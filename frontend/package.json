@@ -4,6 +4,8 @@
   "description": "",
   "main": "script.js",
   "scripts": {
+    "start": "serve -s . -l 4173",
+    "dev": "serve -s . -l 5173",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,5 +18,8 @@
     "gsap": "^3.14.2",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "serve": "^14.2.6"
   }
 }
