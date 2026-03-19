@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="ambient" aria-hidden="true">
+      <div class="shape shape-a"></div>
+      <div class="shape shape-b"></div>
+      <div class="shape shape-c"></div>
+    </section>
+
+    <section class="login-shell" aria-label="Login Bereich">
+      <div class="brand-block">
+        <p class="eyebrow">DMSKI PORTAL</p>
+        <h1>Willkommen<br />zurueck</h1>
+        <p class="subtitle">Melde dich an, um deine Dokumente sicher zu verwalten.</p>
+      </div>
+
+      <form class="login-card" id="loginForm" novalidate>
+        <h2>Login</h2>
+
+        <label for="email">E-Mail</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="name@beispiel.ch" required />
+
+        <label for="password">Passwort</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" placeholder="Mindestens 8 Zeichen" required />
+
+        <div class="row">
+          <label class="checkbox-wrap">
+            <input id="remember" name="remember" type="checkbox" />
+            <span>Angemeldet bleiben</span>
+          </label>
+          <a href="#" class="text-link">Passwort vergessen?</a>
+        </div>
+
+        <button type="submit" id="submitButton">Anmelden</button>
+        <p id="message" class="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
