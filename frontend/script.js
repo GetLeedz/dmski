@@ -7,7 +7,7 @@ const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{10,}$/;
 
 const API_BASE = window.location.hostname === "localhost"
   ? "http://localhost:4000"
-  : "https://api.dmski.aikmu.ch";
+  : "https://lively-reverence-production-def3.up.railway.app";
 
 function setMessage(text, type) {
   messageEl.textContent = text;
