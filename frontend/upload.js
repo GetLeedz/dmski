@@ -14,7 +14,6 @@ const API_BASE = window.location.hostname === "localhost"
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
-const uploadBtn = document.getElementById("uploadBtn");
 const uploadMessage = document.getElementById("uploadMessage");
 const uploadQueue = document.getElementById("uploadQueue");
 const workspaceHint = document.getElementById("workspaceHint");
@@ -25,6 +24,7 @@ const copyrightYearEl = document.getElementById("copyrightYear");
 
 let pendingFiles = [];
 let isUploading = false;
+let totalUploadedCount = 0;
 const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
@@ -91,7 +91,7 @@ function renderPendingFiles() {
     row.innerHTML = `
       <div class="queue-head">
         <span class="queue-name">${safeName}</span>
-        <span class="queue-meta"><span class="spinner"></span><span class="queue-state">Bereit</span> <span class="queue-percent">0%</span></span>
+        <span class="queue-meta"><span class="spinner"></span><span class="queue-state">Bereit</span> <span class="queue-percent">0%</span><button type="button" class="queue-delete" title="Datei löschen" aria-label="Datei löschen" hidden><svg class="queue-delete-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h2v9H7V9Zm4 0h2v9h-2V9Zm4 0h2v9h-2V9Z"/></svg></button></span>
       </div>
       <div class="progress"><div class="progress-bar"></div></div>
     `;
@@ -112,10 +112,25 @@ function updateQueueProgress(fileKey, percent, state, className) {
   const bar = row.querySelector(".progress-bar");
   const pct = row.querySelector(".queue-percent");
   const status = row.querySelector(".queue-state");
+  const deleteBtn = row.querySelector(".queue-delete");
 
   if (bar) bar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
   if (pct) pct.textContent = `${Math.round(percent)}%`;
   if (status) status.textContent = state;
+  if (deleteBtn) deleteBtn.hidden = !(row.classList.contains("done") && Boolean(row.dataset.fileId));
+}
+
+function setRowUploadedFileId(fileKey, fileId) {
+  const row = uploadQueue.querySelector(`.queue-item[data-file-key="${CSS.escape(fileKey)}"]`);
+  if (!row || !fileId) {
+    return;
+  }
+
+  row.dataset.fileId = fileId;
+  const deleteBtn = row.querySelector(".queue-delete");
+  if (deleteBtn && row.classList.contains("done")) {
+    deleteBtn.hidden = false;
+  }
 }
 
 function addPendingFiles(newFiles) {
@@ -136,7 +151,6 @@ function addPendingFiles(newFiles) {
     setMessage(uploadMessage, message, "error");
   }
 
-  uploadBtn.disabled = pendingFiles.length === 0;
   renderPendingFiles();
 
   if (pendingFiles.length > 0) {
@@ -163,8 +177,15 @@ function uploadSingleFile(file) {
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
+        let uploaded = null;
+        try {
+          const parsed = JSON.parse(xhr.responseText || "{}");
+          uploaded = Array.isArray(parsed.uploaded) ? parsed.uploaded[0] : null;
+        } catch {
+          // Ignore JSON parse errors on success response.
+        }
         updateQueueProgress(fileKey, 100, "Fertig", "done");
-        resolve();
+        resolve(uploaded);
         return;
       }
 
@@ -196,36 +217,57 @@ async function startUpload() {
   }
 
   if (pendingFiles.length === 0) {
-    uploadBtn.disabled = true;
     return;
   }
 
   isUploading = true;
-  uploadBtn.disabled = true;
   const filesToUpload = [...pendingFiles];
   pendingFiles = [];
 
   let successCount = 0;
   for (const file of filesToUpload) {
     try {
-      await uploadSingleFile(file);
+      const uploadedMeta = await uploadSingleFile(file);
+      if (uploadedMeta?.id) {
+        setRowUploadedFileId(getFileKey(file), uploadedMeta.id);
+      }
       successCount += 1;
     } catch (error) {
       setMessage(uploadMessage, error.message || "Upload fehlgeschlagen.", "error");
       isUploading = false;
-      uploadBtn.disabled = pendingFiles.length === 0;
       return;
     }
   }
 
-  setMessage(uploadMessage, `${successCount} Datei(en) erfolgreich hochgeladen.`, "success");
+  totalUploadedCount += successCount;
+  setMessage(uploadMessage, `${totalUploadedCount} Datei(en) erfolgreich hochgeladen.`, "success");
   fileInput.value = "";
   isUploading = false;
-  uploadBtn.disabled = pendingFiles.length === 0;
 
   if (pendingFiles.length > 0) {
     startUpload();
   }
+}
+
+async function deleteUploadedFile(fileId, fileKey) {
+  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    setMessage(uploadMessage, payload.error || "Datei konnte nicht gelöscht werden.", "error");
+    return;
+  }
+
+  const row = uploadQueue.querySelector(`.queue-item[data-file-key="${CSS.escape(fileKey)}"]`);
+  if (row) {
+    row.remove();
+  }
+
+  totalUploadedCount = Math.max(0, totalUploadedCount - 1);
+  setMessage(uploadMessage, `${totalUploadedCount} Datei(en) erfolgreich hochgeladen.`, "success");
 }
 
 dropzone.addEventListener("click", () => fileInput.click());
@@ -249,7 +291,30 @@ dropzone.addEventListener("drop", (event) => {
   addPendingFiles(event.dataTransfer.files);
 });
 
-uploadBtn.addEventListener("click", () => startUpload());
+uploadQueue.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+
+  const deleteButton = target.closest(".queue-delete");
+  if (!deleteButton) {
+    return;
+  }
+
+  const row = deleteButton.closest(".queue-item");
+  if (!(row instanceof HTMLElement)) {
+    return;
+  }
+
+  const fileId = row.dataset.fileId;
+  const fileKey = row.dataset.fileKey;
+  if (!fileId || !fileKey) {
+    return;
+  }
+
+  await deleteUploadedFile(fileId, fileKey);
+});
 
 goToListBtn.addEventListener("click", () => {
   window.location.href = "/files.html";

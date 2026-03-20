@@ -186,6 +186,29 @@ button:disabled {
   white-space: nowrap;
 }
 
+.queue-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid #efc1ba;
+  background: #fff3f1;
+  color: #9c3528;
+}
+
+.queue-delete:hover {
+  background: #fde8e6;
+}
+
+.queue-delete-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: currentColor;
+}
+
 .spinner {
   width: 0.85rem;
   height: 0.85rem;
