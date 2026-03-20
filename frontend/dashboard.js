@@ -45,6 +45,7 @@ function maybeShowServiceAlert(status, detail) {
 const caseForm = document.getElementById("caseForm");
 const caseMessage = document.getElementById("caseMessage");
 const caseNameInput = document.getElementById("caseName");
+const protectedPersonNameInput = document.getElementById("protectedPersonName");
 const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const existingCasesSelect = document.getElementById("existingCasesSelect");
@@ -116,7 +117,10 @@ async function loadCasesList() {
       const option = document.createElement("option");
       option.value = item.id;
       const createdLabel = formatCaseTimestamp(item.created_at);
-      option.textContent = `${createdLabel} - ${item.id} - ${item.case_name}`;
+      const protectedLabel = String(item.protected_person_name || "").trim();
+      option.textContent = protectedLabel
+        ? `${createdLabel} - ${item.id} - ${item.case_name} (Benachteiligte Person: ${protectedLabel})`
+        : `${createdLabel} - ${item.id} - ${item.case_name}`;
       existingCasesSelect.appendChild(option);
     }
   } catch {
@@ -153,6 +157,7 @@ caseForm.addEventListener("submit", async (event) => {
 
   const caseDate = todayIsoDate();
   const caseName = String(caseNameInput.value || "").trim();
+  const protectedPersonName = String(protectedPersonNameInput?.value || "").trim();
 
   if (!caseName) {
     setMessage(caseMessage, "Bitte einen Namen eingeben.", "error");
@@ -174,7 +179,12 @@ caseForm.addEventListener("submit", async (event) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ caseId: nextCaseId, caseDate, caseName })
+        body: JSON.stringify({
+          caseId: nextCaseId,
+          caseDate,
+          caseName,
+          protected_person_name: protectedPersonName || null
+        })
       });
 
       const data = await res.json().catch(() => ({}));

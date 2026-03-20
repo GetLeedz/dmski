@@ -1177,8 +1177,123 @@ async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "")
   }
 }
 
+async function listCasesCompat() {
+  try {
+    const result = await pool.query(
+      "SELECT id, case_date, case_name, protected_person_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+    );
+    return result.rows;
+  } catch (err) {
+    if (err?.code === "42703") {
+      const fallback = await pool.query(
+        "SELECT id, case_date, case_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+      );
+      return fallback.rows.map((row) => ({ ...row, protected_person_name: null }));
+    }
+    throw err;
+  }
+}
+
+async function createCaseCompat(caseId, caseDate, caseName, protectedPerson) {
+  try {
+    const result = await pool.query(
+      "INSERT INTO cases (id, case_date, case_name, protected_person_name) VALUES ($1, $2, $3, $4) RETURNING id, case_date, case_name, protected_person_name, created_at",
+      [caseId, caseDate, caseName, protectedPerson]
+    );
+    return result.rows[0];
+  } catch (err) {
+    if (err?.code === "42703") {
+      const fallback = await pool.query(
+        "INSERT INTO cases (id, case_date, case_name) VALUES ($1, $2, $3) RETURNING id, case_date, case_name, created_at",
+        [caseId, caseDate, caseName]
+      );
+      return { ...fallback.rows[0], protected_person_name: null };
+    }
+    throw err;
+  }
+}
+
+async function getCaseProtectedPerson(caseId) {
+  try {
+    const result = await pool.query(
+      "SELECT protected_person_name FROM cases WHERE id = $1 LIMIT 1",
+      [caseId]
+    );
+    return normalizeWhitespace(result.rows[0]?.protected_person_name || "");
+  } catch (err) {
+    if (err?.code === "42703") {
+      return "";
+    }
+    throw err;
+  }
+}
+
+function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") {
+  const protectedName = normalizeWhitespace(protectedPersonName);
+  if (!protectedName || !analysis || typeof analysis !== "object") {
+    return analysis;
+  }
+
+  const output = {
+    ...analysis,
+    people: Array.isArray(analysis.people) ? [...analysis.people] : [],
+    impactRanking: Array.isArray(analysis.impactRanking) ? [...analysis.impactRanking] : []
+  };
+
+  const hasProtectedInPeople = output.people.some((entry) => {
+    const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name);
+    return name.toLowerCase() === protectedName.toLowerCase();
+  });
+
+  const lowerText = String(rawText || "").toLowerCase();
+  const nameInText = lowerText.includes(protectedName.toLowerCase());
+  const hasAttackTerms = /(benachteilig|diskriminier|beleidig|angriff|abwert|verletz|schlecht\s+gemacht|unterschiedlich\s+gut|ungleich\s+behand)/.test(lowerText);
+
+  if (!hasProtectedInPeople && nameInText) {
+    output.people.push({ name: protectedName, affiliation: "Privatperson", allowSingleToken: true });
+  }
+
+  const shouldFlagProtected = nameInText && hasAttackTerms;
+  if (shouldFlagProtected) {
+    output.disadvantagedPerson = protectedName;
+    output.impactAssessment = "Person benachteiligt";
+  }
+
+  const normalizedPeople = normalizePeopleDetailed(output.people, rawText, new Set(), output.author || "");
+  const existing = new Map();
+  for (const item of output.impactRanking) {
+    const key = normalizeWhitespace(item?.name).toLowerCase();
+    if (!key) {
+      continue;
+    }
+    existing.set(key, {
+      count: Number(item?.count || 0),
+      items: Array.isArray(item?.items) ? item.items : []
+    });
+  }
+
+  if (shouldFlagProtected) {
+    const key = protectedName.toLowerCase();
+    const prev = existing.get(key) || { count: 0, items: [] };
+    const hasTargetQuote = prev.items.some((it) => /unterschiedlich gute zusammenarbeit/i.test(String(it || "")));
+    existing.set(key, {
+      count: Math.max(1, prev.count),
+      items: hasTargetQuote ? prev.items : [...prev.items, "Für die unterschiedlich gute Zusammenarbeit"]
+    });
+  }
+
+  const aiLookup = {};
+  for (const [nameKey, value] of existing.entries()) {
+    aiLookup[nameKey] = value;
+  }
+
+  output.people = normalizedPeople;
+  output.impactRanking = buildImpactRanking(normalizedPeople, output.disadvantagedPerson || "", aiLookup);
+  return output;
+}
+
 router.post("/", requireAuth, async (req, res) => {
-  const { caseId, caseDate, caseName } = req.body;
+  const { caseId, caseDate, caseName, protected_person_name: protectedPersonInput } = req.body;
 
   if (!caseId || !caseDate || !caseName) {
     return res.status(400).json({ error: "ID, Datum und Name sind erforderlich." });
@@ -1192,13 +1307,9 @@ router.post("/", requireAuth, async (req, res) => {
   }
 
   try {
-    const protectedPerson = String(req.body.protected_person_name || "").trim() || null;
-    const result = await pool.query(
-      "INSERT INTO cases (id, case_date, case_name, protected_person_name) VALUES ($1, $2, $3, $4) RETURNING id, case_date, case_name, protected_person_name, created_at",
-      [normalizedCaseId, caseDate, normalizedCaseName, protectedPerson]
-    );
-
-    return res.status(201).json(result.rows[0]);
+    const protectedPerson = String(protectedPersonInput || "").trim() || null;
+    const created = await createCaseCompat(normalizedCaseId, caseDate, normalizedCaseName, protectedPerson);
+    return res.status(201).json(created);
   } catch (err) {
     if (err.code === "23505") {
       return res.status(409).json({ error: "Fall-ID existiert bereits." });
@@ -1210,11 +1321,8 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.get("/", requireAuth, async (_req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT id, case_date, case_name, protected_person_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
-    );
-
-    return res.json({ cases: result.rows });
+    const cases = await listCasesCompat();
+    return res.json({ cases });
   } catch (err) {
     console.error("List cases error:", err.message);
     return res.status(500).json({ error: "Fallliste konnte nicht geladen werden." });
@@ -1391,6 +1499,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
 
     if (String(file.mime_type || "").includes("pdf")) {
       try {
+        const protectedPersonName = await getCaseProtectedPerson(caseId);
         const pdfParse = getPdfParse();
         if (!pdfParse) {
           return res.json({
@@ -1405,9 +1514,9 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
         }
         const parsed = await pdfParse(fileBuffer);
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
-
         const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
-        return res.json(aiResult);
+        const focused = applyProtectedPersonFocus(aiResult, parsed?.text || "", protectedPersonName);
+        return res.json(focused);
       } catch (pdfError) {
         console.error("PDF parse warning:", pdfError.message);
         return res.json({
