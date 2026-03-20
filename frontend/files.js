@@ -87,10 +87,6 @@ function setMessage(el, text, type) {
   el.textContent = text;
   el.classList.remove("error", "success");
   if (type) {
-    el.classList.add(type);
-  }
-}
-
 function formatDate(value) {
   const date = new Date(value);
   const dateStr = date.toLocaleString("de-CH", {
@@ -153,10 +149,6 @@ function decodeUtf8Safe(text) {
 
 function resolveFileType(file) {
   const mime = String(file.mime_type || "").toLowerCase();
-  const name = String(file.original_name || "").toLowerCase();
-
-  if (mime.includes("pdf") || name.endsWith(".pdf")) {
-    return { className: "pdf", label: "PDF" };
   }
 
   if (mime.includes("png") || name.endsWith(".png")) {
@@ -165,14 +157,7 @@ function resolveFileType(file) {
 
   if (mime.includes("jpeg") || mime.includes("jpg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
     return { className: "jpg", label: "JPG" };
-  }
-
-  return { className: "generic", label: "FILE" };
-}
-
-function compactDocId(id) {
-  const raw = String(id || "").replace(/-/g, "").slice(0, 12);
-  const numeric = Number.parseInt(raw || "0", 16) % 100000000;
+    ${protectedName ? `<div class="analysis-section"><p class="analysis-label">Vorfälle Fallperson</p><p class="analysis-value">${protectedCount}</p></div>` : ""}
   return String(Number.isFinite(numeric) ? numeric : 0).padStart(8, "0");
 }
 
@@ -495,10 +480,6 @@ async function loadRowAnalysis(file) {
     ? `<p class="analysis-value">${swissAuthoredDate}</p>`
     : '<p class="analysis-value muted">Nicht erkannt</p>';
 
-  const disadvantagedMarkup = analysis.disadvantagedPerson
-    ? `<p class="analysis-value">${analysis.disadvantagedPerson}</p>`
-    : '<p class="analysis-value muted">Nicht erkannt</p>';
-
   const senderInstitutionMarkup = analysis.senderInstitution
     ? `<p class="analysis-value">${analysis.senderInstitution}</p>`
     : '<p class="analysis-value muted">Nicht erkannt</p>';
@@ -518,27 +499,11 @@ async function loadRowAnalysis(file) {
       .filter((entry) => entry.name)
     : [];
 
-  const impactRankingMarkup = impactRankingItems.length > 0
-    ? `<ul class="analysis-people">${impactRankingItems.map((entry) => {
-        const countBadge = entry.count > 0 ? ` <span class="impact-count">${entry.count}</span>` : "";
-        const impactClass = (entry.impact || "").toLowerCase() === "benachteiligt" ? "analysis-person-affiliation impact-badge-benachteiligt" : "analysis-person-affiliation";
-        const itemsList = entry.items.length > 0
-          ? `<ul class="impact-items">${entry.items.map((it) => `<li>«${it}»</li>`).join("")}</ul>`
-          : "";
-        return `<li class="impact-entry"><div class="impact-entry-header"><span>${entry.name}${countBadge}</span><span class="${impactClass}">${entry.impact}</span></div>${itemsList}</li>`;
-      }).join("")}</ul>`
-    : '<p class="analysis-value muted">Keine Einstufung</p>';
-
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
   const protectedEntry = protectedName
     ? impactRankingItems.find((entry) => entry.name.toLowerCase() === protectedName.toLowerCase())
     : null;
   const protectedCount = protectedEntry ? Math.max(0, Number(protectedEntry.count || 0)) : 0;
-  const protectedStatusMarkup = !protectedName
-    ? '<p class="analysis-value muted">Keine Fallperson definiert</p>'
-    : protectedCount > 0
-      ? `<p class="analysis-value"><strong>Ja</strong> · ${protectedCount} Vorfall${protectedCount === 1 ? "" : "e"}</p>`
-      : '<p class="analysis-value">Nein · 0 Vorfälle</p>';
 
   const hintMarkup = analysis.message
     ? `<p class="analysis-hint">${analysis.message}</p>`
@@ -562,10 +527,6 @@ async function loadRowAnalysis(file) {
       ${peopleMarkup}
     </div>
     <div class="analysis-section">
-      <p class="analysis-label">Wer wird benachteiligt</p>
-      ${disadvantagedMarkup}
-    </div>
-    <div class="analysis-section">
       <p class="analysis-label">Herkunft Schreiben</p>
       ${senderInstitutionMarkup}
     </div>
@@ -573,14 +534,7 @@ async function loadRowAnalysis(file) {
       <p class="analysis-label">KI Bewertung</p>
       ${impactAssessmentMarkup}
     </div>
-    <div class="analysis-section">
-      <p class="analysis-label">Gewichtung Personen</p>
-      ${impactRankingMarkup}
-    </div>
-    <div class="analysis-section">
-      <p class="analysis-label">Fallperson benachteiligt</p>
-      ${protectedStatusMarkup}
-    </div>
+    ${protectedName ? `<div class="analysis-section"><p class="analysis-label">Vorfälle Fallperson</p><p class="analysis-value">${protectedCount}</p></div>` : ""}
     ${hintMarkup}
   `;
 }
@@ -615,6 +569,7 @@ function renderFiles(files) {
         <div class="preview-topline">
           <div class="preview-doc-id">Doc ID: ${compactDocId(file.id)}</div>
           <div class="row-actions">
+            <button type="button" class="btn-inline" data-action="refresh-analysis" data-id="${file.id}">Analyse neu</button>
             <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
             <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
           </div>
@@ -637,6 +592,33 @@ function renderFiles(files) {
   for (const file of files) {
     void loadRowPreview(file);
     void loadRowAnalysis(file);
+  }
+}
+
+async function refreshAnalysis(fileId, triggerButton) {
+  const file = allFiles.find((entry) => entry.id === fileId);
+  if (!file) {
+    return;
+  }
+
+  if (triggerButton instanceof HTMLButtonElement) {
+    triggerButton.disabled = true;
+    triggerButton.textContent = "Analysiere...";
+  }
+
+  analysisCache.delete(fileId);
+  analysisPromiseCache.delete(fileId);
+
+  try {
+    await loadRowAnalysis(file);
+    setMessage(listMessage, "Analyse aktualisiert.", "success");
+  } catch {
+    setMessage(listMessage, "Analyse konnte nicht aktualisiert werden.", "error");
+  } finally {
+    if (triggerButton instanceof HTMLButtonElement) {
+      triggerButton.disabled = false;
+      triggerButton.textContent = "Analyse neu";
+    }
   }
 }
 
@@ -869,6 +851,11 @@ filesTableBody.addEventListener("click", async (event) => {
   if (rowActions && action && fileId) {
     if (action === "download") {
       await downloadFile(fileId);
+      return;
+    }
+
+    if (action === "refresh-analysis") {
+      await refreshAnalysis(fileId, target);
       return;
     }
 

@@ -663,6 +663,7 @@ function extractSenderInstitution(rawText, author = "") {
   const fromValue = extractLabeledValue(rawText, ["Von", "From", "Absender", "Sender"]);
   const domainEmail = extractFirstEmail(fromValue);
   const domain = domainEmail ? domainEmail.split("@")[1].toLowerCase() : "";
+  const normalizedAuthor = normalizeWhitespace(author);
 
   // Check domain for institution clues
   if (domain && domain.includes("kesb")) {
@@ -686,6 +687,11 @@ function extractSenderInstitution(rawText, author = "") {
     if (stem) {
       return stem.toUpperCase();
     }
+  }
+
+  // No sender domain available: default to private author identity.
+  if (normalizedAuthor && looksLikePersonName(normalizedAuthor)) {
+    return `${normalizedAuthor} (Privat)`;
   }
 
   const lines = String(rawText || "")
@@ -922,7 +928,8 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
             "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
             "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
-            "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt (z. B. KESB Leimental).",
+            "- senderInstitution = NUR vom Absender ableiten, nie vom Empfänger/Fallgegner.",
+            "- Wenn der Absender eine Privatperson ist: '<Author Name> (Privat)' (z. B. Ayhan Ergen (Privat)).",
             "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
             "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
             "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen oder diskriminieren; 0 wenn neutral.",
@@ -1000,7 +1007,8 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte oder Satzfragmente enthalten.",
                 "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
-                "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt.",
+                "- senderInstitution = NUR vom sichtbaren Absender ableiten, nie vom Empfänger.",
+                "- Bei Privatabsender: '<Author Name> (Privat)'.",
                 "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
                 "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
                 "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen; 0 wenn neutral.",

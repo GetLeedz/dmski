@@ -346,7 +346,7 @@ async function startUpload() {
       const fileKey = getFileKey(file);
       if (uploadedMeta?.id) {
         setRowUploadedFileId(fileKey, uploadedMeta.id);
-        void triggerRealtimeAnalysis(uploadedMeta.id, uploadedMeta.original_name || file.name, fileKey);
+        await triggerRealtimeAnalysis(uploadedMeta.id, uploadedMeta.original_name || file.name, fileKey);
       }
       successCount += 1;
     } catch (error) {
