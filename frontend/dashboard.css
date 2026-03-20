@@ -1023,7 +1023,16 @@ td {
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
+  .page {
+    max-width: 880px;
+    padding: 1rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
   .header-logo {
     height: 2.4rem;
   }
@@ -1074,7 +1083,7 @@ td {
 
   th,
   td {
-    font-size: 0.86rem;
+    font-size: 0.9rem;
   }
 
   .row-preview-loading,
@@ -1082,7 +1091,8 @@ td {
   .row-preview-box,
   .row-preview-image,
   .row-preview-frame {
-    width: 15.4rem;
-    height: 11.2rem;
+    width: clamp(19rem, 88vw, 24rem);
+    height: auto;
+    aspect-ratio: 1 / 1.414;
   }
 }
