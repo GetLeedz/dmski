@@ -148,7 +148,7 @@ async function getPreviewUrl(file) {
     return previewPromiseCache.get(file.id);
   }
 
-  const promise = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/download`, {
+  const promise = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 
