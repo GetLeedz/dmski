@@ -30,7 +30,7 @@ const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
 activeCaseBanner.textContent = `WICHTIG: Du arbeitest im Fall ${currentCaseId}`;
-workspaceHint.textContent = `Aktiver Fall: ${currentCaseId}. Dateien werden direkt hochgeladen, wenn sie in die Fläche gezogen werden.`;
+workspaceHint.textContent = "Dateien werden direkt hochgeladen, wenn sie in die Fläche gezogen werden.";
 
 function decodeUtf8Safe(text) {
   const input = String(text || "");
