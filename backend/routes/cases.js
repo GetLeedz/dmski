@@ -80,21 +80,26 @@ const upload = multer({
 });
 
 let openAiClient = null;
-let pdfParseLoader = null;
+let pdfParseFn;
+let pdfParseLoadLogged = false;
 
-async function getPdfParse() {
-  if (pdfParseLoader) {
-    return pdfParseLoader;
+function getPdfParse() {
+  if (pdfParseFn !== undefined) {
+    return pdfParseFn;
   }
 
-  pdfParseLoader = import("pdf-parse")
-    .then((mod) => mod?.default || mod)
-    .catch((err) => {
-      pdfParseLoader = null;
-      throw err;
-    });
+  try {
+    const mod = require("pdf-parse");
+    pdfParseFn = (typeof mod === "function") ? mod : (mod?.default || null);
+  } catch (err) {
+    pdfParseFn = null;
+    if (!pdfParseLoadLogged) {
+      console.error("PDF parser unavailable:", err.message);
+      pdfParseLoadLogged = true;
+    }
+  }
 
-  return pdfParseLoader;
+  return pdfParseFn;
 }
 
 function getOpenAiClient() {
@@ -702,7 +707,17 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     if (String(file.mime_type || "").includes("pdf")) {
       try {
         const buffer = await fs.promises.readFile(absolutePath);
-        const pdfParse = await getPdfParse();
+        const pdfParse = getPdfParse();
+        if (!pdfParse) {
+          return res.json({
+            status: "empty",
+            title: "",
+            author: "",
+            authoredDate: "",
+            people: [],
+            message: "PDF-Parser ist aktuell nicht verfuegbar."
+          });
+        }
         const parsed = await pdfParse(buffer);
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
 
