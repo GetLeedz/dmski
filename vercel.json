@@ -1,5 +1,6 @@
 {
   "outputDirectory": "frontend",
   "buildCommand": "",
-  "installCommand": ""
+  "installCommand": "",
+  "regions": ["fra1"]
 }
