@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <h1>DMSKI Fallverwaltung</h1>
+      <button id="logoutBtn" class="ghost">Logout</button>
+    </header>
+
+    <section class="card">
+      <h2>Neuen Fall anlegen</h2>
+      <form id="caseForm" class="grid">
+        <label>
+          ID (6-stellig)
+          <input id="caseId" name="caseId" type="text" pattern="[0-9]{6}" maxlength="6" placeholder="z.B. 123456" required />
+        </label>
+        <label>
+          Datum
+          <input id="caseDate" name="caseDate" type="date" required />
+        </label>
+        <label class="full">
+          Name
+          <input id="caseName" name="caseName" type="text" placeholder="Fallname / Mandat" required />
+        </label>
+        <button type="submit">Fall erstellen</button>
+      </form>
+      <p id="caseMessage" class="message"></p>
+    </section>
+
+    <section class="card" id="uploadSection">
+      <h2>Dateien hochladen</h2>
+      <p>Erlaubte Formate: PDF, JPG, JPEG, PNG. Mehrere Dateien gleichzeitig moeglich.</p>
+
+      <div id="dropzone" class="dropzone" tabindex="0">
+        Dateien hier hineinziehen oder klicken, um Dateien auszuwaehlen.
+        <input id="fileInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden />
+      </div>
+
+      <button id="uploadBtn" type="button" disabled>Upload starten</button>
+      <p id="uploadMessage" class="message"></p>
+
+      <h3>Dateiliste (nach Upload-Datum)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Upload-Datum</th>
+            <th>Dateiname</th>
+            <th>Typ</th>
+            <th>Groesse (KB)</th>
+          </tr>
+        </thead>
+        <tbody id="filesTableBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

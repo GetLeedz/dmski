@@ -3,6 +3,7 @@ require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
 const authRouter = require("./routes/auth");
+const casesRouter = require("./routes/cases");
 
 const app = express();
 const port = Number(process.env.PORT) || 4000;
@@ -35,6 +36,8 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/cases", casesRouter);
+app.use("/uploads", express.static("uploads"));
 
 app.listen(port, () => {
   console.log(`Backend running on http://localhost:${port}`);

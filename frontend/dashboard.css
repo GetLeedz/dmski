@@ -1,0 +1,146 @@
+:root {
+  --bg: #eef1f2;
+  --card: #ffffff;
+  --ink: #1b2a31;
+  --line: #d7dfe2;
+  --accent: #116b73;
+  --accent-2: #0f5960;
+  --error: #b64a3b;
+  --ok: #2d8248;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 20% -10%, #d4ecef, transparent 40%), var(--bg);
+}
+
+.page {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 1.2rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 500;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.7rem;
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.72rem 1rem;
+  background: linear-gradient(150deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.dropzone {
+  margin-top: 0.6rem;
+  border: 2px dashed #8fb8bd;
+  background: #f4fbfc;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.dropzone.drag {
+  border-color: var(--accent);
+  background: #e9f7f9;
+}
+
+.message {
+  min-height: 1.3rem;
+  margin: 0.6rem 0 0;
+}
+
+.message.error {
+  color: var(--error);
+}
+
+.message.success {
+  color: var(--ok);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.6rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 0.65rem 0.4rem;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 700px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  th,
+  td {
+    font-size: 0.86rem;
+  }
+}
