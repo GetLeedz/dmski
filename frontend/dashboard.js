@@ -94,6 +94,17 @@ function openUploadForCase(caseId) {
   window.location.href = "/upload.html";
 }
 
+function openListForCase(caseId) {
+  const normalized = String(caseId || "").trim();
+  if (!/^\d{6}$/.test(normalized)) {
+    setMessage(caseMessage, "Bitte eine gültige 6-stellige Fall-ID auswählen.", "error");
+    return;
+  }
+
+  sessionStorage.setItem("currentCaseId", normalized);
+  window.location.href = "/files.html";
+}
+
 caseForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -151,7 +162,7 @@ caseForm.addEventListener("submit", async (event) => {
 
 existingCasesSelect.addEventListener("change", () => {
   if (!existingCasesSelect.value) return;
-  openUploadForCase(existingCasesSelect.value);
+  openListForCase(existingCasesSelect.value);
 });
 
 logoutBtn.addEventListener("click", () => {
