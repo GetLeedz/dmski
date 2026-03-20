@@ -151,6 +151,21 @@ async function getPreviewUrl(file) {
   previewPromiseCache.delete(file.id);
 
   if (!response.ok) {
+    let detail = "Vorschau konnte nicht geladen werden.";
+    try {
+      const payload = await response.json();
+      if (payload && payload.error) {
+        detail = payload.error;
+      }
+    } catch {
+      // Ignore non-JSON error bodies.
+    }
+
+    if (response.status === 404) {
+      detail = "Datei fehlt im Serverspeicher. Bitte dieses Dokument neu hochladen.";
+    }
+
+    setMessage(listMessage, `${decodeUtf8Safe(file.original_name)}: ${detail}`, "error");
     return null;
   }
 
@@ -218,7 +233,7 @@ async function loadRowPreview(file) {
   cell.innerHTML = '<div class="row-preview-loading">Lädt...</div>';
   const previewUrl = await getPreviewUrl(file);
   if (!previewUrl) {
-    cell.innerHTML = '<span class="row-preview-empty">Nicht verfügbar</span>';
+    cell.innerHTML = '<span class="row-preview-empty">Neu hochladen</span>';
     return;
   }
 
