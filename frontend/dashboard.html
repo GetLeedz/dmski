@@ -33,6 +33,25 @@
         </label>
         <button id="createCaseBtn" type="submit">Dossier eröffnen</button>
       </form>
+
+      <div class="open-case">
+        <h3>Bestehendes Dossier öffnen</h3>
+        <div class="open-case-grid">
+          <label>
+            Fall-ID
+            <input id="openCaseId" type="text" placeholder="z. B. 166559" maxlength="6" />
+          </label>
+          <button id="openCaseBtn" type="button">Dossier öffnen</button>
+        </div>
+
+        <label>
+          Oder aus Liste wählen
+          <select id="existingCasesSelect">
+            <option value="">Lade Fallliste...</option>
+          </select>
+        </label>
+      </div>
+
       <p id="caseMessage" class="message"></p>
     </section>
 

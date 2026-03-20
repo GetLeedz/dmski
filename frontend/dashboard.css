@@ -52,6 +52,25 @@ h1 {
   gap: 0.8rem;
 }
 
+.open-case {
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.85rem;
+}
+
+.open-case h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+}
+
+.open-case-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.7rem;
+  align-items: end;
+  margin-bottom: 0.6rem;
+}
+
 label {
   display: flex;
   flex-direction: column;
@@ -346,6 +365,10 @@ td {
 
 @media (max-width: 700px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .open-case-grid {
     grid-template-columns: 1fr;
   }
 

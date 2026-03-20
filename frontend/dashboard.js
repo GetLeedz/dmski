@@ -24,6 +24,9 @@ const tabUpload = document.getElementById("tabUpload");
 const tabList = document.getElementById("tabList");
 const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const openCaseIdInput = document.getElementById("openCaseId");
+const openCaseBtn = document.getElementById("openCaseBtn");
+const existingCasesSelect = document.getElementById("existingCasesSelect");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const copyrightYearEl = document.getElementById("copyrightYear");
@@ -32,6 +35,7 @@ const uploadQueue = document.getElementById("uploadQueue");
 let currentCaseId = "";
 let pendingFiles = [];
 let allFiles = [];
+let allCases = [];
 
 function formatSizeKB(bytes) {
   return Math.max(1, Math.round(Number(bytes || 0) / 1024));
@@ -336,6 +340,60 @@ async function loadFiles() {
   setMessage(uploadMessage, data.error || "Dateiliste konnte nicht geladen werden.", "error");
 }
 
+async function loadCasesList() {
+  const res = await fetch(`${API_BASE}/cases`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    existingCasesSelect.innerHTML = "<option value=\"\">Fallliste konnte nicht geladen werden</option>";
+    return;
+  }
+
+  allCases = data.cases || [];
+  existingCasesSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = allCases.length > 0
+    ? "Bitte Dossier auswählen"
+    : "Noch keine Dossiers vorhanden";
+  existingCasesSelect.appendChild(placeholder);
+
+  for (const item of allCases) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = `${item.id} - ${item.case_name} (${String(item.case_date || "")})`;
+    existingCasesSelect.appendChild(option);
+  }
+}
+
+async function openCase(caseId) {
+  const normalized = String(caseId || "").trim();
+  if (!/^\d{6}$/.test(normalized)) {
+    setMessage(caseMessage, "Bitte eine gültige 6-stellige Fall-ID eingeben.", "error");
+    return;
+  }
+
+  currentCaseId = normalized;
+  caseIdInput.value = normalized;
+
+  const selected = allCases.find((item) => item.id === normalized);
+  if (selected) {
+    caseDateInput.value = String(selected.case_date || "").slice(0, 10) || todayIsoDate();
+    document.getElementById("caseName").value = selected.case_name || "";
+  }
+
+  setWorkspaceEnabled(true);
+  setMessage(caseMessage, `Dossier ${normalized} geöffnet. Du kannst Dateien hochladen.`, "success");
+  setMessage(uploadMessage, "", null);
+  pendingFiles = [];
+  renderPendingFiles();
+  await loadFiles();
+  switchTab("upload");
+}
+
 caseForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -397,6 +455,7 @@ caseForm.addEventListener("submit", async (event) => {
   setWorkspaceEnabled(true);
   switchTab("upload");
   createCaseBtn.disabled = false;
+  await loadCasesList();
   loadFiles();
 });
 
@@ -499,6 +558,15 @@ for (const element of [fileTypeFilter, dateFromFilter]) {
   });
 }
 
+openCaseBtn.addEventListener("click", async () => {
+  await openCase(openCaseIdInput.value);
+});
+
+existingCasesSelect.addEventListener("change", async () => {
+  if (!existingCasesSelect.value) return;
+  await openCase(existingCasesSelect.value);
+});
+
 logoutBtn.addEventListener("click", () => {
   sessionStorage.removeItem("token");
   window.location.href = "/";
@@ -508,3 +576,4 @@ copyrightYearEl.textContent = String(new Date().getFullYear());
 resetAutoFields();
 setWorkspaceEnabled(false);
 switchTab("upload");
+loadCasesList();

@@ -108,6 +108,19 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/", requireAuth, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, case_date, case_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+    );
+
+    return res.json({ cases: result.rows });
+  } catch (err) {
+    console.error("List cases error:", err.message);
+    return res.status(500).json({ error: "Fallliste konnte nicht geladen werden." });
+  }
+});
+
 router.post("/:caseId/files", requireAuth, (req, res) => {
   upload.array("files", 20)(req, res, async (uploadErr) => {
     if (uploadErr) {
