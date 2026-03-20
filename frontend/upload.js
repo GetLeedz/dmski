@@ -24,6 +24,7 @@ const logoutBtn = document.getElementById("logoutBtn");
 const copyrightYearEl = document.getElementById("copyrightYear");
 
 let pendingFiles = [];
+let isUploading = false;
 const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
@@ -51,6 +52,10 @@ function setMessage(el, text, type) {
   }
 }
 
+function getFileKey(file) {
+  return `${file.name}__${file.size}__${file.lastModified}`;
+}
+
 function splitAcceptedFiles(files) {
   const accepted = [];
   const rejected = [];
@@ -68,17 +73,21 @@ function splitAcceptedFiles(files) {
 }
 
 function renderPendingFiles() {
-  uploadQueue.innerHTML = "";
-
   if (pendingFiles.length === 0) {
     return;
   }
 
   for (const file of pendingFiles) {
+    const fileKey = getFileKey(file);
+    const existingRow = uploadQueue.querySelector(`.queue-item[data-file-key="${CSS.escape(fileKey)}"]`);
+    if (existingRow) {
+      continue;
+    }
+
     const safeName = decodeUtf8Safe(file.name);
     const row = document.createElement("div");
     row.className = "queue-item";
-    row.dataset.fileName = file.name;
+    row.dataset.fileKey = fileKey;
     row.innerHTML = `
       <div class="queue-head">
         <span class="queue-name">${safeName}</span>
@@ -90,9 +99,8 @@ function renderPendingFiles() {
   }
 }
 
-function updateQueueProgress(fileName, percent, state, className) {
-  const row = Array.from(uploadQueue.querySelectorAll(".queue-item"))
-    .find((item) => item.dataset.fileName === fileName);
+function updateQueueProgress(fileKey, percent, state, className) {
+  const row = uploadQueue.querySelector(`.queue-item[data-file-key="${CSS.escape(fileKey)}"]`);
 
   if (!row) return;
 
@@ -112,11 +120,12 @@ function updateQueueProgress(fileName, percent, state, className) {
 
 function addPendingFiles(newFiles) {
   const { accepted, rejected } = splitAcceptedFiles(newFiles);
-  const existingNames = new Set(pendingFiles.map((f) => f.name));
+  const existingKeys = new Set(pendingFiles.map((f) => getFileKey(f)));
   for (const f of accepted) {
-    if (!existingNames.has(f.name)) {
+    const key = getFileKey(f);
+    if (!existingKeys.has(key)) {
       pendingFiles.push(f);
-      existingNames.add(f.name);
+      existingKeys.add(key);
     }
   }
 
@@ -132,11 +141,13 @@ function addPendingFiles(newFiles) {
 
   if (pendingFiles.length > 0) {
     setMessage(uploadMessage, `${pendingFiles.length} Datei(en) bereit zum Upload.`, "success");
+    startUpload();
   }
 }
 
 function uploadSingleFile(file) {
   return new Promise((resolve, reject) => {
+    const fileKey = getFileKey(file);
     const body = new FormData();
     body.append("files", file);
 
@@ -147,12 +158,12 @@ function uploadSingleFile(file) {
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable) return;
       const percent = (event.loaded / event.total) * 100;
-      updateQueueProgress(file.name, percent, "Lädt...", "uploading");
+      updateQueueProgress(fileKey, percent, "Lädt...", "uploading");
     };
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        updateQueueProgress(file.name, 100, "Fertig", "done");
+        updateQueueProgress(fileKey, 100, "Fertig", "done");
         resolve();
         return;
       }
@@ -166,12 +177,12 @@ function uploadSingleFile(file) {
       } catch {
         // Ignore JSON parse errors.
       }
-      updateQueueProgress(file.name, 0, "Fehler", "error");
+      updateQueueProgress(fileKey, 0, "Fehler", "error");
       reject(new Error(errorText));
     };
 
     xhr.onerror = () => {
-      updateQueueProgress(file.name, 0, "Fehler", "error");
+      updateQueueProgress(fileKey, 0, "Fehler", "error");
       reject(new Error("Server nicht erreichbar."));
     };
 
@@ -180,29 +191,41 @@ function uploadSingleFile(file) {
 }
 
 async function startUpload() {
-  if (pendingFiles.length === 0) {
-    setMessage(uploadMessage, "Keine Dateien ausgewählt.", "error");
+  if (isUploading) {
     return;
   }
 
+  if (pendingFiles.length === 0) {
+    uploadBtn.disabled = true;
+    return;
+  }
+
+  isUploading = true;
   uploadBtn.disabled = true;
+  const filesToUpload = [...pendingFiles];
+  pendingFiles = [];
 
   let successCount = 0;
-  for (const file of pendingFiles) {
+  for (const file of filesToUpload) {
     try {
       await uploadSingleFile(file);
       successCount += 1;
     } catch (error) {
       setMessage(uploadMessage, error.message || "Upload fehlgeschlagen.", "error");
-      uploadBtn.disabled = false;
+      isUploading = false;
+      uploadBtn.disabled = pendingFiles.length === 0;
       return;
     }
   }
 
   setMessage(uploadMessage, `${successCount} Datei(en) erfolgreich hochgeladen.`, "success");
-  pendingFiles = [];
   fileInput.value = "";
-  renderPendingFiles();
+  isUploading = false;
+  uploadBtn.disabled = pendingFiles.length === 0;
+
+  if (pendingFiles.length > 0) {
+    startUpload();
+  }
 }
 
 dropzone.addEventListener("click", () => fileInput.click());
@@ -224,7 +247,6 @@ for (const eventName of ["dragleave", "drop"]) {
 
 dropzone.addEventListener("drop", (event) => {
   addPendingFiles(event.dataTransfer.files);
-  startUpload();
 });
 
 uploadBtn.addEventListener("click", () => startUpload());
