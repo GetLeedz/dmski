@@ -25,31 +25,6 @@ const API_BASE = isLocalHost
   ? "http://localhost:4000"
   : "https://lively-reverence-production-def3.up.railway.app";
 
-const OUTAGE_STATUSES = new Set([502, 503, 504]);
-let serviceAlertEl = null;
-
-function showServiceAlert(detail) {
-  if (!serviceAlertEl) {
-    serviceAlertEl = document.createElement("div");
-    serviceAlertEl.className = "service-alert";
-    const page = document.querySelector(".page");
-    if (page) {
-      page.prepend(serviceAlertEl);
-    } else {
-      document.body.prepend(serviceAlertEl);
-    }
-  }
-
-  const suffix = detail ? ` (${detail})` : "";
-  serviceAlertEl.textContent = `Server-Störung erkannt. Einige Funktionen sind derzeit eingeschränkt. Bitte in 1-2 Minuten erneut versuchen.${suffix}`;
-}
-
-function maybeShowServiceAlert(status, detail) {
-  if (OUTAGE_STATUSES.has(Number(status))) {
-    showServiceAlert(detail);
-  }
-}
-
 const REMEMBER_EMAIL_KEY = "dmski.remember.email";
 
 function restoreRememberedEmail() {
@@ -105,14 +80,12 @@ async function startPasskeyLogin() {
     });
 
     if (!optionsResponse.ok) {
-      maybeShowServiceAlert(optionsResponse.status, "Passkey-Service nicht erreichbar");
       setMessage("Passkey ist serverseitig noch nicht freigeschaltet. Bitte Passwort-Login verwenden.", "error");
       return;
     }
 
     setMessage("Passkey-Flow bereit. Browser startet Authentifizierung.", "success");
   } catch {
-    showServiceAlert("Passkey-Anfrage fehlgeschlagen");
     setMessage("Passkey-Anmeldung aktuell nicht verfügbar.", "error");
   } finally {
     passkeyButton.disabled = false;
@@ -167,7 +140,6 @@ loginForm.addEventListener("submit", async (event) => {
     const data = await res.json();
 
     if (!res.ok) {
-      maybeShowServiceAlert(res.status, "Login-Service gestört");
       setMessage(data.error || "Anmeldung fehlgeschlagen.", "error");
       return;
     }
@@ -182,7 +154,6 @@ loginForm.addEventListener("submit", async (event) => {
       window.location.href = "/dashboard.html";
     }, 1000);
   } catch {
-    showServiceAlert("Keine Verbindung zum Backend");
     setMessage("Server nicht erreichbar. Bitte später erneut versuchen.", "error");
   } finally {
     submitButton.disabled = false;
