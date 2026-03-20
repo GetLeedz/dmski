@@ -169,8 +169,8 @@ function extractPeopleFromText(rawText) {
   const people = [];
 
   const personPatterns = [
-    /\b([A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ][a-zäöüß]+)\b/g,
-    /\b([A-ZÄÖÜ][a-zäöüß]+\.[A-ZÄÖÜ][a-zäöüß]+)\b/g
+    /\b([A-ZÄÖÜ][a-zäöüß'-]+\s+[A-ZÄÖÜ][a-zäöüß'-]+)\b/g,
+    /\b([A-ZÄÖÜ][a-zäöüß'-]+\.[A-ZÄÖÜ][a-zäöüß'-]+)\b/g
   ];
 
   for (const line of lines) {
@@ -187,6 +187,63 @@ function extractPeopleFromText(rawText) {
   }
 
   return normalizePeople(people);
+}
+
+function extractLabeledValue(rawText, labels) {
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeWhitespace(line));
+
+  for (const line of lines) {
+    for (const label of labels) {
+      const pattern = new RegExp(`^${label}\\s*[:\\-]\\s*(.+)$`, "i");
+      const match = line.match(pattern);
+      if (match && match[1]) {
+        return normalizeWhitespace(match[1]);
+      }
+    }
+  }
+
+  return "";
+}
+
+function extractPeopleFromLabeledFields(rawText) {
+  const recipients = extractLabeledValue(rawText, ["An", "To", "Empfänger", "Empfaenger", "Cc", "Kopie"]);
+  if (!recipients) {
+    return [];
+  }
+
+  const values = recipients
+    .split(/[;,]/)
+    .map((part) => normalizeWhitespace(part.replace(/<[^>]+>/g, "")))
+    .filter(Boolean);
+
+  return normalizePeople(values);
+}
+
+function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
+  const titleFromSubject = extractLabeledValue(rawText, ["Betreff", "Subject", "Titel"]);
+  const titleFromText = extractTitleFromText(rawText);
+  const title = titleFromSubject || (titleFromText && !/^von\s*:/i.test(titleFromText) ? titleFromText : "");
+
+  const authorFromLabel = extractLabeledValue(rawText, ["Von", "From", "Absender", "Verfasser", "Autor", "Sachbearbeiter", "Sachbearbeiterin"]);
+  const author = authorFromLabel || normalizeWhitespace(pdfInfo.Author);
+
+  const dateFromLabel = extractLabeledValue(rawText, ["Datum", "Date", "Verfasst am", "Erstellt am", "Gesendet", "Sent"]);
+  const authoredDate = dateFromLabel || parsePdfMetadataDate(pdfInfo.CreationDate || pdfInfo.ModDate || "") || extractDateFromText(rawText);
+
+  const people = normalizePeople([
+    ...extractPeopleFromLabeledFields(rawText),
+    ...extractPeopleFromText(rawText)
+  ]);
+
+  return buildFallbackAnalysis({
+    title,
+    author,
+    authoredDate,
+    people,
+    message: ""
+  });
 }
 
 function parsePdfMetadataDate(value) {
@@ -628,22 +685,24 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     }
 
     if (String(file.mime_type || "").includes("pdf")) {
-      const buffer = await fs.promises.readFile(absolutePath);
-      const parsed = await pdfParse(buffer);
-      const metaTitle = normalizeWhitespace(parsed?.info?.Title);
-      const metaAuthor = normalizeWhitespace(parsed?.info?.Author);
-      const metaDate = parsePdfMetadataDate(parsed?.info?.CreationDate || parsed?.info?.ModDate || "");
-      const fromText = extractTitleFromText(parsed?.text || "");
-      const fallback = buildFallbackAnalysis({
-        title: metaTitle && !/^untitled$/i.test(metaTitle) ? metaTitle : fromText,
-        author: metaAuthor,
-        authoredDate: metaDate || extractDateFromText(parsed?.text || ""),
-        people: extractPeopleFromText(parsed?.text || ""),
-        message: ""
-      });
+      try {
+        const buffer = await fs.promises.readFile(absolutePath);
+        const parsed = await pdfParse(buffer);
+        const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
 
-      const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
-      return res.json(aiResult);
+        const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
+        return res.json(aiResult);
+      } catch (pdfError) {
+        console.error("PDF parse warning:", pdfError.message);
+        return res.json({
+          status: "empty",
+          title: "",
+          author: "",
+          authoredDate: "",
+          people: [],
+          message: "PDF-Inhalt konnte nicht gelesen werden (möglicherweise Scan oder defekter Textlayer)."
+        });
+      }
     }
 
     if (String(file.mime_type || "").startsWith("image/")) {
