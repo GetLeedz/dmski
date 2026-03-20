@@ -39,6 +39,13 @@ body {
   gap: 0.25rem;
 }
 
+.header-logo {
+  display: block;
+  width: auto;
+  height: 3rem;
+  object-fit: contain;
+}
+
 .brand-slogan {
   margin: 0;
   font-size: 0.92rem;
@@ -409,6 +416,10 @@ td {
 }
 
 @media (max-width: 700px) {
+  .header-logo {
+    height: 2.4rem;
+  }
+
   .topbar {
     align-items: flex-start;
     gap: 0.65rem;

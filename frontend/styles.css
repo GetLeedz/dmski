@@ -113,11 +113,11 @@ body {
   animation: rise-in 680ms ease forwards;
 }
 
-.eyebrow {
-  font-size: 0.82rem;
-  letter-spacing: 0.18em;
-  margin: 0 0 1rem;
-  opacity: 0.9;
+.brand-logo {
+  display: block;
+  width: min(100%, 30rem);
+  height: auto;
+  margin-bottom: 1.4rem;
 }
 
 .brand-block h1 {
@@ -155,14 +155,6 @@ body {
 .card-kicker {
   margin: -0.2rem 0 0.4rem;
   color: var(--ink-soft);
-
-.brand-slogan {
-  margin: 0.3rem 0 0;
-  color: rgba(228, 242, 255, 0.86);
-  font-size: 0.92rem;
-  line-height: 1.45;
-  max-width: 34ch;
-}
   font-size: 0.86rem;
   letter-spacing: 0.04em;
 }
