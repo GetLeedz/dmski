@@ -278,6 +278,13 @@ function renderFiles(files) {
     const isSelected = selectedFileIds.has(file.id);
     const checkboxClass = isMultiDeleteMode ? "checkbox-col" : "checkbox-col hidden";
     tr.dataset.fileId = file.id;
+    tr.className = "file-row";
+    if (isMultiDeleteMode) {
+      tr.classList.add("multi-delete-row");
+    }
+    if (isSelected) {
+      tr.classList.add("is-selected");
+    }
     tr.innerHTML = `
       <td class="${checkboxClass}"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
@@ -644,6 +651,11 @@ selectAllCheckbox.addEventListener("change", (event) => {
     cb.checked = checked;
   });
 
+  const rows = filesTableBody.querySelectorAll("tr[data-file-id]");
+  rows.forEach((row) => {
+    row.classList.toggle("is-selected", checked);
+  });
+
   updateMultiDeleteCount();
 });
 
@@ -662,6 +674,11 @@ filesTableBody.addEventListener("change", (event) => {
     selectedFileIds.add(fileId);
   } else {
     selectedFileIds.delete(fileId);
+  }
+
+  const row = target.closest("tr[data-file-id]");
+  if (row instanceof HTMLElement) {
+    row.classList.toggle("is-selected", target.checked);
   }
 
   const visibleFiles = filterFiles(allFiles);

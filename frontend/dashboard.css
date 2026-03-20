@@ -479,6 +479,23 @@ td {
   accent-color: var(--accent);
 }
 
+.file-row td {
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.file-row.multi-delete-row:hover td {
+  background: #f5fbfc;
+}
+
+.file-row.is-selected td {
+  background: #e8f5f7;
+  box-shadow: inset 0 0 0 1px #9fcfd4;
+}
+
+.file-row.is-selected .preview-doc-id {
+  color: #134f57;
+}
+
 .file-icon {
   display: inline-flex;
   align-items: center;
@@ -539,6 +556,8 @@ td {
 .preview-cell {
   width: 38rem;
   cursor: zoom-in;
+}
+
 .preview-doc-id {
   margin-bottom: 0.4rem;
   font-size: 0.9rem;
@@ -547,12 +566,9 @@ td {
   font-family: ui-monospace, "Courier New", monospace;
 }
 
-}
-
 .preview-timestamp {
   margin-bottom: 0.5rem;
-    font-size: 0.8rem;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #5f7780;
   font-weight: 500;
 }
