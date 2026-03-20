@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const multer = require("multer");
+const OpenAI = require("openai");
 const pdfParse = require("pdf-parse");
 const { Pool } = require("pg");
 const { requireAuth } = require("../middleware/auth");
@@ -79,6 +80,21 @@ const upload = multer({
   }
 });
 
+let openAiClient = null;
+
+function getOpenAiClient() {
+  const key = String(process.env.OPENAI_API_KEY || "").trim();
+  if (!key) {
+    return null;
+  }
+
+  if (!openAiClient) {
+    openAiClient = new OpenAI({ apiKey: key });
+  }
+
+  return openAiClient;
+}
+
 function extractTitleFromText(rawText) {
   const lines = String(rawText || "")
     .split(/\r?\n/)
@@ -102,6 +118,75 @@ function extractTitleFromText(rawText) {
   }
 
   return "";
+}
+
+function extractResponseText(response) {
+  if (typeof response?.output_text === "string" && response.output_text.trim()) {
+    return response.output_text.trim();
+  }
+
+  const output = Array.isArray(response?.output) ? response.output : [];
+  for (const item of output) {
+    const content = Array.isArray(item?.content) ? item.content : [];
+    for (const part of content) {
+      if (part?.type === "output_text" && typeof part.text === "string" && part.text.trim()) {
+        return part.text.trim();
+      }
+    }
+  }
+
+  return "";
+}
+
+async function extractTitleFromImageWithAi(absolutePath, mimeType) {
+  const client = getOpenAiClient();
+  if (!client) {
+    return {
+      status: "needs-ocr",
+      title: "",
+      message: "Bildtitel benötigt OCR oder KI-Analyse."
+    };
+  }
+
+  const fileBuffer = await fs.promises.readFile(absolutePath);
+  const base64 = fileBuffer.toString("base64");
+
+  const response = await client.responses.create({
+    model: "gpt-4.1-mini",
+    max_output_tokens: 80,
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: "Extrahiere nur den Dokumenttitel aus diesem Bild. Antworte mit genau einer Zeile, ohne Erklaerung. Wenn kein klarer Titel sichtbar ist, antworte nur mit: KEIN_TITEL"
+          },
+          {
+            type: "input_image",
+            image_url: `data:${mimeType || "image/png"};base64,${base64}`
+          }
+        ]
+      }
+    ]
+  });
+
+  const raw = extractResponseText(response);
+  const title = String(raw || "").replace(/\s+/g, " ").trim();
+
+  if (!title || /^KEIN_TITEL$/i.test(title)) {
+    return {
+      status: "empty",
+      title: "",
+      message: "Kein klarer Titel im Bild erkannt."
+    };
+  }
+
+  return {
+    status: "ok",
+    title,
+    message: ""
+  };
 }
 
 router.post("/", requireAuth, async (req, res) => {
@@ -311,10 +396,15 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       });
     }
 
+    if (String(file.mime_type || "").startsWith("image/")) {
+      const imageResult = await extractTitleFromImageWithAi(absolutePath, file.mime_type);
+      return res.json(imageResult);
+    }
+
     return res.json({
-      status: "needs-ocr",
+      status: "empty",
       title: "",
-      message: "Bildtitel benötigt OCR oder KI-Analyse."
+      message: "Analyse für diesen Dateityp nicht verfügbar."
     });
   } catch (err) {
     console.error("Analyze file error:", err.message);
