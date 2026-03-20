@@ -1248,12 +1248,13 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") 
   const lowerText = String(rawText || "").toLowerCase();
   const nameInText = lowerText.includes(protectedName.toLowerCase());
   const hasAttackTerms = /(benachteilig|diskriminier|beleidig|angriff|abwert|verletz|schlecht\s+gemacht|unterschiedlich\s+gut|ungleich\s+behand)/.test(lowerText);
+  const assessmentSuggestsHarm = /benachteiligt/i.test(String(output.impactAssessment || ""));
 
   if (!hasProtectedInPeople && nameInText) {
     output.people.push({ name: protectedName, affiliation: "Privatperson", allowSingleToken: true });
   }
 
-  const shouldFlagProtected = nameInText && hasAttackTerms;
+  const shouldFlagProtected = (nameInText && hasAttackTerms) || (hasProtectedInPeople && assessmentSuggestsHarm);
   if (shouldFlagProtected) {
     output.disadvantagedPerson = protectedName;
     output.impactAssessment = "Person benachteiligt";
@@ -1532,8 +1533,10 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     }
 
     if (String(file.mime_type || "").startsWith("image/")) {
+      const protectedPersonName = await getCaseProtectedPerson(caseId);
       const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name);
-      return res.json(imageResult);
+      const focused = applyProtectedPersonFocus(imageResult, "", protectedPersonName);
+      return res.json(focused);
     }
 
     return res.json({
