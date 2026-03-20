@@ -198,6 +198,17 @@ function normalizeTitleText(text) {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
 
+function normalizePeople(people) {
+  if (!Array.isArray(people)) {
+    return [];
+  }
+
+  return people
+    .map((person) => normalizeTitleText(person))
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
 async function getDocumentAnalysis(file) {
   if (analysisCache.has(file.id)) {
     return analysisCache.get(file.id);
@@ -224,12 +235,18 @@ async function getDocumentAnalysis(file) {
       return {
         status: payload.status || "ok",
         title: normalizeTitleText(payload.title),
+        author: normalizeTitleText(payload.author),
+        authoredDate: normalizeTitleText(payload.authoredDate),
+        people: normalizePeople(payload.people),
         message: normalizeTitleText(payload.message)
       };
     })
     .catch(() => ({
       status: "error",
       title: "",
+      author: "",
+      authoredDate: "",
+      people: [],
       message: "Analyse konnte nicht geladen werden."
     }));
 
@@ -318,25 +335,44 @@ async function loadRowAnalysis(file) {
   box.innerHTML = '<div class="analysis-loading">Analysiere...</div>';
   const analysis = await getDocumentAnalysis(file);
 
-  if (analysis.status === "ok" && analysis.title) {
-    box.innerHTML = `
-      <p class="analysis-label">Dokumenttitel</p>
-      <p class="analysis-title">${analysis.title}</p>
-    `;
-    return;
-  }
+  const peopleMarkup = analysis.people && analysis.people.length > 0
+    ? `<ul class="analysis-people">${analysis.people.map((person) => `<li>${person}</li>`).join("")}</ul>`
+    : '<p class="analysis-value muted">Keine eindeutigen Personen erkannt</p>';
 
-  if (analysis.status === "needs-ocr") {
-    box.innerHTML = `
-      <p class="analysis-label">Dokumenttitel</p>
-      <p class="analysis-note">${analysis.message || "Titel benötigt OCR/KI."}</p>
-    `;
-    return;
-  }
+  const titleMarkup = analysis.title
+    ? `<p class="analysis-value analysis-title">${analysis.title}</p>`
+    : '<p class="analysis-value muted">Nicht erkannt</p>';
+
+  const authorMarkup = analysis.author
+    ? `<p class="analysis-value">${analysis.author}</p>`
+    : '<p class="analysis-value muted">Nicht erkannt</p>';
+
+  const dateMarkup = analysis.authoredDate
+    ? `<p class="analysis-value">${analysis.authoredDate}</p>`
+    : '<p class="analysis-value muted">Nicht erkannt</p>';
+
+  const hintMarkup = analysis.message
+    ? `<p class="analysis-hint">${analysis.message}</p>`
+    : "";
 
   box.innerHTML = `
-    <p class="analysis-label">Dokumenttitel</p>
-    <p class="analysis-note">${analysis.message || "Keine Analyse verfügbar."}</p>
+    <div class="analysis-section">
+      <p class="analysis-label">Dokumenttitel</p>
+      ${titleMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">Verfasser</p>
+      ${authorMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">Datum Verfassung</p>
+      ${dateMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">Personen im Dokument</p>
+      ${peopleMarkup}
+    </div>
+    ${hintMarkup}
   `;
 }
 

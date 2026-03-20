@@ -120,6 +120,112 @@ function extractTitleFromText(rawText) {
   return "";
 }
 
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function normalizePeople(values) {
+  const seen = new Set();
+  const list = [];
+
+  for (const value of Array.isArray(values) ? values : []) {
+    const normalized = normalizeWhitespace(value).replace(/[;,]+$/g, "");
+    if (!normalized || normalized.length < 3) {
+      continue;
+    }
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    list.push(normalized);
+  }
+
+  return list.slice(0, 8);
+}
+
+function extractDateFromText(rawText) {
+  const text = String(rawText || "");
+  const patterns = [
+    /\b(\d{2}\.\d{2}\.\d{4})\b/,
+    /\b(\d{2}\/\d{2}\/\d{4})\b/,
+    /\b(\d{4}-\d{2}-\d{2})\b/
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return "";
+}
+
+function extractPeopleFromText(rawText) {
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeWhitespace(line));
+  const people = [];
+
+  const personPatterns = [
+    /\b([A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ][a-zäöüß]+)\b/g,
+    /\b([A-ZÄÖÜ][a-zäöüß]+\.[A-ZÄÖÜ][a-zäöüß]+)\b/g
+  ];
+
+  for (const line of lines) {
+    if (!line || line.length > 140) {
+      continue;
+    }
+
+    for (const pattern of personPatterns) {
+      const matches = line.matchAll(pattern);
+      for (const match of matches) {
+        people.push(match[1]);
+      }
+    }
+  }
+
+  return normalizePeople(people);
+}
+
+function parsePdfMetadataDate(value) {
+  const raw = normalizeWhitespace(value);
+  const match = raw.match(/(\d{4})(\d{2})(\d{2})/);
+  if (!match) {
+    return "";
+  }
+
+  const [, year, month, day] = match;
+  return `${day}.${month}.${year}`;
+}
+
+function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", people = [], message = "" }) {
+  return {
+    status: "ok",
+    title: normalizeWhitespace(title),
+    author: normalizeWhitespace(author),
+    authoredDate: normalizeWhitespace(authoredDate),
+    people: normalizePeople(people),
+    message: normalizeWhitespace(message)
+  };
+}
+
+function extractJsonObject(text) {
+  const raw = String(text || "");
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
 function extractResponseText(response) {
   if (typeof response?.output_text === "string" && response.output_text.trim()) {
     return response.output_text.trim();
@@ -138,12 +244,98 @@ function extractResponseText(response) {
   return "";
 }
 
+async function analyzeTextWithAi(documentText, fallback = {}) {
+  const client = getOpenAiClient();
+  if (!client) {
+    return buildFallbackAnalysis(fallback);
+  }
+
+  const textSnippet = String(documentText || "").slice(0, 12000);
+  if (!textSnippet.trim()) {
+    return buildFallbackAnalysis(fallback);
+  }
+
+  try {
+    const response = await client.responses.create({
+      model: "gpt-4.1-mini",
+      max_output_tokens: 300,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                "Analysiere dieses Dokument und extrahiere strukturierte Fakten.",
+                "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
+                '{"title":"","author":"","authoredDate":"","people":[],"message":""}',
+                "Regeln:",
+                "- title = Dokumenttitel aus dem Inhalt, nicht der Dateiname.",
+                "- author = Verfasser/Absender, falls klar erkennbar.",
+                "- authoredDate = Datum der Verfassung in lesbarer Form.",
+                "- people = vorkommende Personen als Array ohne Duplikate.",
+                "- message = kurzer Hinweis, falls etwas unklar ist.",
+                "- Wenn etwas fehlt, leeres Feld verwenden.",
+                "Dokumenttext:",
+                textSnippet
+              ].join("\n")
+            }
+          ]
+        }
+      ]
+    });
+
+    const parsed = extractJsonObject(extractResponseText(response));
+    if (!parsed || typeof parsed !== "object") {
+      return buildFallbackAnalysis(fallback);
+    }
+
+    return buildFallbackAnalysis({
+      title: parsed.title || fallback.title,
+      author: parsed.author || fallback.author,
+      authoredDate: parsed.authoredDate || fallback.authoredDate,
+      people: Array.isArray(parsed.people) && parsed.people.length > 0 ? parsed.people : fallback.people,
+      message: parsed.message || fallback.message
+    });
+  } catch (error) {
+    const statusCode = Number(error?.status || 0);
+    const message = String(error?.message || "");
+
+    if (statusCode === 401 || /Missing scopes:|insufficient permissions/i.test(message)) {
+      return {
+        status: "needs-config",
+        title: "",
+        author: "",
+        authoredDate: "",
+        people: [],
+        message: "OpenAI-Key erkannt, aber ohne ausreichende API-Scopes (model.request / api.responses.write)."
+      };
+    }
+
+    if (statusCode === 429) {
+      return {
+        status: "needs-config",
+        title: "",
+        author: "",
+        authoredDate: "",
+        people: [],
+        message: "OpenAI-Limit erreicht. Bitte später erneut versuchen."
+      };
+    }
+
+    return buildFallbackAnalysis(fallback);
+  }
+}
+
 async function extractTitleFromImageWithAi(absolutePath, mimeType) {
   const client = getOpenAiClient();
   if (!client) {
     return {
       status: "needs-ocr",
       title: "",
+      author: "",
+      authoredDate: "",
+      people: [],
       message: "Bildtitel benötigt OCR oder KI-Analyse."
     };
   }
@@ -154,14 +346,25 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
   try {
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
-      max_output_tokens: 80,
+      max_output_tokens: 300,
       input: [
         {
           role: "user",
           content: [
             {
               type: "input_text",
-              text: "Extrahiere nur den Dokumenttitel aus diesem Bild. Antworte mit genau einer Zeile, ohne Erklaerung. Wenn kein klarer Titel sichtbar ist, antworte nur mit: KEIN_TITEL"
+              text: [
+                "Analysiere dieses Dokumentbild und extrahiere strukturierte Fakten.",
+                "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
+                '{"title":"","author":"","authoredDate":"","people":[],"message":""}',
+                "Regeln:",
+                "- title = sichtbarer Dokumenttitel aus dem Dokument.",
+                "- author = sichtbarer Verfasser/Absender.",
+                "- authoredDate = sichtbares Verfassungsdatum.",
+                "- people = erkennbare Personen im Dokument als Array ohne Duplikate.",
+                "- message = kurzer Hinweis, wenn etwas nicht sicher lesbar ist.",
+                "- Wenn nichts erkennbar ist, Felder leer lassen."
+              ].join("\n")
             },
             {
               type: "input_image",
@@ -172,22 +375,39 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
       ]
     });
 
-    const raw = extractResponseText(response);
-    const title = String(raw || "").replace(/\s+/g, " ").trim();
+    const parsed = extractJsonObject(extractResponseText(response));
 
-    if (!title || /^KEIN_TITEL$/i.test(title)) {
+    if (!parsed || typeof parsed !== "object") {
       return {
         status: "empty",
         title: "",
-        message: "Kein klarer Titel im Bild erkannt."
+        author: "",
+        authoredDate: "",
+        people: [],
+        message: "Kein klarer Inhalt im Bild erkannt."
       };
     }
 
-    return {
-      status: "ok",
-      title,
-      message: ""
-    };
+    const normalized = buildFallbackAnalysis({
+      title: parsed.title,
+      author: parsed.author,
+      authoredDate: parsed.authoredDate,
+      people: parsed.people,
+      message: parsed.message
+    });
+
+    if (!normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
+      return {
+        status: "empty",
+        title: "",
+        author: "",
+        authoredDate: "",
+        people: [],
+        message: normalized.message || "Kein klarer Inhalt im Bild erkannt."
+      };
+    }
+
+    return normalized;
   } catch (error) {
     const statusCode = Number(error?.status || 0);
     const message = String(error?.message || "");
@@ -196,6 +416,9 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
       return {
         status: "needs-config",
         title: "",
+        author: "",
+        authoredDate: "",
+        people: [],
         message: "OpenAI-Key erkannt, aber ohne ausreichende API-Scopes (model.request / api.responses.write)."
       };
     }
@@ -204,6 +427,9 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
       return {
         status: "needs-config",
         title: "",
+        author: "",
+        authoredDate: "",
+        people: [],
         message: "OpenAI-Limit erreicht. Bitte später erneut versuchen."
       };
     }
@@ -404,19 +630,20 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     if (String(file.mime_type || "").includes("pdf")) {
       const buffer = await fs.promises.readFile(absolutePath);
       const parsed = await pdfParse(buffer);
-      const metaTitle = String(parsed?.info?.Title || "").trim();
+      const metaTitle = normalizeWhitespace(parsed?.info?.Title);
+      const metaAuthor = normalizeWhitespace(parsed?.info?.Author);
+      const metaDate = parsePdfMetadataDate(parsed?.info?.CreationDate || parsed?.info?.ModDate || "");
       const fromText = extractTitleFromText(parsed?.text || "");
-      const title = metaTitle && !/^untitled$/i.test(metaTitle) ? metaTitle : fromText;
-
-      if (title) {
-        return res.json({ status: "ok", title });
-      }
-
-      return res.json({
-        status: "empty",
-        title: "",
-        message: "Kein klarer Titel im PDF erkannt."
+      const fallback = buildFallbackAnalysis({
+        title: metaTitle && !/^untitled$/i.test(metaTitle) ? metaTitle : fromText,
+        author: metaAuthor,
+        authoredDate: metaDate || extractDateFromText(parsed?.text || ""),
+        people: extractPeopleFromText(parsed?.text || ""),
+        message: ""
       });
+
+      const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
+      return res.json(aiResult);
     }
 
     if (String(file.mime_type || "").startsWith("image/")) {
