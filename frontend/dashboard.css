@@ -614,13 +614,13 @@ td {
 }
 
 .row-preview-box {
-  width: clamp(20rem, 36vw, 28rem);
+  width: clamp(28rem, 50.4vw, 39.2rem);
   aspect-ratio: 210 / 297;
 }
 
 .row-preview-loading,
 .row-preview-empty {
-  width: clamp(20rem, 36vw, 28rem);
+  width: clamp(28rem, 50.4vw, 39.2rem);
   aspect-ratio: 1 / 1.414;
   border: 1px solid #cbdadd;
   border-radius: 10px;
@@ -635,7 +635,7 @@ td {
 
 .row-preview-image,
 .row-preview-frame {
-  width: clamp(20rem, 36vw, 28rem);
+  width: clamp(28rem, 50.4vw, 39.2rem);
   aspect-ratio: 1 / 1.414;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -670,7 +670,7 @@ td {
 }
 
 .analysis-cell {
-  width: 18rem;
+  width: 21rem;
   border-left: 1px solid #dfe7ea;
   padding-left: 0.9rem;
 }
@@ -787,11 +787,30 @@ td {
 
 .analysis-people {
   margin: 0;
-  padding-left: 1rem;
+  padding-left: 0;
+  list-style: none;
   display: grid;
-  gap: 0.2rem;
+  gap: 0.35rem;
   color: #20363d;
   font-size: 0.88rem;
+}
+
+.analysis-people li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.analysis-person-affiliation {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2f5f67;
+  background: #e6f1f4;
+  border: 1px solid #c8dee5;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  white-space: nowrap;
 }
 
 .analysis-hint {
@@ -980,7 +999,7 @@ td {
   .row-preview-box,
   .row-preview-image,
   .row-preview-frame {
-    width: 11rem;
-    height: 8rem;
+    width: 15.4rem;
+    height: 11.2rem;
   }
 }

@@ -103,6 +103,33 @@ function formatDate(value) {
   return `${dateStr} ${timeStr}`;
 }
 
+function formatSwissAnalysisDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(raw)) {
+    return raw;
+  }
+
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  }
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString("de-CH", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+  }
+
+  return raw;
+}
+
 function formatSizeKB(bytes) {
   return Math.max(1, Math.round(Number(bytes || 0) / 1024));
 }
@@ -379,8 +406,16 @@ async function loadRowAnalysis(file) {
     </div>`;
   const analysis = await getDocumentAnalysis(file);
 
-  const peopleMarkup = analysis.people && analysis.people.length > 0
-    ? `<ul class="analysis-people">${analysis.people.map((person) => `<li>${person}</li>`).join("")}</ul>`
+  const people = Array.isArray(analysis.people)
+    ? analysis.people
+      .map((entry) => (typeof entry === "string"
+        ? { name: normalizeTitleText(entry), affiliation: "Privatperson" }
+        : { name: normalizeTitleText(entry?.name), affiliation: normalizeTitleText(entry?.affiliation || "Privatperson") }))
+      .filter((entry) => entry.name)
+    : [];
+
+  const peopleMarkup = people.length > 0
+    ? `<ul class="analysis-people">${people.map((person) => `<li><span>${person.name}</span><span class="analysis-person-affiliation">${person.affiliation}</span></li>`).join("")}</ul>`
     : '<p class="analysis-value muted">Keine eindeutigen Personen erkannt</p>';
 
   const titleMarkup = analysis.title
@@ -391,8 +426,13 @@ async function loadRowAnalysis(file) {
     ? `<p class="analysis-value">${analysis.author}</p>`
     : '<p class="analysis-value muted">Nicht erkannt</p>';
 
-  const dateMarkup = analysis.authoredDate
-    ? `<p class="analysis-value">${analysis.authoredDate}</p>`
+  const swissAuthoredDate = formatSwissAnalysisDate(analysis.authoredDate);
+  const dateMarkup = swissAuthoredDate
+    ? `<p class="analysis-value">${swissAuthoredDate}</p>`
+    : '<p class="analysis-value muted">Nicht erkannt</p>';
+
+  const disadvantagedMarkup = analysis.disadvantagedPerson
+    ? `<p class="analysis-value">${analysis.disadvantagedPerson}</p>`
     : '<p class="analysis-value muted">Nicht erkannt</p>';
 
   const hintMarkup = analysis.message
@@ -415,6 +455,10 @@ async function loadRowAnalysis(file) {
     <div class="analysis-section">
       <p class="analysis-label">Personen im Dokument</p>
       ${peopleMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">Wer wird benachteiligt</p>
+      ${disadvantagedMarkup}
     </div>
     ${hintMarkup}
   `;
