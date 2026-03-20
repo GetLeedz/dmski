@@ -30,7 +30,7 @@ const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
 activeCaseBanner.textContent = `WICHTIG: Du arbeitest im Fall ${currentCaseId}`;
-workspaceHint.textContent = "Dateien werden direkt hochgeladen, wenn sie in die Fläche gezogen werden.";
+workspaceHint.textContent = "Dateien werden direkt hochgeladen: Drag&Drop, Klick-Auswahl oder Einfügen mit Ctrl+V.";
 
 function decodeUtf8Safe(text) {
   const input = String(text || "");
@@ -159,6 +159,43 @@ function addPendingFiles(newFiles) {
     setMessage(uploadMessage, `${pendingFiles.length} Datei(en) bereit zum Upload.`, "success");
     startUpload();
   }
+}
+
+function buildClipboardFileName(file, index) {
+  const hasName = typeof file.name === "string" && file.name.trim().length > 0;
+  if (hasName) {
+    return file.name;
+  }
+
+  const mime = String(file.type || "").toLowerCase();
+  const ext = mime.includes("/") ? mime.split("/")[1].replace(/[^a-z0-9]/g, "") : "bin";
+  const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  return `clipboard-${stamp}-${index}.${ext || "bin"}`;
+}
+
+function getFilesFromClipboardEvent(event) {
+  const items = Array.from(event.clipboardData?.items || []);
+  const files = [];
+
+  for (const item of items) {
+    if (item.kind !== "file") {
+      continue;
+    }
+
+    const blob = item.getAsFile();
+    if (!blob) {
+      continue;
+    }
+
+    const normalizedName = buildClipboardFileName(blob, files.length + 1);
+    const file = new File([blob], normalizedName, {
+      type: blob.type || "application/octet-stream",
+      lastModified: Date.now()
+    });
+    files.push(file);
+  }
+
+  return files;
 }
 
 function uploadSingleFile(file) {
@@ -291,6 +328,18 @@ for (const eventName of ["dragleave", "drop"]) {
 
 dropzone.addEventListener("drop", (event) => {
   addPendingFiles(event.dataTransfer.files);
+});
+
+document.addEventListener("paste", (event) => {
+  const files = getFilesFromClipboardEvent(event);
+  if (files.length === 0) {
+    return;
+  }
+
+  event.preventDefault();
+  addPendingFiles(files);
+  dropzone.classList.add("paste-flash");
+  window.setTimeout(() => dropzone.classList.remove("paste-flash"), 500);
 });
 
 uploadQueue.addEventListener("click", async (event) => {

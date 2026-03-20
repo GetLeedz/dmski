@@ -154,15 +154,29 @@ button:disabled {
   border: 2px dashed #8fb8bd;
   background: #f4fbfc;
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 2.2rem 1.4rem;
+  min-height: 7.4rem;
   text-align: center;
+  font-size: 1.85rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
   cursor: pointer;
   transition: all 120ms ease;
+  display: grid;
+  place-items: center;
 }
 
 .dropzone.drag {
   border-color: var(--accent);
   background: #e9f7f9;
+  box-shadow: inset 0 0 0 1px #5ea4ad;
+}
+
+.dropzone.paste-flash {
+  border-color: #2d8248;
+  background: #ebf8ef;
+  box-shadow: 0 0 0 3px rgba(45, 130, 72, 0.16);
 }
 
 .upload-queue {
