@@ -144,15 +144,116 @@ function normalizeWhitespace(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function looksLikePersonName(value) {
+  const text = normalizeWhitespace(value);
+  if (!text) {
+    return false;
+  }
+
+  const cleaned = text.replace(/[.,;:!?()\[\]"']/g, "");
+  const forbidden = [
+    "strasse",
+    "straße",
+    "assekuranz",
+    "mail",
+    "telefon",
+    "tel",
+    "fax",
+    "www",
+    "http",
+    "kesb",
+    "gericht",
+    "bei rueckfragen",
+    "ihren aufzeichnungen",
+    "aufzeichnungen"
+  ];
+
+  const lower = cleaned.toLowerCase();
+  if (forbidden.some((item) => lower.includes(item))) {
+    return false;
+  }
+
+  if (/\d/.test(cleaned)) {
+    return false;
+  }
+
+  const parts = cleaned
+    .split(/\s+/)
+    .map((part) => part.replace(/[^\p{L}-]/gu, ""))
+    .filter(Boolean);
+
+  if (parts.length < 2 || parts.length > 4) {
+    return false;
+  }
+
+  return parts.every((part) => /^(?:[A-ZÄÖÜ][a-zäöüß-]+|[A-ZÄÖÜ][a-zäöüß-]*\.)$/u.test(part));
+}
+
+function normalizeDateIso(value) {
+  const raw = normalizeWhitespace(value);
+  if (!raw) {
+    return "";
+  }
+
+  const dotted = raw.match(/\b(\d{2})[.](\d{2})[.](\d{4})\b/);
+  if (dotted) {
+    return `${dotted[3]}-${dotted[2]}-${dotted[1]}`;
+  }
+
+  const slashed = raw.match(/\b(\d{2})\/(\d{2})\/(\d{4})\b/);
+  if (slashed) {
+    return `${slashed[3]}-${slashed[2]}-${slashed[1]}`;
+  }
+
+  const iso = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  if (iso) {
+    return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  }
+
+  return raw;
+}
+
+function extractAuthorFromSignature(rawText) {
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeWhitespace(line.replace(/[;,]+$/g, "")))
+    .filter(Boolean);
+
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const line = lines[i];
+    if (looksLikePersonName(line)) {
+      return line;
+    }
+  }
+
+  for (let i = 0; i < Math.min(lines.length, 8); i += 1) {
+    const line = lines[i];
+    if (looksLikePersonName(line)) {
+      return line;
+    }
+  }
+
+  return "";
+}
+
 function normalizePeople(values) {
   const seen = new Set();
   const list = [];
 
   for (const value of Array.isArray(values) ? values : []) {
-    const normalized = normalizeWhitespace(value).replace(/[;,]+$/g, "");
+    let normalized = normalizeWhitespace(value).replace(/[;,]+$/g, "");
+    normalized = normalized
+      .replace(/^(Herr|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "")
+      .replace(/[-–]\s*$/g, "");
+
     if (!normalized || normalized.length < 3) {
       continue;
     }
+
+    if (!looksLikePersonName(normalized)) {
+      continue;
+    }
+
     const key = normalized.toLowerCase();
     if (seen.has(key)) {
       continue;
@@ -244,15 +345,23 @@ function extractPeopleFromLabeledFields(rawText) {
 function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
   const titleFromSubject = extractLabeledValue(rawText, ["Betreff", "Subject", "Titel"]);
   const titleFromText = extractTitleFromText(rawText);
-  const title = titleFromSubject || (titleFromText && !/^von\s*:/i.test(titleFromText) ? titleFromText : "");
+  const titleCandidate = titleFromSubject || (titleFromText && !/^von\s*:/i.test(titleFromText) ? titleFromText : "");
 
   const authorFromLabel = extractLabeledValue(rawText, ["Von", "From", "Absender", "Verfasser", "Autor", "Sachbearbeiter", "Sachbearbeiterin"]);
-  const author = authorFromLabel || normalizeWhitespace(pdfInfo.Author);
+  const authorFromSignature = extractAuthorFromSignature(rawText);
+  const author = authorFromLabel || authorFromSignature || normalizeWhitespace(pdfInfo.Author);
 
   const dateFromLabel = extractLabeledValue(rawText, ["Datum", "Date", "Verfasst am", "Erstellt am", "Gesendet", "Sent"]);
-  const authoredDate = dateFromLabel || parsePdfMetadataDate(pdfInfo.CreationDate || pdfInfo.ModDate || "") || extractDateFromText(rawText);
+  const authoredDate = normalizeDateIso(
+    dateFromLabel || parsePdfMetadataDate(pdfInfo.CreationDate || pdfInfo.ModDate || "") || extractDateFromText(rawText)
+  );
+
+  const title = (looksLikePersonName(titleCandidate) && author)
+    ? "Stellungnahme"
+    : titleCandidate;
 
   const people = normalizePeople([
+    author,
     ...extractPeopleFromLabeledFields(rawText),
     ...extractPeopleFromText(rawText)
   ]);
@@ -278,12 +387,25 @@ function parsePdfMetadataDate(value) {
 }
 
 function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", people = [], message = "" }) {
+  const normalizedAuthor = normalizeWhitespace(author);
+  const normalizedTitle = normalizeWhitespace(title);
+
+  const correctedAuthor = (!normalizedAuthor && looksLikePersonName(normalizedTitle))
+    ? normalizedTitle
+    : normalizedAuthor;
+
+  const correctedTitle = (looksLikePersonName(normalizedTitle) && correctedAuthor)
+    ? "Stellungnahme"
+    : normalizedTitle;
+
+  const normalizedPeople = normalizePeople([correctedAuthor, ...(Array.isArray(people) ? people : [])]);
+
   return {
     status: "ok",
-    title: normalizeWhitespace(title),
-    author: normalizeWhitespace(author),
-    authoredDate: normalizeWhitespace(authoredDate),
-    people: normalizePeople(people),
+    title: correctedTitle,
+    author: correctedAuthor,
+    authoredDate: normalizeDateIso(authoredDate),
+    people: normalizedPeople,
     message: normalizeWhitespace(message)
   };
 }
@@ -347,10 +469,11 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
                 "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
                 '{"title":"","author":"","authoredDate":"","people":[],"message":""}',
                 "Regeln:",
-                "- title = Dokumenttitel aus dem Inhalt, nicht der Dateiname.",
-                "- author = Verfasser/Absender, falls klar erkennbar.",
-                "- authoredDate = Datum der Verfassung in lesbarer Form.",
-                "- people = vorkommende Personen als Array ohne Duplikate.",
+                "- title = kurzer Dokumenttitel aus dem Inhalt, nicht der Dateiname und nicht nur ein Personenname.",
+                "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
+                "- authoredDate = Datum der Verfassung im Format YYYY-MM-DD.",
+                "- people = nur echte Personennamen als Array ohne Duplikate.",
+                "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
                 "- message = kurzer Hinweis, falls etwas unklar ist.",
                 "- Wenn etwas fehlt, leeres Feld verwenden.",
                 "Dokumenttext:",
@@ -435,10 +558,11 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
                 "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
                 '{"title":"","author":"","authoredDate":"","people":[],"message":""}',
                 "Regeln:",
-                "- title = sichtbarer Dokumenttitel aus dem Dokument.",
-                "- author = sichtbarer Verfasser/Absender.",
-                "- authoredDate = sichtbares Verfassungsdatum.",
-                "- people = erkennbare Personen im Dokument als Array ohne Duplikate.",
+                "- title = kurzer sichtbarer Dokumenttitel, kein reiner Personenname.",
+                "- author = sichtbarer Verfasser/Absender aus Briefkopf oder Unterschrift.",
+                "- authoredDate = sichtbares Verfassungsdatum im Format YYYY-MM-DD.",
+                "- people = nur erkennbare reale Personennamen als Array ohne Duplikate.",
+                "- people darf KEINE Strassen, Orte oder Satzfragmente enthalten.",
                 "- message = kurzer Hinweis, wenn etwas nicht sicher lesbar ist.",
                 "- Wenn nichts erkennbar ist, Felder leer lassen."
               ].join("\n")
