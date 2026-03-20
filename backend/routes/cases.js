@@ -664,11 +664,24 @@ function extractSenderInstitution(rawText, author = "") {
   const domainEmail = extractFirstEmail(fromValue);
   const domain = domainEmail ? domainEmail.split("@")[1].toLowerCase() : "";
 
-  if (domain) {
-    if (domain.includes("kesb")) {
-      return "KESB";
+  // Check domain for institution clues
+  if (domain && domain.includes("kesb")) {
+    // Try to find "KESB <location>" pattern in next lines
+    const lines = String(rawText || "")
+      .split(/\r?\n/)
+      .map((line) => normalizeWhitespace(line))
+      .filter(Boolean);
+    
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      if (/^KESB\s+/i.test(line)) {
+        return line; // e.g. "KESB Leimental"
+      }
     }
+    return "KESB";
+  }
 
+  if (domain) {
     const stem = domain.split(".")[0] || "";
     if (stem) {
       return stem.toUpperCase();
@@ -903,7 +916,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             "Regeln:",
             "- title = kurzer Dokumenttitel aus dem Inhalt, nicht der Dateiname und nicht nur ein Personenname.",
             "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
-            "- authoredDate = Datum der Verfassung im Schweizer Format DD.MM.YYYY.",
+            "- authoredDate = Sendedatum (Priorität: 'Sendedatum', 'Von:' Header), sonst Verfassungsdatum im Schweizer Format DD.MM.YYYY.",
             "- people = alle relevanten Personennamen OHNE Verfasser, als Array von Objekten {name, affiliation}.",
             "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
             "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
@@ -1179,9 +1192,10 @@ router.post("/", requireAuth, async (req, res) => {
   }
 
   try {
+    const protectedPerson = String(req.body.protected_person_name || "").trim() || null;
     const result = await pool.query(
-      "INSERT INTO cases (id, case_date, case_name) VALUES ($1, $2, $3) RETURNING id, case_date, case_name, created_at",
-      [normalizedCaseId, caseDate, normalizedCaseName]
+      "INSERT INTO cases (id, case_date, case_name, protected_person_name) VALUES ($1, $2, $3, $4) RETURNING id, case_date, case_name, protected_person_name, created_at",
+      [normalizedCaseId, caseDate, normalizedCaseName, protectedPerson]
     );
 
     return res.status(201).json(result.rows[0]);
@@ -1197,7 +1211,7 @@ router.post("/", requireAuth, async (req, res) => {
 router.get("/", requireAuth, async (_req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, case_date, case_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+      "SELECT id, case_date, case_name, protected_person_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
     );
 
     return res.json({ cases: result.rows });
