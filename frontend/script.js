@@ -1,7 +1,6 @@
 const loginForm = document.getElementById("loginForm");
 const messageEl = document.getElementById("message");
 const submitButton = document.getElementById("submitButton");
-const passkeyButton = document.getElementById("passkeyButton");
 const passwordInput = document.getElementById("password");
 const togglePasswordButton = document.getElementById("togglePassword");
 const emailInput = document.getElementById("email");
@@ -63,35 +62,6 @@ async function storeBrowserCredential(email, password) {
   }
 }
 
-async function startPasskeyLogin() {
-  if (!window.PublicKeyCredential || !navigator.credentials?.get) {
-    setMessage("Passkey wird von diesem Browser nicht unterstützt.", "error");
-    return;
-  }
-
-  passkeyButton.disabled = true;
-  setMessage("Passkey-Anmeldung wird gestartet...", null);
-
-  try {
-    const optionsResponse = await fetch(`${API_BASE}/auth/passkey/options`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailInput.value.trim().toLowerCase() }),
-    });
-
-    if (!optionsResponse.ok) {
-      setMessage("Passkey ist serverseitig noch nicht freigeschaltet. Bitte Passwort-Login verwenden.", "error");
-      return;
-    }
-
-    setMessage("Passkey-Flow bereit. Browser startet Authentifizierung.", "success");
-  } catch {
-    setMessage("Passkey-Anmeldung aktuell nicht verfügbar.", "error");
-  } finally {
-    passkeyButton.disabled = false;
-  }
-}
-
 function setMessage(text, type) {
   messageEl.textContent = text;
   messageEl.classList.remove("success", "error");
@@ -100,7 +70,6 @@ function setMessage(text, type) {
 
 restoreRememberedEmail();
 togglePasswordButton.addEventListener("click", togglePasswordVisibility);
-passkeyButton.addEventListener("click", startPasskeyLogin);
 if (copyrightYearEl) {
   copyrightYearEl.textContent = String(new Date().getFullYear());
 }
@@ -126,7 +95,6 @@ loginForm.addEventListener("submit", async (event) => {
   }
 
   submitButton.disabled = true;
-  passkeyButton.disabled = true;
   submitButton.textContent = "Anmelden...";
   setMessage("", null);
 
@@ -157,7 +125,6 @@ loginForm.addEventListener("submit", async (event) => {
     setMessage("Server nicht erreichbar. Bitte später erneut versuchen.", "error");
   } finally {
     submitButton.disabled = false;
-    passkeyButton.disabled = false;
     submitButton.textContent = "Anmelden";
   }
 });

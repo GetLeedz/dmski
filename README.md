@@ -63,6 +63,24 @@ cd frontend
 npm start
 ```
 
+## Datei-Uploads persistent speichern (Supabase Storage)
+
+Dateien werden nicht mehr im Railway-Container gespeichert, sondern in Supabase Storage.
+
+Benötigte Backend-Variablen (`backend/.env`):
+
+```env
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+SUPABASE_STORAGE_BUCKET=case-files
+```
+
+Wichtig:
+
+- Der Bucket (z.B. `case-files`) muss in Supabase existieren.
+- Verwende den Service-Role-Key nur serverseitig im Backend, nie im Frontend.
+- Uploads bleiben in Supabase persistent, auch bei Redeploy/Restart von Railway.
+
 ## Datenbank Migrationen
 
 In `backend/.env` muss `DATABASE_URL` gesetzt sein.

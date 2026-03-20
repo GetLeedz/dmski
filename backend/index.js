@@ -39,7 +39,6 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/cases", casesRouter);
-app.use("/uploads", express.static("uploads"));
 
 app.listen(port, host, () => {
   console.log(`Backend running on http://${host}:${port}`);

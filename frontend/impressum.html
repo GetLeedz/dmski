@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI Impressum</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <h1>Impressum</h1>
+
+      <h2>Hauptsitz</h2>
+      <p>
+        GetLeedz GmbH<br />
+        Hasenrainstrasse 85<br />
+        CH-4142 Binningen<br />
+        Schweiz
+      </p>
+
+      <p>
+        Telefon: <a href="tel:+41615251810">+41 61 525 18 10</a><br />
+        E-Mail: <a href="mailto:info@getleedz.com">info@getleedz.com</a>
+      </p>
+
+      <p>MWST-Nr. CHE-339.044.174</p>
+
+      <h2>Bankverbindung</h2>
+      <p>
+        Bank Cler AG, Aeschenplatz 3, 4052 Basel, Switzerland<br />
+        BIC/Swift BCLRCHBBXXX<br />
+        IBAN CH60 0844 0258 4872 6200 1
+      </p>
+
+      <h2>Disclaimer</h2>
+      <p>
+        Alle Inhalte werden regelmaessig sorgfaeltig geprueft und bearbeitet. Der Website-Betreiber uebernimmt
+        jedoch keine Gewaehr fuer die Richtigkeit, Zuverlaessigkeit, Vollstaendigkeit und Aktualitaet der auf der
+        Website veroeffentlichten Inhalte.
+      </p>
+      <p>
+        Haftungsansprueche gegenueber dem Betreiber wegen Schaeden materieller oder immaterieller Art, die aus
+        dem Zugriff oder der Nutzung bzw. Nichtnutzung der veroeffentlichten Informationen auf der Website
+        <a href="https://dmski.aikmu.ch">https://dmski.aikmu.ch</a> oder durch fehlerhafte oder unvollstaendige
+        Informationen entstanden sind, werden ausgeschlossen. dmski.aikmu.ch behaelt sich ausdruecklich das Recht
+        vor, Teile der Seiten oder das gesamte Angebot der Website ohne vorherige Ankuendigung zu veraendern,
+        zu ergaenzen oder zu loeschen.
+      </p>
+      <p>
+        Es ist nicht gestattet, die Inhalte auf den Webseiten von
+        <a href="https://dmski.aikmu.ch">https://dmski.aikmu.ch</a> fuer kommerzielle Zwecke zu drucken,
+        zu kopieren und ueber das Internet oder auf andere Art und Weise zu vervielfaeltigen.
+      </p>
+
+      <h2>Externe Links</h2>
+      <p>
+        Auf der Website <a href="https://dmski.aikmu.ch">https://dmski.aikmu.ch</a> befinden sich Hyperlinks,
+        die auf externe Websites fuehren. Die Besitzerin und Betreiberin von dmski.aikmu.ch betont, dass sie
+        keinerlei Einfluss auf das Layout und den Inhalt dieser externen Websites hat und keine Verantwortung
+        und/oder Haftung dafuer uebernimmt. Die Inhalte und das Layout dieser externen Websites liegen
+        ausschliesslich in der Verantwortung ihrer Autoren und Betreiber.
+      </p>
+    </section>
+
+    <footer class="dashboard-footer">
+      <span>Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</span>
+      <span class="footer-sep">·</span>
+      <a href="/impressum.html">Impressum</a>
+      <span class="footer-sep">·</span>
+      <a href="/datenschutz.html">Datenschutz</a>
+      <span class="footer-sep">·</span>
+      <a href="/">Login</a>
+    </footer>
+  </main>
+
+  <script>
+    const yearEl = document.getElementById("copyrightYear");
+    if (yearEl) {
+      yearEl.textContent = String(new Date().getFullYear());
+    }
+  </script>
+</body>
+</html>

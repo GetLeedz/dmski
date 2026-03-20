@@ -1,9 +1,9 @@
-const fs = require("fs");
-const path = require("path");
+﻿const crypto = require("crypto");
 const express = require("express");
 const multer = require("multer");
 const OpenAI = require("openai");
 const { Pool } = require("pg");
+const { createClient } = require("@supabase/supabase-js");
 const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
@@ -46,10 +46,33 @@ function normalizeDatabaseUrl(rawUrl) {
 }
 
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
+const supabaseUrl = String(process.env.SUPABASE_URL || "").trim();
+const supabaseServiceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+const supabaseBucketName = String(process.env.SUPABASE_STORAGE_BUCKET || "case-files").trim();
 
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+let supabaseStorageClient = null;
+
+function getStorageBucket() {
+  if (!supabaseUrl || !supabaseServiceRoleKey || !supabaseBucketName) {
+    return null;
+  }
+
+  if (!supabaseStorageClient) {
+    const client = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    supabaseStorageClient = client.storage.from(supabaseBucketName);
+  }
+
+  return supabaseStorageClient;
+}
+
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  console.warn("Supabase Storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
 }
 
 const allowedMimeTypes = new Set([
@@ -58,17 +81,8 @@ const allowedMimeTypes = new Set([
   "image/png"
 ]);
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const decodedName = decodeOriginalFileName(file.originalname);
-    const safeName = decodedName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    cb(null, `${Date.now()}_${safeName}`);
-  }
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024, files: 20 },
   fileFilter: (_req, file, cb) => {
     if (!allowedMimeTypes.has(file.mimetype)) {
@@ -78,6 +92,61 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+function createStoredName(originalName) {
+  const decodedName = decodeOriginalFileName(originalName);
+  const safeName = decodedName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const randomPart = crypto.randomUUID().slice(0, 8);
+  return `${Date.now()}_${randomPart}_${safeName}`;
+}
+
+function deriveTitleFromFileName(fileName) {
+  const raw = normalizeWhitespace(String(fileName || ""));
+  if (!raw) {
+    return "";
+  }
+
+  const withoutExt = raw.replace(/\.[a-z0-9]{2,5}$/i, "");
+  const normalized = normalizeWhitespace(withoutExt.replace(/[_-]+/g, " "));
+  if (!normalized || looksLikePersonName(normalized)) {
+    return "";
+  }
+
+  return normalized;
+}
+
+function resolveStorageObjectPath(caseId, storedName) {
+  const value = String(storedName || "").trim();
+  if (!value) {
+    return "";
+  }
+
+  if (value.includes("/")) {
+    return value;
+  }
+
+  return `${caseId}/${value}`;
+}
+
+async function downloadStorageFile(caseId, storedName) {
+  const bucket = getStorageBucket();
+  if (!bucket) {
+    const err = new Error("Supabase Storage ist nicht konfiguriert.");
+    err.statusCode = 503;
+    throw err;
+  }
+
+  const objectPath = resolveStorageObjectPath(caseId, storedName);
+  const { data, error } = await bucket.download(objectPath);
+
+  if (error || !data) {
+    const err = new Error(error?.message || "Datei fehlt im Supabase Storage.");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return Buffer.from(await data.arrayBuffer());
+}
 
 let openAiClient = null;
 let pdfParseFn;
@@ -153,7 +222,7 @@ function looksLikePersonName(value) {
   const cleaned = text.replace(/[.,;:!?()\[\]"']/g, "");
   const forbidden = [
     "strasse",
-    "straße",
+    "stra├ƒe",
     "assekuranz",
     "mail",
     "telefon",
@@ -186,7 +255,7 @@ function looksLikePersonName(value) {
     return false;
   }
 
-  return parts.every((part) => /^(?:[A-ZÄÖÜ][a-zäöüß-]+|[A-ZÄÖÜ][a-zäöüß-]*\.)$/u.test(part));
+  return parts.every((part) => /^(?:[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ-]+|[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ-]*\.)$/u.test(part));
 }
 
 function normalizeDateIso(value) {
@@ -254,7 +323,7 @@ function normalizePeopleWithBlacklist(values, blockedNames) {
       continue;
     }
 
-    if (/[\-–]\s*$/.test(normalized)) {
+    if (/[\-ÔÇô]\s*$/.test(normalized)) {
       continue;
     }
 
@@ -283,7 +352,7 @@ function extractBlockedPersonCandidates(rawText) {
     .map((line) => normalizeWhitespace(line));
 
   const blocked = new Set();
-  const streetPattern = /(strasse|straße|gasse|weg|platz|allee)\b/i;
+  const streetPattern = /(strasse|stra├ƒe|gasse|weg|platz|allee)\b/i;
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -291,13 +360,13 @@ function extractBlockedPersonCandidates(rawText) {
       continue;
     }
 
-    const sameLine = line.match(/^([A-ZÄÖÜ][a-zäöüß'-]+\s+[A-ZÄÖÜ][a-zäöüß'-]+)/u);
+    const sameLine = line.match(/^([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\s+[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)/u);
     if (sameLine && sameLine[1]) {
       blocked.add(normalizeWhitespace(sameLine[1]).toLowerCase());
     }
 
     const prev = lines[i - 1] || "";
-    const prevCandidate = normalizeWhitespace(prev.replace(/[\-–]\s*$/, ""));
+    const prevCandidate = normalizeWhitespace(prev.replace(/[\-ÔÇô]\s*$/, ""));
     if (looksLikePersonName(prevCandidate)) {
       blocked.add(prevCandidate.toLowerCase());
     }
@@ -331,8 +400,8 @@ function extractPeopleFromText(rawText, blockedNames = new Set()) {
   const people = [];
 
   const personPatterns = [
-    /\b([A-ZÄÖÜ][a-zäöüß'-]+\s+[A-ZÄÖÜ][a-zäöüß'-]+)\b/g,
-    /\b([A-ZÄÖÜ][a-zäöüß'-]+\.[A-ZÄÖÜ][a-zäöüß'-]+)\b/g
+    /\b([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\s+[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)\b/g,
+    /\b([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\.[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)\b/g
   ];
 
   for (const line of lines) {
@@ -370,7 +439,7 @@ function extractLabeledValue(rawText, labels) {
 }
 
 function extractPeopleFromLabeledFields(rawText, blockedNames = new Set()) {
-  const recipients = extractLabeledValue(rawText, ["An", "To", "Empfänger", "Empfaenger", "Cc", "Kopie"]);
+  const recipients = extractLabeledValue(rawText, ["An", "To", "Empf├ñnger", "Empfaenger", "Cc", "Kopie"]);
   if (!recipients) {
     return [];
   }
@@ -559,7 +628,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
         author: "",
         authoredDate: "",
         people: [],
-        message: "OpenAI-Limit erreicht. Bitte später erneut versuchen."
+        message: "OpenAI-Limit erreicht. Bitte sp├ñter erneut versuchen."
       };
     }
 
@@ -567,7 +636,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
   }
 }
 
-async function extractTitleFromImageWithAi(absolutePath, mimeType) {
+async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
   const client = getOpenAiClient();
   if (!client) {
     return {
@@ -576,11 +645,10 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
       author: "",
       authoredDate: "",
       people: [],
-      message: "Bildtitel benötigt OCR oder KI-Analyse."
+      message: "Bildtitel ben├Âtigt OCR oder KI-Analyse."
     };
   }
 
-  const fileBuffer = await fs.promises.readFile(absolutePath);
   const base64 = fileBuffer.toString("base64");
 
   try {
@@ -671,11 +739,95 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
         author: "",
         authoredDate: "",
         people: [],
-        message: "OpenAI-Limit erreicht. Bitte später erneut versuchen."
+        message: "OpenAI-Limit erreicht. Bitte sp├ñter erneut versuchen."
       };
     }
 
     throw error;
+  }
+}
+
+async function extractTextFromImageWithOcr(fileBuffer) {
+  const languageCandidates = ["deu+eng", "eng"];
+
+  try {
+    const { createWorker } = require("tesseract.js");
+
+    for (const lang of languageCandidates) {
+      const worker = await createWorker(lang);
+      try {
+        const result = await worker.recognize(fileBuffer);
+        const text = normalizeWhitespace(result?.data?.text || "");
+        if (text.length >= 20) {
+          return text;
+        }
+      } finally {
+        await worker.terminate();
+      }
+    }
+
+    return "";
+  } catch (error) {
+    console.warn("OCR warning:", error.message);
+    return "";
+  }
+}
+
+async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "") {
+  const fileNameTitle = deriveTitleFromFileName(originalName);
+
+  try {
+    const imageResult = await extractTitleFromImageWithAi(fileBuffer, mimeType);
+    if (imageResult.status !== "needs-ocr" && imageResult.status !== "needs-config") {
+      return imageResult;
+    }
+
+    const ocrText = await extractTextFromImageWithOcr(fileBuffer);
+    if (!ocrText) {
+      return {
+        ...imageResult,
+        title: imageResult.title || fileNameTitle,
+        message: "Bildtext konnte nicht klar via OCR erkannt werden."
+      };
+    }
+
+    const fallback = buildHeuristicAnalysisFromText(ocrText, {});
+    if (getOpenAiClient()) {
+      const aiFromText = await analyzeTextWithAi(ocrText, fallback);
+      if (aiFromText.status === "ok") {
+        return aiFromText;
+      }
+    }
+
+    return buildFallbackAnalysis({
+      ...fallback,
+      title: fallback.title || fileNameTitle,
+      message: fallback.message || "Bildtext via OCR erkannt."
+    });
+  } catch (error) {
+    const ocrText = await extractTextFromImageWithOcr(fileBuffer);
+    if (!ocrText) {
+      const statusCode = Number(error?.status || 0);
+      const message = String(error?.message || "");
+      if (statusCode === 401 || /Missing scopes:|insufficient permissions/i.test(message)) {
+        return {
+          status: "needs-config",
+          title: fileNameTitle,
+          author: "",
+          authoredDate: "",
+          people: [],
+          message: "OpenAI-Bildanalyse nicht verfuegbar und OCR ohne klaren Text."
+        };
+      }
+      throw error;
+    }
+
+    const fallback = buildHeuristicAnalysisFromText(ocrText, {});
+    return buildFallbackAnalysis({
+      ...fallback,
+      title: fallback.title || fileNameTitle,
+      message: fallback.message || "Bildanalyse via OCR-Fallback erstellt."
+    });
   }
 }
 
@@ -737,6 +889,11 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
       return res.status(400).json({ error: "Keine Dateien erhalten." });
     }
 
+    const bucket = getStorageBucket();
+    if (!bucket) {
+      return res.status(503).json({ error: "Supabase Storage ist nicht konfiguriert." });
+    }
+
     try {
       const caseExists = await pool.query("SELECT id FROM cases WHERE id = $1 LIMIT 1", [caseId]);
       if (caseExists.rows.length === 0) {
@@ -746,10 +903,29 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
       const inserted = [];
       for (const file of req.files) {
         const decodedOriginalName = decodeOriginalFileName(file.originalname);
-        const result = await pool.query(
-          "INSERT INTO case_documents (case_id, original_name, stored_name, mime_type, size_bytes) VALUES ($1, $2, $3, $4, $5) RETURNING id, case_id, original_name, mime_type, size_bytes, uploaded_at",
-          [caseId, decodedOriginalName, file.filename, file.mimetype, file.size]
-        );
+        const storedName = createStoredName(decodedOriginalName);
+        const objectPath = `${caseId}/${storedName}`;
+
+        const { error: uploadError } = await bucket.upload(objectPath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
+
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
+
+        let result;
+        try {
+          result = await pool.query(
+            "INSERT INTO case_documents (case_id, original_name, stored_name, mime_type, size_bytes) VALUES ($1, $2, $3, $4, $5) RETURNING id, case_id, original_name, mime_type, size_bytes, uploaded_at",
+            [caseId, decodedOriginalName, objectPath, file.mimetype, file.size]
+          );
+        } catch (dbError) {
+          await bucket.remove([objectPath]);
+          throw dbError;
+        }
+
         inserted.push(result.rows[0]);
       }
 
@@ -764,7 +940,7 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
 router.get("/:caseId/files", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungültige Fall-ID." });
+    return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
   }
 
   try {
@@ -785,7 +961,7 @@ router.get("/:caseId/files/:fileId/preview", requireAuth, async (req, res) => {
   const fileId = String(req.params.fileId || "").trim();
 
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungültige Fall-ID." });
+    return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
   }
 
   try {
@@ -799,15 +975,15 @@ router.get("/:caseId/files/:fileId/preview", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Datei nicht gefunden." });
     }
 
-    const absolutePath = path.join(uploadDir, file.stored_name);
-    if (!fs.existsSync(absolutePath)) {
-      return res.status(404).json({ error: "Datei fehlt im Speicher." });
-    }
+    const fileBuffer = await downloadStorageFile(caseId, file.stored_name);
 
     res.setHeader("Content-Type", file.mime_type || "application/octet-stream");
     res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(file.original_name)}`);
-    return res.sendFile(absolutePath);
+    return res.send(fileBuffer);
   } catch (err) {
+    if (Number(err?.statusCode || 0) === 404 || Number(err?.statusCode || 0) === 503) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     console.error("Preview file error:", err.message);
     return res.status(500).json({ error: "Dateivorschau konnte nicht geladen werden." });
   }
@@ -818,7 +994,7 @@ router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
   const fileId = String(req.params.fileId || "").trim();
 
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungültige Fall-ID." });
+    return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
   }
 
   try {
@@ -832,13 +1008,14 @@ router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Datei nicht gefunden." });
     }
 
-    const absolutePath = path.join(uploadDir, file.stored_name);
-    if (!fs.existsSync(absolutePath)) {
-      return res.status(404).json({ error: "Datei fehlt im Speicher." });
-    }
-
-    return res.download(absolutePath, file.original_name);
+    const fileBuffer = await downloadStorageFile(caseId, file.stored_name);
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.original_name)}`);
+    return res.send(fileBuffer);
   } catch (err) {
+    if (Number(err?.statusCode || 0) === 404 || Number(err?.statusCode || 0) === 503) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     console.error("Download file error:", err.message);
     return res.status(500).json({ error: "Datei konnte nicht heruntergeladen werden." });
   }
@@ -849,7 +1026,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
   const fileId = String(req.params.fileId || "").trim();
 
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungültige Fall-ID." });
+    return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
   }
 
   try {
@@ -863,14 +1040,10 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Datei nicht gefunden." });
     }
 
-    const absolutePath = path.join(uploadDir, file.stored_name);
-    if (!fs.existsSync(absolutePath)) {
-      return res.status(404).json({ error: "Datei fehlt im Speicher." });
-    }
+    const fileBuffer = await downloadStorageFile(caseId, file.stored_name);
 
     if (String(file.mime_type || "").includes("pdf")) {
       try {
-        const buffer = await fs.promises.readFile(absolutePath);
         const pdfParse = getPdfParse();
         if (!pdfParse) {
           return res.json({
@@ -882,7 +1055,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
             message: "PDF-Parser ist aktuell nicht verfuegbar."
           });
         }
-        const parsed = await pdfParse(buffer);
+        const parsed = await pdfParse(fileBuffer);
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
 
         const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
@@ -895,22 +1068,25 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
           author: "",
           authoredDate: "",
           people: [],
-          message: "PDF-Inhalt konnte nicht gelesen werden (möglicherweise Scan oder defekter Textlayer)."
+          message: "PDF-Inhalt konnte nicht gelesen werden (m├Âglicherweise Scan oder defekter Textlayer)."
         });
       }
     }
 
     if (String(file.mime_type || "").startsWith("image/")) {
-      const imageResult = await extractTitleFromImageWithAi(absolutePath, file.mime_type);
+      const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name);
       return res.json(imageResult);
     }
 
     return res.json({
       status: "empty",
       title: "",
-      message: "Analyse für diesen Dateityp nicht verfügbar."
+      message: "Analyse f├╝r diesen Dateityp nicht verf├╝gbar."
     });
   } catch (err) {
+    if (Number(err?.statusCode || 0) === 404 || Number(err?.statusCode || 0) === 503) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     console.error("Analyze file error:", err.message);
     return res.status(500).json({ error: "Dateianalyse konnte nicht geladen werden." });
   }
@@ -921,7 +1097,7 @@ router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
   const fileId = String(req.params.fileId || "").trim();
 
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungültige Fall-ID." });
+    return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
   }
 
   try {
@@ -935,17 +1111,23 @@ router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Datei nicht gefunden." });
     }
 
+    const bucket = getStorageBucket();
+    if (!bucket) {
+      return res.status(503).json({ error: "Supabase Storage ist nicht konfiguriert." });
+    }
+
     await pool.query("DELETE FROM case_documents WHERE case_id = $1 AND id = $2", [caseId, fileId]);
 
-    const absolutePath = path.join(uploadDir, file.stored_name);
-    if (fs.existsSync(absolutePath)) {
-      await fs.promises.unlink(absolutePath);
+    const objectPath = resolveStorageObjectPath(caseId, file.stored_name);
+    const { error: removeError } = await bucket.remove([objectPath]);
+    if (removeError) {
+      console.warn("Storage delete warning:", removeError.message);
     }
 
     return res.json({ ok: true, id: fileId });
   } catch (err) {
     console.error("Delete file error:", err.message);
-    return res.status(500).json({ error: "Datei konnte nicht gelöscht werden." });
+    return res.status(500).json({ error: "Datei konnte nicht gel├Âscht werden." });
   }
 });
 

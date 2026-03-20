@@ -18,3 +18,16 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Uploaded user files (runtime data, not source)
+uploads/
+backend/uploads/
+
+# Tesseract language data (large binaries, downloaded at runtime)
+*.traineddata
+
+# Local DMSKI working folder
+DMSKI/
+
+# Backend compiled assets
+backend/assets/

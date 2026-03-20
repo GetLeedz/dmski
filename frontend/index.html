@@ -6,7 +6,7 @@
   <title>DMSKI Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -55,13 +55,17 @@
         </div>
 
         <button type="submit" id="submitButton">Anmelden</button>
-        <button type="button" id="passkeyButton" class="passkey-button">Mit Passkey anmelden</button>
-        <p class="passkey-note">Passkey-Login ist aktiviert, sobald dein Browser eine gespeicherte Passkey-Identität für diese Domain findet.</p>
         <p id="message" class="message" role="status" aria-live="polite"></p>
       </form>
     </section>
 
-    <footer class="site-footer">Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</footer>
+    <footer class="site-footer">
+      <span>Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</span>
+      <span class="footer-sep">·</span>
+      <a href="/impressum.html">Impressum</a>
+      <span class="footer-sep">·</span>
+      <a href="/datenschutz.html">Datenschutz</a>
+    </footer>
   </main>
 
   <script src="script.js"></script>
