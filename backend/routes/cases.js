@@ -3,7 +3,6 @@ const path = require("path");
 const express = require("express");
 const multer = require("multer");
 const OpenAI = require("openai");
-const pdfParse = require("pdf-parse");
 const { Pool } = require("pg");
 const { requireAuth } = require("../middleware/auth");
 
@@ -81,6 +80,22 @@ const upload = multer({
 });
 
 let openAiClient = null;
+let pdfParseLoader = null;
+
+async function getPdfParse() {
+  if (pdfParseLoader) {
+    return pdfParseLoader;
+  }
+
+  pdfParseLoader = import("pdf-parse")
+    .then((mod) => mod?.default || mod)
+    .catch((err) => {
+      pdfParseLoader = null;
+      throw err;
+    });
+
+  return pdfParseLoader;
+}
 
 function getOpenAiClient() {
   const key = String(process.env.OPENAI_API_KEY || "").trim();
@@ -687,6 +702,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     if (String(file.mime_type || "").includes("pdf")) {
       try {
         const buffer = await fs.promises.readFile(absolutePath);
+        const pdfParse = await getPdfParse();
         const parsed = await pdfParse(buffer);
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
 
