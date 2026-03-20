@@ -1330,6 +1330,24 @@ router.get("/", requireAuth, async (_req, res) => {
   }
 });
 
+router.delete("/:caseId", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+
+  try {
+    const result = await pool.query("DELETE FROM cases WHERE id = $1 RETURNING id", [caseId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Fall nicht gefunden." });
+    }
+    return res.json({ ok: true, caseId });
+  } catch (err) {
+    console.error("Delete case error:", err.message);
+    return res.status(500).json({ error: "Fall konnte nicht gelöscht werden." });
+  }
+});
+
 router.post("/:caseId/files", requireAuth, (req, res) => {
   upload.array("files", 20)(req, res, async (uploadErr) => {
     if (uploadErr) {

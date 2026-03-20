@@ -59,6 +59,7 @@ const closePreviewBtn = document.getElementById("closePreviewBtn");
 const goToUploadBtn = document.getElementById("goToUploadBtn");
 const toggleMultiDeleteBtn = document.getElementById("toggleMultiDeleteBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
+const deleteCaseBtn = document.getElementById("deleteCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const copyrightYearEl = document.getElementById("copyrightYear");
 const selectAllHeader = document.getElementById("selectAllHeader");
@@ -77,6 +78,8 @@ let modalZoom = 1;
 let pendingDelete = null;
 let isMultiDeleteMode = false;
 const selectedFileIds = new Set();
+let currentCaseProtectedPerson = "";
+let currentCaseName = "";
 
 listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
 
@@ -271,9 +274,44 @@ function normalizePeople(people) {
   }
 
   return people
-    .map((person) => normalizeTitleText(person))
+    .map((entry) => {
+      if (typeof entry === "string") {
+        const name = normalizeTitleText(entry);
+        return name ? { name, affiliation: "Privatperson" } : null;
+      }
+
+      const name = normalizeTitleText(entry?.name || entry?.fullName || "");
+      const affiliation = normalizeTitleText(entry?.affiliation || "Privatperson");
+      if (!name) {
+        return null;
+      }
+      return { name, affiliation: affiliation || "Privatperson" };
+    })
     .filter(Boolean)
-    .slice(0, 8);
+    .slice(0, 12);
+}
+
+function normalizeImpactRanking(entries) {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return entries
+    .map((entry) => {
+      const name = normalizeTitleText(entry?.name);
+      if (!name) {
+        return null;
+      }
+      return {
+        name,
+        impact: normalizeTitleText(entry?.impact),
+        count: Number.isFinite(Number(entry?.count)) ? Number(entry.count) : 0,
+        items: Array.isArray(entry?.items)
+          ? entry.items.map((item) => normalizeTitleText(item)).filter(Boolean)
+          : []
+      };
+    })
+    .filter(Boolean);
 }
 
 async function getDocumentAnalysis(file) {
@@ -305,6 +343,10 @@ async function getDocumentAnalysis(file) {
         author: normalizeTitleText(payload.author),
         authoredDate: normalizeTitleText(payload.authoredDate),
         people: normalizePeople(payload.people),
+        disadvantagedPerson: normalizeTitleText(payload.disadvantagedPerson),
+        senderInstitution: normalizeTitleText(payload.senderInstitution),
+        impactAssessment: normalizeTitleText(payload.impactAssessment),
+        impactRanking: normalizeImpactRanking(payload.impactRanking),
         message: normalizeTitleText(payload.message)
       };
     })
@@ -314,6 +356,10 @@ async function getDocumentAnalysis(file) {
       author: "",
       authoredDate: "",
       people: [],
+      disadvantagedPerson: "",
+      senderInstitution: "",
+      impactAssessment: "",
+      impactRanking: [],
       message: "Analyse konnte nicht geladen werden."
     }));
 
@@ -483,6 +529,17 @@ async function loadRowAnalysis(file) {
       }).join("")}</ul>`
     : '<p class="analysis-value muted">Keine Einstufung</p>';
 
+  const protectedName = normalizeTitleText(currentCaseProtectedPerson);
+  const protectedEntry = protectedName
+    ? impactRankingItems.find((entry) => entry.name.toLowerCase() === protectedName.toLowerCase())
+    : null;
+  const protectedCount = protectedEntry ? Math.max(0, Number(protectedEntry.count || 0)) : 0;
+  const protectedStatusMarkup = !protectedName
+    ? '<p class="analysis-value muted">Keine Fallperson definiert</p>'
+    : protectedCount > 0
+      ? `<p class="analysis-value"><strong>Ja</strong> · ${protectedCount} Vorfall${protectedCount === 1 ? "" : "e"}</p>`
+      : '<p class="analysis-value">Nein · 0 Vorfälle</p>';
+
   const hintMarkup = analysis.message
     ? `<p class="analysis-hint">${analysis.message}</p>`
     : "";
@@ -519,6 +576,10 @@ async function loadRowAnalysis(file) {
     <div class="analysis-section">
       <p class="analysis-label">Gewichtung Personen</p>
       ${impactRankingMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">Fallperson benachteiligt</p>
+      ${protectedStatusMarkup}
     </div>
     ${hintMarkup}
   `;
@@ -655,6 +716,69 @@ async function flushPendingDelete() {
   }
 }
 
+async function loadCaseContext() {
+  try {
+    const response = await fetch(`${API_BASE}/cases`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = await response.json().catch(() => ({}));
+    const cases = Array.isArray(payload?.cases) ? payload.cases : [];
+    const active = cases.find((entry) => String(entry?.id || "") === currentCaseId);
+    if (!active) {
+      return;
+    }
+
+    currentCaseProtectedPerson = normalizeTitleText(active.protected_person_name || "");
+    currentCaseName = normalizeTitleText(active.case_name || "");
+    listTitle.textContent = currentCaseName
+      ? `Dateiliste · ${currentCaseName} (${currentCaseId})`
+      : `Dateiliste für Fall ${currentCaseId}`;
+  } catch {
+    // Keep default title when case context cannot be loaded.
+  }
+}
+
+async function deleteCurrentCase() {
+  const descriptor = currentCaseName || `Fall ${currentCaseId}`;
+  const confirmed = window.confirm(`Bist du sicher, dass du "${descriptor}" inklusive aller Dateien löschen willst?`);
+  if (!confirmed) {
+    return;
+  }
+
+  if (pendingDelete) {
+    clearTimeout(pendingDelete.timerId);
+    await flushPendingDelete();
+  }
+
+  if (deleteCaseBtn instanceof HTMLButtonElement) {
+    deleteCaseBtn.disabled = true;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/cases/${currentCaseId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Dossier konnte nicht gelöscht werden.");
+    }
+
+    sessionStorage.removeItem("currentCaseId");
+    window.location.href = "/dashboard.html";
+  } catch (error) {
+    setMessage(listMessage, error.message || "Dossier konnte nicht gelöscht werden.", "error");
+  } finally {
+    if (deleteCaseBtn instanceof HTMLButtonElement) {
+      deleteCaseBtn.disabled = false;
+    }
+  }
+}
+
 async function loadFiles() {
   let res;
   try {
@@ -785,6 +909,12 @@ goToUploadBtn.addEventListener("click", () => {
 backToCasesBtn.addEventListener("click", () => {
   window.location.href = "/dashboard.html";
 });
+
+if (deleteCaseBtn instanceof HTMLButtonElement) {
+  deleteCaseBtn.addEventListener("click", () => {
+    void deleteCurrentCase();
+  });
+}
 
 logoutBtn.addEventListener("click", () => {
   sessionStorage.removeItem("token");
@@ -986,4 +1116,6 @@ window.addEventListener("beforeunload", () => {
 });
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
-loadFiles();
+void loadCaseContext().then(() => {
+  loadFiles();
+});

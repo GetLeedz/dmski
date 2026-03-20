@@ -64,6 +64,43 @@ h1 {
   font-size: clamp(1.4rem, 2.8vw, 2rem);
 }
 
+.list-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.list-header-row h2 {
+  margin: 0;
+}
+
+.icon-btn {
+  width: 2.2rem;
+  height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #33545d;
+  padding: 0;
+}
+
+.icon-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
+}
+
+.icon-btn.danger {
+  border-color: #efc1ba;
+  color: #9c3528;
+  background: #fff4f2;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--line);
