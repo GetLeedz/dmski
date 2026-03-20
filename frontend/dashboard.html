@@ -53,6 +53,8 @@
           <input id="fileInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden />
         </div>
 
+        <div id="uploadQueue" class="upload-queue"></div>
+
         <button id="uploadBtn" type="button" disabled>Upload starten</button>
         <p id="uploadMessage" class="message"></p>
       </div>
@@ -74,11 +76,6 @@
           <label>
             Hochgeladen ab
             <input id="dateFromFilter" type="date" />
-          </label>
-
-          <label>
-            Hochgeladen bis
-            <input id="dateToFilter" type="date" />
           </label>
         </div>
 

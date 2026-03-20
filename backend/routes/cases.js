@@ -7,6 +7,19 @@ const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
+function decodeOriginalFileName(name) {
+  const value = String(name || "");
+  try {
+    const decoded = Buffer.from(value, "latin1").toString("utf8");
+    if (!decoded.includes("\uFFFD")) {
+      return decoded;
+    }
+  } catch {
+    // Fall back to original value.
+  }
+  return value;
+}
+
 function normalizeDatabaseUrl(rawUrl) {
   if (!rawUrl) {
     return rawUrl;
@@ -47,7 +60,8 @@ const allowedMimeTypes = new Set([
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const decodedName = decodeOriginalFileName(file.originalname);
+    const safeName = decodedName.replace(/[^a-zA-Z0-9._-]/g, "_");
     cb(null, `${Date.now()}_${safeName}`);
   }
 });
@@ -117,9 +131,10 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
 
       const inserted = [];
       for (const file of req.files) {
+        const decodedOriginalName = decodeOriginalFileName(file.originalname);
         const result = await pool.query(
           "INSERT INTO case_documents (case_id, original_name, stored_name, mime_type, size_bytes) VALUES ($1, $2, $3, $4, $5) RETURNING id, case_id, original_name, mime_type, size_bytes, uploaded_at",
-          [caseId, file.originalname, file.filename, file.mimetype, file.size]
+          [caseId, decodedOriginalName, file.filename, file.mimetype, file.size]
         );
         inserted.push(result.rows[0]);
       }

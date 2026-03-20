@@ -26,12 +26,30 @@ const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
-const dateToFilter = document.getElementById("dateToFilter");
 const copyrightYearEl = document.getElementById("copyrightYear");
+const uploadQueue = document.getElementById("uploadQueue");
 
 let currentCaseId = "";
 let pendingFiles = [];
 let allFiles = [];
+
+function formatSizeKB(bytes) {
+  return Math.max(1, Math.round(Number(bytes || 0) / 1024));
+}
+
+function decodeUtf8Safe(text) {
+  const input = String(text || "");
+  if (!/[ÃÂ][\x80-\xBF]/.test(input) && !input.includes("�")) {
+    return input;
+  }
+
+  try {
+    const decoded = decodeURIComponent(escape(input));
+    return decoded || input;
+  } catch {
+    return input;
+  }
+}
 
 function todayIsoDate() {
   const now = new Date();
@@ -106,17 +124,14 @@ function resolveFileType(file) {
 }
 
 function compactDocId(id) {
-  const value = String(id || "");
-  if (value.length <= 12) {
-    return value;
-  }
-  return `${value.slice(0, 8)}...`;
+  const raw = String(id || "").replace(/-/g, "").slice(0, 12);
+  const numeric = Number.parseInt(raw || "0", 16) % 100000000;
+  return String(Number.isFinite(numeric) ? numeric : 0).padStart(8, "0");
 }
 
 function filterFiles(files) {
   const type = String(fileTypeFilter.value || "all").toLowerCase();
   const fromDate = dateFromFilter.value ? new Date(`${dateFromFilter.value}T00:00:00`) : null;
-  const toDate = dateToFilter.value ? new Date(`${dateToFilter.value}T23:59:59`) : null;
 
   return files.filter((file) => {
     const fileType = resolveFileType(file).className;
@@ -130,11 +145,94 @@ function filterFiles(files) {
       return false;
     }
 
-    if (toDate && uploadedAt > toDate) {
-      return false;
-    }
-
     return true;
+  });
+}
+
+function renderPendingFiles() {
+  uploadQueue.innerHTML = "";
+
+  if (pendingFiles.length === 0) {
+    return;
+  }
+
+  for (const file of pendingFiles) {
+    const safeName = decodeUtf8Safe(file.name);
+    const row = document.createElement("div");
+    row.className = "queue-item";
+    row.dataset.fileName = file.name;
+    row.innerHTML = `
+      <div class="queue-head">
+        <span class="queue-name">${safeName}</span>
+        <span class="queue-meta"><span class="spinner"></span><span class="queue-state">Bereit</span> <span class="queue-percent">0%</span></span>
+      </div>
+      <div class="progress"><div class="progress-bar"></div></div>
+    `;
+    uploadQueue.appendChild(row);
+  }
+}
+
+function updateQueueProgress(fileName, percent, state, className) {
+  const row = Array.from(uploadQueue.querySelectorAll(".queue-item"))
+    .find((item) => item.dataset.fileName === fileName);
+
+  if (!row) return;
+
+  row.classList.remove("uploading", "done", "error");
+  if (className) {
+    row.classList.add(className);
+  }
+
+  const bar = row.querySelector(".progress-bar");
+  const pct = row.querySelector(".queue-percent");
+  const status = row.querySelector(".queue-state");
+
+  if (bar) bar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+  if (pct) pct.textContent = `${Math.round(percent)}%`;
+  if (status) status.textContent = state;
+}
+
+function uploadSingleFile(file) {
+  return new Promise((resolve, reject) => {
+    const body = new FormData();
+    body.append("files", file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_BASE}/cases/${currentCaseId}/files`);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      const percent = (event.loaded / event.total) * 100;
+      updateQueueProgress(file.name, percent, "Lädt...", "uploading");
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        updateQueueProgress(file.name, 100, "Fertig", "done");
+        resolve();
+        return;
+      }
+
+      let errorText = "Upload fehlgeschlagen.";
+      try {
+        const parsed = JSON.parse(xhr.responseText || "{}");
+        if (parsed.error) {
+          errorText = parsed.error;
+        }
+      } catch {
+        // Ignore JSON parse errors.
+      }
+      updateQueueProgress(file.name, 0, "Fehler", "error");
+      reject(new Error(errorText));
+    };
+
+    xhr.onerror = () => {
+      updateQueueProgress(file.name, 0, "Fehler", "error");
+      reject(new Error("Server nicht erreichbar."));
+    };
+
+    xhr.send(body);
   });
 }
 
@@ -205,13 +303,14 @@ function renderFiles(files) {
 
   for (const file of files) {
     const fileType = resolveFileType(file);
+    const displayName = decodeUtf8Safe(file.original_name);
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
       <td>${formatDate(file.uploaded_at)}</td>
-      <td>${file.original_name}</td>
+      <td>${displayName}</td>
       <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
-      <td>${Math.round(file.size_bytes / 1024)}</td>
+      <td>${formatSizeKB(file.size_bytes)}</td>
       <td class="actions-cell">
         <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
         <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
@@ -304,8 +403,11 @@ caseForm.addEventListener("submit", async (event) => {
 function setPending(files) {
   pendingFiles = Array.from(files || []);
   uploadBtn.disabled = pendingFiles.length === 0 || !currentCaseId;
+  renderPendingFiles();
   if (pendingFiles.length > 0) {
     setMessage(uploadMessage, `${pendingFiles.length} Datei(en) bereit zum Upload.`, "success");
+  } else {
+    setMessage(uploadMessage, "", null);
   }
 }
 
@@ -341,29 +443,24 @@ uploadBtn.addEventListener("click", async () => {
     return;
   }
 
-  const body = new FormData();
-  for (const file of pendingFiles) {
-    body.append("files", file);
-  }
-
   uploadBtn.disabled = true;
 
-  const res = await fetch(`${API_BASE}/cases/${currentCaseId}/files`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    setMessage(uploadMessage, data.error || "Upload fehlgeschlagen.", "error");
-    uploadBtn.disabled = false;
-    return;
+  let successCount = 0;
+  for (const file of pendingFiles) {
+    try {
+      await uploadSingleFile(file);
+      successCount += 1;
+    } catch (error) {
+      setMessage(uploadMessage, error.message || "Upload fehlgeschlagen.", "error");
+      uploadBtn.disabled = false;
+      return;
+    }
   }
 
-  setMessage(uploadMessage, `${data.uploaded.length} Datei(en) erfolgreich hochgeladen.`, "success");
+  setMessage(uploadMessage, `${successCount} Datei(en) erfolgreich hochgeladen.`, "success");
   pendingFiles = [];
   fileInput.value = "";
+  renderPendingFiles();
   await loadFiles();
   switchTab("list");
 });
@@ -396,7 +493,7 @@ filesTableBody.addEventListener("click", async (event) => {
   }
 });
 
-for (const element of [fileTypeFilter, dateFromFilter, dateToFilter]) {
+for (const element of [fileTypeFilter, dateFromFilter]) {
   element.addEventListener("change", () => {
     renderFiles(filterFiles(allFiles));
   });

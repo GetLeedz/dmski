@@ -70,6 +70,14 @@ input {
   font: inherit;
 }
 
+select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.7rem;
+  font: inherit;
+  background: #fff;
+}
+
 input[readonly] {
   background: #f5f8f9;
   color: #4d5f68;
@@ -110,6 +118,77 @@ button:disabled {
 .dropzone.drag {
   border-color: var(--accent);
   background: #e9f7f9;
+}
+
+.upload-queue {
+  margin-top: 0.55rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.queue-item {
+  border: 1px solid var(--line);
+  background: #f8fbfc;
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+}
+
+.queue-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.queue-name {
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.queue-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-size: 0.8rem;
+  color: #49626c;
+  white-space: nowrap;
+}
+
+.spinner {
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid #b9cfd4;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+  display: none;
+}
+
+.queue-item.uploading .spinner {
+  display: inline-block;
+}
+
+.progress {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #dfecee;
+  overflow: hidden;
+  margin-top: 0.45rem;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(150deg, var(--accent), var(--accent-2));
+  transition: width 120ms linear;
+}
+
+.queue-item.done .queue-meta {
+  color: var(--ok);
+}
+
+.queue-item.error .queue-meta {
+  color: var(--error);
 }
 
 .hint {
@@ -257,6 +336,12 @@ td {
   color: #4d646e;
   font-size: 0.82rem;
   margin: 0.2rem 0 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 700px) {
