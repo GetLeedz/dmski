@@ -87,6 +87,10 @@ function setMessage(el, text, type) {
   el.textContent = text;
   el.classList.remove("error", "success");
   if (type) {
+    el.classList.add(type);
+  }
+}
+
 function formatDate(value) {
   const date = new Date(value);
   const dateStr = date.toLocaleString("de-CH", {
@@ -149,6 +153,10 @@ function decodeUtf8Safe(text) {
 
 function resolveFileType(file) {
   const mime = String(file.mime_type || "").toLowerCase();
+  const name = String(file.original_name || "").toLowerCase();
+
+  if (mime.includes("pdf") || name.endsWith(".pdf")) {
+    return { className: "pdf", label: "PDF" };
   }
 
   if (mime.includes("png") || name.endsWith(".png")) {
@@ -157,7 +165,14 @@ function resolveFileType(file) {
 
   if (mime.includes("jpeg") || mime.includes("jpg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
     return { className: "jpg", label: "JPG" };
-    ${protectedName ? `<div class="analysis-section"><p class="analysis-label">Vorfälle Fallperson</p><p class="analysis-value">${protectedCount}</p></div>` : ""}
+  }
+
+  return { className: "generic", label: "FILE" };
+}
+
+function compactDocId(id) {
+  const raw = String(id || "").replace(/-/g, "").slice(0, 12);
+  const numeric = Number.parseInt(raw || "0", 16) % 100000000;
   return String(Number.isFinite(numeric) ? numeric : 0).padStart(8, "0");
 }
 
