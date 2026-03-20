@@ -614,13 +614,13 @@ td {
 }
 
 .row-preview-box {
-  width: clamp(10rem, 18vw, 14rem);
+  width: clamp(20rem, 36vw, 28rem);
   aspect-ratio: 210 / 297;
 }
 
 .row-preview-loading,
 .row-preview-empty {
-  width: clamp(10rem, 18vw, 14rem);
+  width: clamp(20rem, 36vw, 28rem);
   aspect-ratio: 1 / 1.414;
   border: 1px solid #cbdadd;
   border-radius: 10px;
@@ -635,7 +635,7 @@ td {
 
 .row-preview-image,
 .row-preview-frame {
-  width: clamp(10rem, 18vw, 14rem);
+  width: clamp(20rem, 36vw, 28rem);
   aspect-ratio: 1 / 1.414;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -980,7 +980,7 @@ td {
   .row-preview-box,
   .row-preview-image,
   .row-preview-frame {
-    width: 5.6rem;
-    height: 4rem;
+    width: 11rem;
+    height: 8rem;
   }
 }
