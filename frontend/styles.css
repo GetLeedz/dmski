@@ -166,7 +166,8 @@ label {
 }
 
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+.password-field input {
   width: 100%;
   padding: 0.76rem 0.88rem;
   border-radius: 11px;
