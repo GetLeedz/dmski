@@ -351,7 +351,7 @@ async function loadRowPreview(file) {
     return;
   }
 
-  box.innerHTML = '<div class="row-preview-loading">Lädt...</div>';
+  box.innerHTML = '<div class="row-preview-loading"><span class="spinner spinner--preview" aria-label="Vorschau wird geladen"></span></div>';
   const previewUrl = await getPreviewUrl(file);
   if (!previewUrl) {
     box.innerHTML = '<span class="row-preview-empty">Neu hochladen</span>';
@@ -372,7 +372,11 @@ async function loadRowAnalysis(file) {
     return;
   }
 
-  box.innerHTML = '<div class="analysis-loading">Analysiere...</div>';
+  box.innerHTML = `
+    <div class="analysis-loading">
+      <span class="spinner spinner--ai" aria-label="KI analysiert"></span>
+      <span class="analysis-loading-text">KI analysiert Dokument&hellip;<br /><small>Das kann bei Bildern l&auml;nger dauern.</small></span>
+    </div>`;
   const analysis = await getDocumentAnalysis(file);
 
   const peopleMarkup = analysis.people && analysis.people.length > 0
@@ -451,7 +455,7 @@ function renderFiles(files) {
           </div>
         </div>
         <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
-        <div class="row-preview-box" data-file-id="${file.id}"><div class="row-preview-loading">Lädt...</div></div>
+        <div class="row-preview-box" data-file-id="${file.id}"><div class="row-preview-loading"><span class="spinner spinner--preview" aria-label="Vorschau wird geladen"></span></div></div>
         <div class="preview-filename">${displayName}</div>
         <div class="preview-meta-row">
           <span class="file-icon ${fileType.className}">${fileType.label}</span>
