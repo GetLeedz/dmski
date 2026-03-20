@@ -11,7 +11,10 @@ function normalizeDatabaseUrl(rawUrl) {
     return rawUrl;
   }
 
-  const trimmed = String(rawUrl).trim().replace(/^['\"]|['\"]$/g, "");
+  const trimmed = String(rawUrl)
+    .trim()
+    .replace(/^['\"]|['\"]$/g, "")
+    .replace(/\s+/g, "");
 
   try {
     // If already valid, keep as-is.
