@@ -34,6 +34,24 @@ function setMessage(el, text, type) {
   }
 }
 
+function formatCaseTimestamp(value) {
+  if (!value) {
+    return "--.--.---- --:--";
+  }
+
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) {
+    return "--.--.---- --:--";
+  }
+
+  const day = String(dt.getDate()).padStart(2, "0");
+  const month = String(dt.getMonth() + 1).padStart(2, "0");
+  const year = dt.getFullYear();
+  const hour = String(dt.getHours()).padStart(2, "0");
+  const minute = String(dt.getMinutes()).padStart(2, "0");
+  return `${day}.${month}.${year} ${hour}:${minute}`;
+}
+
 async function loadCasesList() {
   const res = await fetch(`${API_BASE}/cases`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -45,7 +63,8 @@ async function loadCasesList() {
     return;
   }
 
-  const cases = data.cases || [];
+  const cases = Array.isArray(data.cases) ? [...data.cases] : [];
+  cases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   existingCasesSelect.innerHTML = "";
 
   const placeholder = document.createElement("option");
@@ -58,7 +77,8 @@ async function loadCasesList() {
   for (const item of cases) {
     const option = document.createElement("option");
     option.value = item.id;
-    option.textContent = `${item.id} - ${item.case_name} (${String(item.case_date || "")})`;
+    const createdLabel = formatCaseTimestamp(item.created_at);
+    option.textContent = `${createdLabel} - ${item.id} - ${item.case_name}`;
     existingCasesSelect.appendChild(option);
   }
 }
