@@ -495,9 +495,10 @@ for (const eventName of ["dragleave", "drop"]) {
 
 dropzone.addEventListener("drop", (event) => {
   addPendingFiles(event.dataTransfer.files);
+  startUpload();
 });
 
-uploadBtn.addEventListener("click", async () => {
+async function startUpload() {
   if (!currentCaseId) {
     setMessage(uploadMessage, "Zuerst einen Fall erstellen.", "error");
     return;
@@ -528,7 +529,9 @@ uploadBtn.addEventListener("click", async () => {
   renderPendingFiles();
   await loadFiles();
   switchTab("list");
-});
+}
+
+uploadBtn.addEventListener("click", () => startUpload());
 
 goToUploadBtn.addEventListener("click", () => switchTab("upload"));
 tabUpload.addEventListener("click", () => switchTab("upload"));
