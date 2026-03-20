@@ -49,14 +49,18 @@ function setMessage(el, text, type) {
 }
 
 function formatDate(value) {
-  return new Date(value).toLocaleString("de-CH", {
+  const date = new Date(value);
+  const dateStr = date.toLocaleString("de-CH", {
     year: "numeric",
     month: "2-digit",
-    day: "2-digit",
+    day: "2-digit"
+  });
+  const timeStr = date.toLocaleString("de-CH", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit"
   });
+  return `${dateStr}<br/>${timeStr}`;
 }
 
 function formatSizeKB(bytes) {
@@ -253,7 +257,7 @@ function renderFiles(files) {
 
   if (!files || files.length === 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td colspan=\"5\">Keine Dateien für die gewählten Filter gefunden.</td>";
+    tr.innerHTML = "<td colspan=\"4\">Keine Dateien für die gewählten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
     return;
   }
@@ -264,10 +268,10 @@ function renderFiles(files) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
-      <td>${formatDate(file.uploaded_at)}</td>
-      <td>${displayName}</td>
+      <td class="timestamp-cell">${formatDate(file.uploaded_at)}</td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
         <div class="row-preview-box" data-file-id="${file.id}"><div class="row-preview-loading">Lädt...</div></div>
+        <div class="preview-filename">${displayName}</div>
         <div class="preview-meta-row">
           <span class="file-icon ${fileType.className}">${fileType.label}</span>
           <span class="preview-size">${formatSizeKB(file.size_bytes)} KB</span>

@@ -385,9 +385,12 @@ td {
   font-size: 0.95rem;
 }
 
+.timestamp-cell {
+  line-height: 1.4;
+}
+
 .doc-id {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.84rem;
+  font-size: 0.95rem;
   color: #39515a;
 }
 
@@ -449,19 +452,19 @@ td {
 }
 
 .preview-cell {
-  width: 9rem;
+  width: 30rem;
   cursor: zoom-in;
 }
 
 .row-preview-box {
-  width: 7rem;
-  height: 5rem;
+  width: 28rem;
+  height: 20rem;
 }
 
 .row-preview-loading,
 .row-preview-empty {
-  width: 7rem;
-  height: 5rem;
+  width: 28rem;
+  height: 20rem;
   border: 1px dashed #cbdadd;
   border-radius: 10px;
   background: #f8fbfc;
@@ -474,8 +477,8 @@ td {
 
 .row-preview-image,
 .row-preview-frame {
-  width: 7rem;
-  height: 5rem;
+  width: 28rem;
+  height: 20rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;
@@ -484,6 +487,14 @@ td {
 
 .row-preview-image {
   object-fit: cover;
+}
+
+.preview-filename {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  word-break: break-word;
 }
 
 .preview-meta-row {
