@@ -35,13 +35,28 @@ function normalizeDatabaseUrl(rawUrl) {
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "8h";
+let jwtSecretWarningLogged = false;
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is required");
+function ensureJwtSecret(res) {
+  if (JWT_SECRET) {
+    return true;
+  }
+
+  if (!jwtSecretWarningLogged) {
+    console.error("JWT_SECRET environment variable is required");
+    jwtSecretWarningLogged = true;
+  }
+
+  res.status(503).json({ error: "Server-Konfiguration unvollstaendig (JWT_SECRET fehlt)." });
+  return false;
 }
 
 // POST /auth/login
 router.post("/login", async (req, res) => {
+  if (!ensureJwtSecret(res)) {
+    return;
+  }
+
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -82,6 +97,10 @@ router.post("/login", async (req, res) => {
 
 // POST /auth/register
 router.post("/register", async (req, res) => {
+  if (!ensureJwtSecret(res)) {
+    return;
+  }
+
   const { email, password } = req.body;
 
   if (!email || !password) {
