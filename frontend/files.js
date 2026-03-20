@@ -569,7 +569,6 @@ function renderFiles(files) {
         <div class="preview-topline">
           <div class="preview-doc-id">Doc ID: ${compactDocId(file.id)}</div>
           <div class="row-actions">
-            <button type="button" class="btn-inline" data-action="refresh-analysis" data-id="${file.id}">Analyse neu</button>
             <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
             <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
           </div>
@@ -583,6 +582,13 @@ function renderFiles(files) {
         </div>
       </td>
       <td class="analysis-cell">
+        <div class="analysis-cell-top">
+          <button type="button" class="btn-inline icon-only" data-action="refresh-analysis" data-id="${file.id}" title="Analyse neu laden" aria-label="Analyse neu laden">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 4a8 8 0 0 1 7.75 6h-2.2A6 6 0 1 0 16.2 16l-2.2-2.2H20v6l-2.35-2.35A8 8 0 1 1 12 4z" />
+            </svg>
+          </button>
+        </div>
         <div class="analysis-box" data-file-id="${file.id}"></div>
       </td>
     `;
@@ -844,18 +850,19 @@ filesTableBody.addEventListener("click", async (event) => {
     return;
   }
 
-  const action = target.dataset.action;
-  const fileId = target.dataset.id;
+  const actionElement = target.closest("[data-action]");
+  const action = actionElement instanceof HTMLElement ? actionElement.dataset.action : "";
+  const fileId = actionElement instanceof HTMLElement ? actionElement.dataset.id : "";
   const rowActions = target.closest(".row-actions");
+
+  if (action === "refresh-analysis" && fileId) {
+    await refreshAnalysis(fileId, actionElement instanceof HTMLButtonElement ? actionElement : null);
+    return;
+  }
 
   if (rowActions && action && fileId) {
     if (action === "download") {
       await downloadFile(fileId);
-      return;
-    }
-
-    if (action === "refresh-analysis") {
-      await refreshAnalysis(fileId, target);
       return;
     }
 

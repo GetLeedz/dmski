@@ -742,6 +742,28 @@ td {
   padding-left: 0.9rem;
 }
 
+.analysis-cell-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
+}
+
+.btn-inline.icon-only {
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-inline.icon-only svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+}
+
 .analysis-box {
   border: 1px solid #d8e4e8;
   background: #f9fcfd;
