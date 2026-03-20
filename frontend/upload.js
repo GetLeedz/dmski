@@ -22,6 +22,25 @@ const API_BASE = isLocalHost
   ? "http://localhost:4000"
   : "https://lively-reverence-production-def3.up.railway.app";
 
+const OUTAGE_STATUSES = new Set([502, 503, 504]);
+let serviceAlertEl = null;
+
+function showServiceAlert(detail) {
+  if (!serviceAlertEl) {
+    serviceAlertEl = document.createElement("div");
+    serviceAlertEl.className = "service-alert";
+    const page = document.querySelector(".page");
+    if (page) {
+      page.prepend(serviceAlertEl);
+    } else {
+      document.body.prepend(serviceAlertEl);
+    }
+  }
+
+  const suffix = detail ? ` (${detail})` : "";
+  serviceAlertEl.textContent = `Server-Störung erkannt. Einige Funktionen sind derzeit eingeschränkt. Bitte in 1-2 Minuten erneut versuchen.${suffix}`;
+}
+
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
 const uploadMessage = document.getElementById("uploadMessage");
@@ -238,6 +257,10 @@ function uploadSingleFile(file) {
         return;
       }
 
+      if (OUTAGE_STATUSES.has(Number(xhr.status))) {
+        showServiceAlert("Upload-Service derzeit gestört");
+      }
+
       let errorText = "Upload fehlgeschlagen.";
       try {
         const parsed = JSON.parse(xhr.responseText || "{}");
@@ -252,6 +275,7 @@ function uploadSingleFile(file) {
     };
 
     xhr.onerror = () => {
+      showServiceAlert("Keine Verbindung zum Backend");
       updateQueueProgress(fileKey, 0, "Fehler", "error");
       reject(new Error("Server nicht erreichbar."));
     };
@@ -299,13 +323,23 @@ async function startUpload() {
 }
 
 async function deleteUploadedFile(fileId, fileKey) {
-  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch {
+    showServiceAlert("Keine Verbindung zum Backend");
+    setMessage(uploadMessage, "Backend nicht erreichbar.", "error");
+    return;
+  }
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (OUTAGE_STATUSES.has(Number(response.status))) {
+      showServiceAlert("Lösch-Service derzeit gestört");
+    }
     setMessage(uploadMessage, payload.error || "Datei konnte nicht gelöscht werden.", "error");
     return;
   }

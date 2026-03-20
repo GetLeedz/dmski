@@ -22,6 +22,25 @@ const API_BASE = isLocalHost
   ? "http://localhost:4000"
   : "https://lively-reverence-production-def3.up.railway.app";
 
+const OUTAGE_STATUSES = new Set([502, 503, 504]);
+let serviceAlertEl = null;
+
+function showServiceAlert(detail) {
+  if (!serviceAlertEl) {
+    serviceAlertEl = document.createElement("div");
+    serviceAlertEl.className = "service-alert";
+    const page = document.querySelector(".page");
+    if (page) {
+      page.prepend(serviceAlertEl);
+    } else {
+      document.body.prepend(serviceAlertEl);
+    }
+  }
+
+  const suffix = detail ? ` (${detail})` : "";
+  serviceAlertEl.textContent = `Server-Störung erkannt. Einige Funktionen sind derzeit eingeschränkt. Bitte in 1-2 Minuten erneut versuchen.${suffix}`;
+}
+
 const filesTableBody = document.getElementById("filesTableBody");
 const listTitle = document.getElementById("listTitle");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
@@ -175,10 +194,21 @@ async function getPreviewUrl(file) {
 
   previewPromiseCache.set(file.id, promise);
 
-  const response = await promise;
+  let response;
+  try {
+    response = await promise;
+  } catch {
+    previewPromiseCache.delete(file.id);
+    showServiceAlert("Keine Verbindung zum Backend");
+    setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
+    return null;
+  }
   previewPromiseCache.delete(file.id);
 
   if (!response.ok) {
+    if (OUTAGE_STATUSES.has(Number(response.status))) {
+      showServiceAlert("Vorschau-Service derzeit gestört");
+    }
     let detail = "Vorschau konnte nicht geladen werden.";
     try {
       const payload = await response.json();
@@ -518,9 +548,16 @@ async function flushPendingDelete() {
 }
 
 async function loadFiles() {
-  const res = await fetch(`${API_BASE}/cases/${currentCaseId}/files`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/cases/${currentCaseId}/files`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch {
+    showServiceAlert("Keine Verbindung zum Backend");
+    setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
+    return;
+  }
   const data = await res.json().catch(() => ({}));
   if (res.ok) {
     allFiles = data.files || [];
@@ -528,6 +565,9 @@ async function loadFiles() {
     return;
   }
 
+  if (OUTAGE_STATUSES.has(Number(res.status))) {
+    showServiceAlert("Dateiliste derzeit nicht verfügbar");
+  }
   setMessage(listMessage, data.error || "Dateiliste konnte nicht geladen werden.", "error");
 }
 

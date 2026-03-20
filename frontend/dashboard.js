@@ -17,6 +17,31 @@ const API_BASE = isLocalHost
   ? "http://localhost:4000"
   : "https://lively-reverence-production-def3.up.railway.app";
 
+const OUTAGE_STATUSES = new Set([502, 503, 504]);
+let serviceAlertEl = null;
+
+function showServiceAlert(detail) {
+  if (!serviceAlertEl) {
+    serviceAlertEl = document.createElement("div");
+    serviceAlertEl.className = "service-alert";
+    const page = document.querySelector(".page");
+    if (page) {
+      page.prepend(serviceAlertEl);
+    } else {
+      document.body.prepend(serviceAlertEl);
+    }
+  }
+
+  const suffix = detail ? ` (${detail})` : "";
+  serviceAlertEl.textContent = `Server-Störung erkannt. Einige Funktionen sind derzeit eingeschränkt. Bitte in 1-2 Minuten erneut versuchen.${suffix}`;
+}
+
+function maybeShowServiceAlert(status, detail) {
+  if (OUTAGE_STATUSES.has(Number(status))) {
+    showServiceAlert(detail);
+  }
+}
+
 const caseForm = document.getElementById("caseForm");
 const caseMessage = document.getElementById("caseMessage");
 const caseNameInput = document.getElementById("caseName");
@@ -70,6 +95,7 @@ async function loadCasesList() {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      maybeShowServiceAlert(res.status, "Dossierliste nicht verfügbar");
       existingCasesSelect.innerHTML = "<option value=\"\">Fallliste konnte nicht geladen werden</option>";
       setMessage(caseMessage, data.error || "Fallliste konnte nicht geladen werden.", "error");
       return;
@@ -94,6 +120,7 @@ async function loadCasesList() {
       existingCasesSelect.appendChild(option);
     }
   } catch {
+    showServiceAlert("Keine Verbindung zum Backend");
     existingCasesSelect.innerHTML = "<option value=\"\">Fallliste konnte nicht geladen werden</option>";
     setMessage(caseMessage, "Backend nicht erreichbar. Bitte Seite neu laden.", "error");
   }
@@ -161,6 +188,8 @@ caseForm.addEventListener("submit", async (event) => {
         continue;
       }
 
+      maybeShowServiceAlert(res.status, "Dossier-Erstellung derzeit gestört");
+
       setMessage(caseMessage, data.error || "Fall konnte nicht erstellt werden.", "error");
       return;
     }
@@ -173,6 +202,7 @@ caseForm.addEventListener("submit", async (event) => {
     sessionStorage.setItem("currentCaseId", created.id);
     window.location.href = "/upload.html";
   } catch {
+    showServiceAlert("Keine Verbindung zum Backend");
     setMessage(caseMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
   } finally {
     createCaseBtn.disabled = false;
