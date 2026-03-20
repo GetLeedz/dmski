@@ -435,6 +435,27 @@ async function loadRowAnalysis(file) {
     ? `<p class="analysis-value">${analysis.disadvantagedPerson}</p>`
     : '<p class="analysis-value muted">Nicht erkannt</p>';
 
+  const senderInstitutionMarkup = analysis.senderInstitution
+    ? `<p class="analysis-value">${analysis.senderInstitution}</p>`
+    : '<p class="analysis-value muted">Nicht erkannt</p>';
+
+  const impactAssessmentMarkup = analysis.impactAssessment
+    ? `<p class="analysis-value">${analysis.impactAssessment}</p>`
+    : '<p class="analysis-value muted">Nicht erkannt</p>';
+
+  const impactRankingItems = Array.isArray(analysis.impactRanking)
+    ? analysis.impactRanking
+      .map((entry) => ({
+        name: normalizeTitleText(entry?.name),
+        impact: normalizeTitleText(entry?.impact)
+      }))
+      .filter((entry) => entry.name)
+    : [];
+
+  const impactRankingMarkup = impactRankingItems.length > 0
+    ? `<ul class="analysis-people">${impactRankingItems.map((entry) => `<li><span>${entry.name}</span><span class="analysis-person-affiliation">${entry.impact}</span></li>`).join("")}</ul>`
+    : '<p class="analysis-value muted">Keine Einstufung</p>';
+
   const hintMarkup = analysis.message
     ? `<p class="analysis-hint">${analysis.message}</p>`
     : "";
@@ -459,6 +480,18 @@ async function loadRowAnalysis(file) {
     <div class="analysis-section">
       <p class="analysis-label">Wer wird benachteiligt</p>
       ${disadvantagedMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">Herkunft Schreiben</p>
+      ${senderInstitutionMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">KI Bewertung</p>
+      ${impactAssessmentMarkup}
+    </div>
+    <div class="analysis-section">
+      <p class="analysis-label">Gewichtung Personen</p>
+      ${impactRankingMarkup}
     </div>
     ${hintMarkup}
   `;

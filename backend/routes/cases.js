@@ -222,7 +222,7 @@ function looksLikePersonName(value) {
   const cleaned = text.replace(/[.,;:!?()\[\]"']/g, "");
   const forbidden = [
     "strasse",
-    "stra├ƒe",
+    "straße",
     "assekuranz",
     "mail",
     "telefon",
@@ -255,7 +255,7 @@ function looksLikePersonName(value) {
     return false;
   }
 
-  return parts.every((part) => /^(?:[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ-]+|[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ-]*\.)$/u.test(part));
+  return parts.every((part) => /^(?:\p{Lu}[\p{Ll}\p{M}'-]+|\p{Lu}[\p{Ll}\p{M}'-]*\.)$/u.test(part));
 }
 
 function normalizeDateSwiss(value) {
@@ -452,7 +452,7 @@ function extractBlockedPersonCandidates(rawText) {
     .map((line) => normalizeWhitespace(line));
 
   const blocked = new Set();
-  const streetPattern = /(strasse|stra├ƒe|gasse|weg|platz|allee)\b/i;
+  const streetPattern = /(strasse|straße|gasse|weg|platz|allee)\b/i;
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -460,7 +460,7 @@ function extractBlockedPersonCandidates(rawText) {
       continue;
     }
 
-    const sameLine = line.match(/^([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\s+[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)/u);
+    const sameLine = line.match(/^(\p{Lu}[\p{Ll}\p{M}'-]+\s+\p{Lu}[\p{Ll}\p{M}'-]+)/u);
     if (sameLine && sameLine[1]) {
       blocked.add(normalizeWhitespace(sameLine[1]).toLowerCase());
     }
@@ -500,8 +500,8 @@ function extractPeopleFromText(rawText, blockedNames = new Set()) {
   const people = [];
 
   const personPatterns = [
-    /\b([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\s+[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)\b/g,
-    /\b([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\.[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)\b/g
+    /\b(\p{Lu}[\p{Ll}\p{M}'-]+\s+\p{Lu}[\p{Ll}\p{M}'-]+)\b/gu,
+    /\b(\p{Lu}[\p{Ll}\p{M}'-]+\.\p{Lu}[\p{Ll}\p{M}'-]+)\b/gu
   ];
 
   for (const line of lines) {
@@ -539,7 +539,7 @@ function extractLabeledValue(rawText, labels) {
 }
 
 function extractPeopleFromLabeledFields(rawText, blockedNames = new Set()) {
-  const recipients = extractLabeledValue(rawText, ["An", "To", "Empf├ñnger", "Empfaenger", "Cc", "Kopie"]);
+  const recipients = extractLabeledValue(rawText, ["An", "To", "Empfänger", "Empfaenger", "Cc", "Kopie"]);
   if (!recipients) {
     return [];
   }
@@ -595,6 +595,89 @@ function extractDisadvantagedPerson(rawText, people = [], author = "") {
   return "";
 }
 
+function extractFirstEmail(value) {
+  const raw = String(value || "");
+  const match = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return match ? match[0] : "";
+}
+
+function extractSenderInstitution(rawText, author = "") {
+  const fromValue = extractLabeledValue(rawText, ["Von", "From", "Absender", "Sender"]);
+  const domainEmail = extractFirstEmail(fromValue);
+  const domain = domainEmail ? domainEmail.split("@")[1].toLowerCase() : "";
+
+  if (domain) {
+    if (domain.includes("kesb")) {
+      return "KESB";
+    }
+
+    const stem = domain.split(".")[0] || "";
+    if (stem) {
+      return stem.toUpperCase();
+    }
+  }
+
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeWhitespace(line))
+    .filter(Boolean);
+  const authorKey = normalizeWhitespace(author).toLowerCase();
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const lower = line.toLowerCase();
+    if (
+      /\b(kesb|gericht|amt|behörde|behoerde|schule|sozialdienst|gmbh|\bag\b|versicherung|bank|verwaltung)\b/i.test(line)
+      && !looksLikePersonName(line)
+      && !/\d/.test(line)
+      && lower !== authorKey
+    ) {
+      return line;
+    }
+  }
+
+  return "";
+}
+
+function buildImpactRanking(people = [], disadvantagedPerson = "") {
+  const disadvantagedKey = normalizeWhitespace(disadvantagedPerson).toLowerCase();
+  const entries = (Array.isArray(people) ? people : [])
+    .map((item) => {
+      const name = typeof item === "string" ? normalizeWhitespace(item) : normalizeWhitespace(item?.name);
+      if (!name) {
+        return null;
+      }
+
+      return {
+        name,
+        impact: name.toLowerCase() === disadvantagedKey ? "benachteiligt" : "neutral"
+      };
+    })
+    .filter(Boolean);
+
+  entries.sort((a, b) => {
+    if (a.impact === b.impact) {
+      return a.name.localeCompare(b.name, "de-CH");
+    }
+    return a.impact === "benachteiligt" ? -1 : 1;
+  });
+
+  return entries;
+}
+
+function classifyImpact(rawText, disadvantagedPerson = "") {
+  if (normalizeWhitespace(disadvantagedPerson)) {
+    return "Person benachteiligt";
+  }
+
+  const lower = String(rawText || "").toLowerCase();
+  if (/(benachteilig|abgewiesen|entzogen|kündigung|kuendigung|sanktion|verweigert|zulasten|zu lasten|nachteil)/.test(lower)) {
+    return "Person benachteiligt";
+  }
+
+  return "Neutral";
+}
+
 function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
   const blockedPeople = extractBlockedPersonCandidates(rawText);
   const titleFromSubject = extractLabeledValue(rawText, ["Betreff", "Subject", "Titel"]);
@@ -618,6 +701,9 @@ function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
   ], rawText, blockedPeople, author);
 
   const disadvantagedPerson = extractDisadvantagedPerson(rawText, people, author);
+  const senderInstitution = extractSenderInstitution(rawText, author);
+  const impactAssessment = classifyImpact(rawText, disadvantagedPerson);
+  const impactRanking = buildImpactRanking(people, disadvantagedPerson);
 
   return buildFallbackAnalysis({
     title,
@@ -625,6 +711,9 @@ function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
     authoredDate,
     people,
     disadvantagedPerson,
+    senderInstitution,
+    impactAssessment,
+    impactRanking,
     rawText,
     message: ""
   });
@@ -641,7 +730,7 @@ function parsePdfMetadataDate(value) {
   return `${day}.${month}.${year}`;
 }
 
-function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", people = [], disadvantagedPerson = "", rawText = "", message = "" }) {
+function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], rawText = "", message = "" }) {
   const normalizedAuthor = normalizeWhitespace(author);
   const normalizedTitle = normalizeWhitespace(title);
 
@@ -659,6 +748,14 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
   const normalizedDisadvantaged = computedDisadvantaged.toLowerCase() === correctedAuthor.toLowerCase()
     ? ""
     : computedDisadvantaged;
+  const normalizedSenderInstitution = normalizeWhitespace(senderInstitution) || extractSenderInstitution(rawText, correctedAuthor);
+  const normalizedImpactRanking = buildImpactRanking(
+    Array.isArray(impactRanking) && impactRanking.length > 0
+      ? impactRanking.map((entry) => entry?.name || "")
+      : normalizedPeople,
+    normalizedDisadvantaged
+  );
+  const normalizedImpactAssessment = normalizeWhitespace(impactAssessment) || classifyImpact(rawText, normalizedDisadvantaged);
 
   return {
     status: "ok",
@@ -667,6 +764,9 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     authoredDate: normalizeDateSwiss(authoredDate),
     people: normalizedPeople,
     disadvantagedPerson: normalizedDisadvantaged,
+    senderInstitution: normalizedSenderInstitution,
+    impactAssessment: normalizedImpactAssessment,
+    impactRanking: normalizedImpactRanking,
     message: normalizeWhitespace(message)
   };
 }
@@ -728,7 +828,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
               text: [
                 "Analysiere dieses Dokument und extrahiere strukturierte Fakten.",
                 "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
-                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","message":""}',
+                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":""}],"message":""}',
                 "Regeln:",
                 "- title = kurzer Dokumenttitel aus dem Inhalt, nicht der Dateiname und nicht nur ein Personenname.",
                 "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
@@ -737,6 +837,9 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
                 "- disadvantagedPerson = Name der benachteiligten Person, falls erkennbar.",
+                "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt (z. B. KESB Leimental).",
+                "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
+                "- impactRanking = sortierte Liste von Personen {name, impact}, benachteiligte Person zuerst.",
                 "- message = kurzer Hinweis, falls etwas unklar ist.",
                 "- Wenn etwas fehlt, leeres Feld verwenden.",
                 "Dokumenttext:",
@@ -759,6 +862,9 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
       authoredDate: parsed.authoredDate || fallback.authoredDate,
       people: Array.isArray(parsed.people) && parsed.people.length > 0 ? parsed.people : fallback.people,
       disadvantagedPerson: parsed.disadvantagedPerson || fallback.disadvantagedPerson,
+      senderInstitution: parsed.senderInstitution || fallback.senderInstitution,
+      impactAssessment: parsed.impactAssessment || fallback.impactAssessment,
+      impactRanking: Array.isArray(parsed.impactRanking) && parsed.impactRanking.length > 0 ? parsed.impactRanking : fallback.impactRanking,
       rawText: textSnippet,
       message: parsed.message || fallback.message
     });
@@ -823,7 +929,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
               text: [
                 "Analysiere dieses Dokumentbild und extrahiere strukturierte Fakten.",
                 "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
-                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","message":""}',
+                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":""}],"message":""}',
                 "Regeln:",
                 "- title = kurzer sichtbarer Dokumenttitel, kein reiner Personenname.",
                 "- author = sichtbarer Verfasser/Absender aus Briefkopf oder Unterschrift.",
@@ -832,6 +938,9 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte oder Satzfragmente enthalten.",
                 "- disadvantagedPerson = Name der benachteiligten Person, falls erkennbar.",
+                "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt.",
+                "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
+                "- impactRanking = sortierte Liste von Personen {name, impact}, benachteiligte Person zuerst.",
                 "- message = kurzer Hinweis, wenn etwas nicht sicher lesbar ist.",
                 "- Wenn nichts erkennbar ist, Felder leer lassen."
               ].join("\n")
@@ -865,6 +974,9 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
       authoredDate: parsed.authoredDate,
       people: parsed.people,
       disadvantagedPerson: parsed.disadvantagedPerson,
+      senderInstitution: parsed.senderInstitution,
+      impactAssessment: parsed.impactAssessment,
+      impactRanking: parsed.impactRanking,
       rawText: "",
       message: parsed.message
     });
