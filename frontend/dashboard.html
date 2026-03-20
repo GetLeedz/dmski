@@ -36,16 +36,8 @@
 
       <div class="open-case">
         <h3>Bestehendes Dossier öffnen</h3>
-        <div class="open-case-grid">
-          <label>
-            Fall-ID
-            <input id="openCaseId" type="text" placeholder="z. B. 166559" maxlength="6" />
-          </label>
-          <button id="openCaseBtn" type="button">Dossier öffnen</button>
-        </div>
-
         <label>
-          Oder aus Liste wählen
+          Dossier auswählen
           <select id="existingCasesSelect">
             <option value="">Lade Fallliste...</option>
           </select>
@@ -79,6 +71,7 @@
       </div>
 
       <div id="panelList" class="panel hidden">
+        <button id="goToUploadBtn" type="button" class="btn-upload-big">+ Dateien hochladen</button>
         <h3>Dateiliste (nach Upload-Datum)</h3>
 
         <div class="filter-row">

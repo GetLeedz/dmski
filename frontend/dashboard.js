@@ -24,9 +24,8 @@ const tabUpload = document.getElementById("tabUpload");
 const tabList = document.getElementById("tabList");
 const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
-const openCaseIdInput = document.getElementById("openCaseId");
-const openCaseBtn = document.getElementById("openCaseBtn");
 const existingCasesSelect = document.getElementById("existingCasesSelect");
+const goToUploadBtn = document.getElementById("goToUploadBtn");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const copyrightYearEl = document.getElementById("copyrightYear");
@@ -386,12 +385,12 @@ async function openCase(caseId) {
   }
 
   setWorkspaceEnabled(true);
-  setMessage(caseMessage, `Dossier ${normalized} geöffnet. Du kannst Dateien hochladen.`, "success");
+  setMessage(caseMessage, `Dossier ${normalized} geöffnet.`, "success");
   setMessage(uploadMessage, "", null);
   pendingFiles = [];
   renderPendingFiles();
   await loadFiles();
-  switchTab("upload");
+  switchTab("list");
 }
 
 caseForm.addEventListener("submit", async (event) => {
@@ -459,8 +458,15 @@ caseForm.addEventListener("submit", async (event) => {
   loadFiles();
 });
 
-function setPending(files) {
-  pendingFiles = Array.from(files || []);
+function addPendingFiles(newFiles) {
+  const incoming = Array.from(newFiles || []);
+  const existingNames = new Set(pendingFiles.map((f) => f.name));
+  for (const f of incoming) {
+    if (!existingNames.has(f.name)) {
+      pendingFiles.push(f);
+      existingNames.add(f.name);
+    }
+  }
   uploadBtn.disabled = pendingFiles.length === 0 || !currentCaseId;
   renderPendingFiles();
   if (pendingFiles.length > 0) {
@@ -471,7 +477,7 @@ function setPending(files) {
 }
 
 dropzone.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", () => setPending(fileInput.files));
+fileInput.addEventListener("change", () => addPendingFiles(fileInput.files));
 
 for (const eventName of ["dragenter", "dragover"]) {
   dropzone.addEventListener(eventName, (event) => {
@@ -488,7 +494,7 @@ for (const eventName of ["dragleave", "drop"]) {
 }
 
 dropzone.addEventListener("drop", (event) => {
-  setPending(event.dataTransfer.files);
+  addPendingFiles(event.dataTransfer.files);
 });
 
 uploadBtn.addEventListener("click", async () => {
@@ -524,6 +530,7 @@ uploadBtn.addEventListener("click", async () => {
   switchTab("list");
 });
 
+goToUploadBtn.addEventListener("click", () => switchTab("upload"));
 tabUpload.addEventListener("click", () => switchTab("upload"));
 tabList.addEventListener("click", async () => {
   switchTab("list");
@@ -557,10 +564,6 @@ for (const element of [fileTypeFilter, dateFromFilter]) {
     renderFiles(filterFiles(allFiles));
   });
 }
-
-openCaseBtn.addEventListener("click", async () => {
-  await openCase(openCaseIdInput.value);
-});
 
 existingCasesSelect.addEventListener("change", async () => {
   if (!existingCasesSelect.value) return;
