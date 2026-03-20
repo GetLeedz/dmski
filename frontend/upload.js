@@ -284,6 +284,48 @@ function uploadSingleFile(file) {
   });
 }
 
+async function triggerRealtimeAnalysis(fileId, fileName, fileKey) {
+  if (!fileId) {
+    return;
+  }
+
+  updateQueueProgress(fileKey, 100, "Analysiere...", "done");
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/analysis`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch {
+    showServiceAlert("Analyse-Service derzeit nicht erreichbar");
+    updateQueueProgress(fileKey, 100, "Fertig (Analyse später)", "done");
+    return;
+  }
+
+  if (!response.ok) {
+    if (OUTAGE_STATUSES.has(Number(response.status))) {
+      showServiceAlert("Analyse-Service derzeit gestört");
+    }
+    updateQueueProgress(fileKey, 100, "Fertig (Analyse später)", "done");
+    return;
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  const hasExtractedData = Boolean(payload?.title || payload?.author || payload?.authoredDate)
+    || (Array.isArray(payload?.people) && payload.people.length > 0);
+
+  if (hasExtractedData) {
+    updateQueueProgress(fileKey, 100, "Analysiert", "done");
+    return;
+  }
+
+  updateQueueProgress(fileKey, 100, "Fertig", "done");
+  if (payload?.message) {
+    const name = decodeUtf8Safe(fileName || "Datei");
+    setMessage(uploadMessage, `${name}: ${payload.message}`, "success");
+  }
+}
+
 async function startUpload() {
   if (isUploading) {
     return;
@@ -301,8 +343,10 @@ async function startUpload() {
   for (const file of filesToUpload) {
     try {
       const uploadedMeta = await uploadSingleFile(file);
+      const fileKey = getFileKey(file);
       if (uploadedMeta?.id) {
-        setRowUploadedFileId(getFileKey(file), uploadedMeta.id);
+        setRowUploadedFileId(fileKey, uploadedMeta.id);
+        void triggerRealtimeAnalysis(uploadedMeta.id, uploadedMeta.original_name || file.name, fileKey);
       }
       successCount += 1;
     } catch (error) {

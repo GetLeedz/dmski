@@ -237,16 +237,24 @@ function extractAuthorFromSignature(rawText) {
 }
 
 function normalizePeople(values) {
+  return normalizePeopleWithBlacklist(values, new Set());
+}
+
+function normalizePeopleWithBlacklist(values, blockedNames) {
   const seen = new Set();
   const list = [];
+  const blocked = blockedNames instanceof Set ? blockedNames : new Set();
 
   for (const value of Array.isArray(values) ? values : []) {
     let normalized = normalizeWhitespace(value).replace(/[;,]+$/g, "");
     normalized = normalized
-      .replace(/^(Herr|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "")
-      .replace(/[-–]\s*$/g, "");
+      .replace(/^(Herr|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "");
 
     if (!normalized || normalized.length < 3) {
+      continue;
+    }
+
+    if (/[\-–]\s*$/.test(normalized)) {
       continue;
     }
 
@@ -255,6 +263,10 @@ function normalizePeople(values) {
     }
 
     const key = normalized.toLowerCase();
+    if (blocked.has(key)) {
+      continue;
+    }
+
     if (seen.has(key)) {
       continue;
     }
@@ -263,6 +275,35 @@ function normalizePeople(values) {
   }
 
   return list.slice(0, 8);
+}
+
+function extractBlockedPersonCandidates(rawText) {
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeWhitespace(line));
+
+  const blocked = new Set();
+  const streetPattern = /(strasse|straße|gasse|weg|platz|allee)\b/i;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!streetPattern.test(line)) {
+      continue;
+    }
+
+    const sameLine = line.match(/^([A-ZÄÖÜ][a-zäöüß'-]+\s+[A-ZÄÖÜ][a-zäöüß'-]+)/u);
+    if (sameLine && sameLine[1]) {
+      blocked.add(normalizeWhitespace(sameLine[1]).toLowerCase());
+    }
+
+    const prev = lines[i - 1] || "";
+    const prevCandidate = normalizeWhitespace(prev.replace(/[\-–]\s*$/, ""));
+    if (looksLikePersonName(prevCandidate)) {
+      blocked.add(prevCandidate.toLowerCase());
+    }
+  }
+
+  return blocked;
 }
 
 function extractDateFromText(rawText) {
@@ -283,7 +324,7 @@ function extractDateFromText(rawText) {
   return "";
 }
 
-function extractPeopleFromText(rawText) {
+function extractPeopleFromText(rawText, blockedNames = new Set()) {
   const lines = String(rawText || "")
     .split(/\r?\n/)
     .map((line) => normalizeWhitespace(line));
@@ -307,7 +348,7 @@ function extractPeopleFromText(rawText) {
     }
   }
 
-  return normalizePeople(people);
+  return normalizePeopleWithBlacklist(people, blockedNames);
 }
 
 function extractLabeledValue(rawText, labels) {
@@ -328,7 +369,7 @@ function extractLabeledValue(rawText, labels) {
   return "";
 }
 
-function extractPeopleFromLabeledFields(rawText) {
+function extractPeopleFromLabeledFields(rawText, blockedNames = new Set()) {
   const recipients = extractLabeledValue(rawText, ["An", "To", "Empfänger", "Empfaenger", "Cc", "Kopie"]);
   if (!recipients) {
     return [];
@@ -339,10 +380,11 @@ function extractPeopleFromLabeledFields(rawText) {
     .map((part) => normalizeWhitespace(part.replace(/<[^>]+>/g, "")))
     .filter(Boolean);
 
-  return normalizePeople(values);
+  return normalizePeopleWithBlacklist(values, blockedNames);
 }
 
 function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
+  const blockedPeople = extractBlockedPersonCandidates(rawText);
   const titleFromSubject = extractLabeledValue(rawText, ["Betreff", "Subject", "Titel"]);
   const titleFromText = extractTitleFromText(rawText);
   const titleCandidate = titleFromSubject || (titleFromText && !/^von\s*:/i.test(titleFromText) ? titleFromText : "");
@@ -356,15 +398,13 @@ function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
     dateFromLabel || parsePdfMetadataDate(pdfInfo.CreationDate || pdfInfo.ModDate || "") || extractDateFromText(rawText)
   );
 
-  const title = (looksLikePersonName(titleCandidate) && author)
-    ? "Stellungnahme"
-    : titleCandidate;
+  const title = looksLikePersonName(titleCandidate) ? "" : titleCandidate;
 
-  const people = normalizePeople([
+  const people = normalizePeopleWithBlacklist([
     author,
-    ...extractPeopleFromLabeledFields(rawText),
-    ...extractPeopleFromText(rawText)
-  ]);
+    ...extractPeopleFromLabeledFields(rawText, blockedPeople),
+    ...extractPeopleFromText(rawText, blockedPeople)
+  ], blockedPeople);
 
   return buildFallbackAnalysis({
     title,
@@ -395,7 +435,7 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     : normalizedAuthor;
 
   const correctedTitle = (looksLikePersonName(normalizedTitle) && correctedAuthor)
-    ? "Stellungnahme"
+    ? ""
     : normalizedTitle;
 
   const normalizedPeople = normalizePeople([correctedAuthor, ...(Array.isArray(people) ? people : [])]);
