@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const multer = require("multer");
+const pdfParse = require("pdf-parse");
 const { Pool } = require("pg");
 const { requireAuth } = require("../middleware/auth");
 
@@ -77,6 +78,31 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+function extractTitleFromText(rawText) {
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    if (line.length < 4 || line.length > 180) {
+      continue;
+    }
+
+    if (!/[\p{L}]/u.test(line)) {
+      continue;
+    }
+
+    if (/^seite\s+\d+$/i.test(line)) {
+      continue;
+    }
+
+    return line;
+  }
+
+  return "";
+}
 
 router.post("/", requireAuth, async (req, res) => {
   const { caseId, caseDate, caseName } = req.body;
@@ -240,6 +266,59 @@ router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Download file error:", err.message);
     return res.status(500).json({ error: "Datei konnte nicht heruntergeladen werden." });
+  }
+});
+
+router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  const fileId = String(req.params.fileId || "").trim();
+
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT id, original_name, stored_name, mime_type FROM case_documents WHERE case_id = $1 AND id = $2 LIMIT 1",
+      [caseId, fileId]
+    );
+
+    const file = result.rows[0];
+    if (!file) {
+      return res.status(404).json({ error: "Datei nicht gefunden." });
+    }
+
+    const absolutePath = path.join(uploadDir, file.stored_name);
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ error: "Datei fehlt im Speicher." });
+    }
+
+    if (String(file.mime_type || "").includes("pdf")) {
+      const buffer = await fs.promises.readFile(absolutePath);
+      const parsed = await pdfParse(buffer);
+      const metaTitle = String(parsed?.info?.Title || "").trim();
+      const fromText = extractTitleFromText(parsed?.text || "");
+      const title = metaTitle && !/^untitled$/i.test(metaTitle) ? metaTitle : fromText;
+
+      if (title) {
+        return res.json({ status: "ok", title });
+      }
+
+      return res.json({
+        status: "empty",
+        title: "",
+        message: "Kein klarer Titel im PDF erkannt."
+      });
+    }
+
+    return res.json({
+      status: "needs-ocr",
+      title: "",
+      message: "Bildtitel benötigt OCR oder KI-Analyse."
+    });
+  } catch (err) {
+    console.error("Analyze file error:", err.message);
+    return res.status(500).json({ error: "Dateianalyse konnte nicht geladen werden." });
   }
 });
 

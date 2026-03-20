@@ -42,6 +42,8 @@ const cancelMultiDeleteBtn = document.getElementById("cancelMultiDeleteBtn");
 let allFiles = [];
 const previewUrlCache = new Map();
 const previewPromiseCache = new Map();
+const analysisCache = new Map();
+const analysisPromiseCache = new Map();
 let modalZoom = 1;
 let pendingDelete = null;
 let isMultiDeleteMode = false;
@@ -192,6 +194,52 @@ async function getPreviewUrl(file) {
   return objectUrl;
 }
 
+function normalizeTitleText(text) {
+  return String(text || "").replace(/\s+/g, " ").trim();
+}
+
+async function getDocumentAnalysis(file) {
+  if (analysisCache.has(file.id)) {
+    return analysisCache.get(file.id);
+  }
+
+  if (analysisPromiseCache.has(file.id)) {
+    return analysisPromiseCache.get(file.id);
+  }
+
+  const request = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/analysis`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        return {
+          status: "error",
+          title: "",
+          message: payload.error || "Analyse konnte nicht geladen werden."
+        };
+      }
+
+      const payload = await response.json().catch(() => ({}));
+      return {
+        status: payload.status || "ok",
+        title: normalizeTitleText(payload.title),
+        message: normalizeTitleText(payload.message)
+      };
+    })
+    .catch(() => ({
+      status: "error",
+      title: "",
+      message: "Analyse konnte nicht geladen werden."
+    }));
+
+  analysisPromiseCache.set(file.id, request);
+  const result = await request;
+  analysisPromiseCache.delete(file.id);
+  analysisCache.set(file.id, result);
+  return result;
+}
+
 function clampZoom(nextZoom) {
   return Math.max(0.5, Math.min(4, nextZoom));
 }
@@ -261,6 +309,37 @@ async function loadRowPreview(file) {
   box.innerHTML = `<img class="row-preview-image" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
 }
 
+async function loadRowAnalysis(file) {
+  const box = filesTableBody.querySelector(`.analysis-box[data-file-id="${file.id}"]`);
+  if (!(box instanceof HTMLElement)) {
+    return;
+  }
+
+  box.innerHTML = '<div class="analysis-loading">Analysiere...</div>';
+  const analysis = await getDocumentAnalysis(file);
+
+  if (analysis.status === "ok" && analysis.title) {
+    box.innerHTML = `
+      <p class="analysis-label">Dokumenttitel</p>
+      <p class="analysis-title">${analysis.title}</p>
+    `;
+    return;
+  }
+
+  if (analysis.status === "needs-ocr") {
+    box.innerHTML = `
+      <p class="analysis-label">Dokumenttitel</p>
+      <p class="analysis-note">${analysis.message || "Titel benötigt OCR/KI."}</p>
+    `;
+    return;
+  }
+
+  box.innerHTML = `
+    <p class="analysis-label">Dokumenttitel</p>
+    <p class="analysis-note">${analysis.message || "Keine Analyse verfügbar."}</p>
+  `;
+}
+
 function renderFiles(files) {
   filesTableBody.innerHTML = "";
 
@@ -288,7 +367,13 @@ function renderFiles(files) {
     tr.innerHTML = `
       <td class="${checkboxClass}"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
-          <div class="preview-doc-id">${compactDocId(file.id)}</div>
+        <div class="preview-topline">
+          <div class="preview-doc-id">Doc ID: ${compactDocId(file.id)}</div>
+          <div class="row-actions">
+            <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
+            <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
+          </div>
+        </div>
         <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
         <div class="row-preview-box" data-file-id="${file.id}"><div class="row-preview-loading">Lädt...</div></div>
         <div class="preview-filename">${displayName}</div>
@@ -297,9 +382,8 @@ function renderFiles(files) {
           <span class="preview-size">${formatSizeKB(file.size_bytes)} KB</span>
         </div>
       </td>
-      <td class="actions-cell">
-        <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
-        <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
+      <td class="analysis-cell">
+        <div class="analysis-box" data-file-id="${file.id}"></div>
       </td>
     `;
     filesTableBody.appendChild(tr);
@@ -307,6 +391,7 @@ function renderFiles(files) {
 
   for (const file of files) {
     void loadRowPreview(file);
+    void loadRowAnalysis(file);
   }
 }
 
@@ -375,6 +460,8 @@ async function flushPendingDelete() {
       previewUrlCache.delete(snapshot.file.id);
     }
     previewPromiseCache.delete(snapshot.file.id);
+    analysisCache.delete(snapshot.file.id);
+    analysisPromiseCache.delete(snapshot.file.id);
     setMessage(listMessage, "Datei endgültig gelöscht.", "success");
   } catch (error) {
     allFiles = [snapshot.file, ...allFiles];
@@ -459,6 +546,19 @@ filesTableBody.addEventListener("click", async (event) => {
 
   const action = target.dataset.action;
   const fileId = target.dataset.id;
+  const rowActions = target.closest(".row-actions");
+
+  if (rowActions && action && fileId) {
+    if (action === "download") {
+      await downloadFile(fileId);
+      return;
+    }
+
+    if (action === "delete") {
+      void deleteFile(fileId, target);
+      return;
+    }
+  }
 
   const previewCell = target.closest(".preview-cell");
   if (previewCell instanceof HTMLElement) {
@@ -475,15 +575,6 @@ filesTableBody.addEventListener("click", async (event) => {
 
   if (!action || !fileId) {
     return;
-  }
-
-  if (action === "download") {
-    await downloadFile(fileId);
-    return;
-  }
-
-  if (action === "delete") {
-    void deleteFile(fileId, target);
   }
 });
 
@@ -600,6 +691,8 @@ async function executeMultiDelete() {
         previewUrlCache.delete(fileId);
       }
       previewPromiseCache.delete(fileId);
+      analysisCache.delete(fileId);
+      analysisPromiseCache.delete(fileId);
     }
 
     setMessage(listMessage, `${filesToDelete.length} Datei${filesToDelete.length === 1 ? "" : "en"} gelöscht.`, "success");
@@ -694,6 +787,8 @@ window.addEventListener("beforeunload", () => {
   }
   closePreviewModal();
   revokeAllPreviewUrls();
+  analysisCache.clear();
+  analysisPromiseCache.clear();
 });
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
