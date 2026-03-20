@@ -5,7 +5,31 @@ const { Pool } = require("pg");
 const { validatePassword } = require("../utils/passwordPolicy");
 
 const router = express.Router();
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+function normalizeDatabaseUrl(rawUrl) {
+  if (!rawUrl) {
+    return rawUrl;
+  }
+
+  const trimmed = String(rawUrl).trim().replace(/^['\"]|['\"]$/g, "");
+
+  try {
+    // If already valid, keep as-is.
+    new URL(trimmed);
+    return trimmed;
+  } catch {
+    // Recover from unescaped password chars in postgres URLs.
+    const match = trimmed.match(/^(postgres(?:ql)?:\/\/)([^:]+):([^@]+)@([^/]+)\/(.+)$/i);
+    if (!match) {
+      return trimmed;
+    }
+
+    const [, protocol, user, password, host, dbPath] = match;
+    return `${protocol}${user}:${encodeURIComponent(password)}@${host}/${dbPath}`;
+  }
+}
+
+const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "8h";
 
