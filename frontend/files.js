@@ -276,9 +276,10 @@ function renderFiles(files) {
     const displayName = decodeUtf8Safe(file.original_name);
     const tr = document.createElement("tr");
     const isSelected = selectedFileIds.has(file.id);
+    const checkboxClass = isMultiDeleteMode ? "checkbox-col" : "checkbox-col hidden";
     tr.dataset.fileId = file.id;
     tr.innerHTML = `
-      <td class="checkbox-col hidden"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
+      <td class="${checkboxClass}"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
           <div class="preview-doc-id">${compactDocId(file.id)}</div>
         <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
@@ -300,6 +301,12 @@ function renderFiles(files) {
   for (const file of files) {
     void loadRowPreview(file);
   }
+}
+
+function applyMultiDeleteUiState() {
+  selectAllHeader.classList.toggle("hidden", !isMultiDeleteMode);
+  multiDeleteBar.classList.toggle("hidden", !isMultiDeleteMode);
+  toggleMultiDeleteBtn.classList.toggle("active", isMultiDeleteMode);
 }
 
 function hideUndoBar() {
@@ -448,6 +455,9 @@ filesTableBody.addEventListener("click", async (event) => {
 
   const previewCell = target.closest(".preview-cell");
   if (previewCell instanceof HTMLElement) {
+    if (isMultiDeleteMode) {
+      return;
+    }
     const previewId = previewCell.dataset.fileId;
     const file = allFiles.find((item) => item.id === previewId);
     if (file) {
@@ -525,20 +535,10 @@ function toggleMultiDeleteMode() {
   isMultiDeleteMode = !isMultiDeleteMode;
   selectedFileIds.clear();
   selectAllCheckbox.checked = false;
-  
-  if (isMultiDeleteMode) {
-    selectAllHeader.classList.remove("hidden");
-    multiDeleteBar.classList.remove("hidden");
-    toggleMultiDeleteBtn.classList.add("active");
-    updateMultiDeleteCount();
-  } else {
-    selectAllHeader.classList.add("hidden");
-    multiDeleteBar.classList.add("hidden");
-    toggleMultiDeleteBtn.classList.remove("active");
-    
-    const checkboxes = filesTableBody.querySelectorAll(".checkbox-col");
-    checkboxes.forEach((col) => col.classList.add("hidden"));
-  }
+
+  applyMultiDeleteUiState();
+  renderFiles(filterFiles(allFiles));
+  updateMultiDeleteCount();
 }
 
 function updateMultiDeleteCount() {
@@ -553,6 +553,11 @@ function updateMultiDeleteCount() {
 async function executeMultiDelete() {
   if (selectedFileIds.size === 0) {
     return;
+  }
+
+  if (pendingDelete) {
+    clearTimeout(pendingDelete.timerId);
+    await flushPendingDelete();
   }
 
   const filesToDelete = Array.from(selectedFileIds);
@@ -591,9 +596,10 @@ async function executeMultiDelete() {
     }
 
     setMessage(listMessage, `${filesToDelete.length} Datei${filesToDelete.length === 1 ? "" : "en"} gelöscht.`, "success");
-    updateMultiDeleteCount();
     isMultiDeleteMode = false;
-    toggleMultiDeleteMode();
+    applyMultiDeleteUiState();
+    renderFiles(filterFiles(allFiles));
+    updateMultiDeleteCount();
   } catch (error) {
     allFiles = originalFiles;
     renderFiles(filterFiles(allFiles));
@@ -609,7 +615,9 @@ toggleMultiDeleteBtn.addEventListener("click", () => {
 });
 
 cancelMultiDeleteBtn.addEventListener("click", () => {
-  isMultiDeleteMode = false;
+  if (!isMultiDeleteMode) {
+    return;
+  }
   toggleMultiDeleteMode();
 });
 
@@ -619,20 +627,23 @@ executeMultiDeleteBtn.addEventListener("click", () => {
 
 selectAllCheckbox.addEventListener("change", (event) => {
   const checked = event.target.checked;
+  const visibleFiles = filterFiles(allFiles);
   const checkboxes = filesTableBody.querySelectorAll(".file-checkbox");
-  
+
   if (checked) {
-    for (const file of allFiles) {
+    for (const file of visibleFiles) {
       selectedFileIds.add(file.id);
     }
   } else {
-    selectedFileIds.clear();
+    for (const file of visibleFiles) {
+      selectedFileIds.delete(file.id);
+    }
   }
-  
+
   checkboxes.forEach((cb) => {
     cb.checked = checked;
   });
-  
+
   updateMultiDeleteCount();
 });
 
@@ -651,8 +662,11 @@ filesTableBody.addEventListener("change", (event) => {
     selectedFileIds.add(fileId);
   } else {
     selectedFileIds.delete(fileId);
-    selectAllCheckbox.checked = false;
   }
+
+  const visibleFiles = filterFiles(allFiles);
+  const allVisibleSelected = visibleFiles.length > 0 && visibleFiles.every((file) => selectedFileIds.has(file.id));
+  selectAllCheckbox.checked = allVisibleSelected;
 
   updateMultiDeleteCount();
 });
