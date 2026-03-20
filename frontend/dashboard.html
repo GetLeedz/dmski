@@ -19,19 +19,11 @@
     <section class="card">
       <h2>Neuen Fall anlegen</h2>
       <form id="caseForm" class="grid">
-        <label>
-          ID (automatisch)
-          <input id="caseId" name="caseId" type="text" pattern="[0-9]{6}" maxlength="6" required readonly />
-        </label>
-        <label>
-          Datum (automatisch)
-          <input id="caseDate" name="caseDate" type="date" required readonly />
-        </label>
         <label class="full">
           Name
           <input id="caseName" name="caseName" type="text" placeholder="Fallname / Mandat" required />
         </label>
-        <button id="createCaseBtn" type="submit">Dossier eröffnen</button>
+        <button id="createCaseBtn" type="submit" class="full">Dossier eröffnen</button>
       </form>
 
       <div class="open-case">

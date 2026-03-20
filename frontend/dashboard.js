@@ -9,8 +9,6 @@ const API_BASE = window.location.hostname === "localhost"
 
 const caseForm = document.getElementById("caseForm");
 const caseMessage = document.getElementById("caseMessage");
-const caseIdInput = document.getElementById("caseId");
-const caseDateInput = document.getElementById("caseDate");
 const caseNameInput = document.getElementById("caseName");
 const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -26,11 +24,6 @@ function todayIsoDate() {
 
 function generateCaseId() {
   return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function resetAutoFields() {
-  caseIdInput.value = generateCaseId();
-  caseDateInput.value = todayIsoDate();
 }
 
 function setMessage(el, text, type) {
@@ -84,14 +77,8 @@ function openUploadForCase(caseId) {
 caseForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  const caseId = String(caseIdInput.value || "").trim();
-  const caseDate = caseDateInput.value;
+  const caseDate = todayIsoDate();
   const caseName = String(caseNameInput.value || "").trim();
-
-  if (!/^\d{6}$/.test(caseId)) {
-    setMessage(caseMessage, "ID muss exakt 6-stellig sein.", "error");
-    return;
-  }
 
   if (!caseName) {
     setMessage(caseMessage, "Bitte einen Namen eingeben.", "error");
@@ -102,7 +89,7 @@ caseForm.addEventListener("submit", async (event) => {
 
   let created = null;
   let tries = 0;
-  let nextCaseId = caseId;
+  let nextCaseId = generateCaseId();
 
   while (!created && tries < 6) {
     tries += 1;
@@ -135,7 +122,6 @@ caseForm.addEventListener("submit", async (event) => {
 
   if (!created) {
     setMessage(caseMessage, "Konnte keine freie Fall-ID erzeugen. Bitte erneut versuchen.", "error");
-    resetAutoFields();
     return;
   }
 
@@ -155,5 +141,4 @@ logoutBtn.addEventListener("click", () => {
 });
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
-resetAutoFields();
 loadCasesList();
