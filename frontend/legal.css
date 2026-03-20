@@ -17,6 +17,19 @@ body {
   background: radial-gradient(circle at 20% -10%, #d4ecef, transparent 40%), var(--bg);
 }
 
+.legal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.legal-logo {
+  display: block;
+  height: 2.8rem;
+  width: auto;
+  object-fit: contain;
+}
+
 .page {
   max-width: 980px;
   margin: 0 auto;
