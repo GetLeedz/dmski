@@ -316,24 +316,49 @@ button:disabled {
 
 .filter-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.7rem;
-  margin: 0.4rem 0 0.7rem;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.9rem;
+  margin: 0.6rem 0 0.9rem;
+  align-items: flex-end;
 }
 
 .filter-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .filter-row select,
 .filter-row input {
-  margin-top: 0.35rem;
+  margin-top: 0;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.9rem;
 }
 
 .filter-btn {
-  align-self: flex-end;
-  padding: 0.55rem 0.9rem;
-  font-size: 0.85rem;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.65rem 1.2rem;
+  background: linear-gradient(150deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.filter-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(17, 107, 115, 0.2);
+}
+
+.filter-btn.active {
+  background: linear-gradient(150deg, #d9a8a0, #b89589);
+  color: #fff;
 }
 
 .message {
@@ -419,14 +444,15 @@ button:disabled {
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 0.6rem;
+  margin-top: 0.8rem;
+  table-layout: auto;
 }
 
 th,
 td {
   border-bottom: 1px solid var(--line);
   text-align: left;
-  padding: 0.65rem 0.4rem;
+  padding: 0.75rem 0.5rem;
   font-size: 0.95rem;
 }
 
@@ -511,40 +537,42 @@ td {
 }
 
 .preview-cell {
-  width: 58rem;
+  width: 50rem;
   cursor: zoom-in;
 }
 
 .preview-timestamp {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
   font-size: 0.85rem;
   color: #5f7780;
   font-weight: 500;
 }
 
 .row-preview-box {
-  width: 56rem;
-  height: 40rem;
+  width: 48rem;
+  height: 67.9rem;
+  aspect-ratio: 210 / 297;
 }
 
 .row-preview-loading,
 .row-preview-empty {
-  width: 56rem;
-  height: 40rem;
-  border: 1px dashed #cbdadd;
+  width: 48rem;
+  height: 67.9rem;
+  border: 1px solid #cbdadd;
   border-radius: 10px;
   background: #f8fbfc;
   color: #5f7780;
   display: grid;
   place-items: center;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   text-align: center;
+  font-weight: 500;
 }
 
 .row-preview-image,
 .row-preview-frame {
-  width: 56rem;
-  height: 40rem;
+  width: 48rem;
+  height: 67.9rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;
