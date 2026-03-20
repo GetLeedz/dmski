@@ -23,21 +23,18 @@
     <section class="card">
       <h2>Neuen Fall anlegen</h2>
       <form id="caseForm" class="grid">
-        <label class="full">
-          Name
-          <input id="caseName" name="caseName" type="text" placeholder="Fallname" required />
+        <label class="full form-field-inline">
+          <input id="caseName" name="caseName" type="text" placeholder="Fallname" aria-label="Fallname" required />
         </label>
-        <label class="full">
-          Benachteiligte Person
-          <input id="protectedPersonName" name="protectedPersonName" type="text" placeholder="Name (z. B. Ergen)" />
+        <label class="full form-field-inline">
+          <input id="protectedPersonName" name="protectedPersonName" type="text" placeholder="Benachteiligte Person" aria-label="Benachteiligte Person" />
         </label>
-        <button id="createCaseBtn" type="submit" class="full">Dossier eröffnen</button>
+        <button id="createCaseBtn" type="submit" class="full">Fall eröffnen</button>
       </form>
 
       <div class="open-case">
         <h3>Bestehendes Dossier öffnen</h3>
-        <label>
-          Dossier auswählen
+        <label class="form-field-inline">
           <select id="existingCasesSelect">
             <option value="">Lade Fallliste...</option>
           </select>
