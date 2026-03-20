@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI Dateiliste</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <h1>DMSKI Dateiliste</h1>
+      <div class="actions-cell">
+        <button id="goToUploadBtn" type="button">+ Dateien hochladen</button>
+        <button id="backToCasesBtn" type="button" class="ghost">Dossiers</button>
+        <button id="logoutBtn" type="button" class="ghost">Logout</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2 id="listTitle">Dateiliste</h2>
+
+      <div class="filter-row">
+        <label>
+          Dateityp
+          <select id="fileTypeFilter">
+            <option value="all">Alle</option>
+            <option value="pdf">PDF</option>
+            <option value="png">PNG</option>
+            <option value="jpg">JPG/JPEG</option>
+          </select>
+        </label>
+
+        <label>
+          Hochgeladen ab
+          <input id="dateFromFilter" type="date" />
+        </label>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Doc ID</th>
+            <th>Timestamp</th>
+            <th>Dateiname</th>
+            <th>Icon</th>
+            <th>Größe (KB)</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="filesTableBody"></tbody>
+      </table>
+
+      <p id="listMessage" class="message"></p>
+    </section>
+
+    <footer class="dashboard-footer">Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</footer>
+  </main>
+
+  <script src="files.js"></script>
+</body>
+</html>

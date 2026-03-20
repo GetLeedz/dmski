@@ -1,0 +1,243 @@
+const token = sessionStorage.getItem("token");
+if (!token) {
+  window.location.href = "/";
+}
+
+const currentCaseId = String(sessionStorage.getItem("currentCaseId") || "").trim();
+if (!/^\d{6}$/.test(currentCaseId)) {
+  window.location.href = "/dashboard.html";
+}
+
+const API_BASE = window.location.hostname === "localhost"
+  ? "http://localhost:4000"
+  : "https://lively-reverence-production-def3.up.railway.app";
+
+const filesTableBody = document.getElementById("filesTableBody");
+const listTitle = document.getElementById("listTitle");
+const fileTypeFilter = document.getElementById("fileTypeFilter");
+const dateFromFilter = document.getElementById("dateFromFilter");
+const listMessage = document.getElementById("listMessage");
+const goToUploadBtn = document.getElementById("goToUploadBtn");
+const backToCasesBtn = document.getElementById("backToCasesBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const copyrightYearEl = document.getElementById("copyrightYear");
+
+let allFiles = [];
+
+listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
+
+function setMessage(el, text, type) {
+  el.textContent = text;
+  el.classList.remove("error", "success");
+  if (type) {
+    el.classList.add(type);
+  }
+}
+
+function formatDate(value) {
+  return new Date(value).toLocaleString("de-CH", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+
+function formatSizeKB(bytes) {
+  return Math.max(1, Math.round(Number(bytes || 0) / 1024));
+}
+
+function decodeUtf8Safe(text) {
+  const input = String(text || "");
+  if (!/[ÃÂ][\x80-\xBF]/.test(input) && !input.includes("�")) {
+    return input;
+  }
+
+  try {
+    const decoded = decodeURIComponent(escape(input));
+    return decoded || input;
+  } catch {
+    return input;
+  }
+}
+
+function resolveFileType(file) {
+  const mime = String(file.mime_type || "").toLowerCase();
+  const name = String(file.original_name || "").toLowerCase();
+
+  if (mime.includes("pdf") || name.endsWith(".pdf")) {
+    return { className: "pdf", label: "PDF" };
+  }
+
+  if (mime.includes("png") || name.endsWith(".png")) {
+    return { className: "png", label: "PNG" };
+  }
+
+  if (mime.includes("jpeg") || mime.includes("jpg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
+    return { className: "jpg", label: "JPG" };
+  }
+
+  return { className: "generic", label: "FILE" };
+}
+
+function compactDocId(id) {
+  const raw = String(id || "").replace(/-/g, "").slice(0, 12);
+  const numeric = Number.parseInt(raw || "0", 16) % 100000000;
+  return String(Number.isFinite(numeric) ? numeric : 0).padStart(8, "0");
+}
+
+function filterFiles(files) {
+  const type = String(fileTypeFilter.value || "all").toLowerCase();
+  const fromDate = dateFromFilter.value ? new Date(`${dateFromFilter.value}T00:00:00`) : null;
+
+  return files.filter((file) => {
+    const fileType = resolveFileType(file).className;
+    const uploadedAt = new Date(file.uploaded_at);
+
+    if (type !== "all" && fileType !== type) {
+      return false;
+    }
+
+    if (fromDate && uploadedAt < fromDate) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function renderFiles(files) {
+  filesTableBody.innerHTML = "";
+
+  if (!files || files.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td colspan=\"6\">Keine Dateien für die gewählten Filter gefunden.</td>";
+    filesTableBody.appendChild(tr);
+    return;
+  }
+
+  for (const file of files) {
+    const fileType = resolveFileType(file);
+    const displayName = decodeUtf8Safe(file.original_name);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
+      <td>${formatDate(file.uploaded_at)}</td>
+      <td>${displayName}</td>
+      <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
+      <td>${formatSizeKB(file.size_bytes)}</td>
+      <td class="actions-cell">
+        <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
+        <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
+      </td>
+    `;
+    filesTableBody.appendChild(tr);
+  }
+}
+
+async function loadFiles() {
+  const res = await fetch(`${API_BASE}/cases/${currentCaseId}/files`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) {
+    allFiles = data.files || [];
+    renderFiles(filterFiles(allFiles));
+    return;
+  }
+
+  setMessage(listMessage, data.error || "Dateiliste konnte nicht geladen werden.", "error");
+}
+
+async function downloadFile(fileId) {
+  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/download`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!response.ok) {
+    setMessage(listMessage, "Datei konnte nicht heruntergeladen werden.", "error");
+    return;
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+
+  const disposition = response.headers.get("content-disposition") || "";
+  const match = disposition.match(/filename\*?=(?:UTF-8'')?\"?([^\";]+)\"?/i);
+  link.download = match ? decodeURIComponent(match[1]) : `download-${fileId}`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function deleteFile(fileId) {
+  const confirmDelete = window.confirm("Datei wirklich löschen?");
+  if (!confirmDelete) {
+    return;
+  }
+
+  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    setMessage(listMessage, payload.error || "Datei konnte nicht gelöscht werden.", "error");
+    return;
+  }
+
+  setMessage(listMessage, "Datei erfolgreich gelöscht.", "success");
+  await loadFiles();
+}
+
+filesTableBody.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const action = target.dataset.action;
+  const fileId = target.dataset.id;
+  if (!action || !fileId) {
+    return;
+  }
+
+  if (action === "download") {
+    await downloadFile(fileId);
+    return;
+  }
+
+  if (action === "delete") {
+    await deleteFile(fileId);
+  }
+});
+
+for (const element of [fileTypeFilter, dateFromFilter]) {
+  element.addEventListener("change", () => {
+    renderFiles(filterFiles(allFiles));
+  });
+}
+
+goToUploadBtn.addEventListener("click", () => {
+  window.location.href = "/upload.html";
+});
+
+backToCasesBtn.addEventListener("click", () => {
+  window.location.href = "/dashboard.html";
+});
+
+logoutBtn.addEventListener("click", () => {
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("currentCaseId");
+  window.location.href = "/";
+});
+
+copyrightYearEl.textContent = String(new Date().getFullYear());
+loadFiles();
