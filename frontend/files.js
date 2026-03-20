@@ -28,15 +28,24 @@ const zoomResetBtn = document.getElementById("zoomResetBtn");
 const zoomLevel = document.getElementById("zoomLevel");
 const closePreviewBtn = document.getElementById("closePreviewBtn");
 const goToUploadBtn = document.getElementById("goToUploadBtn");
+const toggleMultiDeleteBtn = document.getElementById("toggleMultiDeleteBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const copyrightYearEl = document.getElementById("copyrightYear");
+const selectAllHeader = document.getElementById("selectAllHeader");
+const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+const multiDeleteBar = document.getElementById("multiDeleteBar");
+const multiDeleteCount = document.getElementById("multiDeleteCount");
+const executeMultiDeleteBtn = document.getElementById("executeMultiDeleteBtn");
+const cancelMultiDeleteBtn = document.getElementById("cancelMultiDeleteBtn");
 
 let allFiles = [];
 const previewUrlCache = new Map();
 const previewPromiseCache = new Map();
 let modalZoom = 1;
 let pendingDelete = null;
+let isMultiDeleteMode = false;
+const selectedFileIds = new Set();
 
 listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
 
@@ -257,7 +266,7 @@ function renderFiles(files) {
 
   if (!files || files.length === 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td colspan=\"4\">Keine Dateien für die gewählten Filter gefunden.</td>";
+    tr.innerHTML = "<td colspan=\"5\">Keine Dateien für die gewählten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
     return;
   }
@@ -266,7 +275,10 @@ function renderFiles(files) {
     const fileType = resolveFileType(file);
     const displayName = decodeUtf8Safe(file.original_name);
     const tr = document.createElement("tr");
+    const isSelected = selectedFileIds.has(file.id);
+    tr.dataset.fileId = file.id;
     tr.innerHTML = `
+      <td class="checkbox-col hidden"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
       <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
       <td class="timestamp-cell">${formatDate(file.uploaded_at)}</td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
@@ -507,6 +519,142 @@ previewModal.addEventListener("click", (event) => {
   if (target.dataset.closePreview === "true") {
     closePreviewModal();
   }
+});
+
+function toggleMultiDeleteMode() {
+  isMultiDeleteMode = !isMultiDeleteMode;
+  selectedFileIds.clear();
+  selectAllCheckbox.checked = false;
+  
+  if (isMultiDeleteMode) {
+    selectAllHeader.classList.remove("hidden");
+    multiDeleteBar.classList.remove("hidden");
+    toggleMultiDeleteBtn.classList.add("active");
+    updateMultiDeleteCount();
+  } else {
+    selectAllHeader.classList.add("hidden");
+    multiDeleteBar.classList.add("hidden");
+    toggleMultiDeleteBtn.classList.remove("active");
+    
+    const checkboxes = filesTableBody.querySelectorAll(".checkbox-col");
+    checkboxes.forEach((col) => col.classList.add("hidden"));
+  }
+}
+
+function updateMultiDeleteCount() {
+  const count = selectedFileIds.size;
+  multiDeleteCount.textContent = count > 0 
+    ? `${count} Datei${count === 1 ? "" : "en"} ausgewählt.`
+    : "Keine Dateien ausgewählt.";
+    
+  executeMultiDeleteBtn.disabled = count === 0;
+}
+
+async function executeMultiDelete() {
+  if (selectedFileIds.size === 0) {
+    return;
+  }
+
+  const filesToDelete = Array.from(selectedFileIds);
+  const originalFiles = [...allFiles];
+  
+  executeMultiDeleteBtn.disabled = true;
+  executeMultiDeleteBtn.textContent = "Löscht...";
+
+  allFiles = allFiles.filter((f) => !selectedFileIds.has(f.id));
+  renderFiles(filterFiles(allFiles));
+
+  try {
+    const promises = filesToDelete.map((fileId) =>
+      fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      }).then((res) => {
+        if (!res.ok) {
+          throw new Error(`Fehler beim Löschen von Datei ${fileId}`);
+        }
+      })
+    );
+
+    await Promise.all(promises);
+
+    selectedFileIds.clear();
+    selectAllCheckbox.checked = false;
+    
+    for (const fileId of filesToDelete) {
+      const cachedUrl = previewUrlCache.get(fileId);
+      if (cachedUrl) {
+        URL.revokeObjectURL(cachedUrl);
+        previewUrlCache.delete(fileId);
+      }
+      previewPromiseCache.delete(fileId);
+    }
+
+    setMessage(listMessage, `${filesToDelete.length} Datei${filesToDelete.length === 1 ? "" : "en"} gelöscht.`, "success");
+    updateMultiDeleteCount();
+    isMultiDeleteMode = false;
+    toggleMultiDeleteMode();
+  } catch (error) {
+    allFiles = originalFiles;
+    renderFiles(filterFiles(allFiles));
+    setMessage(listMessage, error.message || "Fehler beim Löschen.", "error");
+  } finally {
+    executeMultiDeleteBtn.disabled = false;
+    executeMultiDeleteBtn.textContent = "Löschen";
+  }
+}
+
+toggleMultiDeleteBtn.addEventListener("click", () => {
+  toggleMultiDeleteMode();
+});
+
+cancelMultiDeleteBtn.addEventListener("click", () => {
+  isMultiDeleteMode = false;
+  toggleMultiDeleteMode();
+});
+
+executeMultiDeleteBtn.addEventListener("click", () => {
+  void executeMultiDelete();
+});
+
+selectAllCheckbox.addEventListener("change", (event) => {
+  const checked = event.target.checked;
+  const checkboxes = filesTableBody.querySelectorAll(".file-checkbox");
+  
+  if (checked) {
+    for (const file of allFiles) {
+      selectedFileIds.add(file.id);
+    }
+  } else {
+    selectedFileIds.clear();
+  }
+  
+  checkboxes.forEach((cb) => {
+    cb.checked = checked;
+  });
+  
+  updateMultiDeleteCount();
+});
+
+filesTableBody.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || !target.classList.contains("file-checkbox")) {
+    return;
+  }
+
+  const fileId = target.dataset.fileId;
+  if (!fileId) {
+    return;
+  }
+
+  if (target.checked) {
+    selectedFileIds.add(fileId);
+  } else {
+    selectedFileIds.delete(fileId);
+    selectAllCheckbox.checked = false;
+  }
+
+  updateMultiDeleteCount();
 });
 
 window.addEventListener("beforeunload", () => {

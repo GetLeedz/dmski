@@ -19,6 +19,7 @@
       </div>
       <div class="actions-cell">
         <button id="goToUploadBtn" type="button">+ Dateien hochladen</button>
+        <button id="toggleMultiDeleteBtn" type="button" class="ghost">Mehrere löschen</button>
         <button id="backToCasesBtn" type="button" class="ghost">Dossiers</button>
         <button id="logoutBtn" type="button" class="ghost">Logout</button>
       </div>
@@ -47,6 +48,7 @@
       <table>
         <thead>
           <tr>
+            <th id="selectAllHeader" class="checkbox-col hidden"><input type="checkbox" id="selectAllCheckbox" /></th>
             <th>Doc ID</th>
             <th>Timestamp</th>
             <th>Vorschau</th>
@@ -58,6 +60,11 @@
 
       <p id="listMessage" class="message"></p>
       <div id="undoBar" class="undo-bar hidden" aria-live="polite"></div>
+      <div id="multiDeleteBar" class="multi-delete-bar hidden" aria-live="polite">
+        <span id="multiDeleteCount"></span>
+        <button id="executeMultiDeleteBtn" type="button" class="delete-btn">Löschen</button>
+        <button id="cancelMultiDeleteBtn" type="button" class="ghost">Abbrechen</button>
+      </div>
     </section>
 
     <div id="previewModal" class="preview-modal hidden" aria-hidden="true">

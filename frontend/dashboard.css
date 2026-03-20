@@ -371,6 +371,45 @@ button:disabled {
   cursor: pointer;
 }
 
+.multi-delete-bar {
+  margin-top: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #e8cac5;
+  border-radius: 10px;
+  background: #fef5f3;
+  color: #5f3b35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.multi-delete-bar.hidden {
+  display: none;
+}
+
+.delete-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.32rem 0.72rem;
+  background: linear-gradient(150deg, #b64a3b, #8a3429);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-btn.active {
+  background: #fde8e6;
+  border-color: #d9a8a0;
+  color: #9c3528;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -392,6 +431,22 @@ td {
 .doc-id {
   font-size: 0.95rem;
   color: #39515a;
+}
+
+.checkbox-col {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.checkbox-col.hidden {
+  display: none;
+}
+
+.file-checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+  accent-color: var(--accent);
 }
 
 .file-icon {
