@@ -35,6 +35,8 @@ let currentCaseId = "";
 let pendingFiles = [];
 let allFiles = [];
 let allCases = [];
+const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
+const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
 function formatSizeKB(bytes) {
   return Math.max(1, Math.round(Number(bytes || 0) / 1024));
@@ -130,6 +132,22 @@ function compactDocId(id) {
   const raw = String(id || "").replace(/-/g, "").slice(0, 12);
   const numeric = Number.parseInt(raw || "0", 16) % 100000000;
   return String(Number.isFinite(numeric) ? numeric : 0).padStart(8, "0");
+}
+
+function splitAcceptedFiles(files) {
+  const accepted = [];
+  const rejected = [];
+
+  for (const file of Array.from(files || [])) {
+    const ext = String(file.name || "").toLowerCase().split(".").pop() || "";
+    if (ALLOWED_EXTENSIONS.has(ext)) {
+      accepted.push(file);
+      continue;
+    }
+    rejected.push(file);
+  }
+
+  return { accepted, rejected };
 }
 
 function filterFiles(files) {
@@ -459,14 +477,22 @@ caseForm.addEventListener("submit", async (event) => {
 });
 
 function addPendingFiles(newFiles) {
-  const incoming = Array.from(newFiles || []);
+  const { accepted, rejected } = splitAcceptedFiles(newFiles);
   const existingNames = new Set(pendingFiles.map((f) => f.name));
-  for (const f of incoming) {
+  for (const f of accepted) {
     if (!existingNames.has(f.name)) {
       pendingFiles.push(f);
       existingNames.add(f.name);
     }
   }
+
+  if (rejected.length > 0) {
+    const rejectedNames = rejected.map((f) => decodeUtf8Safe(f.name)).join(", ");
+    const message = `Nur ${ALLOWED_FILES_LABEL} erlaubt. Nicht akzeptiert: ${rejectedNames}`;
+    window.alert(message);
+    setMessage(uploadMessage, message, "error");
+  }
+
   uploadBtn.disabled = pendingFiles.length === 0 || !currentCaseId;
   renderPendingFiles();
   if (pendingFiles.length > 0) {
