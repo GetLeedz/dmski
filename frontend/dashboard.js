@@ -528,7 +528,7 @@ async function startUpload() {
   fileInput.value = "";
   renderPendingFiles();
   await loadFiles();
-  switchTab("list");
+  switchTab("upload");
 }
 
 uploadBtn.addEventListener("click", () => startUpload());
