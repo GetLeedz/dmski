@@ -318,10 +318,10 @@ async function downloadFile(fileId) {
   URL.revokeObjectURL(url);
 }
 
-async function deleteFile(fileId) {
-  const confirmDelete = window.confirm("Datei wirklich löschen?");
-  if (!confirmDelete) {
-    return;
+async function deleteFile(fileId, triggerButton) {
+  if (triggerButton instanceof HTMLButtonElement) {
+    triggerButton.disabled = true;
+    triggerButton.textContent = "Lösche...";
   }
 
   const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
@@ -331,12 +331,24 @@ async function deleteFile(fileId) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (triggerButton instanceof HTMLButtonElement) {
+      triggerButton.disabled = false;
+      triggerButton.textContent = "Löschen";
+    }
     setMessage(listMessage, payload.error || "Datei konnte nicht gelöscht werden.", "error");
     return;
   }
 
+  const cachedUrl = previewUrlCache.get(fileId);
+  if (cachedUrl) {
+    URL.revokeObjectURL(cachedUrl);
+    previewUrlCache.delete(fileId);
+  }
+  previewPromiseCache.delete(fileId);
+
+  allFiles = allFiles.filter((file) => file.id !== fileId);
+  renderFiles(filterFiles(allFiles));
   setMessage(listMessage, "Datei erfolgreich gelöscht.", "success");
-  await loadFiles();
 }
 
 filesTableBody.addEventListener("click", async (event) => {
@@ -368,7 +380,7 @@ filesTableBody.addEventListener("click", async (event) => {
   }
 
   if (action === "delete") {
-    await deleteFile(fileId);
+    void deleteFile(fileId, target);
   }
 });
 

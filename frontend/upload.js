@@ -16,6 +16,7 @@ const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
 const uploadMessage = document.getElementById("uploadMessage");
 const uploadQueue = document.getElementById("uploadQueue");
+const activeCaseBanner = document.getElementById("activeCaseBanner");
 const workspaceHint = document.getElementById("workspaceHint");
 const goToListBtn = document.getElementById("goToListBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
@@ -28,6 +29,7 @@ let totalUploadedCount = 0;
 const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
+activeCaseBanner.textContent = `WICHTIG: Du arbeitest im Fall ${currentCaseId}`;
 workspaceHint.textContent = `Aktiver Fall: ${currentCaseId}. Dateien werden direkt hochgeladen, wenn sie in die Fläche gezogen werden.`;
 
 function decodeUtf8Safe(text) {

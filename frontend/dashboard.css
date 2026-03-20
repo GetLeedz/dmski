@@ -264,6 +264,18 @@ button:disabled {
   color: #48616b;
 }
 
+.active-case-banner {
+  margin: 0.35rem 0 0.55rem;
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #9fc5cb;
+  background: #eaf6f8;
+  color: #0f5960;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
 .btn-upload-big {
   display: block;
   width: 100%;
