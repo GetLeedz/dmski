@@ -20,46 +20,57 @@
       <h2>Neuen Fall anlegen</h2>
       <form id="caseForm" class="grid">
         <label>
-          ID (6-stellig)
-          <input id="caseId" name="caseId" type="text" pattern="[0-9]{6}" maxlength="6" placeholder="z.B. 123456" required />
+          ID (automatisch)
+          <input id="caseId" name="caseId" type="text" pattern="[0-9]{6}" maxlength="6" required readonly />
         </label>
         <label>
-          Datum
-          <input id="caseDate" name="caseDate" type="date" required />
+          Datum (automatisch)
+          <input id="caseDate" name="caseDate" type="date" required readonly />
         </label>
         <label class="full">
           Name
           <input id="caseName" name="caseName" type="text" placeholder="Fallname / Mandat" required />
         </label>
-        <button type="submit">Fall erstellen</button>
+        <button id="createCaseBtn" type="submit">Dossier eroeffnen</button>
       </form>
       <p id="caseMessage" class="message"></p>
     </section>
 
-    <section class="card" id="uploadSection">
-      <h2>Dateien hochladen</h2>
-      <p>Erlaubte Formate: PDF, JPG, JPEG, PNG. Mehrere Dateien gleichzeitig moeglich.</p>
+    <section class="card" id="workspaceSection">
+      <h2>Fall-Workspace</h2>
+      <p id="workspaceHint" class="hint">Zuerst Dossier eroeffnen, danach Upload oder Dateiliste nutzen.</p>
 
-      <div id="dropzone" class="dropzone" tabindex="0">
-        Dateien hier hineinziehen oder klicken, um Dateien auszuwaehlen.
-        <input id="fileInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden />
+      <div id="workspaceControls" class="tabs disabled">
+        <button id="tabUpload" class="tab active" type="button">Upload</button>
+        <button id="tabList" class="tab" type="button">Dateiliste</button>
       </div>
 
-      <button id="uploadBtn" type="button" disabled>Upload starten</button>
-      <p id="uploadMessage" class="message"></p>
+      <div id="panelUpload" class="panel">
+        <p>Erlaubte Formate: PDF, JPG, JPEG, PNG. Mehrere Dateien gleichzeitig moeglich.</p>
 
-      <h3>Dateiliste (nach Upload-Datum)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Upload-Datum</th>
-            <th>Dateiname</th>
-            <th>Typ</th>
-            <th>Groesse (KB)</th>
-          </tr>
-        </thead>
-        <tbody id="filesTableBody"></tbody>
-      </table>
+        <div id="dropzone" class="dropzone" tabindex="0">
+          Dateien hier hineinziehen oder klicken, um Dateien auszuwaehlen.
+          <input id="fileInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden />
+        </div>
+
+        <button id="uploadBtn" type="button" disabled>Upload starten</button>
+        <p id="uploadMessage" class="message"></p>
+      </div>
+
+      <div id="panelList" class="panel hidden">
+        <h3>Dateiliste (nach Upload-Datum)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Upload-Datum</th>
+              <th>Dateiname</th>
+              <th>Typ</th>
+              <th>Groesse (KB)</th>
+            </tr>
+          </thead>
+          <tbody id="filesTableBody"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 

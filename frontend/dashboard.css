@@ -70,6 +70,11 @@ input {
   font: inherit;
 }
 
+input[readonly] {
+  background: #f5f8f9;
+  color: #4d5f68;
+}
+
 button {
   border: 0;
   border-radius: 10px;
@@ -105,6 +110,40 @@ button:disabled {
 .dropzone.drag {
   border-color: var(--accent);
   background: #e9f7f9;
+}
+
+.hint {
+  margin-top: 0;
+  color: #48616b;
+}
+
+.tabs {
+  display: inline-flex;
+  gap: 0.45rem;
+  margin-bottom: 0.7rem;
+}
+
+.tabs.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.tab {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+}
+
+.tab.active {
+  background: linear-gradient(150deg, var(--accent), var(--accent-2));
+  color: #fff;
+  border-color: transparent;
+}
+
+.panel.hidden {
+  display: none;
 }
 
 .message {

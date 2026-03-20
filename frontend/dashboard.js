@@ -9,15 +9,58 @@ const API_BASE = window.location.hostname === "localhost"
 
 const caseForm = document.getElementById("caseForm");
 const caseMessage = document.getElementById("caseMessage");
+const caseIdInput = document.getElementById("caseId");
+const caseDateInput = document.getElementById("caseDate");
 const uploadMessage = document.getElementById("uploadMessage");
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const filesTableBody = document.getElementById("filesTableBody");
+const workspaceHint = document.getElementById("workspaceHint");
+const workspaceControls = document.getElementById("workspaceControls");
+const panelUpload = document.getElementById("panelUpload");
+const panelList = document.getElementById("panelList");
+const tabUpload = document.getElementById("tabUpload");
+const tabList = document.getElementById("tabList");
+const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
 let currentCaseId = "";
 let pendingFiles = [];
+
+function todayIsoDate() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+function generateCaseId() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function resetAutoFields() {
+  caseIdInput.value = generateCaseId();
+  caseDateInput.value = todayIsoDate();
+}
+
+function setWorkspaceEnabled(enabled) {
+  workspaceControls.classList.toggle("disabled", !enabled);
+  dropzone.style.pointerEvents = enabled ? "auto" : "none";
+  dropzone.style.opacity = enabled ? "1" : "0.5";
+  uploadBtn.disabled = !enabled || pendingFiles.length === 0;
+  workspaceHint.textContent = enabled
+    ? `Aktiver Fall: ${currentCaseId}. Du kannst zwischen Upload und Dateiliste wechseln.`
+    : "Zuerst Dossier eroeffnen, danach Upload oder Dateiliste nutzen.";
+}
+
+function switchTab(target) {
+  const uploadActive = target === "upload";
+  tabUpload.classList.toggle("active", uploadActive);
+  tabList.classList.toggle("active", !uploadActive);
+  panelUpload.classList.toggle("hidden", !uploadActive);
+  panelList.classList.toggle("hidden", uploadActive);
+}
 
 function setMessage(el, text, type) {
   el.textContent = text;
@@ -66,8 +109,8 @@ async function loadFiles() {
 caseForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  const caseId = String(document.getElementById("caseId").value || "").trim();
-  const caseDate = document.getElementById("caseDate").value;
+  const caseId = String(caseIdInput.value || "").trim();
+  const caseDate = caseDateInput.value;
   const caseName = String(document.getElementById("caseName").value || "").trim();
 
   if (!/^\d{6}$/.test(caseId)) {
@@ -75,26 +118,54 @@ caseForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const res = await fetch(`${API_BASE}/cases`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ caseId, caseDate, caseName })
-  });
+  createCaseBtn.disabled = true;
 
-  const data = await res.json();
-  if (!res.ok) {
+  let created = null;
+  let tries = 0;
+  let nextCaseId = caseId;
+
+  while (!created && tries < 6) {
+    tries += 1;
+    const res = await fetch(`${API_BASE}/cases`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ caseId: nextCaseId, caseDate, caseName })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      created = data;
+      break;
+    }
+
+    if (res.status === 409) {
+      nextCaseId = generateCaseId();
+      continue;
+    }
+
     setMessage(caseMessage, data.error || "Fall konnte nicht erstellt werden.", "error");
+    createCaseBtn.disabled = false;
     return;
   }
 
-  currentCaseId = data.id;
-  setMessage(caseMessage, `Fall ${data.id} erstellt. Dateien koennen hochgeladen werden.`, "success");
+  if (!created) {
+    setMessage(caseMessage, "Konnte keine freie Fall-ID erzeugen. Bitte erneut versuchen.", "error");
+    createCaseBtn.disabled = false;
+    resetAutoFields();
+    return;
+  }
+
+  currentCaseId = created.id;
+  caseIdInput.value = created.id;
+  setMessage(caseMessage, `Fall ${created.id} erstellt. Dateien koennen hochgeladen werden.`, "success");
   setMessage(uploadMessage, "", null);
   pendingFiles = [];
-  uploadBtn.disabled = true;
+  setWorkspaceEnabled(true);
+  switchTab("upload");
+  createCaseBtn.disabled = false;
   loadFiles();
 });
 
@@ -162,9 +233,20 @@ uploadBtn.addEventListener("click", async () => {
   pendingFiles = [];
   fileInput.value = "";
   await loadFiles();
+  switchTab("list");
+});
+
+tabUpload.addEventListener("click", () => switchTab("upload"));
+tabList.addEventListener("click", async () => {
+  switchTab("list");
+  await loadFiles();
 });
 
 logoutBtn.addEventListener("click", () => {
   sessionStorage.removeItem("token");
   window.location.href = "/";
 });
+
+resetAutoFields();
+setWorkspaceEnabled(false);
+switchTab("upload");
