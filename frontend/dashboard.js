@@ -76,18 +76,56 @@ function formatDate(value) {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    second: "2-digit"
   });
+}
+
+function resolveFileType(file) {
+  const mime = String(file.mime_type || "").toLowerCase();
+  const name = String(file.original_name || "").toLowerCase();
+
+  if (mime.includes("pdf") || name.endsWith(".pdf")) {
+    return { className: "pdf", label: "PDF" };
+  }
+
+  if (mime.includes("png") || name.endsWith(".png")) {
+    return { className: "png", label: "PNG" };
+  }
+
+  if (mime.includes("jpeg") || mime.includes("jpg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
+    return { className: "jpg", label: "JPG" };
+  }
+
+  return { className: "generic", label: "FILE" };
+}
+
+function compactDocId(id) {
+  const value = String(id || "");
+  if (value.length <= 12) {
+    return value;
+  }
+  return `${value.slice(0, 8)}...`;
 }
 
 function renderFiles(files) {
   filesTableBody.innerHTML = "";
+
+  if (!files || files.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5">Noch keine Dateien fuer diesen Fall vorhanden.</td>`;
+    filesTableBody.appendChild(tr);
+    return;
+  }
+
   for (const file of files) {
+    const fileType = resolveFileType(file);
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
       <td>${formatDate(file.uploaded_at)}</td>
       <td>${file.original_name}</td>
-      <td>${file.mime_type}</td>
+      <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
       <td>${Math.round(file.size_bytes / 1024)}</td>
     `;
     filesTableBody.appendChild(tr);

@@ -173,6 +173,44 @@ td {
   font-size: 0.95rem;
 }
 
+.doc-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.84rem;
+  color: #39515a;
+}
+
+.file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.1rem;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.file-icon.pdf {
+  background: #fde8e6;
+  color: #9e2f23;
+}
+
+.file-icon.png {
+  background: #e9ecff;
+  color: #2c3ea8;
+}
+
+.file-icon.jpg {
+  background: #e6f7ec;
+  color: #25693f;
+}
+
+.file-icon.generic {
+  background: #edf2f4;
+  color: #3f5963;
+}
+
 @media (max-width: 700px) {
   .grid {
     grid-template-columns: 1fr;
