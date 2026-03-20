@@ -151,42 +151,65 @@ async function extractTitleFromImageWithAi(absolutePath, mimeType) {
   const fileBuffer = await fs.promises.readFile(absolutePath);
   const base64 = fileBuffer.toString("base64");
 
-  const response = await client.responses.create({
-    model: "gpt-4.1-mini",
-    max_output_tokens: 80,
-    input: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: "Extrahiere nur den Dokumenttitel aus diesem Bild. Antworte mit genau einer Zeile, ohne Erklaerung. Wenn kein klarer Titel sichtbar ist, antworte nur mit: KEIN_TITEL"
-          },
-          {
-            type: "input_image",
-            image_url: `data:${mimeType || "image/png"};base64,${base64}`
-          }
-        ]
-      }
-    ]
-  });
+  try {
+    const response = await client.responses.create({
+      model: "gpt-4.1-mini",
+      max_output_tokens: 80,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: "Extrahiere nur den Dokumenttitel aus diesem Bild. Antworte mit genau einer Zeile, ohne Erklaerung. Wenn kein klarer Titel sichtbar ist, antworte nur mit: KEIN_TITEL"
+            },
+            {
+              type: "input_image",
+              image_url: `data:${mimeType || "image/png"};base64,${base64}`
+            }
+          ]
+        }
+      ]
+    });
 
-  const raw = extractResponseText(response);
-  const title = String(raw || "").replace(/\s+/g, " ").trim();
+    const raw = extractResponseText(response);
+    const title = String(raw || "").replace(/\s+/g, " ").trim();
 
-  if (!title || /^KEIN_TITEL$/i.test(title)) {
+    if (!title || /^KEIN_TITEL$/i.test(title)) {
+      return {
+        status: "empty",
+        title: "",
+        message: "Kein klarer Titel im Bild erkannt."
+      };
+    }
+
     return {
-      status: "empty",
-      title: "",
-      message: "Kein klarer Titel im Bild erkannt."
+      status: "ok",
+      title,
+      message: ""
     };
-  }
+  } catch (error) {
+    const statusCode = Number(error?.status || 0);
+    const message = String(error?.message || "");
 
-  return {
-    status: "ok",
-    title,
-    message: ""
-  };
+    if (statusCode === 401 || /Missing scopes:|insufficient permissions/i.test(message)) {
+      return {
+        status: "needs-config",
+        title: "",
+        message: "OpenAI-Key erkannt, aber ohne ausreichende API-Scopes (model.request / api.responses.write)."
+      };
+    }
+
+    if (statusCode === 429) {
+      return {
+        status: "needs-config",
+        title: "",
+        message: "OpenAI-Limit erreicht. Bitte später erneut versuchen."
+      };
+    }
+
+    throw error;
+  }
 }
 
 router.post("/", requireAuth, async (req, res) => {
