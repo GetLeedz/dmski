@@ -6,7 +6,9 @@ const authRouter = require("./routes/auth");
 const casesRouter = require("./routes/cases");
 
 const app = express();
-const port = Number(process.env.PORT) || 4000;
+const isProduction = process.env.NODE_ENV === "production";
+const port = Number(process.env.PORT) || (isProduction ? 8080 : 4000);
+const host = "0.0.0.0";
 
 const allowedOrigins = [
   "https://dmski.aikmu.ch",
@@ -39,6 +41,6 @@ app.use("/auth", authRouter);
 app.use("/cases", casesRouter);
 app.use("/uploads", express.static("uploads"));
 
-app.listen(port, () => {
-  console.log(`Backend running on http://localhost:${port}`);
+app.listen(port, host, () => {
+  console.log(`Backend running on http://${host}:${port}`);
 });
