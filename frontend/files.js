@@ -465,13 +465,22 @@ async function loadRowAnalysis(file) {
     ? analysis.impactRanking
       .map((entry) => ({
         name: normalizeTitleText(entry?.name),
-        impact: normalizeTitleText(entry?.impact)
+        impact: normalizeTitleText(entry?.impact),
+        count: typeof entry?.count === "number" ? entry.count : 0,
+        items: Array.isArray(entry?.items) ? entry.items.filter((s) => typeof s === "string" && s.trim()) : []
       }))
       .filter((entry) => entry.name)
     : [];
 
   const impactRankingMarkup = impactRankingItems.length > 0
-    ? `<ul class="analysis-people">${impactRankingItems.map((entry) => `<li><span>${entry.name}</span><span class="analysis-person-affiliation">${entry.impact}</span></li>`).join("")}</ul>`
+    ? `<ul class="analysis-people">${impactRankingItems.map((entry) => {
+        const countBadge = entry.count > 0 ? ` <span class="impact-count">${entry.count}</span>` : "";
+        const impactClass = (entry.impact || "").toLowerCase() === "benachteiligt" ? "analysis-person-affiliation impact-badge-benachteiligt" : "analysis-person-affiliation";
+        const itemsList = entry.items.length > 0
+          ? `<ul class="impact-items">${entry.items.map((it) => `<li>«${it}»</li>`).join("")}</ul>`
+          : "";
+        return `<li class="impact-entry"><div class="impact-entry-header"><span>${entry.name}${countBadge}</span><span class="${impactClass}">${entry.impact}</span></div>${itemsList}</li>`;
+      }).join("")}</ul>`
     : '<p class="analysis-value muted">Keine Einstufung</p>';
 
   const hintMarkup = analysis.message

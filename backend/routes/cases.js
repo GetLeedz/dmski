@@ -695,7 +695,7 @@ function extractSenderInstitution(rawText, author = "") {
   return "";
 }
 
-function buildImpactRanking(people = [], disadvantagedPerson = "") {
+function buildImpactRanking(people = [], disadvantagedPerson = "", aiItems = {}) {
   const disadvantagedKey = normalizeWhitespace(disadvantagedPerson).toLowerCase();
   const entries = (Array.isArray(people) ? people : [])
     .map((item) => {
@@ -704,9 +704,17 @@ function buildImpactRanking(people = [], disadvantagedPerson = "") {
         return null;
       }
 
+      const nameKey = name.toLowerCase();
+      const ai = aiItems[nameKey] || {};
+      const isDisadvantaged = nameKey === disadvantagedKey;
+      const count = typeof ai.count === "number" ? ai.count : (isDisadvantaged ? 1 : 0);
+      const items = Array.isArray(ai.items) ? ai.items.filter((s) => typeof s === "string" && s.trim()) : [];
+
       return {
         name,
-        impact: name.toLowerCase() === disadvantagedKey ? "benachteiligt" : "neutral"
+        impact: (count > 0 || isDisadvantaged) ? "benachteiligt" : "neutral",
+        count,
+        items
       };
     })
     .filter(Boolean);
@@ -806,7 +814,19 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     ? ""
     : computedDisadvantaged;
   const normalizedSenderInstitution = normalizeWhitespace(senderInstitution) || extractSenderInstitution(rawText, correctedAuthor);
-  const normalizedImpactRanking = buildImpactRanking(normalizedPeople, normalizedDisadvantaged);
+  const aiItemsLookup = {};
+  if (Array.isArray(impactRanking)) {
+    impactRanking.forEach((entry) => {
+      const key = normalizeWhitespace(entry?.name || "").toLowerCase();
+      if (key) {
+        aiItemsLookup[key] = {
+          count: typeof entry.count === "number" ? entry.count : undefined,
+          items: Array.isArray(entry.items) ? entry.items : []
+        };
+      }
+    });
+  }
+  const normalizedImpactRanking = buildImpactRanking(normalizedPeople, normalizedDisadvantaged, aiItemsLookup);
   const normalizedImpactAssessment = normalizeWhitespace(impactAssessment) || classifyImpact(rawText, normalizedDisadvantaged);
 
   return {
@@ -870,7 +890,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
   try {
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
-      max_output_tokens: 450,
+      max_output_tokens: 900,
       input: [
         {
           role: "user",
@@ -878,9 +898,9 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             {
               type: "input_text",
               text: [
-                "Analysiere dieses Dokument und extrahiere strukturierte Fakten.",
+                "Du bist ein forensischer Dokumentanalyst. Untersuche den Text auf sprachliche Benachteiligung, Diskriminierung und ungleiche Behandlung von Personen.",
                 "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
-                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":""}],"message":""}',
+                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":"","count":0,"items":[""]}],"message":""}',
                 "Regeln:",
                 "- title = kurzer Dokumenttitel aus dem Inhalt, nicht der Dateiname und nicht nur ein Personenname.",
                 "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
@@ -889,10 +909,12 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
                 "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
-                "- disadvantagedPerson = Name der benachteiligten Person, falls erkennbar.",
+                "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
                 "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt (z. B. KESB Leimental).",
                 "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
-                "- impactRanking = sortierte Liste von Personen {name, impact}, benachteiligte Person zuerst.",
+                "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
+                "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen oder diskriminieren; 0 wenn neutral.",
+                "- items = Array kurzer Textzitate (max. 75 Zeichen je Eintrag) als direkte Belege für die Benachteiligung; [] wenn neutral.",
                 "- message = kurzer Hinweis, falls etwas unklar ist.",
                 "- Wenn etwas fehlt, leeres Feld verwenden.",
                 "Dokumenttext:",
@@ -972,7 +994,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
   try {
     const response = await client.responses.create({
       model: "gpt-4.1-mini",
-      max_output_tokens: 450,
+      max_output_tokens: 900,
       input: [
         {
           role: "user",
@@ -980,9 +1002,9 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
             {
               type: "input_text",
               text: [
-                "Analysiere dieses Dokumentbild und extrahiere strukturierte Fakten.",
+                "Du bist ein forensischer Dokumentanalyst. Untersuche das Dokumentbild auf sprachliche Benachteiligung, Diskriminierung und ungleiche Behandlung von Personen.",
                 "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
-                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":""}],"message":""}',
+                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":"","count":0,"items":[""]}],"message":""}',
                 "Regeln:",
                 "- title = kurzer sichtbarer Dokumenttitel, kein reiner Personenname.",
                 "- author = sichtbarer Verfasser/Absender aus Briefkopf oder Unterschrift.",
@@ -991,10 +1013,12 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
                 "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten, wenn sichtbar.",
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte oder Satzfragmente enthalten.",
-                "- disadvantagedPerson = Name der benachteiligten Person, falls erkennbar.",
+                "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
                 "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt.",
                 "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
-                "- impactRanking = sortierte Liste von Personen {name, impact}, benachteiligte Person zuerst.",
+                "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
+                "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen; 0 wenn neutral.",
+                "- items = Array kurzer Textzitate (max. 75 Zeichen je Eintrag) als Belege für die Benachteiligung; [] wenn neutral.",
                 "- message = kurzer Hinweis, wenn etwas nicht sicher lesbar ist.",
                 "- Wenn nichts erkennbar ist, Felder leer lassen."
               ].join("\n")
