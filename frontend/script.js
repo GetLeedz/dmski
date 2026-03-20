@@ -6,6 +6,7 @@ const passwordInput = document.getElementById("password");
 const togglePasswordButton = document.getElementById("togglePassword");
 const emailInput = document.getElementById("email");
 const rememberInput = document.getElementById("remember");
+const copyrightYearEl = document.getElementById("copyrightYear");
 
 // Password policy: min 10 chars, 1 uppercase, 1 number, 1 special char
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{10,}$/;
@@ -54,7 +55,7 @@ async function storeBrowserCredential(email, password) {
 
 async function startPasskeyLogin() {
   if (!window.PublicKeyCredential || !navigator.credentials?.get) {
-    setMessage("Passkey wird von diesem Browser nicht unterstuetzt.", "error");
+    setMessage("Passkey wird von diesem Browser nicht unterstützt.", "error");
     return;
   }
 
@@ -75,7 +76,7 @@ async function startPasskeyLogin() {
 
     setMessage("Passkey-Flow bereit. Browser startet Authentifizierung.", "success");
   } catch {
-    setMessage("Passkey-Anmeldung aktuell nicht verfuegbar.", "error");
+    setMessage("Passkey-Anmeldung aktuell nicht verfügbar.", "error");
   } finally {
     passkeyButton.disabled = false;
   }
@@ -90,6 +91,9 @@ function setMessage(text, type) {
 restoreRememberedEmail();
 togglePasswordButton.addEventListener("click", togglePasswordVisibility);
 passkeyButton.addEventListener("click", startPasskeyLogin);
+if (copyrightYearEl) {
+  copyrightYearEl.textContent = String(new Date().getFullYear());
+}
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();

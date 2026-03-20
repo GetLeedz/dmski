@@ -24,9 +24,14 @@ const tabUpload = document.getElementById("tabUpload");
 const tabList = document.getElementById("tabList");
 const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const fileTypeFilter = document.getElementById("fileTypeFilter");
+const dateFromFilter = document.getElementById("dateFromFilter");
+const dateToFilter = document.getElementById("dateToFilter");
+const copyrightYearEl = document.getElementById("copyrightYear");
 
 let currentCaseId = "";
 let pendingFiles = [];
+let allFiles = [];
 
 function todayIsoDate() {
   const now = new Date();
@@ -51,7 +56,7 @@ function setWorkspaceEnabled(enabled) {
   uploadBtn.disabled = !enabled || pendingFiles.length === 0;
   workspaceHint.textContent = enabled
     ? `Aktiver Fall: ${currentCaseId}. Du kannst zwischen Upload und Dateiliste wechseln.`
-    : "Zuerst Dossier eroeffnen, danach Upload oder Dateiliste nutzen.";
+    : "Zuerst Dossier eröffnen, danach Upload oder Dateiliste nutzen.";
 }
 
 function switchTab(target) {
@@ -108,12 +113,92 @@ function compactDocId(id) {
   return `${value.slice(0, 8)}...`;
 }
 
+function filterFiles(files) {
+  const type = String(fileTypeFilter.value || "all").toLowerCase();
+  const fromDate = dateFromFilter.value ? new Date(`${dateFromFilter.value}T00:00:00`) : null;
+  const toDate = dateToFilter.value ? new Date(`${dateToFilter.value}T23:59:59`) : null;
+
+  return files.filter((file) => {
+    const fileType = resolveFileType(file).className;
+    const uploadedAt = new Date(file.uploaded_at);
+
+    if (type !== "all" && fileType !== type) {
+      return false;
+    }
+
+    if (fromDate && uploadedAt < fromDate) {
+      return false;
+    }
+
+    if (toDate && uploadedAt > toDate) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+async function downloadFile(fileId) {
+  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/download`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!response.ok) {
+    let errorText = "Datei konnte nicht heruntergeladen werden.";
+    try {
+      const json = await response.json();
+      if (json.error) {
+        errorText = json.error;
+      }
+    } catch {
+      // Ignore parse errors on non-JSON responses.
+    }
+    setMessage(uploadMessage, errorText, "error");
+    return;
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+
+  const disposition = response.headers.get("content-disposition") || "";
+  const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+  link.download = match ? decodeURIComponent(match[1]) : `download-${fileId}`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function deleteFile(fileId) {
+  const confirmDelete = window.confirm("Datei wirklich löschen?");
+  if (!confirmDelete) {
+    return;
+  }
+
+  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    setMessage(uploadMessage, payload.error || "Datei konnte nicht gelöscht werden.", "error");
+    return;
+  }
+
+  setMessage(uploadMessage, "Datei erfolgreich gelöscht.", "success");
+  await loadFiles();
+}
+
 function renderFiles(files) {
   filesTableBody.innerHTML = "";
 
   if (!files || files.length === 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="5">Noch keine Dateien fuer diesen Fall vorhanden.</td>`;
+    tr.innerHTML = "<td colspan=\"6\">Keine Dateien für die gewählten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
     return;
   }
@@ -127,6 +212,10 @@ function renderFiles(files) {
       <td>${file.original_name}</td>
       <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
       <td>${Math.round(file.size_bytes / 1024)}</td>
+      <td class="actions-cell">
+        <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
+        <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
+      </td>
     `;
     filesTableBody.appendChild(tr);
   }
@@ -140,8 +229,12 @@ async function loadFiles() {
   });
   const data = await res.json();
   if (res.ok) {
-    renderFiles(data.files || []);
+    allFiles = data.files || [];
+    renderFiles(filterFiles(allFiles));
+    return;
   }
+
+  setMessage(uploadMessage, data.error || "Dateiliste konnte nicht geladen werden.", "error");
 }
 
 caseForm.addEventListener("submit", async (event) => {
@@ -198,9 +291,10 @@ caseForm.addEventListener("submit", async (event) => {
 
   currentCaseId = created.id;
   caseIdInput.value = created.id;
-  setMessage(caseMessage, `Fall ${created.id} erstellt. Dateien koennen hochgeladen werden.`, "success");
+  setMessage(caseMessage, `Fall ${created.id} erstellt. Dateien können hochgeladen werden.`, "success");
   setMessage(uploadMessage, "", null);
   pendingFiles = [];
+  allFiles = [];
   setWorkspaceEnabled(true);
   switchTab("upload");
   createCaseBtn.disabled = false;
@@ -243,7 +337,7 @@ uploadBtn.addEventListener("click", async () => {
   }
 
   if (pendingFiles.length === 0) {
-    setMessage(uploadMessage, "Keine Dateien ausgewaehlt.", "error");
+    setMessage(uploadMessage, "Keine Dateien ausgewählt.", "error");
     return;
   }
 
@@ -280,11 +374,40 @@ tabList.addEventListener("click", async () => {
   await loadFiles();
 });
 
+filesTableBody.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const action = target.dataset.action;
+  const fileId = target.dataset.id;
+  if (!action || !fileId) {
+    return;
+  }
+
+  if (action === "download") {
+    await downloadFile(fileId);
+    return;
+  }
+
+  if (action === "delete") {
+    await deleteFile(fileId);
+  }
+});
+
+for (const element of [fileTypeFilter, dateFromFilter, dateToFilter]) {
+  element.addEventListener("change", () => {
+    renderFiles(filterFiles(allFiles));
+  });
+}
+
 logoutBtn.addEventListener("click", () => {
   sessionStorage.removeItem("token");
   window.location.href = "/";
 });
 
+copyrightYearEl.textContent = String(new Date().getFullYear());
 resetAutoFields();
 setWorkspaceEnabled(false);
 switchTab("upload");

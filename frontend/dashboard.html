@@ -31,14 +31,14 @@
           Name
           <input id="caseName" name="caseName" type="text" placeholder="Fallname / Mandat" required />
         </label>
-        <button id="createCaseBtn" type="submit">Dossier eroeffnen</button>
+        <button id="createCaseBtn" type="submit">Dossier eröffnen</button>
       </form>
       <p id="caseMessage" class="message"></p>
     </section>
 
     <section class="card" id="workspaceSection">
       <h2>Fall-Workspace</h2>
-      <p id="workspaceHint" class="hint">Zuerst Dossier eroeffnen, danach Upload oder Dateiliste nutzen.</p>
+      <p id="workspaceHint" class="hint">Zuerst Dossier eröffnen, danach Upload oder Dateiliste nutzen.</p>
 
       <div id="workspaceControls" class="tabs disabled">
         <button id="tabUpload" class="tab active" type="button">Upload</button>
@@ -46,10 +46,10 @@
       </div>
 
       <div id="panelUpload" class="panel">
-        <p>Erlaubte Formate: PDF, JPG, JPEG, PNG. Mehrere Dateien gleichzeitig moeglich.</p>
+        <p>Erlaubte Formate: PDF, JPG, JPEG, PNG. Mehrere Dateien gleichzeitig möglich.</p>
 
         <div id="dropzone" class="dropzone" tabindex="0">
-          Dateien hier hineinziehen oder klicken, um Dateien auszuwaehlen.
+          Dateien hier hineinziehen oder klicken, um Dateien auszuwählen.
           <input id="fileInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden />
         </div>
 
@@ -59,6 +59,29 @@
 
       <div id="panelList" class="panel hidden">
         <h3>Dateiliste (nach Upload-Datum)</h3>
+
+        <div class="filter-row">
+          <label>
+            Dateityp
+            <select id="fileTypeFilter">
+              <option value="all">Alle</option>
+              <option value="pdf">PDF</option>
+              <option value="png">PNG</option>
+              <option value="jpg">JPG/JPEG</option>
+            </select>
+          </label>
+
+          <label>
+            Hochgeladen ab
+            <input id="dateFromFilter" type="date" />
+          </label>
+
+          <label>
+            Hochgeladen bis
+            <input id="dateToFilter" type="date" />
+          </label>
+        </div>
+
         <table>
           <thead>
             <tr>
@@ -66,13 +89,16 @@
               <th>Timestamp</th>
               <th>Dateiname</th>
               <th>Icon</th>
-              <th>Groesse (KB)</th>
+              <th>Größe (KB)</th>
+              <th>Aktionen</th>
             </tr>
           </thead>
           <tbody id="filesTableBody"></tbody>
         </table>
       </div>
     </section>
+
+    <footer class="dashboard-footer">Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</footer>
   </main>
 
   <script src="dashboard.js"></script>

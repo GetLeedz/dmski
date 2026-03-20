@@ -146,6 +146,22 @@ button:disabled {
   display: none;
 }
 
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0.4rem 0 0.7rem;
+}
+
+.filter-row label {
+  font-size: 0.9rem;
+}
+
+.filter-row select,
+.filter-row input {
+  margin-top: 0.35rem;
+}
+
 .message {
   min-height: 1.3rem;
   margin: 0.6rem 0 0;
@@ -211,8 +227,44 @@ td {
   color: #3f5963;
 }
 
+.actions-cell {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.btn-inline {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.3rem 0.52rem;
+  font-size: 0.8rem;
+  background: #f8fbfc;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn-inline.download {
+  border-color: #b6d3d8;
+}
+
+.btn-inline.delete {
+  border-color: #efc1ba;
+  color: #9c3528;
+}
+
+.dashboard-footer {
+  text-align: center;
+  color: #4d646e;
+  font-size: 0.82rem;
+  margin: 0.2rem 0 1rem;
+}
+
 @media (max-width: 700px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-row {
     grid-template-columns: 1fr;
   }
 

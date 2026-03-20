@@ -135,7 +135,7 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
 router.get("/:caseId/files", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
 
   try {
@@ -148,6 +148,70 @@ router.get("/:caseId/files", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("List files error:", err.message);
     return res.status(500).json({ error: "Dateiliste konnte nicht geladen werden." });
+  }
+});
+
+router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  const fileId = String(req.params.fileId || "").trim();
+
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT id, original_name, stored_name FROM case_documents WHERE case_id = $1 AND id = $2 LIMIT 1",
+      [caseId, fileId]
+    );
+
+    const file = result.rows[0];
+    if (!file) {
+      return res.status(404).json({ error: "Datei nicht gefunden." });
+    }
+
+    const absolutePath = path.join(uploadDir, file.stored_name);
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ error: "Datei fehlt im Speicher." });
+    }
+
+    return res.download(absolutePath, file.original_name);
+  } catch (err) {
+    console.error("Download file error:", err.message);
+    return res.status(500).json({ error: "Datei konnte nicht heruntergeladen werden." });
+  }
+});
+
+router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  const fileId = String(req.params.fileId || "").trim();
+
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
+  }
+
+  try {
+    const existing = await pool.query(
+      "SELECT id, stored_name FROM case_documents WHERE case_id = $1 AND id = $2 LIMIT 1",
+      [caseId, fileId]
+    );
+
+    const file = existing.rows[0];
+    if (!file) {
+      return res.status(404).json({ error: "Datei nicht gefunden." });
+    }
+
+    await pool.query("DELETE FROM case_documents WHERE case_id = $1 AND id = $2", [caseId, fileId]);
+
+    const absolutePath = path.join(uploadDir, file.stored_name);
+    if (fs.existsSync(absolutePath)) {
+      await fs.promises.unlink(absolutePath);
+    }
+
+    return res.json({ ok: true, id: fileId });
+  } catch (err) {
+    console.error("Delete file error:", err.message);
+    return res.status(500).json({ error: "Datei konnte nicht gelöscht werden." });
   }
 });
 
