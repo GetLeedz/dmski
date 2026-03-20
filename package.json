@@ -1,0 +1,12 @@
+{
+  "name": "dmski-site",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Root package for Railway Node detection",
+  "scripts": {
+    "start": "npm --prefix backend start"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
