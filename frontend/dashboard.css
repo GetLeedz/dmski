@@ -330,6 +330,12 @@ button:disabled {
   margin-top: 0.35rem;
 }
 
+.filter-btn {
+  align-self: flex-end;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+}
+
 .message {
   min-height: 1.3rem;
   margin: 0.6rem 0 0;
@@ -424,9 +430,7 @@ td {
   font-size: 0.95rem;
 }
 
-.timestamp-cell {
-  line-height: 1.4;
-}
+
 
 .doc-id {
   font-size: 0.95rem;
@@ -507,19 +511,26 @@ td {
 }
 
 .preview-cell {
-  width: 30rem;
+  width: 58rem;
   cursor: zoom-in;
 }
 
+.preview-timestamp {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: #5f7780;
+  font-weight: 500;
+}
+
 .row-preview-box {
-  width: 28rem;
-  height: 20rem;
+  width: 56rem;
+  height: 40rem;
 }
 
 .row-preview-loading,
 .row-preview-empty {
-  width: 28rem;
-  height: 20rem;
+  width: 56rem;
+  height: 40rem;
   border: 1px dashed #cbdadd;
   border-radius: 10px;
   background: #f8fbfc;
@@ -532,8 +543,8 @@ td {
 
 .row-preview-image,
 .row-preview-frame {
-  width: 28rem;
-  height: 20rem;
+  width: 56rem;
+  height: 40rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;
