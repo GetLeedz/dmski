@@ -403,9 +403,64 @@ td {
   border-color: #b6d3d8;
 }
 
+.btn-inline.preview {
+  border-color: #c6cbe9;
+  color: #33438a;
+}
+
 .btn-inline.delete {
   border-color: #efc1ba;
   color: #9c3528;
+}
+
+.preview-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.preview-header h2 {
+  margin: 0;
+}
+
+.preview-panel {
+  min-height: 28rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f8fbfc;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.preview-panel.empty {
+  background: linear-gradient(180deg, #fbfeff, #f2f8fa);
+}
+
+.preview-placeholder,
+.preview-loading {
+  color: #55707b;
+  font-size: 0.96rem;
+}
+
+.preview-image,
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 28rem;
+  border: 0;
+  display: block;
+}
+
+.preview-image {
+  object-fit: contain;
+  background: #fff;
 }
 
 .dashboard-footer {
@@ -442,6 +497,11 @@ td {
 
   .filter-row {
     grid-template-columns: 1fr;
+  }
+
+  .preview-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   th,

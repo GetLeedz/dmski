@@ -179,6 +179,39 @@ router.get("/:caseId/files", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/:caseId/files/:fileId/preview", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  const fileId = String(req.params.fileId || "").trim();
+
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT id, original_name, stored_name, mime_type FROM case_documents WHERE case_id = $1 AND id = $2 LIMIT 1",
+      [caseId, fileId]
+    );
+
+    const file = result.rows[0];
+    if (!file) {
+      return res.status(404).json({ error: "Datei nicht gefunden." });
+    }
+
+    const absolutePath = path.join(uploadDir, file.stored_name);
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ error: "Datei fehlt im Speicher." });
+    }
+
+    res.setHeader("Content-Type", file.mime_type || "application/octet-stream");
+    res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(file.original_name)}`);
+    return res.sendFile(absolutePath);
+  } catch (err) {
+    console.error("Preview file error:", err.message);
+    return res.status(500).json({ error: "Dateivorschau konnte nicht geladen werden." });
+  }
+});
+
 router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();

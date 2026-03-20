@@ -17,12 +17,15 @@ const listTitle = document.getElementById("listTitle");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const listMessage = document.getElementById("listMessage");
+const previewPanel = document.getElementById("previewPanel");
+const previewMeta = document.getElementById("previewMeta");
 const goToUploadBtn = document.getElementById("goToUploadBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const copyrightYearEl = document.getElementById("copyrightYear");
 
 let allFiles = [];
+let currentPreviewUrl = null;
 
 listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
 
@@ -108,6 +111,52 @@ function filterFiles(files) {
   });
 }
 
+function revokePreviewUrl() {
+  if (currentPreviewUrl) {
+    URL.revokeObjectURL(currentPreviewUrl);
+    currentPreviewUrl = null;
+  }
+}
+
+function resetPreview(message = "Wähle ein Dokument aus der Liste.") {
+  revokePreviewUrl();
+  previewMeta.textContent = message;
+  previewPanel.classList.add("empty");
+  previewPanel.innerHTML = '<p class="preview-placeholder">PDF und Bilder werden hier direkt angezeigt.</p>';
+}
+
+async function previewFile(file) {
+  const fileType = resolveFileType(file);
+  if (!["pdf", "png", "jpg"].includes(fileType.className)) {
+    resetPreview("Für diesen Dateityp ist keine Vorschau verfügbar.");
+    return;
+  }
+
+  previewPanel.classList.remove("empty");
+  previewPanel.innerHTML = '<div class="preview-loading">Vorschau wird geladen...</div>';
+  previewMeta.textContent = `${decodeUtf8Safe(file.original_name)} · ${formatDate(file.uploaded_at)}`;
+  revokePreviewUrl();
+
+  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!response.ok) {
+    resetPreview("Vorschau konnte nicht geladen werden.");
+    return;
+  }
+
+  const blob = await response.blob();
+  currentPreviewUrl = URL.createObjectURL(blob);
+
+  if (fileType.className === "pdf") {
+    previewPanel.innerHTML = `<iframe class="preview-frame" src="${currentPreviewUrl}" title="PDF Vorschau"></iframe>`;
+    return;
+  }
+
+  previewPanel.innerHTML = `<img class="preview-image" src="${currentPreviewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
+}
+
 function renderFiles(files) {
   filesTableBody.innerHTML = "";
 
@@ -115,6 +164,7 @@ function renderFiles(files) {
     const tr = document.createElement("tr");
     tr.innerHTML = "<td colspan=\"6\">Keine Dateien für die gewählten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
+    resetPreview("Keine Dateien für die aktuelle Auswahl.");
     return;
   }
 
@@ -129,12 +179,15 @@ function renderFiles(files) {
       <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
       <td>${formatSizeKB(file.size_bytes)}</td>
       <td class="actions-cell">
+        <button type="button" class="btn-inline preview" data-action="preview" data-id="${file.id}">Vorschau</button>
         <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
         <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
       </td>
     `;
     filesTableBody.appendChild(tr);
   }
+
+  void previewFile(files[0]);
 }
 
 async function loadFiles() {
@@ -214,6 +267,14 @@ filesTableBody.addEventListener("click", async (event) => {
     return;
   }
 
+  if (action === "preview") {
+    const file = allFiles.find((item) => item.id === fileId);
+    if (file) {
+      await previewFile(file);
+    }
+    return;
+  }
+
   if (action === "delete") {
     await deleteFile(fileId);
   }
@@ -237,6 +298,10 @@ logoutBtn.addEventListener("click", () => {
   sessionStorage.removeItem("token");
   sessionStorage.removeItem("currentCaseId");
   window.location.href = "/";
+});
+
+window.addEventListener("beforeunload", () => {
+  revokePreviewUrl();
 });
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
