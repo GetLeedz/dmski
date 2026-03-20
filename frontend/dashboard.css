@@ -343,6 +343,34 @@ button:disabled {
   color: var(--ok);
 }
 
+.undo-bar {
+  margin-top: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #b9d5da;
+  border-radius: 10px;
+  background: #eef8fa;
+  color: #2f4f59;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.undo-bar.hidden {
+  display: none;
+}
+
+.undo-btn {
+  border: 1px solid #86bfc8;
+  border-radius: 8px;
+  background: #fff;
+  color: #155f6a;
+  padding: 0.32rem 0.56rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

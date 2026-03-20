@@ -17,6 +17,7 @@ const listTitle = document.getElementById("listTitle");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const listMessage = document.getElementById("listMessage");
+const undoBar = document.getElementById("undoBar");
 const previewModal = document.getElementById("previewModal");
 const previewModalTitle = document.getElementById("previewModalTitle");
 const previewModalViewport = document.getElementById("previewModalViewport");
@@ -34,6 +35,7 @@ let allFiles = [];
 const previewUrlCache = new Map();
 const previewPromiseCache = new Map();
 let modalZoom = 1;
+let pendingDelete = null;
 
 listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
 
@@ -279,6 +281,74 @@ function renderFiles(files) {
   }
 }
 
+function hideUndoBar() {
+  undoBar.classList.add("hidden");
+  undoBar.textContent = "";
+}
+
+function showUndoBar(fileName) {
+  undoBar.classList.remove("hidden");
+  undoBar.innerHTML = `
+    <span>${decodeUtf8Safe(fileName)} wurde entfernt. Rückgängig möglich (5s).</span>
+    <button id="undoDeleteBtn" type="button" class="undo-btn">Rückgängig</button>
+  `;
+
+  const undoBtn = document.getElementById("undoDeleteBtn");
+  undoBtn?.addEventListener("click", () => {
+    if (!pendingDelete) {
+      hideUndoBar();
+      return;
+    }
+
+    clearTimeout(pendingDelete.timerId);
+    allFiles = [pendingDelete.file, ...allFiles];
+    allFiles.sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
+    renderFiles(filterFiles(allFiles));
+    setMessage(listMessage, "Löschen rückgängig gemacht.", "success");
+    pendingDelete = null;
+    hideUndoBar();
+  });
+}
+
+async function commitDelete(fileId) {
+  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || "Datei konnte nicht gelöscht werden.");
+  }
+}
+
+async function flushPendingDelete() {
+  if (!pendingDelete) {
+    return;
+  }
+
+  const snapshot = pendingDelete;
+  pendingDelete = null;
+  hideUndoBar();
+
+  try {
+    await commitDelete(snapshot.file.id);
+
+    const cachedUrl = previewUrlCache.get(snapshot.file.id);
+    if (cachedUrl) {
+      URL.revokeObjectURL(cachedUrl);
+      previewUrlCache.delete(snapshot.file.id);
+    }
+    previewPromiseCache.delete(snapshot.file.id);
+    setMessage(listMessage, "Datei endgültig gelöscht.", "success");
+  } catch (error) {
+    allFiles = [snapshot.file, ...allFiles];
+    allFiles.sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
+    renderFiles(filterFiles(allFiles));
+    setMessage(listMessage, error.message || "Datei konnte nicht gelöscht werden.", "error");
+  }
+}
+
 async function loadFiles() {
   const res = await fetch(`${API_BASE}/cases/${currentCaseId}/files`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -319,36 +389,31 @@ async function downloadFile(fileId) {
 }
 
 async function deleteFile(fileId, triggerButton) {
+  if (pendingDelete) {
+    clearTimeout(pendingDelete.timerId);
+    await flushPendingDelete();
+  }
+
+  const file = allFiles.find((entry) => entry.id === fileId);
+  if (!file) {
+    return;
+  }
+
   if (triggerButton instanceof HTMLButtonElement) {
     triggerButton.disabled = true;
     triggerButton.textContent = "Lösche...";
   }
 
-  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    if (triggerButton instanceof HTMLButtonElement) {
-      triggerButton.disabled = false;
-      triggerButton.textContent = "Löschen";
-    }
-    setMessage(listMessage, payload.error || "Datei konnte nicht gelöscht werden.", "error");
-    return;
-  }
-
-  const cachedUrl = previewUrlCache.get(fileId);
-  if (cachedUrl) {
-    URL.revokeObjectURL(cachedUrl);
-    previewUrlCache.delete(fileId);
-  }
-  previewPromiseCache.delete(fileId);
-
   allFiles = allFiles.filter((file) => file.id !== fileId);
   renderFiles(filterFiles(allFiles));
-  setMessage(listMessage, "Datei erfolgreich gelöscht.", "success");
+
+  const timerId = window.setTimeout(() => {
+    void flushPendingDelete();
+  }, 5000);
+
+  pendingDelete = { file, timerId };
+  showUndoBar(file.original_name);
+  setMessage(listMessage, "Datei entfernt. Rückgängig möglich.", "success");
 }
 
 filesTableBody.addEventListener("click", async (event) => {
@@ -432,6 +497,9 @@ previewModal.addEventListener("click", (event) => {
 });
 
 window.addEventListener("beforeunload", () => {
+  if (pendingDelete) {
+    clearTimeout(pendingDelete.timerId);
+  }
   closePreviewModal();
   revokeAllPreviewUrls();
 });
