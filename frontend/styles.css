@@ -120,6 +120,12 @@ body {
   margin-bottom: 1.4rem;
 }
 
+.brand-home-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .brand-block h1 {
   margin: 0;
   font-family: "DM Serif Display", serif;
