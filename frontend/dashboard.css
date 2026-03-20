@@ -403,64 +403,41 @@ td {
   border-color: #b6d3d8;
 }
 
-.btn-inline.preview {
-  border-color: #c6cbe9;
-  color: #33438a;
-}
-
 .btn-inline.delete {
   border-color: #efc1ba;
   color: #9c3528;
 }
 
-.preview-card {
-  display: grid;
-  gap: 0.9rem;
+.preview-cell {
+  width: 8rem;
 }
 
-.preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
-}
-
-.preview-header h2 {
-  margin: 0;
-}
-
-.preview-panel {
-  min-height: 28rem;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+.row-preview-loading,
+.row-preview-empty {
+  width: 7rem;
+  height: 5rem;
+  border: 1px dashed #cbdadd;
+  border-radius: 10px;
   background: #f8fbfc;
-  overflow: hidden;
+  color: #5f7780;
   display: grid;
   place-items: center;
+  font-size: 0.78rem;
+  text-align: center;
 }
 
-.preview-panel.empty {
-  background: linear-gradient(180deg, #fbfeff, #f2f8fa);
-}
-
-.preview-placeholder,
-.preview-loading {
-  color: #55707b;
-  font-size: 0.96rem;
-}
-
-.preview-image,
-.preview-frame {
-  width: 100%;
-  height: 100%;
-  min-height: 28rem;
-  border: 0;
+.row-preview-image,
+.row-preview-frame {
+  width: 7rem;
+  height: 5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
   display: block;
 }
 
-.preview-image {
-  object-fit: contain;
-  background: #fff;
+.row-preview-image {
+  object-fit: cover;
 }
 
 .dashboard-footer {
@@ -507,5 +484,13 @@ td {
   th,
   td {
     font-size: 0.86rem;
+  }
+
+  .row-preview-loading,
+  .row-preview-empty,
+  .row-preview-image,
+  .row-preview-frame {
+    width: 5.6rem;
+    height: 4rem;
   }
 }

@@ -17,15 +17,14 @@ const listTitle = document.getElementById("listTitle");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const listMessage = document.getElementById("listMessage");
-const previewPanel = document.getElementById("previewPanel");
-const previewMeta = document.getElementById("previewMeta");
 const goToUploadBtn = document.getElementById("goToUploadBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const copyrightYearEl = document.getElementById("copyrightYear");
 
 let allFiles = [];
-let currentPreviewUrl = null;
+const previewUrlCache = new Map();
+const previewPromiseCache = new Map();
 
 listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
 
@@ -111,50 +110,72 @@ function filterFiles(files) {
   });
 }
 
-function revokePreviewUrl() {
-  if (currentPreviewUrl) {
-    URL.revokeObjectURL(currentPreviewUrl);
-    currentPreviewUrl = null;
+function revokeAllPreviewUrls() {
+  for (const url of previewUrlCache.values()) {
+    URL.revokeObjectURL(url);
   }
+  previewUrlCache.clear();
+  previewPromiseCache.clear();
 }
 
-function resetPreview(message = "Wähle ein Dokument aus der Liste.") {
-  revokePreviewUrl();
-  previewMeta.textContent = message;
-  previewPanel.classList.add("empty");
-  previewPanel.innerHTML = '<p class="preview-placeholder">PDF und Bilder werden hier direkt angezeigt.</p>';
-}
-
-async function previewFile(file) {
+async function getPreviewUrl(file) {
   const fileType = resolveFileType(file);
   if (!["pdf", "png", "jpg"].includes(fileType.className)) {
-    resetPreview("Für diesen Dateityp ist keine Vorschau verfügbar.");
-    return;
+    return null;
   }
 
-  previewPanel.classList.remove("empty");
-  previewPanel.innerHTML = '<div class="preview-loading">Vorschau wird geladen...</div>';
-  previewMeta.textContent = `${decodeUtf8Safe(file.original_name)} · ${formatDate(file.uploaded_at)}`;
-  revokePreviewUrl();
+  if (previewUrlCache.has(file.id)) {
+    return previewUrlCache.get(file.id);
+  }
 
-  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
+  if (previewPromiseCache.has(file.id)) {
+    return previewPromiseCache.get(file.id);
+  }
+
+  const promise = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 
+  previewPromiseCache.set(file.id, promise);
+
+  const response = await promise;
+  previewPromiseCache.delete(file.id);
+
   if (!response.ok) {
-    resetPreview("Vorschau konnte nicht geladen werden.");
-    return;
+    return null;
   }
 
   const blob = await response.blob();
-  currentPreviewUrl = URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(blob);
+  previewUrlCache.set(file.id, objectUrl);
+  return objectUrl;
+}
 
-  if (fileType.className === "pdf") {
-    previewPanel.innerHTML = `<iframe class="preview-frame" src="${currentPreviewUrl}" title="PDF Vorschau"></iframe>`;
+async function loadRowPreview(file) {
+  const cell = filesTableBody.querySelector(`.preview-cell[data-file-id="${file.id}"]`);
+  if (!(cell instanceof HTMLElement)) {
     return;
   }
 
-  previewPanel.innerHTML = `<img class="preview-image" src="${currentPreviewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
+  const fileType = resolveFileType(file);
+  if (!["pdf", "png", "jpg"].includes(fileType.className)) {
+    cell.innerHTML = '<span class="row-preview-empty">Keine Vorschau</span>';
+    return;
+  }
+
+  cell.innerHTML = '<div class="row-preview-loading">Lädt...</div>';
+  const previewUrl = await getPreviewUrl(file);
+  if (!previewUrl) {
+    cell.innerHTML = '<span class="row-preview-empty">Nicht verfügbar</span>';
+    return;
+  }
+
+  if (fileType.className === "pdf") {
+    cell.innerHTML = `<iframe class="row-preview-frame" src="${previewUrl}" title="PDF Vorschau ${decodeUtf8Safe(file.original_name)}"></iframe>`;
+    return;
+  }
+
+  cell.innerHTML = `<img class="row-preview-image" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
 }
 
 function renderFiles(files) {
@@ -162,9 +183,8 @@ function renderFiles(files) {
 
   if (!files || files.length === 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td colspan=\"6\">Keine Dateien für die gewählten Filter gefunden.</td>";
+    tr.innerHTML = "<td colspan=\"7\">Keine Dateien für die gewählten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
-    resetPreview("Keine Dateien für die aktuelle Auswahl.");
     return;
   }
 
@@ -176,10 +196,10 @@ function renderFiles(files) {
       <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
       <td>${formatDate(file.uploaded_at)}</td>
       <td>${displayName}</td>
+      <td class="preview-cell" data-file-id="${file.id}"><div class="row-preview-loading">Lädt...</div></td>
       <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
       <td>${formatSizeKB(file.size_bytes)}</td>
       <td class="actions-cell">
-        <button type="button" class="btn-inline preview" data-action="preview" data-id="${file.id}">Vorschau</button>
         <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
         <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
       </td>
@@ -187,7 +207,9 @@ function renderFiles(files) {
     filesTableBody.appendChild(tr);
   }
 
-  void previewFile(files[0]);
+  for (const file of files) {
+    void loadRowPreview(file);
+  }
 }
 
 async function loadFiles() {
@@ -267,14 +289,6 @@ filesTableBody.addEventListener("click", async (event) => {
     return;
   }
 
-  if (action === "preview") {
-    const file = allFiles.find((item) => item.id === fileId);
-    if (file) {
-      await previewFile(file);
-    }
-    return;
-  }
-
   if (action === "delete") {
     await deleteFile(fileId);
   }
@@ -301,7 +315,7 @@ logoutBtn.addEventListener("click", () => {
 });
 
 window.addEventListener("beforeunload", () => {
-  revokePreviewUrl();
+  revokeAllPreviewUrls();
 });
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
