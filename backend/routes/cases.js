@@ -378,6 +378,7 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
   for (const value of Array.isArray(values) ? values : []) {
     const inputName = typeof value === "string" ? value : value?.name;
     const inputAffiliation = typeof value === "object" && value ? value.affiliation : "";
+    const allowSingleToken = typeof value === "object" && value ? value.allowSingleToken === true : false;
 
     let normalized = normalizeWhitespace(inputName).replace(/[;,]+$/g, "");
     normalized = normalized.replace(/^(Herr|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "");
@@ -391,7 +392,10 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
     }
 
     if (!looksLikePersonName(normalized)) {
-      continue;
+      const singleTokenPattern = /^\p{Lu}[\p{Ll}\p{M}'-]{2,}$/u;
+      if (!(allowSingleToken && singleTokenPattern.test(normalized))) {
+        continue;
+      }
     }
 
     const key = normalized.toLowerCase();
@@ -544,12 +548,64 @@ function extractPeopleFromLabeledFields(rawText, blockedNames = new Set()) {
     return [];
   }
 
-  const values = recipients
+  const capitalizeWord = (word) => {
+    const raw = normalizeWhitespace(word).toLowerCase();
+    if (!raw) {
+      return "";
+    }
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  };
+
+  const parts = recipients
     .split(/[;,]/)
     .map((part) => normalizeWhitespace(part.replace(/<[^>]+>/g, "")))
     .filter(Boolean);
 
-  return normalizePeopleWithBlacklist(values, blockedNames);
+  const candidates = [];
+  for (const part of parts) {
+    const email = extractFirstEmail(part);
+    if (!email) {
+      candidates.push({ name: part, allowSingleToken: false });
+      continue;
+    }
+
+    const local = (email.split("@")[0] || "").toLowerCase();
+    if (local.includes(".")) {
+      const name = local
+        .split(".")
+        .map((token) => capitalizeWord(token.replace(/[^\p{L}'-]/gu, "")))
+        .filter(Boolean)
+        .join(" ");
+
+      if (name) {
+        candidates.push({ name, allowSingleToken: false });
+      }
+    } else {
+      const token = capitalizeWord(local.replace(/[^\p{L}'-]/gu, ""));
+      if (token) {
+        candidates.push({ name: token, allowSingleToken: true });
+      }
+    }
+  }
+
+  return normalizePeopleDetailed(candidates, rawText, blockedNames, "");
+}
+
+function extractPeopleFromSalutation(rawText, blockedNames = new Set()) {
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeWhitespace(line));
+  const candidates = [];
+
+  const salutationRegex = /^Sehr\s+geehrte[rsn]?\s+(?:Frau|Herr)\s+(\p{Lu}[\p{Ll}\p{M}'-]{2,})/iu;
+  for (const line of lines) {
+    const match = line.match(salutationRegex);
+    if (match && match[1]) {
+      candidates.push({ name: match[1], allowSingleToken: true });
+    }
+  }
+
+  return normalizePeopleDetailed(candidates, rawText, blockedNames, "");
 }
 
 function extractDisadvantagedPerson(rawText, people = [], author = "") {
@@ -697,6 +753,7 @@ function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
 
   const people = normalizePeopleDetailed([
     ...extractPeopleFromLabeledFields(rawText, blockedPeople),
+    ...extractPeopleFromSalutation(rawText, blockedPeople),
     ...extractPeopleFromText(rawText, blockedPeople)
   ], rawText, blockedPeople, author);
 
@@ -749,12 +806,7 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     ? ""
     : computedDisadvantaged;
   const normalizedSenderInstitution = normalizeWhitespace(senderInstitution) || extractSenderInstitution(rawText, correctedAuthor);
-  const normalizedImpactRanking = buildImpactRanking(
-    Array.isArray(impactRanking) && impactRanking.length > 0
-      ? impactRanking.map((entry) => entry?.name || "")
-      : normalizedPeople,
-    normalizedDisadvantaged
-  );
+  const normalizedImpactRanking = buildImpactRanking(normalizedPeople, normalizedDisadvantaged);
   const normalizedImpactAssessment = normalizeWhitespace(impactAssessment) || classifyImpact(rawText, normalizedDisadvantaged);
 
   return {
@@ -834,6 +886,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
                 "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
                 "- authoredDate = Datum der Verfassung im Schweizer Format DD.MM.YYYY.",
                 "- people = alle relevanten Personennamen OHNE Verfasser, als Array von Objekten {name, affiliation}.",
+                "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
                 "- disadvantagedPerson = Name der benachteiligten Person, falls erkennbar.",
@@ -935,6 +988,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
                 "- author = sichtbarer Verfasser/Absender aus Briefkopf oder Unterschrift.",
                 "- authoredDate = sichtbares Verfassungsdatum im Schweizer Format DD.MM.YYYY.",
                 "- people = alle erkennbaren Personennamen OHNE Verfasser als Objekte {name, affiliation}.",
+                "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten, wenn sichtbar.",
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte oder Satzfragmente enthalten.",
                 "- disadvantagedPerson = Name der benachteiligten Person, falls erkennbar.",

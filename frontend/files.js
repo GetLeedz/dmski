@@ -406,11 +406,29 @@ async function loadRowAnalysis(file) {
     </div>`;
   const analysis = await getDocumentAnalysis(file);
 
+  const toDisplayName = (value) => {
+    if (typeof value === "string") {
+      return normalizeTitleText(value);
+    }
+    if (value && typeof value === "object") {
+      if (typeof value.name === "string") {
+        return normalizeTitleText(value.name);
+      }
+      if (typeof value.fullName === "string") {
+        return normalizeTitleText(value.fullName);
+      }
+      const first = typeof value.firstName === "string" ? normalizeTitleText(value.firstName) : "";
+      const last = typeof value.lastName === "string" ? normalizeTitleText(value.lastName) : "";
+      return normalizeTitleText(`${first} ${last}`);
+    }
+    return "";
+  };
+
   const people = Array.isArray(analysis.people)
     ? analysis.people
       .map((entry) => (typeof entry === "string"
-        ? { name: normalizeTitleText(entry), affiliation: "Privatperson" }
-        : { name: normalizeTitleText(entry?.name), affiliation: normalizeTitleText(entry?.affiliation || "Privatperson") }))
+        ? { name: toDisplayName(entry), affiliation: "Privatperson" }
+        : { name: toDisplayName(entry), affiliation: normalizeTitleText(entry?.affiliation || "Privatperson") }))
       .filter((entry) => entry.name)
     : [];
 
