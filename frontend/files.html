@@ -62,6 +62,23 @@
       <p id="listMessage" class="message"></p>
     </section>
 
+    <div id="previewModal" class="preview-modal hidden" aria-hidden="true">
+      <div class="preview-modal-backdrop" data-close-preview="true"></div>
+      <div class="preview-modal-dialog" role="dialog" aria-modal="true" aria-label="Dokument Vorschau">
+        <div class="preview-modal-top">
+          <p id="previewModalTitle" class="preview-modal-title">Dokument Vorschau</p>
+          <div class="preview-modal-actions">
+            <button id="zoomOutBtn" type="button" class="ghost">-</button>
+            <span id="zoomLevel" class="zoom-level">100%</span>
+            <button id="zoomInBtn" type="button" class="ghost">+</button>
+            <button id="zoomResetBtn" type="button" class="ghost">Reset</button>
+            <button id="closePreviewBtn" type="button" class="ghost">Schliessen</button>
+          </div>
+        </div>
+        <div id="previewModalViewport" class="preview-modal-viewport"></div>
+      </div>
+    </div>
+
     <footer class="dashboard-footer">Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</footer>
   </main>
 

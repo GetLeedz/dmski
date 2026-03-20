@@ -17,6 +17,14 @@ const listTitle = document.getElementById("listTitle");
 const fileTypeFilter = document.getElementById("fileTypeFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const listMessage = document.getElementById("listMessage");
+const previewModal = document.getElementById("previewModal");
+const previewModalTitle = document.getElementById("previewModalTitle");
+const previewModalViewport = document.getElementById("previewModalViewport");
+const zoomOutBtn = document.getElementById("zoomOutBtn");
+const zoomInBtn = document.getElementById("zoomInBtn");
+const zoomResetBtn = document.getElementById("zoomResetBtn");
+const zoomLevel = document.getElementById("zoomLevel");
+const closePreviewBtn = document.getElementById("closePreviewBtn");
 const goToUploadBtn = document.getElementById("goToUploadBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -25,6 +33,7 @@ const copyrightYearEl = document.getElementById("copyrightYear");
 let allFiles = [];
 const previewUrlCache = new Map();
 const previewPromiseCache = new Map();
+let modalZoom = 1;
 
 listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
 
@@ -132,7 +141,7 @@ async function getPreviewUrl(file) {
     return previewPromiseCache.get(file.id);
   }
 
-  const promise = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
+  const promise = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/download`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 
@@ -146,9 +155,52 @@ async function getPreviewUrl(file) {
   }
 
   const blob = await response.blob();
-  const objectUrl = URL.createObjectURL(blob);
+  const typedBlob = blob.type ? blob : new Blob([blob], { type: file.mime_type || "application/octet-stream" });
+  const objectUrl = URL.createObjectURL(typedBlob);
   previewUrlCache.set(file.id, objectUrl);
   return objectUrl;
+}
+
+function clampZoom(nextZoom) {
+  return Math.max(0.5, Math.min(4, nextZoom));
+}
+
+function updateModalZoom(value) {
+  modalZoom = clampZoom(value);
+  const content = previewModalViewport.querySelector(".preview-modal-content");
+  if (content instanceof HTMLElement) {
+    content.style.transform = `scale(${modalZoom})`;
+  }
+  zoomLevel.textContent = `${Math.round(modalZoom * 100)}%`;
+}
+
+function closePreviewModal() {
+  previewModal.classList.add("hidden");
+  previewModal.setAttribute("aria-hidden", "true");
+  previewModalViewport.innerHTML = "";
+  document.body.style.overflow = "";
+}
+
+async function openPreviewModal(file) {
+  const fileType = resolveFileType(file);
+  const previewUrl = await getPreviewUrl(file);
+  if (!previewUrl) {
+    setMessage(listMessage, "Vorschau konnte nicht geladen werden.", "error");
+    return;
+  }
+
+  previewModalTitle.textContent = `${decodeUtf8Safe(file.original_name)} · ${formatDate(file.uploaded_at)}`;
+  previewModal.classList.remove("hidden");
+  previewModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  if (fileType.className === "pdf") {
+    previewModalViewport.innerHTML = `<iframe class="preview-modal-frame preview-modal-content" src="${previewUrl}" title="PDF Vorschau ${decodeUtf8Safe(file.original_name)}"></iframe>`;
+  } else {
+    previewModalViewport.innerHTML = `<img class="preview-modal-image preview-modal-content" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
+  }
+
+  updateModalZoom(1);
 }
 
 async function loadRowPreview(file) {
@@ -196,7 +248,7 @@ function renderFiles(files) {
       <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
       <td>${formatDate(file.uploaded_at)}</td>
       <td>${displayName}</td>
-      <td class="preview-cell" data-file-id="${file.id}"><div class="row-preview-loading">Lädt...</div></td>
+      <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau"><div class="row-preview-loading">Lädt...</div></td>
       <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
       <td>${formatSizeKB(file.size_bytes)}</td>
       <td class="actions-cell">
@@ -280,6 +332,17 @@ filesTableBody.addEventListener("click", async (event) => {
 
   const action = target.dataset.action;
   const fileId = target.dataset.id;
+
+  const previewCell = target.closest(".preview-cell");
+  if (previewCell instanceof HTMLElement) {
+    const previewId = previewCell.dataset.fileId;
+    const file = allFiles.find((item) => item.id === previewId);
+    if (file) {
+      await openPreviewModal(file);
+    }
+    return;
+  }
+
   if (!action || !fileId) {
     return;
   }
@@ -314,7 +377,35 @@ logoutBtn.addEventListener("click", () => {
   window.location.href = "/";
 });
 
+zoomOutBtn.addEventListener("click", () => {
+  updateModalZoom(modalZoom - 0.25);
+});
+
+zoomInBtn.addEventListener("click", () => {
+  updateModalZoom(modalZoom + 0.25);
+});
+
+zoomResetBtn.addEventListener("click", () => {
+  updateModalZoom(1);
+});
+
+closePreviewBtn.addEventListener("click", () => {
+  closePreviewModal();
+});
+
+previewModal.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  if (target.dataset.closePreview === "true") {
+    closePreviewModal();
+  }
+});
+
 window.addEventListener("beforeunload", () => {
+  closePreviewModal();
   revokeAllPreviewUrls();
 });
 
