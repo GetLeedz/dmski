@@ -23,6 +23,7 @@ const previewModalTitle = document.getElementById("previewModalTitle");
 const previewModalViewport = document.getElementById("previewModalViewport");
 const zoomOutBtn = document.getElementById("zoomOutBtn");
 const zoomInBtn = document.getElementById("zoomInBtn");
+const zoomMaxBtn = document.getElementById("zoomMaxBtn");
 const zoomResetBtn = document.getElementById("zoomResetBtn");
 const zoomLevel = document.getElementById("zoomLevel");
 const closePreviewBtn = document.getElementById("closePreviewBtn");
@@ -221,30 +222,30 @@ async function openPreviewModal(file) {
 }
 
 async function loadRowPreview(file) {
-  const cell = filesTableBody.querySelector(`.preview-cell[data-file-id="${file.id}"]`);
-  if (!(cell instanceof HTMLElement)) {
+  const box = filesTableBody.querySelector(`.row-preview-box[data-file-id="${file.id}"]`);
+  if (!(box instanceof HTMLElement)) {
     return;
   }
 
   const fileType = resolveFileType(file);
   if (!["pdf", "png", "jpg"].includes(fileType.className)) {
-    cell.innerHTML = '<span class="row-preview-empty">Keine Vorschau</span>';
+    box.innerHTML = '<span class="row-preview-empty">Keine Vorschau</span>';
     return;
   }
 
-  cell.innerHTML = '<div class="row-preview-loading">Lädt...</div>';
+  box.innerHTML = '<div class="row-preview-loading">Lädt...</div>';
   const previewUrl = await getPreviewUrl(file);
   if (!previewUrl) {
-    cell.innerHTML = '<span class="row-preview-empty">Neu hochladen</span>';
+    box.innerHTML = '<span class="row-preview-empty">Neu hochladen</span>';
     return;
   }
 
   if (fileType.className === "pdf") {
-    cell.innerHTML = `<iframe class="row-preview-frame" src="${previewUrl}" title="PDF Vorschau ${decodeUtf8Safe(file.original_name)}"></iframe>`;
+    box.innerHTML = `<iframe class="row-preview-frame" src="${previewUrl}" title="PDF Vorschau ${decodeUtf8Safe(file.original_name)}"></iframe>`;
     return;
   }
 
-  cell.innerHTML = `<img class="row-preview-image" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
+  box.innerHTML = `<img class="row-preview-image" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
 }
 
 function renderFiles(files) {
@@ -252,7 +253,7 @@ function renderFiles(files) {
 
   if (!files || files.length === 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td colspan=\"7\">Keine Dateien für die gewählten Filter gefunden.</td>";
+    tr.innerHTML = "<td colspan=\"5\">Keine Dateien für die gewählten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
     return;
   }
@@ -265,9 +266,13 @@ function renderFiles(files) {
       <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
       <td>${formatDate(file.uploaded_at)}</td>
       <td>${displayName}</td>
-      <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau"><div class="row-preview-loading">Lädt...</div></td>
-      <td><span class="file-icon ${fileType.className}">${fileType.label}</span></td>
-      <td>${formatSizeKB(file.size_bytes)}</td>
+      <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
+        <div class="row-preview-box" data-file-id="${file.id}"><div class="row-preview-loading">Lädt...</div></div>
+        <div class="preview-meta-row">
+          <span class="file-icon ${fileType.className}">${fileType.label}</span>
+          <span class="preview-size">${formatSizeKB(file.size_bytes)} KB</span>
+        </div>
+      </td>
       <td class="actions-cell">
         <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
         <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
@@ -475,6 +480,10 @@ zoomOutBtn.addEventListener("click", () => {
 
 zoomInBtn.addEventListener("click", () => {
   updateModalZoom(modalZoom + 0.25);
+});
+
+zoomMaxBtn.addEventListener("click", () => {
+  updateModalZoom(4);
 });
 
 zoomResetBtn.addEventListener("click", () => {

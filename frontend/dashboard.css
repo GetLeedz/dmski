@@ -449,8 +449,13 @@ td {
 }
 
 .preview-cell {
-  width: 8rem;
+  width: 9rem;
   cursor: zoom-in;
+}
+
+.row-preview-box {
+  width: 7rem;
+  height: 5rem;
 }
 
 .row-preview-loading,
@@ -479,6 +484,19 @@ td {
 
 .row-preview-image {
   object-fit: cover;
+}
+
+.preview-meta-row {
+  margin-top: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.preview-size {
+  font-size: 0.78rem;
+  color: #4f6770;
+  font-weight: 600;
 }
 
 .preview-modal {
@@ -621,6 +639,7 @@ td {
 
   .row-preview-loading,
   .row-preview-empty,
+  .row-preview-box,
   .row-preview-image,
   .row-preview-frame {
     width: 5.6rem;
