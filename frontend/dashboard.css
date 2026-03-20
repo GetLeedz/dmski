@@ -537,27 +537,36 @@ td {
 }
 
 .preview-cell {
-  width: 50rem;
+  width: 38rem;
   cursor: zoom-in;
+.preview-doc-id {
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #39515a;
+  font-family: ui-monospace, "Courier New", monospace;
+}
+
 }
 
 .preview-timestamp {
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
+    font-size: 0.8rem;
   font-size: 0.85rem;
   color: #5f7780;
   font-weight: 500;
 }
 
 .row-preview-box {
-  width: 48rem;
-  height: 67.9rem;
+  width: 36rem;
+  height: 50.9rem;
   aspect-ratio: 210 / 297;
 }
 
 .row-preview-loading,
 .row-preview-empty {
-  width: 48rem;
-  height: 67.9rem;
+  width: 36rem;
+  height: 50.9rem;
   border: 1px solid #cbdadd;
   border-radius: 10px;
   background: #f8fbfc;
@@ -571,8 +580,8 @@ td {
 
 .row-preview-image,
 .row-preview-frame {
-  width: 48rem;
-  height: 67.9rem;
+  width: 36rem;
+  height: 50.9rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;

@@ -266,7 +266,7 @@ function renderFiles(files) {
 
   if (!files || files.length === 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td colspan=\"4\">Keine Dateien für die gewählten Filter gefunden.</td>";
+    tr.innerHTML = "<td colspan=\"3\">Keine Dateien für die gewählten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
     return;
   }
@@ -279,8 +279,8 @@ function renderFiles(files) {
     tr.dataset.fileId = file.id;
     tr.innerHTML = `
       <td class="checkbox-col hidden"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
-      <td class="doc-id" title="${file.id}">${compactDocId(file.id)}</td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
+          <div class="preview-doc-id">${compactDocId(file.id)}</div>
         <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
         <div class="row-preview-box" data-file-id="${file.id}"><div class="row-preview-loading">Lädt...</div></div>
         <div class="preview-filename">${displayName}</div>
