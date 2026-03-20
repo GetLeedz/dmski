@@ -53,33 +53,39 @@ function formatCaseTimestamp(value) {
 }
 
 async function loadCasesList() {
-  const res = await fetch(`${API_BASE}/cases`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  try {
+    const res = await fetch(`${API_BASE}/cases`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      existingCasesSelect.innerHTML = "<option value=\"\">Fallliste konnte nicht geladen werden</option>";
+      setMessage(caseMessage, data.error || "Fallliste konnte nicht geladen werden.", "error");
+      return;
+    }
+
+    const cases = Array.isArray(data.cases) ? [...data.cases] : [];
+    cases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    existingCasesSelect.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = cases.length > 0
+      ? "Bitte Dossier auswählen"
+      : "Noch keine Dossiers vorhanden";
+    existingCasesSelect.appendChild(placeholder);
+
+    for (const item of cases) {
+      const option = document.createElement("option");
+      option.value = item.id;
+      const createdLabel = formatCaseTimestamp(item.created_at);
+      option.textContent = `${createdLabel} - ${item.id} - ${item.case_name}`;
+      existingCasesSelect.appendChild(option);
+    }
+  } catch {
     existingCasesSelect.innerHTML = "<option value=\"\">Fallliste konnte nicht geladen werden</option>";
-    return;
-  }
-
-  const cases = Array.isArray(data.cases) ? [...data.cases] : [];
-  cases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  existingCasesSelect.innerHTML = "";
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = cases.length > 0
-    ? "Bitte Dossier auswählen"
-    : "Noch keine Dossiers vorhanden";
-  existingCasesSelect.appendChild(placeholder);
-
-  for (const item of cases) {
-    const option = document.createElement("option");
-    option.value = item.id;
-    const createdLabel = formatCaseTimestamp(item.created_at);
-    option.textContent = `${createdLabel} - ${item.id} - ${item.case_name}`;
-    existingCasesSelect.appendChild(option);
+    setMessage(caseMessage, "Backend nicht erreichbar. Bitte Seite neu laden.", "error");
   }
 }
 
@@ -118,46 +124,49 @@ caseForm.addEventListener("submit", async (event) => {
 
   createCaseBtn.disabled = true;
 
-  let created = null;
-  let tries = 0;
-  let nextCaseId = generateCaseId();
+  try {
+    let created = null;
+    let tries = 0;
+    let nextCaseId = generateCaseId();
 
-  while (!created && tries < 6) {
-    tries += 1;
-    const res = await fetch(`${API_BASE}/cases`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ caseId: nextCaseId, caseDate, caseName })
-    });
+    while (!created && tries < 6) {
+      tries += 1;
+      const res = await fetch(`${API_BASE}/cases`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ caseId: nextCaseId, caseDate, caseName })
+      });
 
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      created = data;
-      break;
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        created = data;
+        break;
+      }
+
+      if (res.status === 409) {
+        nextCaseId = generateCaseId();
+        continue;
+      }
+
+      setMessage(caseMessage, data.error || "Fall konnte nicht erstellt werden.", "error");
+      return;
     }
 
-    if (res.status === 409) {
-      nextCaseId = generateCaseId();
-      continue;
+    if (!created) {
+      setMessage(caseMessage, "Konnte keine freie Fall-ID erzeugen. Bitte erneut versuchen.", "error");
+      return;
     }
 
-    setMessage(caseMessage, data.error || "Fall konnte nicht erstellt werden.", "error");
+    sessionStorage.setItem("currentCaseId", created.id);
+    window.location.href = "/upload.html";
+  } catch {
+    setMessage(caseMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
+  } finally {
     createCaseBtn.disabled = false;
-    return;
   }
-
-  createCaseBtn.disabled = false;
-
-  if (!created) {
-    setMessage(caseMessage, "Konnte keine freie Fall-ID erzeugen. Bitte erneut versuchen.", "error");
-    return;
-  }
-
-  sessionStorage.setItem("currentCaseId", created.id);
-  window.location.href = "/upload.html";
 });
 
 existingCasesSelect.addEventListener("change", () => {
