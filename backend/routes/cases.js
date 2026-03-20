@@ -588,7 +588,8 @@ function extractPeopleFromLabeledFields(rawText, blockedNames = new Set()) {
     }
   }
 
-  return normalizePeopleDetailed(candidates, rawText, blockedNames, "");
+  const blocked = blockedNames instanceof Set ? blockedNames : new Set();
+  return candidates.filter((c) => !blocked.has(normalizeWhitespace(c.name).toLowerCase()));
 }
 
 function extractPeopleFromSalutation(rawText, blockedNames = new Set()) {
@@ -605,7 +606,8 @@ function extractPeopleFromSalutation(rawText, blockedNames = new Set()) {
     }
   }
 
-  return normalizePeopleDetailed(candidates, rawText, blockedNames, "");
+  const blocked = blockedNames instanceof Set ? blockedNames : new Set();
+  return candidates.filter((c) => !blocked.has(normalizeWhitespace(c.name).toLowerCase()));
 }
 
 function extractDisadvantagedPerson(rawText, people = [], author = "") {
@@ -735,7 +737,7 @@ function classifyImpact(rawText, disadvantagedPerson = "") {
   }
 
   const lower = String(rawText || "").toLowerCase();
-  if (/(benachteilig|abgewiesen|entzogen|kündigung|kuendigung|sanktion|verweigert|zulasten|zu lasten|nachteil)/.test(lower)) {
+  if (/(benachteilig|abgewiesen|entzogen|kündigung|kuendigung|sanktion|verweigert|zulasten|zu lasten|nachteil|unterschiedlich\s+gut|ungleich\s+behand|schlechter\s+gestellt|diskriminier|nicht\s+gleich)/.test(lower)) {
     return "Person benachteiligt";
   }
 
@@ -888,45 +890,42 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
   }
 
   try {
-    const response = await client.responses.create({
-      model: "gpt-4.1-mini",
-      max_output_tokens: 900,
-      input: [
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      max_tokens: 900,
+      messages: [
         {
           role: "user",
           content: [
-            {
-              type: "input_text",
-              text: [
-                "Du bist ein forensischer Dokumentanalyst. Untersuche den Text auf sprachliche Benachteiligung, Diskriminierung und ungleiche Behandlung von Personen.",
-                "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
-                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":"","count":0,"items":[""]}],"message":""}',
-                "Regeln:",
-                "- title = kurzer Dokumenttitel aus dem Inhalt, nicht der Dateiname und nicht nur ein Personenname.",
-                "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
-                "- authoredDate = Datum der Verfassung im Schweizer Format DD.MM.YYYY.",
-                "- people = alle relevanten Personennamen OHNE Verfasser, als Array von Objekten {name, affiliation}.",
-                "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
-                "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
-                "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
-                "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
-                "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt (z. B. KESB Leimental).",
-                "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
-                "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
-                "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen oder diskriminieren; 0 wenn neutral.",
-                "- items = Array kurzer Textzitate (max. 75 Zeichen je Eintrag) als direkte Belege für die Benachteiligung; [] wenn neutral.",
-                "- message = kurzer Hinweis, falls etwas unklar ist.",
-                "- Wenn etwas fehlt, leeres Feld verwenden.",
-                "Dokumenttext:",
-                textSnippet
-              ].join("\n")
-            }
-          ]
+            "Du bist ein forensischer Dokumentanalyst. Untersuche den Text auf sprachliche Benachteiligung, Diskriminierung und ungleiche Behandlung von Personen.",
+            "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
+            '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":"","count":0,"items":[""]}],"message":""}',
+            "Regeln:",
+            "- title = kurzer Dokumenttitel aus dem Inhalt, nicht der Dateiname und nicht nur ein Personenname.",
+            "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
+            "- authoredDate = Datum der Verfassung im Schweizer Format DD.MM.YYYY.",
+            "- people = alle relevanten Personennamen OHNE Verfasser, als Array von Objekten {name, affiliation}.",
+            "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
+            "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
+            "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
+            "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
+            "- senderInstitution = aus welchem Haus/Institution das Schreiben stammt (z. B. KESB Leimental).",
+            "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
+            "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
+            "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen oder diskriminieren; 0 wenn neutral.",
+            "- items = Array kurzer Textzitate (max. 75 Zeichen je Eintrag) als direkte Belege für die Benachteiligung; [] wenn neutral.",
+            "- Achte auch auf subtile Diskriminierung: unterschiedliche Wertungen (z.B. 'unterschiedlich gute Zusammenarbeit'), abwertende Adjektive, ungleiche Behandlung oder selektive Formulierungen.",
+            "- message = kurzer Hinweis, falls etwas unklar ist.",
+            "- Wenn etwas fehlt, leeres Feld verwenden.",
+            "Dokumenttext:",
+            textSnippet
+          ].join("\n")
         }
       ]
     });
 
-    const parsed = extractJsonObject(extractResponseText(response));
+    const responseText = response?.choices?.[0]?.message?.content || "";
+    const parsed = extractJsonObject(responseText);
     if (!parsed || typeof parsed !== "object") {
       return buildFallbackAnalysis(fallback);
     }
@@ -944,33 +943,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
       message: parsed.message || fallback.message
     });
   } catch (error) {
-    const statusCode = Number(error?.status || 0);
-    const message = String(error?.message || "");
-
-    if (statusCode === 401 || /Missing scopes:|insufficient permissions/i.test(message)) {
-      return {
-        status: "needs-config",
-        title: "",
-        author: "",
-        authoredDate: "",
-        people: [],
-        disadvantagedPerson: "",
-        message: "OpenAI-Key erkannt, aber ohne ausreichende API-Scopes (model.request / api.responses.write)."
-      };
-    }
-
-    if (statusCode === 429) {
-      return {
-        status: "needs-config",
-        title: "",
-        author: "",
-        authoredDate: "",
-        people: [],
-        disadvantagedPerson: "",
-        message: "OpenAI-Limit erreicht. Bitte sp├ñter erneut versuchen."
-      };
-    }
-
+    console.error("Analyze text error:", error.message);
     return buildFallbackAnalysis(fallback);
   }
 }
@@ -992,15 +965,15 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
   const base64 = fileBuffer.toString("base64");
 
   try {
-    const response = await client.responses.create({
-      model: "gpt-4.1-mini",
-      max_output_tokens: 900,
-      input: [
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      max_tokens: 900,
+      messages: [
         {
           role: "user",
           content: [
             {
-              type: "input_text",
+              type: "text",
               text: [
                 "Du bist ein forensischer Dokumentanalyst. Untersuche das Dokumentbild auf sprachliche Benachteiligung, Diskriminierung und ungleiche Behandlung von Personen.",
                 "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
@@ -1019,20 +992,22 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
                 "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
                 "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen; 0 wenn neutral.",
                 "- items = Array kurzer Textzitate (max. 75 Zeichen je Eintrag) als Belege für die Benachteiligung; [] wenn neutral.",
+                "- Achte auch auf subtile Diskriminierung: unterschiedliche Wertungen, abwertende Adjektive, ungleiche Behandlung.",
                 "- message = kurzer Hinweis, wenn etwas nicht sicher lesbar ist.",
                 "- Wenn nichts erkennbar ist, Felder leer lassen."
               ].join("\n")
             },
             {
-              type: "input_image",
-              image_url: `data:${mimeType || "image/png"};base64,${base64}`
+              type: "image_url",
+              image_url: { url: `data:${mimeType || "image/png"};base64,${base64}` }
             }
           ]
         }
       ]
     });
 
-    const parsed = extractJsonObject(extractResponseText(response));
+    const responseText = response?.choices?.[0]?.message?.content || "";
+    const parsed = extractJsonObject(responseText);
 
     if (!parsed || typeof parsed !== "object") {
       return {
