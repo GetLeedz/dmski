@@ -1206,23 +1206,31 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const src = parsed && typeof parsed === "object" ? parsed : {};
   const meta = src.metadaten && typeof src.metadaten === "object" ? src.metadaten : {};
   const stats = src.statistik && typeof src.statistik === "object" ? src.statistik : {};
+  const evalData = src.auswertung && typeof src.auswertung === "object" ? src.auswertung : {};
 
-  const mappedPeople = Array.isArray(src.personen)
+  const peopleSource = Array.isArray(src.personen)
     ? src.personen
+    : (Array.isArray(src.personen_array) ? src.personen_array : []);
+
+  const mappedPeople = Array.isArray(peopleSource)
+    ? peopleSource
       .map((entry) => {
-        const name = normalizeWhitespace(entry?.name || "");
+        const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name || "");
         if (!name) {
           return null;
         }
+        const role = normalizeWhitespace(typeof entry === "string" ? "" : entry?.rolle || "");
         return {
           name,
-          affiliation: normalizeWhitespace(entry?.rolle || "") || "Privatperson"
+          affiliation: role || "Privatperson"
         };
       })
       .filter(Boolean)
     : [];
 
   const score = src.analyse_score && typeof src.analyse_score === "object" ? src.analyse_score : {};
+  const focusFromEval = evalData.fokus && typeof evalData.fokus === "object" ? evalData.fokus : null;
+  const referenceFromEval = evalData.referenz && typeof evalData.referenz === "object" ? evalData.referenz : null;
   const disadvantagedFromStats = (stats.fokus_person && typeof stats.fokus_person === "object")
     ? stats.fokus_person
     : (stats.benachteiligte_person && typeof stats.benachteiligte_person === "object"
@@ -1243,10 +1251,10 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const disadvantagedName = normalizeWhitespace(disadvantaged.name || fallback.disadvantagedPerson || "");
   const opposingName = normalizeWhitespace(opposing.name || "");
 
-  const disadvantagedNeg = Math.max(0, Number(disadvantaged.rot_anzahl ?? disadvantaged.negativ_count ?? disadvantaged.punkte_negativ ?? 0));
-  const disadvantagedPos = Math.max(0, Number(disadvantaged.gruen_anzahl ?? disadvantaged.positiv_count ?? disadvantaged.punkte_positiv ?? 0));
-  const opposingNeg = Math.max(0, Number(opposing.rot_anzahl ?? opposing.negativ_count ?? opposing.punkte_negativ ?? 0));
-  const opposingPos = Math.max(0, Number(opposing.gruen_anzahl ?? opposing.positiv_count ?? opposing.punkte_positiv ?? 0));
+  const disadvantagedNeg = Math.max(0, Number(focusFromEval?.neg ?? disadvantaged.rot_anzahl ?? disadvantaged.negativ_count ?? disadvantaged.punkte_negativ ?? 0));
+  const disadvantagedPos = Math.max(0, Number(focusFromEval?.pos ?? disadvantaged.gruen_anzahl ?? disadvantaged.positiv_count ?? disadvantaged.punkte_positiv ?? 0));
+  const opposingNeg = Math.max(0, Number(referenceFromEval?.neg ?? opposing.rot_anzahl ?? opposing.negativ_count ?? opposing.punkte_negativ ?? 0));
+  const opposingPos = Math.max(0, Number(referenceFromEval?.pos ?? opposing.gruen_anzahl ?? opposing.positiv_count ?? opposing.punkte_positiv ?? 0));
 
   const derivedPeople = [];
   if (disadvantagedName) {
@@ -1279,15 +1287,19 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const biasRatio = normalizeWhitespace(src.bias_verhaeltnis || "");
   const qualitativeSummary = normalizeWhitespace(src.zusammenfassung || src.fazit_voreingenommenheit || "");
   const biasIndex = normalizeWhitespace(String(src.fbi_bias_index ?? src.alarm_stufe ?? src.alarm_level ?? ""));
+  const topTitle = normalizeWhitespace(src.titel || "");
+  const topAuthor = normalizeWhitespace(src.verfasser || "");
+  const topDate = normalizeWhitespace(src.datum || "");
+  const topSender = normalizeWhitespace(src.absender || src.herkunft || "");
 
   return buildFallbackAnalysis({
-    title: meta.titel || fallback.title,
-    author: meta.verfasser || normalizeWhitespace(src.verfasser || "") || meta.herkunft || normalizeWhitespace(src.herkunft || "") || fallback.author,
+    title: topTitle || meta.titel || fallback.title,
+    author: topAuthor || meta.verfasser || meta.herkunft || topSender || fallback.author,
     documentType: fallback.documentType || "Brief",
-    authoredDate: meta.datum || fallback.authoredDate,
+    authoredDate: topDate || meta.datum || fallback.authoredDate,
     people: effectivePeople,
     disadvantagedPerson: disadvantagedName || fallback.disadvantagedPerson,
-    senderInstitution: meta.herkunft || normalizeWhitespace(src.herkunft || "") || fallback.senderInstitution,
+    senderInstitution: topSender || meta.herkunft || fallback.senderInstitution,
     impactAssessment: qualitativeSummary || (biasRatio ? `Bias-Verhaeltnis: ${biasRatio}` : fallback.impactAssessment),
     impactRanking: impactRanking.length > 0 ? impactRanking : fallback.impactRanking,
     positiveMentions: disadvantagedPos,
@@ -1304,35 +1316,41 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
   const referenceName = normalizeWhitespace(opposingPartyName) || "Unbekannt";
 
   return [
-    "Du bist ein forensischer Linguistik-Experte. Deine Aufgabe ist die rein quantitative und qualitative Analyse von einseitiger Darstellung (Bias).",
+    "Du bist ein forensischer Linguistik-Experte fuer die Analyse von Behoerden- und Gerichtskommunikation. Deine Aufgabe ist die objektive Dekonstruktion von Texten auf institutionelle Voreingenommenheit (Bias).",
     "",
-    "### 1. ANALYSE-FOKUS (Vorgegebene Parteien):",
+    "### 1. DYNAMISCHE DATEN-EXTRAKTION:",
+    "- TITEL: Erstelle einen praezisen Titel basierend auf dem Betreff oder Inhalt.",
+    "- VERFASSER: Identifiziere die natuerliche Person, die das Dokument erstellt oder unterzeichnet hat.",
+    "- DATUM: Extrahiere das Erstellungsdatum (DD.MM.YYYY).",
+    "- ABSENDER: Identifiziere die Behoerde, das Amt oder die Kanzlei im Briefkopf.",
+    "- PERSONEN: Extrahiere ALLE im Text genannten Klarnamen (inkl. Kinder, Partner, Sachbearbeiter). Liste diese als Array auf.",
+    "",
+    "### 2. ROLLENZUORDNUNG & SCORING:",
+    "Ordne die im Dokument gefundenen Aussagen den im System definierten Rollen zu:",
     `- Fokus-Person (Benachteiligt): ${focusName}`,
     `- Referenz-Person (Gegenpartei): ${referenceName}`,
     "",
-    "### 2. QUANTITATIVES ZAEHL-VERFAHREN (SCORING):",
-    "Untersuche das Dokument Wort fuer Wort auf wertende Zuschreibungen:",
-    "- ROT-PUNKTE (Negativ): Jede Stelle, an der Kritik, Abwertung, Defizitzuschreibung oder negative Adjektive in Bezug auf eine Person fallen.",
-    "- GRUEN-PUNKTE (Positiv): Jede Stelle, an der Lob, Kompetenz, Empathie oder positive Adjektive in Bezug auf eine Person fallen.",
+    "### 3. METHODISCHES ZAEHLVERFAHREN (FBI-PROFILING):",
+    "Zaehle jede wertende Textstelle streng getrennt:",
+    "- ROT-SCORE (Negativ): Jede Stelle, an der Kritik, Abwertung, Defizitzuschreibung, Unterstellung von mangelnder Kooperation oder Charakter-Diskreditierung erfolgt.",
+    "- GRUEN-SCORE (Positiv): Jede Stelle, an der Lob, Kompetenzzuschreibung, Validierung von Argumenten oder Empathie durch den Autor erfolgt.",
     "",
-    "Wichtig: Zaehle jede einzelne Textstelle separat. Wenn ein Satz zwei Vorwuerfe enthaelt, sind das 2 Punkte.",
+    "### 4. OUTPUT-REGELN:",
+    "- ZUSAMMENFASSUNG: Beschreibe das Muster der asymmetrischen Darstellung und die psychologische Tendenz des Verfassers (max. 2 Saetze). Erwaehne KEINE Zahlen im Text.",
+    "- NULLEN-LOGIK: Gib fuer jede Person exakt EINE Summe fuer Positiv und EINE Summe fuer Negativ zurueck.",
     "",
-    "### 3. OUTPUT-STRUKTUR (STRENGES JSON):",
+    "### JSON-AUSGABE:",
     "{",
-    '  "statistik": {',
-    '    "fokus_person": {',
-    `      "name": "${focusName}",`,
-    '      "rot_anzahl": 0,',
-    '      "gruen_anzahl": 0',
+    '  "titel": "",',
+    '  "verfasser": "",',
+    '  "datum": "",',
+    '  "absender": "",',
+    '  "personen": [],',
+    '  "auswertung": {',
+    '    "fokus": { "pos": 0, "neg": 0 },',
+    '    "referenz": { "pos": 0, "neg": 0 }',
     '    },',
-    '    "referenz_person": {',
-    `      "name": "${referenceName}",`,
-    '      "rot_anzahl": 0,',
-    '      "gruen_anzahl": 0',
-    '    }',
-    '  },',
-    '  "zusammenfassung": "Analysiere hier die psychologische Tendenz des Dokuments. Beschreibe das Muster der Benachteiligung und die Einseitigkeit der Argumentation, ohne Zahlen zu nennen.",',
-    '  "fbi_bias_index": 1',
+    '  "zusammenfassung": ""',
     "}"
   ].join("\n");
 }
@@ -1452,7 +1470,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
       return buildFallbackAnalysis(fallback);
     }
 
-    if (parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
+    if (parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
       return mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
     }
 
@@ -1556,7 +1574,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
 
     const normalized = parsed?.beteiligte
       ? mapChatForensicJsonToAnalysis(parsed, {})
-      : (parsed?.statistik || parsed?.metadaten || parsed?.analyse_score)
+      : (parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score)
         ? mapBiasForensicJsonToAnalysis(parsed, {}, "")
         : mapSwissForensicJsonToAnalysis(parsed, {}, "");
 
