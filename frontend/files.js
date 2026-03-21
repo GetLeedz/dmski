@@ -297,12 +297,6 @@ function extractNamesFromChunk(value) {
     const matches = [...chunk.matchAll(namePattern)].map((m) => normalizePersonName(m[1]));
     if (matches.length > 0) {
       names.push(...matches);
-      continue;
-    }
-
-    const single = normalizePersonName(chunk);
-    if (single) {
-      names.push(single);
     }
   }
 
@@ -342,10 +336,6 @@ function collectAnalysisPeople(analysis, protectedName = "") {
 
   if (analysis?.disadvantagedPerson) {
     candidates.push(...extractNamesFromChunk(analysis.disadvantagedPerson));
-  }
-
-  if (analysis?.title) {
-    candidates.push(...extractNamesFromChunk(analysis.title));
   }
 
   if (protectedName) {
@@ -579,10 +569,6 @@ async function loadRowAnalysis(file, options = {}) {
     ? `<p class="analysis-value">${analysis.senderInstitution}</p>`
     : '<p class="analysis-value muted">Nicht erkannt</p>';
 
-  const impactAssessmentMarkup = analysis.impactAssessment
-    ? `<p class="analysis-value">${analysis.impactAssessment}</p>`
-    : '<p class="analysis-value muted">Nicht erkannt</p>';
-
   const impactRankingItems = Array.isArray(analysis.impactRanking)
     ? analysis.impactRanking
       .map((entry) => ({
@@ -624,10 +610,6 @@ async function loadRowAnalysis(file, options = {}) {
       <section class="analysis-section analysis-people-section">
         <p class="analysis-label">Personen im Dokument</p>
         ${peopleMarkup}
-      </section>
-      <section class="analysis-section">
-        <p class="analysis-label">KI Bewertung</p>
-        ${impactAssessmentMarkup}
       </section>
       ${protectedName ? `
         <section class="analysis-section analysis-score-box">
