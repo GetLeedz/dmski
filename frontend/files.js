@@ -323,6 +323,34 @@ function extractNamesFromChunk(value) {
   return names;
 }
 
+function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => i);
+  for (let j = 1; j <= n; j++) {
+    let prev = j;
+    for (let i = 1; i <= m; i++) {
+      const curr = a[i - 1] === b[j - 1] ? dp[i - 1] : 1 + Math.min(dp[i - 1], dp[i], prev);
+      dp[i - 1] = prev;
+      prev = curr;
+    }
+    dp[m] = prev;
+  }
+  return dp[m];
+}
+
+function samePersonFuzzy(nameA, nameB) {
+  const wordsA = nameA.toLowerCase().split(/\s+/).sort();
+  const wordsB = nameB.toLowerCase().split(/\s+/).sort();
+  if (wordsA.join(" ") === wordsB.join(" ")) {
+    return true;
+  }
+  if (wordsA.length !== wordsB.length) {
+    return false;
+  }
+  return wordsA.every((w, i) => levenshtein(w, wordsB[i]) <= 1);
+}
+
 function isLikelyValidPersonLabel(value) {
   const cleaned = normalizePersonName(value);
   if (!cleaned || /\d/.test(cleaned)) {
@@ -402,7 +430,6 @@ function collectAnalysisPeople(analysis, protectedName = "", authorName = "") {
     candidates.push(...extractNamesFromChunk(protectedName));
   }
 
-  const seen = new Set();
   const unique = [];
   const authorKey = normalizePersonName(authorName).toLowerCase();
   for (const candidate of candidates) {
@@ -414,13 +441,12 @@ function collectAnalysisPeople(analysis, protectedName = "", authorName = "") {
       continue;
     }
     const key = cleaned.toLowerCase();
-    if (authorKey && key === authorKey) {
+    if (authorKey && samePersonFuzzy(key, authorKey)) {
       continue;
     }
-    if (seen.has(key)) {
+    if (unique.some((existing) => samePersonFuzzy(cleaned, existing))) {
       continue;
     }
-    seen.add(key);
     unique.push(cleaned);
   }
 
@@ -999,13 +1025,13 @@ async function deleteFile(fileId, triggerButton) {
 
 filesTableBody.addEventListener("click", async (event) => {
   const target = event.target;
-  if (!(target instanceof HTMLElement)) {
+  if (!(target instanceof Element)) {
     return;
   }
 
   const actionElement = target.closest("[data-action]");
-  const action = actionElement instanceof HTMLElement ? actionElement.dataset.action : "";
-  const fileId = actionElement instanceof HTMLElement ? actionElement.dataset.id : "";
+  const action = actionElement instanceof Element ? actionElement.dataset.action : "";
+  const fileId = actionElement instanceof Element ? actionElement.dataset.id : "";
   const rowActions = target.closest(".row-actions");
 
   if (action === "refresh-analysis" && fileId) {
