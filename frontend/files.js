@@ -301,6 +301,23 @@ function resolveDocumentTypeLabel(aiType, file) {
   return normalizeTitleText(aiType) || "Nicht erkannt";
 }
 
+function renderMentionDots(count, tone) {
+  const safeCount = Math.max(0, Number(count) || 0);
+  const maxDots = 12;
+  const dotsToShow = Math.min(safeCount, maxDots);
+  const overflow = Math.max(0, safeCount - maxDots);
+  const dotClass = tone === "positive" ? "is-positive" : "is-negative";
+
+  const dots = dotsToShow > 0
+    ? Array.from({ length: dotsToShow }, () => `<span class="analysis-dot ${dotClass}" aria-hidden="true"></span>`).join("")
+    : `<span class="analysis-dot-empty">0</span>`;
+
+  const overflowText = overflow > 0 ? `<span class="analysis-dot-overflow">+${overflow}</span>` : "";
+  const totalText = `<span class="analysis-dot-total">(${safeCount})</span>`;
+
+  return `<span class="analysis-dot-track" aria-label="${safeCount}">${dots}${overflowText}${totalText}</span>`;
+}
+
 function normalizePersonName(value) {
   const raw = normalizeTitleText(value)
     .replace(/\bPrivatperson\b/gi, "")
@@ -736,6 +753,10 @@ async function loadRowAnalysis(file, options = {}) {
   const negativeMentions = Math.max(0, Number(analysis.negativeMentions || 0));
   const opposingPositiveMentions = Math.max(0, Number(analysis.opposingPositiveMentions || 0));
   const opposingNegativeMentions = Math.max(0, Number(analysis.opposingNegativeMentions || 0));
+  const protectedPosDots = renderMentionDots(positiveMentions, "positive");
+  const protectedNegDots = renderMentionDots(negativeMentions, "negative");
+  const opposingPosDots = renderMentionDots(opposingPositiveMentions, "positive");
+  const opposingNegDots = renderMentionDots(opposingNegativeMentions, "negative");
 
   box.innerHTML = `
     <div class="analysis-glass">
@@ -773,9 +794,11 @@ async function loadRowAnalysis(file, options = {}) {
       ` : ""}
       <section class="analysis-section analysis-mention-box">
         <p class="analysis-label">Benachteiligte Person erwähnt</p>
-        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv: ${positiveMentions} | Negativ: ${negativeMentions}</span></p>
+        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${protectedPosDots}</p>
+        <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${protectedNegDots}</p>
         <p class="analysis-label analysis-sub-label">Gegenpartei erwähnt</p>
-        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv: ${opposingPositiveMentions} | Negativ: ${opposingNegativeMentions}</span></p>
+        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${opposingPosDots}</p>
+        <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${opposingNegDots}</p>
       </section>
     </div>
   `;
