@@ -83,6 +83,8 @@ const selectedFileIds = new Set();
 let currentCaseProtectedPerson = "";
 let currentCaseName = "";
 let currentCaseOpposingParty = "";
+let currentCaseCountry = "";
+let currentCaseLocality = "";
 
 listTitle.textContent = `Files für Fall ${currentCaseId}`;
 
@@ -991,6 +993,8 @@ async function loadCaseContext() {
 
     currentCaseProtectedPerson = normalizeTitleText(active.protected_person_name || "");
     currentCaseOpposingParty = normalizeTitleText(active.opposing_party || "");
+    currentCaseCountry = normalizeTitleText(active.country || "");
+    currentCaseLocality = normalizeTitleText(active.locality || "");
     currentCaseName = normalizeTitleText(active.case_name || "");
     listTitle.textContent = currentCaseName
       ? `Files · ${currentCaseName} (${currentCaseId})`
@@ -1001,6 +1005,8 @@ async function loadCaseContext() {
       const parts = [];
       parts.push(`<div class="case-person-field is-protected"><span class="case-person-label">Benachteiligte Person</span><span class="case-person-value">${currentCaseProtectedPerson || "Nicht gesetzt"}</span></div>`);
       parts.push(`<div class="case-person-field is-opposing"><span class="case-person-label">Gegenpartei</span><span class="case-person-value">${currentCaseOpposingParty || "Nicht gesetzt"}</span></div>`);
+      parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Land</span><span class="case-person-value">${currentCaseCountry || "Nicht gesetzt"}</span></div>`);
+      parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Ortschaft</span><span class="case-person-value">${currentCaseLocality || "Nicht gesetzt"}</span></div>`);
       personsRow.innerHTML = parts.join("");
     }
   } catch {

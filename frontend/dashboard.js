@@ -47,12 +47,45 @@ function maybeShowServiceAlert(status, detail) {
 const caseForm = document.getElementById("caseForm");
 const caseMessage = document.getElementById("caseMessage");
 const caseNameInput = document.getElementById("caseName");
+const countrySelect = document.getElementById("countrySelect");
+const localitySelect = document.getElementById("localitySelect");
 const protectedPersonNameInput = document.getElementById("protectedPersonName");
 const opposingPartyNameInput = document.getElementById("opposingPartyName");
 const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const existingCasesSelect = document.getElementById("existingCasesSelect");
 const copyrightYearEl = document.getElementById("copyrightYear");
+
+const LOCALITIES_BY_COUNTRY = {
+  Schweiz: ["Aarau", "Arlesheim", "Basel", "Bern", "Binningen", "Bottmingen", "Liestal", "Luzern", "Muttenz", "Pratteln", "Solothurn", "Winterthur", "Zürich"],
+  Deutschland: ["Berlin", "Bremen", "Dresden", "Düsseldorf", "Frankfurt am Main", "Hamburg", "Hannover", "Köln", "Leipzig", "München", "Nürnberg", "Stuttgart"],
+  Österreich: ["Bregenz", "Graz", "Innsbruck", "Klagenfurt", "Linz", "Salzburg", "Sankt Pölten", "Villach", "Wels", "Wien"]
+};
+
+function populateLocalityOptions(country, preferred = "") {
+  const selectedCountry = String(country || "").trim();
+  const localities = LOCALITIES_BY_COUNTRY[selectedCountry] || [];
+
+  localitySelect.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = localities.length > 0 ? "Ortschaft wählen" : "Zuerst Land wählen";
+  localitySelect.appendChild(placeholder);
+
+  for (const locality of localities) {
+    const option = document.createElement("option");
+    option.value = locality;
+    option.textContent = locality;
+    localitySelect.appendChild(option);
+  }
+
+  localitySelect.disabled = localities.length === 0;
+  if (preferred && localities.includes(preferred)) {
+    localitySelect.value = preferred;
+  } else {
+    localitySelect.value = "";
+  }
+}
 
 function todayIsoDate() {
   const now = new Date();
@@ -121,9 +154,12 @@ async function loadCasesList() {
       option.value = item.id;
       const createdLabel = formatCaseTimestamp(item.created_at);
       const protectedLabel = String(item.protected_person_name || "").trim();
+      const countryLabel = String(item.country || "").trim();
+      const localityLabel = String(item.locality || "").trim();
+      const placeLabel = [localityLabel, countryLabel].filter(Boolean).join(", ");
       option.textContent = protectedLabel
-        ? `${createdLabel} - ${item.id} - ${item.case_name} (Benachteiligte Person: ${protectedLabel})`
-        : `${createdLabel} - ${item.id} - ${item.case_name}`;
+        ? `${createdLabel} - ${item.id} - ${item.case_name} (${placeLabel || "Ort nicht gesetzt"}; Benachteiligte Person: ${protectedLabel})`
+        : `${createdLabel} - ${item.id} - ${item.case_name}${placeLabel ? ` (${placeLabel})` : ""}`;
       existingCasesSelect.appendChild(option);
     }
   } catch {
@@ -160,11 +196,18 @@ caseForm.addEventListener("submit", async (event) => {
 
   const caseDate = todayIsoDate();
   const caseName = String(caseNameInput.value || "").trim();
+  const country = String(countrySelect?.value || "").trim();
+  const locality = String(localitySelect?.value || "").trim();
   const protectedPersonName = String(protectedPersonNameInput?.value || "").trim();
   const opposingPartyName = String(opposingPartyNameInput?.value || "").trim();
 
   if (!caseName) {
     setMessage(caseMessage, "Bitte einen Namen eingeben.", "error");
+    return;
+  }
+
+  if (!country || !locality) {
+    setMessage(caseMessage, "Bitte zuerst Land und danach Ortschaft auswählen.", "error");
     return;
   }
 
@@ -187,6 +230,8 @@ caseForm.addEventListener("submit", async (event) => {
           caseId: nextCaseId,
           caseDate,
           caseName,
+          country: country || null,
+          locality: locality || null,
           protected_person_name: protectedPersonName || null,
           opposing_party: opposingPartyName || null
         })
@@ -234,6 +279,13 @@ logoutBtn.addEventListener("click", () => {
   sessionStorage.removeItem("currentCaseId");
   window.location.href = "/";
 });
+
+if (countrySelect instanceof HTMLSelectElement && localitySelect instanceof HTMLSelectElement) {
+  countrySelect.addEventListener("change", () => {
+    populateLocalityOptions(countrySelect.value);
+  });
+  populateLocalityOptions(countrySelect.value);
+}
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
 loadCasesList();

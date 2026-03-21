@@ -26,10 +26,23 @@
         <label class="full form-field-inline">
           <input id="caseName" name="caseName" type="text" placeholder="Fallname" aria-label="Fallname" required />
         </label>
-        <label class="full form-field-inline">
-          <input id="protectedPersonName" name="protectedPersonName" type="text" placeholder="Schlüsselwörter zur benachteiligten Person, Name, Alias, Kindsvater" aria-label="Schlüsselwörter zur benachteiligten Person, Name, Alias, Kindsvater" />
+        <label class="form-field-inline">
+          <select id="countrySelect" name="country" aria-label="Land" required>
+            <option value="">Land wählen</option>
+            <option value="Schweiz">Schweiz</option>
+            <option value="Deutschland">Deutschland</option>
+            <option value="Österreich">Österreich</option>
+          </select>
         </label>
-        <label class="full form-field-inline">
+        <label class="form-field-inline">
+          <select id="localitySelect" name="locality" aria-label="Ortschaft" required disabled>
+            <option value="">Zuerst Land wählen</option>
+          </select>
+        </label>
+        <label class="form-field-inline">
+          <input id="protectedPersonName" name="protectedPersonName" type="text" placeholder="Benachteiligte Person (Name, Alias, Kindsvater)" aria-label="Benachteiligte Person" />
+        </label>
+        <label class="form-field-inline">
           <input id="opposingPartyName" name="opposingPartyName" type="text" placeholder="Gegenpartei (Name, Behörde, Institution)" aria-label="Gegenpartei" />
         </label>
         <button id="createCaseBtn" type="submit" class="full">Fall eröffnen</button>

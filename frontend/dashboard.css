@@ -769,8 +769,8 @@ button:disabled {
 }
 
 .case-persons-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(16rem, 1fr));
   gap: 0.55rem;
   margin-top: 0.4rem;
 }
@@ -779,10 +779,10 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 0.12rem;
-  min-width: 16rem;
+  min-width: 0;
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 0.3rem 0.55rem;
+  padding: 0.36rem 0.58rem;
   background: var(--card);
 }
 
@@ -808,6 +808,11 @@ button:disabled {
 .case-person-field.is-opposing {
   border-color: #c0392b;
   background: var(--error-light);
+}
+
+.case-person-field.is-meta {
+  border-color: #b8d2dc;
+  background: #f7fbfc;
 }
 
 .case-person-chip {
@@ -1661,6 +1666,10 @@ td {
 
   #goToUploadBtn {
     min-width: 0;
+  }
+
+  .case-persons-row {
+    grid-template-columns: 1fr;
   }
 
   .analysis-cell {
