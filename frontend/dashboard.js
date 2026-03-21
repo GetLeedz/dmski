@@ -49,7 +49,7 @@ const caseMessage = document.getElementById("caseMessage");
 const caseNameInput = document.getElementById("caseName");
 const countrySelect = document.getElementById("countrySelect");
 const regionSelect = document.getElementById("regionSelect");
-const cityInput = document.getElementById("cityInput");
+const citySelect = document.getElementById("citySelect");
 const protectedPersonNameInput = document.getElementById("protectedPersonName");
 const opposingPartyNameInput = document.getElementById("opposingPartyName");
 const createCaseBtn = document.getElementById("createCaseBtn");
@@ -86,6 +86,66 @@ const REGIONS_BY_COUNTRY = {
   }
 };
 
+const CITIES_BY_REGION = {
+  Schweiz: {
+    "Aargau": ["Aarau", "Baden", "Brugg", "Lenzburg", "Rheinfelden", "Wettingen", "Zofingen"],
+    "Appenzell Ausserrhoden": ["Herisau", "Speicher", "Trogen"],
+    "Appenzell Innerrhoden": ["Appenzell"],
+    "Basel-Landschaft": ["Allschwil", "Arlesheim", "Binningen", "Bottmingen", "Laufen", "Liestal", "Muttenz", "Pratteln", "Reinach", "Sissach"],
+    "Basel-Stadt": ["Basel", "Bettingen", "Riehen"],
+    "Bern": ["Bern", "Biel/Bienne", "Burgdorf", "Köniz", "Langenthal", "Münsingen", "Steffisburg", "Thun"],
+    "Freiburg": ["Bulle", "Düdingen", "Freiburg", "Murten"],
+    "Genf": ["Carouge", "Genf", "Lancy", "Meyrin", "Vernier"],
+    "Glarus": ["Glarus", "Glarus Nord", "Glarus Süd"],
+    "Graubünden": ["Chur", "Davos", "Ilanz", "Samedan", "St. Moritz"],
+    "Jura": ["Delémont", "Porrentruy", "Saignelégier"],
+    "Luzern": ["Emmen", "Horw", "Kriens", "Luzern", "Sursee", "Wolhusen"],
+    "Neuenburg": ["La Chaux-de-Fonds", "Le Locle", "Neuenburg"],
+    "Nidwalden": ["Buochs", "Hergiswil", "Stans"],
+    "Obwalden": ["Engelberg", "Sarnen"],
+    "Schaffhausen": ["Neuhausen am Rheinfall", "Schaffhausen"],
+    "Schwyz": ["Einsiedeln", "Freienbach", "Küssnacht", "Schwyz"],
+    "Solothurn": ["Grenchen", "Olten", "Solothurn"],
+    "St. Gallen": ["Gossau", "Rapperswil-Jona", "Rorschach", "St. Gallen", "Wil"],
+    "Tessin": ["Bellinzona", "Locarno", "Lugano", "Mendrisio"],
+    "Thurgau": ["Arbon", "Frauenfeld", "Kreuzlingen"],
+    "Uri": ["Altdorf", "Andermatt"],
+    "Waadt": ["Lausanne", "Montreux", "Nyon", "Renens", "Yverdon-les-Bains"],
+    "Wallis": ["Brig", "Monthey", "Sion/Sitten", "Visp"],
+    "Zug": ["Baar", "Cham", "Steinhausen", "Zug"],
+    "Zürich": ["Bülach", "Dietikon", "Dübendorf", "Frenkendorf", "Kloten", "Uster", "Winterthur", "Zürich"]
+  },
+  Deutschland: {
+    "Baden-Württemberg": ["Freiburg im Breisgau", "Heidelberg", "Heilbronn", "Karlsruhe", "Konstanz", "Mannheim", "Pforzheim", "Ravensburg", "Stuttgart", "Ulm"],
+    "Bayern": ["Augsburg", "Bamberg", "Bayreuth", "Erlangen", "Ingolstadt", "Kempten", "München", "Nürnberg", "Regensburg", "Würzburg"],
+    "Berlin": ["Berlin"],
+    "Brandenburg": ["Brandenburg an der Havel", "Cottbus", "Frankfurt (Oder)", "Potsdam"],
+    "Bremen": ["Bremen", "Bremerhaven"],
+    "Hamburg": ["Hamburg"],
+    "Hessen": ["Darmstadt", "Frankfurt am Main", "Fulda", "Kassel", "Marburg", "Offenbach am Main", "Wiesbaden"],
+    "Mecklenburg-Vorpommern": ["Greifswald", "Neubrandenburg", "Rostock", "Schwerin", "Stralsund"],
+    "Niedersachsen": ["Braunschweig", "Göttingen", "Hannover", "Lüneburg", "Oldenburg", "Osnabrück", "Wolfsburg"],
+    "Nordrhein-Westfalen": ["Aachen", "Bielefeld", "Bochum", "Bonn", "Dortmund", "Düsseldorf", "Duisburg", "Essen", "Köln", "Münster", "Wuppertal"],
+    "Rheinland-Pfalz": ["Kaiserslautern", "Koblenz", "Ludwigshafen", "Mainz", "Trier"],
+    "Saarland": ["Homburg", "Neunkirchen", "Saarbrücken"],
+    "Sachsen": ["Chemnitz", "Dresden", "Leipzig", "Zwickau"],
+    "Sachsen-Anhalt": ["Dessau-Roßlau", "Halle (Saale)", "Magdeburg"],
+    "Schleswig-Holstein": ["Flensburg", "Kiel", "Lübeck", "Neumünster"],
+    "Thüringen": ["Erfurt", "Gera", "Jena", "Weimar"]
+  },
+  Österreich: {
+    "Burgenland": ["Eisenstadt", "Neusiedl am See", "Oberwart"],
+    "Kärnten": ["Klagenfurt", "Spittal an der Drau", "Villach", "Wolfsberg"],
+    "Niederösterreich": ["Amstetten", "Krems an der Donau", "Sankt Pölten", "Wiener Neustadt"],
+    "Oberösterreich": ["Gmunden", "Linz", "Steyr", "Wels"],
+    "Salzburg": ["Hallein", "Salzburg", "Zell am See"],
+    "Steiermark": ["Bruck an der Mur", "Graz", "Kapfenberg", "Leoben"],
+    "Tirol": ["Hall in Tirol", "Innsbruck", "Kufstein", "Lienz"],
+    "Vorarlberg": ["Bludenz", "Bregenz", "Dornbirn", "Feldkirch"],
+    "Wien": ["Wien"]
+  }
+};
+
 function populateRegionOptions(country, preferred = "") {
   const selectedCountry = String(country || "").trim();
   const entry = REGIONS_BY_COUNTRY[selectedCountry];
@@ -113,6 +173,27 @@ function populateRegionOptions(country, preferred = "") {
   } else {
     regionSelect.value = "";
   }
+  populateCityOptions(country, regionSelect.value);
+}
+
+function populateCityOptions(country, region, preferred = "") {
+  const cities = (CITIES_BY_REGION[country] || {})[region] || [];
+
+  citySelect.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = cities.length > 0 ? "Ortschaft / Sitz des Gerichts wählen" : (region ? "Keine Ortschaften verfügbar" : "Zuerst Kanton / Bundesland wählen");
+  citySelect.appendChild(placeholder);
+
+  for (const city of cities) {
+    const option = document.createElement("option");
+    option.value = city;
+    option.textContent = city;
+    citySelect.appendChild(option);
+  }
+
+  citySelect.disabled = cities.length === 0;
+  citySelect.value = (preferred && cities.includes(preferred)) ? preferred : "";
 }
 
 function todayIsoDate() {
@@ -228,7 +309,7 @@ caseForm.addEventListener("submit", async (event) => {
   const caseName = String(caseNameInput.value || "").trim();
   const country = String(countrySelect?.value || "").trim();
   const region = String(regionSelect?.value || "").trim();
-  const city = String(cityInput?.value || "").trim();
+  const city = String(citySelect?.value || "").trim();
   const protectedPersonName = String(protectedPersonNameInput?.value || "").trim();
   const opposingPartyName = String(opposingPartyNameInput?.value || "").trim();
 
@@ -315,6 +396,9 @@ logoutBtn.addEventListener("click", () => {
 if (countrySelect instanceof HTMLSelectElement && regionSelect instanceof HTMLSelectElement) {
   countrySelect.addEventListener("change", () => {
     populateRegionOptions(countrySelect.value);
+  });
+  regionSelect.addEventListener("change", () => {
+    populateCityOptions(countrySelect.value, regionSelect.value);
   });
   populateRegionOptions(countrySelect.value);
 }
