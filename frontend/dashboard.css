@@ -424,12 +424,13 @@ button:disabled {
 }
 
 .qa-field {
-  display: flex;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
+  column-gap: 0.4rem;
   font-size: 0.8rem;
   color: var(--ink);
   line-height: 1.4;
-  flex-wrap: wrap;
+  align-items: start;
 }
 
 .qa-grid {
@@ -447,6 +448,10 @@ button:disabled {
   color: var(--ink-soft);
   min-width: 5rem;
   flex-shrink: 0;
+}
+
+.qa-field-value {
+  min-width: 0;
 }
 
 .qa-mentions {
@@ -467,11 +472,26 @@ button:disabled {
 }
 
 .qa-person-col-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.qa-person-role {
   font-size: 0.73rem;
   font-weight: 700;
   color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.qa-person-keywords {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.35;
 }
 
 .qa-badges {
@@ -1476,6 +1496,16 @@ td {
   letter-spacing: 0.08em;
   color: #6e8a97;
   font-weight: 700;
+}
+
+.analysis-label-keywords {
+  display: inline;
+  margin-left: 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #1f3e4a;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .analysis-value {

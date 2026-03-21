@@ -871,12 +871,10 @@ async function loadRowAnalysis(file, options = {}) {
         </section>
       ` : ""}
       <section class="analysis-section analysis-mention-box">
-        <p class="analysis-label">Benachteiligte Person erwähnt</p>
-        <p class="analysis-meta-line"><span class="analysis-mention-values">Keywords:</span><span>${protectedKeywords}</span></p>
+        <p class="analysis-label">Benachteiligte Person <span class="analysis-label-keywords">${protectedKeywords}</span></p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${protectedPosDots}</p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${protectedNegDots}</p>
-        <p class="analysis-label analysis-sub-label">Gegenpartei erwähnt</p>
-        <p class="analysis-meta-line"><span class="analysis-mention-values">Keywords:</span><span>${opposingKeywords}</span></p>
+        <p class="analysis-label analysis-sub-label">Gegenpartei <span class="analysis-label-keywords">${opposingKeywords}</span></p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${opposingPosDots}</p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${opposingNegDots}</p>
       </section>

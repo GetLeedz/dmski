@@ -961,6 +961,103 @@ function countPolaritySignals(text) {
   };
 }
 
+function splitIntoClaimClauses(rawText) {
+  return String(rawText || "")
+    .replace(/\r/g, "\n")
+    .split(/(?<=[.!?;:])\s+|\n+/)
+    .flatMap((sentence) => String(sentence || "").split(/,(?=\s)/))
+    .map((part) => normalizeWhitespace(part))
+    .filter((part) => part.length >= 5);
+}
+
+function countDistinctClaimSignals(clause) {
+  const lower = normalizeForSearch(clause);
+  const positiveSignals = [
+    /\beher\s+in\s+der\s+lage\b/,
+    /\bin\s+der\s+lage\b/,
+    /\bgeeignet\b/,
+    /\bsinnvoll\b/,
+    /\bvertretbar\b/,
+    /\bangemessen\b/,
+    /\bgerechtfertigt\b/,
+    /\bempfohlen\b/,
+    /\bbeibehalten\b/,
+    /\bbelassen\b/,
+    /\bsoll\b.*\bbleiben\b/,
+    /\bsoll\b.*\bzugeteilt\b/,
+    /\bsoll\b.*\bzugewiesen\b/,
+    /\bsoll\b.*\bubertragen\b/,
+    /\bkooperativ/,
+    /\bargumentationsstark\b/,
+    /\bmehr\s+kindesorientiert\b/,
+    /\bstabil/,
+    /\bkontinuitaet\b/,
+    /\bgute\s+argumente\b/
+  ];
+
+  const negativeSignals = [
+    /\bweniger\s+kooperativ\b/,
+    /\bnicht\s+kooperativ\b/,
+    /\bdurchsetzungsorientiert\b/,
+    /\bhat\s+muehe\b/,
+    /\bmuehe\s+mit\b/,
+    /\bgelingt\s+selten\b/,
+    /\bnicht\s+im\s+blick\b/,
+    /\bdurchsetzen\s+wollen\b/,
+    /\bweniger\s+kompromissbereit\b/,
+    /\bweniger\s+kindesorientiert\b/,
+    /\bweniger\s+in\s+der\s+lage\b/,
+    /\bnicht\s+in\s+der\s+lage\b/,
+    /\bkeine\s+losungen\s+finden\b/,
+    /\bkann\s+keine\s+losungen\s+finden\b/,
+    /\brigid\b/,
+    /\bproblematisch\b/,
+    /\beigene\s+interessen\b/,
+    /\bnicht\s+berucksichtigt\b/
+  ];
+
+  return {
+    positive: positiveSignals.filter((regex) => regex.test(lower)).length,
+    negative: negativeSignals.filter((regex) => regex.test(lower)).length
+  };
+}
+
+function countStrictPartyClaims(rawText, protectedAliases = [], opposingAliases = []) {
+  const clauses = splitIntoClaimClauses(rawText);
+  const result = {
+    groupA: { positive: 0, negative: 0 },
+    groupB: { positive: 0, negative: 0 }
+  };
+
+  for (const clause of clauses) {
+    const mentionsA = hasAnyPartyNeedle(clause, protectedAliases);
+    const mentionsB = hasAnyPartyNeedle(clause, opposingAliases);
+    if (!mentionsA && !mentionsB) {
+      continue;
+    }
+
+    if (mentionsA && mentionsB) {
+      continue;
+    }
+
+    const counts = countDistinctClaimSignals(clause);
+    if (counts.positive === 0 && counts.negative === 0) {
+      continue;
+    }
+
+    if (mentionsA) {
+      result.groupA.positive += counts.positive;
+      result.groupA.negative += counts.negative;
+    }
+    if (mentionsB) {
+      result.groupB.positive += counts.positive;
+      result.groupB.negative += counts.negative;
+    }
+  }
+
+  return result;
+}
+
 function normalizeForSearch(value) {
   return normalizeWhitespace(value)
     .normalize("NFD")
@@ -2314,6 +2411,19 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
 
   output.people = normalizedPeople;
   output.impactRanking = buildImpactRanking(normalizedPeople, output.disadvantagedPerson || "", aiLookup);
+
+  const strictCounts = countStrictPartyClaims(rawText, protectedIdentity.aliases, opposingIdentity.aliases);
+  const hasStrictCounts = strictCounts.groupA.positive > 0
+    || strictCounts.groupA.negative > 0
+    || strictCounts.groupB.positive > 0
+    || strictCounts.groupB.negative > 0;
+
+  if (hasStrictCounts) {
+    output.positiveMentions = Math.max(0, strictCounts.groupA.positive);
+    output.negativeMentions = Math.max(0, strictCounts.groupA.negative);
+    output.opposingPositiveMentions = Math.max(0, strictCounts.groupB.positive);
+    output.opposingNegativeMentions = Math.max(0, strictCounts.groupB.negative);
+  }
 
   if (!normalizeWhitespace(output.author) && normalizeWhitespace(output.senderInstitution)) {
     output.author = normalizeWhitespace(output.senderInstitution);

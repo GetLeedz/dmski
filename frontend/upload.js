@@ -463,23 +463,21 @@ function renderAnalysisInQueueRow(fileKey, payload) {
       <span class="qa-field"><span class="qa-label">Verfasser</span>${author || "Unbekannt"}</span>
       <span class="qa-field"><span class="qa-label">Datum</span>${date || "Unbekannt"}</span>
       <span class="qa-field"><span class="qa-label">Herkunft</span>${senderInstitution || "Unbekannt"}</span>
-      <span class="qa-field"><span class="qa-label">Personen</span>${people.length > 0 ? people.join(" · ") : "Keine"}</span>
-      ${analysisEngineVersion || backendStartedAt ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span>${escapeHtml(analysisEngineVersion || "unbekannt")}${backendStartedAt ? ` · Instanz ${escapeHtml(backendStartedAt)}` : ""}</span>` : ""}
-      ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span>${impactAssessment}</span>` : ""}
+      <span class="qa-field"><span class="qa-label">Personen</span><span class="qa-field-value">${people.length > 0 ? people.join(" · ") : "Keine"}</span></span>
+      ${analysisEngineVersion || backendStartedAt ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span><span class="qa-field-value">${escapeHtml(analysisEngineVersion || "unbekannt")}${backendStartedAt ? ` · Instanz ${escapeHtml(backendStartedAt)}` : ""}</span></span>` : ""}
+      ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span><span class="qa-field-value">${impactAssessment}</span></span>` : ""}
     </div>
     <div class="qa-mentions">
       <div class="qa-persons-grid">
         <div class="qa-person-col">
-          <div class="qa-person-col-label">${escapeHtml(currentCaseProtectedLabel)}</div>
-          <div class="qa-person-col-meta"><span class="qa-label">Keywords</span>${escapeHtml(protectedKeywords)}</div>
+          <div class="qa-person-col-label"><span class="qa-person-role">${escapeHtml(currentCaseProtectedLabel)}</span><span class="qa-person-keywords">${escapeHtml(protectedKeywords)}</span></div>
           <div class="qa-badge-rows">
             <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(positiveMentions, "positive")}</div>
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
           </div>
         </div>
         <div class="qa-person-col">
-          <div class="qa-person-col-label">${escapeHtml(currentCaseOpposingLabel)}</div>
-          <div class="qa-person-col-meta"><span class="qa-label">Keywords</span>${escapeHtml(opposingKeywords)}</div>
+          <div class="qa-person-col-label"><span class="qa-person-role">${escapeHtml(currentCaseOpposingLabel)}</span><span class="qa-person-keywords">${escapeHtml(opposingKeywords)}</span></div>
           <div class="qa-badge-rows">
             <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(opposingPositiveMentions, "positive")}</div>
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(opposingNegativeMentions, "negative")}</div>
