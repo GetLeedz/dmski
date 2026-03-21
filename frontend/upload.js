@@ -150,8 +150,20 @@ function updateQueueProgress(fileKey, percent, state, className) {
   if (pct) pct.textContent = `${Math.round(percent)}%`;
   if (status) status.textContent = state;
   if (deleteBtn) deleteBtn.hidden = !(row.classList.contains("done") && Boolean(row.dataset.fileId));
-}
 
+  // Show AI waveform while KI is running, remove when done
+  let thinkingEl = row.querySelector(".queue-ai-thinking");
+  if (state === "Analysiere...") {
+    if (!thinkingEl) {
+      thinkingEl = document.createElement("div");
+      thinkingEl.className = "queue-ai-thinking";
+      thinkingEl.innerHTML = `<div class="ai-wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><span>KI analysiert Dokument…</span>`;
+      row.appendChild(thinkingEl);
+    }
+  } else if (thinkingEl) {
+    thinkingEl.remove();
+  }
+}
 function setRowUploadedFileId(fileKey, fileId) {
   const row = uploadQueue.querySelector(`.queue-item[data-file-key="${CSS.escape(fileKey)}"]`);
   if (!row || !fileId) {
@@ -296,17 +308,17 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     existing.remove();
   }
 
-  const renderMentionDots = (count, tone) => {
+  const thinking = row.querySelector(".queue-ai-thinking");
+  if (thinking) {
+    thinking.remove();
+  }
+
+  const renderMentionBadge = (count, tone) => {
     const safeCount = Math.max(0, Number(count) || 0);
-    const maxDots = 10;
-    const shown = Math.min(safeCount, maxDots);
-    const overflow = Math.max(0, safeCount - maxDots);
-    const cls = tone === "positive" ? "is-positive" : "is-negative";
-    const dots = shown > 0
-      ? Array.from({ length: shown }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")
-      : `<span class="qa-dot-empty">0</span>`;
-    const overflowText = overflow > 0 ? `<span class="qa-dot-overflow">+${overflow}</span>` : "";
-    return `<span class="qa-dot-track">${dots}${overflowText}<span class="qa-dot-total">(${safeCount})</span></span>`;
+    if (tone === "positive") {
+      return `<span class="qa-badge is-positive" title="${safeCount} positive Erwähnungen"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="2,8 6,12 14,4"/></svg>${safeCount}</span>`;
+    }
+    return `<span class="qa-badge is-negative" title="${safeCount} negative Erwähnungen"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>${safeCount}</span>`;
   };
 
   const docType = String(payload?.documentType || "").trim();
@@ -314,9 +326,7 @@ function renderAnalysisInQueueRow(fileKey, payload) {
   const author = String(payload?.author || "").trim();
   const date = String(payload?.authoredDate || "").trim();
   const senderInstitution = String(payload?.senderInstitution || "").trim();
-  const disadvantagedPerson = String(payload?.disadvantagedPerson || "").trim();
   const impactAssessment = String(payload?.impactAssessment || "").trim();
-  const message = String(payload?.message || "").trim();
   const positiveMentions = Math.max(0, Number(payload?.positiveMentions || 0));
   const negativeMentions = Math.max(0, Number(payload?.negativeMentions || 0));
   const opposingPositiveMentions = Math.max(0, Number(payload?.opposingPositiveMentions || 0));
@@ -325,7 +335,7 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     ? payload.people.map((p) => String(p?.name || p || "").trim()).filter(Boolean)
     : [];
 
-  if (!docType && !title && !author && !date && !senderInstitution && !disadvantagedPerson && !impactAssessment && !message && people.length === 0) {
+  if (!docType && !title && !author && !date && !senderInstitution && !impactAssessment && people.length === 0) {
     return;
   }
 
@@ -338,16 +348,20 @@ function renderAnalysisInQueueRow(fileKey, payload) {
       <span class="qa-field"><span class="qa-label">Verfasser</span>${author || "Unbekannt"}</span>
       <span class="qa-field"><span class="qa-label">Datum</span>${date || "Unbekannt"}</span>
       <span class="qa-field"><span class="qa-label">Herkunft</span>${senderInstitution || "Unbekannt"}</span>
-      <span class="qa-field"><span class="qa-label">Benachteiligt</span>${disadvantagedPerson || "Nicht erkannt"}</span>
       <span class="qa-field"><span class="qa-label">Personen</span>${people.length > 0 ? people.join(" · ") : "Keine"}</span>
       ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span>${impactAssessment}</span>` : ""}
-      ${message ? `<span class="qa-field qa-wide"><span class="qa-label">Hinweis</span>${message}</span>` : ""}
     </div>
     <div class="qa-mentions">
-      <span class="qa-mention-line"><span class="qa-label">Benachteiligte Positiv</span>${renderMentionDots(positiveMentions, "positive")}</span>
-      <span class="qa-mention-line"><span class="qa-label">Benachteiligte Negativ</span>${renderMentionDots(negativeMentions, "negative")}</span>
-      <span class="qa-mention-line"><span class="qa-label">Gegenpartei Positiv</span>${renderMentionDots(opposingPositiveMentions, "positive")}</span>
-      <span class="qa-mention-line"><span class="qa-label">Gegenpartei Negativ</span>${renderMentionDots(opposingNegativeMentions, "negative")}</span>
+      <div class="qa-persons-grid">
+        <div class="qa-person-col">
+          <div class="qa-person-col-label">Benachteiligte</div>
+          <div class="qa-badges">${renderMentionBadge(positiveMentions, "positive")}${renderMentionBadge(negativeMentions, "negative")}</div>
+        </div>
+        <div class="qa-person-col">
+          <div class="qa-person-col-label">Gegenpartei</div>
+          <div class="qa-badges">${renderMentionBadge(opposingPositiveMentions, "positive")}${renderMentionBadge(opposingNegativeMentions, "negative")}</div>
+        </div>
+      </div>
     </div>
   `;
   row.appendChild(card);

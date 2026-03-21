@@ -451,19 +451,67 @@ button:disabled {
 
 .qa-mentions {
   border-top: 1px dashed #c9dbe1;
-  padding-top: 0.42rem;
+  padding-top: 0.55rem;
+}
+
+.qa-persons-grid {
   display: grid;
-  gap: 0.24rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1rem;
 }
 
-.qa-mention-line {
+.qa-person-col {
   display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
+.qa-person-col-label {
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.qa-badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.qa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+}
+
+.qa-badge svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  flex-shrink: 0;
+  stroke-width: 2.4;
+}
+
+.qa-badge.is-positive {
+  background: #edf8f1;
+  color: #1d7a3e;
+  border-color: #b6e0c5;
+}
+
+.qa-badge.is-negative {
+  background: #fdf0ef;
+  color: #c0392b;
+  border-color: #f5c6c1;
+}
+
+/* Legacy dot classes kept for files.js compatibility */
 .qa-dot-track {
   display: inline-flex;
   align-items: center;
@@ -500,6 +548,46 @@ button:disabled {
   color: #51717e;
   font-weight: 700;
 }
+
+/* AI Thinking waveform animation */
+.queue-ai-thinking {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.7rem;
+  margin-top: 0.55rem;
+  background: linear-gradient(135deg, rgba(241,248,251,0.97), rgba(228,244,245,0.9));
+  border: 1px solid #d4e4ea;
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.ai-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.ai-wave span {
+  display: block;
+  width: 3px;
+  min-height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: aiPulse 1.2s ease-in-out infinite;
+}
+
+.ai-wave span:nth-child(1) { animation-delay: 0s; }
+.ai-wave span:nth-child(2) { animation-delay: 0.12s; }
+.ai-wave span:nth-child(3) { animation-delay: 0.24s; }
+.ai-wave span:nth-child(4) { animation-delay: 0.36s; }
+.ai-wave span:nth-child(5) { animation-delay: 0.48s; }
+.ai-wave span:nth-child(6) { animation-delay: 0.36s; }
+.ai-wave span:nth-child(7) { animation-delay: 0.24s; }
 
 .queue-item.done .queue-analysis {
   margin-top: 0.55rem;
@@ -1612,6 +1700,11 @@ td {
    ================================================================ */
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes aiPulse {
+  0%, 100% { height: 3px;  opacity: 0.35; }
+  50%       { height: 17px; opacity: 1;    }
 }
 
 /* ================================================================
