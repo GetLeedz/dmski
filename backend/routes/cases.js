@@ -823,7 +823,7 @@ function extractSenderInstitution(rawText, author = "") {
 
   // No sender domain available: default to private author identity.
   if (normalizedAuthor && looksLikePersonName(normalizedAuthor)) {
-    return `${normalizedAuthor} (Privat)`;
+    return "Privat";
   }
 
   const lines = String(rawText || "")
@@ -846,6 +846,71 @@ function extractSenderInstitution(rawText, author = "") {
   }
 
   return "";
+}
+
+function classifyMentionPolarity(text) {
+  const lower = normalizeWhitespace(text).toLowerCase();
+  if (!lower) {
+    return "neutral";
+  }
+
+  const negative = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert)/.test(lower);
+  const positive = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher)/.test(lower);
+
+  if (negative && !positive) {
+    return "negative";
+  }
+  if (positive && !negative) {
+    return "positive";
+  }
+  return "neutral";
+}
+
+function countProtectedMentions(rawText, protectedName, impactRanking = []) {
+  const name = normalizeWhitespace(protectedName);
+  if (!name) {
+    return { positiveMentions: 0, negativeMentions: 0 };
+  }
+
+  let positiveMentions = 0;
+  let negativeMentions = 0;
+  const targetKey = name.toLowerCase();
+  const rankingEntry = (Array.isArray(impactRanking) ? impactRanking : []).find(
+    (entry) => normalizeWhitespace(entry?.name).toLowerCase() === targetKey
+  );
+
+  const evidenceItems = Array.isArray(rankingEntry?.items) ? rankingEntry.items : [];
+  for (const item of evidenceItems) {
+    const polarity = classifyMentionPolarity(item);
+    if (polarity === "positive") {
+      positiveMentions += 1;
+    } else if (polarity === "negative") {
+      negativeMentions += 1;
+    }
+  }
+
+  if (positiveMentions > 0 || negativeMentions > 0) {
+    return { positiveMentions, negativeMentions };
+  }
+
+  const lowerText = String(rawText || "").toLowerCase();
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escaped, "gi");
+  let match;
+  while ((match = regex.exec(lowerText)) !== null) {
+    const idx = match.index;
+    const windowStart = Math.max(0, idx - 120);
+    const windowEnd = Math.min(lowerText.length, idx + name.length + 120);
+    const windowText = lowerText.slice(windowStart, windowEnd);
+    const polarity = classifyMentionPolarity(windowText);
+    if (polarity === "positive") {
+      positiveMentions += 1;
+    } else if (polarity === "negative") {
+      negativeMentions += 1;
+    }
+  }
+
+  return { positiveMentions, negativeMentions };
 }
 
 function buildImpactRanking(people = [], disadvantagedPerson = "", aiItems = {}) {
@@ -950,7 +1015,7 @@ function parsePdfMetadataDate(value) {
   return `${day}.${month}.${year}`;
 }
 
-function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], rawText = "", message = "" }) {
+function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], positiveMentions = 0, negativeMentions = 0, rawText = "", message = "" }) {
   const normalizedAuthor = normalizeWhitespace(author);
   const normalizedTitle = normalizeWhitespace(title);
 
@@ -977,7 +1042,10 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
   const normalizedDisadvantaged = computedDisadvantaged.toLowerCase() === correctedAuthor.toLowerCase()
     ? ""
     : computedDisadvantaged;
-  const normalizedSenderInstitution = normalizeWhitespace(senderInstitution) || extractSenderInstitution(rawText, correctedAuthor);
+  let normalizedSenderInstitution = normalizeWhitespace(senderInstitution) || extractSenderInstitution(rawText, correctedAuthor);
+  if (/\bbrief\b/i.test(String(documentType || "")) && correctedAuthor && looksLikePersonName(correctedAuthor)) {
+    normalizedSenderInstitution = "Privat";
+  }
   const aiItemsLookup = {};
   if (Array.isArray(impactRanking)) {
     impactRanking.forEach((entry) => {
@@ -1004,6 +1072,8 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
     senderInstitution: normalizedSenderInstitution,
     impactAssessment: normalizedImpactAssessment,
     impactRanking: normalizedImpactRanking,
+    positiveMentions: Number(positiveMentions) || 0,
+    negativeMentions: Number(negativeMentions) || 0,
     message: normalizeWhitespace(message)
   };
 }
@@ -1072,6 +1142,8 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     senderInstitution: src.herkunft || src.senderInstitution || fallback.senderInstitution,
     impactAssessment: src.bewertung_kurz || src.impactAssessment || fallback.impactAssessment,
     impactRanking: Array.isArray(src.impactRanking) && src.impactRanking.length > 0 ? src.impactRanking : fallback.impactRanking,
+    positiveMentions: src.positiveMentions ?? fallback.positiveMentions ?? 0,
+    negativeMentions: src.negativeMentions ?? fallback.negativeMentions ?? 0,
     rawText: effectiveRawText,
     message: src.benachteiligung_indiz || src.message || fallback.message
   });
@@ -1122,7 +1194,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             "   - Alexandra Schifferli = Mutter",
             "   - Nael Schifferli = Kind",
             "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
-            "JSON-SCHEMA: {\"dokument_typ\":\"E-Mail|Brief|Beschluss|Verfuegung|Foto|WhatsApp|Bericht|Rechnung|Formular|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+            "JSON-SCHEMA: {\"dokument_typ\":\"Chat|Brief|E-Mail|Foto|Film|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
           ].join("\n")
         },
         {
@@ -1189,7 +1261,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
             "   - Alexandra Schifferli = Mutter",
             "   - Nael Schifferli = Kind",
             "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
-            "JSON-SCHEMA: {\"dokument_typ\":\"E-Mail|Brief|Beschluss|Verfuegung|Foto|WhatsApp|Bericht|Rechnung|Formular|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+            "JSON-SCHEMA: {\"dokument_typ\":\"Chat|Brief|E-Mail|Foto|Film|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
           ].join("\n")
         },
         {
@@ -1489,6 +1561,17 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") 
 
   output.people = normalizedPeople;
   output.impactRanking = buildImpactRanking(normalizedPeople, output.disadvantagedPerson || "", aiLookup);
+  const mentionSummary = countProtectedMentions(rawText, protectedName, output.impactRanking);
+  output.positiveMentions = mentionSummary.positiveMentions;
+  output.negativeMentions = mentionSummary.negativeMentions;
+
+  if (normalizeWhitespace(output.senderInstitution).toLowerCase() !== "privat"
+    && /\bbrief\b/i.test(String(output.documentType || ""))
+    && normalizeWhitespace(output.author)
+    && looksLikePersonName(output.author)) {
+    output.senderInstitution = "Privat";
+  }
+
   return output;
 }
 

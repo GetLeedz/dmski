@@ -271,6 +271,36 @@ function normalizeTitleText(text) {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
 
+function resolveDocumentTypeLabel(aiType, file) {
+  const normalized = normalizeTitleText(aiType).toLowerCase();
+  const map = {
+    "chat": "Chat",
+    "brief": "Brief",
+    "e-mail": "E-Mail",
+    "email": "E-Mail",
+    "foto": "Foto",
+    "film": "Film",
+    "whatsapp": "Chat"
+  };
+
+  if (map[normalized]) {
+    return map[normalized];
+  }
+
+  const mime = String(file?.mime_type || "").toLowerCase();
+  if (mime.includes("pdf")) {
+    return "Brief";
+  }
+  if (mime.startsWith("image/")) {
+    return "Foto";
+  }
+  if (mime.startsWith("video/")) {
+    return "Film";
+  }
+
+  return normalizeTitleText(aiType) || "Nicht erkannt";
+}
+
 function normalizePersonName(value) {
   const raw = normalizeTitleText(value)
     .replace(/\bPrivatperson\b/gi, "")
@@ -540,11 +570,14 @@ async function getDocumentAnalysis(file, options = {}) {
         senderInstitution: normalizeTitleText(payload.senderInstitution),
         impactAssessment: normalizeTitleText(payload.impactAssessment),
         impactRanking: normalizeImpactRanking(payload.impactRanking),
+        positiveMentions: Number.isFinite(Number(payload.positiveMentions)) ? Number(payload.positiveMentions) : 0,
+        negativeMentions: Number.isFinite(Number(payload.negativeMentions)) ? Number(payload.negativeMentions) : 0,
         message: normalizeTitleText(payload.message)
       };
     })
     .catch(() => ({
       status: "error",
+      documentType: "",
       title: "",
       author: "",
       authoredDate: "",
@@ -553,6 +586,8 @@ async function getDocumentAnalysis(file, options = {}) {
       senderInstitution: "",
       impactAssessment: "",
       impactRanking: [],
+      positiveMentions: 0,
+      negativeMentions: 0,
       message: "Analyse konnte nicht geladen werden."
     }));
 
@@ -656,9 +691,8 @@ async function loadRowAnalysis(file, options = {}) {
       }).join("")}</ul>`
     : '<p class="analysis-value muted">Keine eindeutigen Personen erkannt</p>';
 
-  const docTypeMarkup = analysis.documentType
-    ? `<p class="analysis-value analysis-doctype">${analysis.documentType}</p>`
-    : '';
+  const resolvedDocType = resolveDocumentTypeLabel(analysis.documentType, file);
+  const docTypeMarkup = `<p class="analysis-value analysis-doctype">${resolvedDocType}</p>`;
 
   const titleMarkup = analysis.title
     ? `<p class="analysis-value analysis-title">${analysis.title}</p>`
@@ -694,10 +728,16 @@ async function loadRowAnalysis(file, options = {}) {
   const protectedCount = protectedEntry ? Math.max(0, Number(protectedEntry.count || 0)) : 0;
   const protectedEvidenceCount = protectedEntry ? protectedEntry.items.length : 0;
   const points = Math.max(protectedCount, protectedEvidenceCount);
+  const positiveMentions = Math.max(0, Number(analysis.positiveMentions || 0));
+  const negativeMentions = Math.max(0, Number(analysis.negativeMentions || 0));
 
   box.innerHTML = `
     <div class="analysis-glass">
       <div class="analysis-grid">
+        <section class="analysis-section">
+          <p class="analysis-label">Type of File</p>
+          ${docTypeMarkup}
+        </section>
         <section class="analysis-section">
           <p class="analysis-label">Dokumenttitel</p>
           ${titleMarkup}
@@ -725,6 +765,10 @@ async function loadRowAnalysis(file, options = {}) {
           <p class="analysis-score"><span class="analysis-score-label">Punkt:</span><span class="analysis-score-value">${points}</span></p>
         </section>
       ` : ""}
+      <section class="analysis-section analysis-mention-box">
+        <p class="analysis-label">Benachteiligte Person erwähnt</p>
+        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv: ${positiveMentions} | Negativ: ${negativeMentions}</span></p>
+      </section>
     </div>
   `;
 }
