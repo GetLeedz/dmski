@@ -1,7 +1,7 @@
 /* ============================================================
-   DMSKI Dashboard — Professional Light Design System
+   DMSKI Dashboard ï¿½ Professional Light Design System
    Light mode: reduces eye fatigue when working with white docs.
-   Brand accent: teal (#116b73) — retained from login page.
+   Brand accent: teal (#116b73) ï¿½ retained from login page.
    ============================================================ */
 
 /* ---- Design Tokens ---- */
@@ -55,9 +55,9 @@ body {
   justify-content: space-between;
   gap: 1rem;
   padding: 0 2rem;
-  background: #ffffff;
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 4px rgba(15, 43, 54, 0.07);
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
 }
 
 .brand-lockup {
