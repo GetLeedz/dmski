@@ -151,6 +151,7 @@ async function downloadStorageFile(caseId, storedName) {
 let openAiClient = null;
 let pdfParseFn;
 let pdfParseLoadLogged = false;
+let analysisStorageInitPromise = null;
 
 function getPdfParse() {
   if (pdfParseFn !== undefined) {
@@ -182,6 +183,52 @@ function getOpenAiClient() {
   }
 
   return openAiClient;
+}
+
+async function ensureAnalysisStorageTable() {
+  if (!analysisStorageInitPromise) {
+    analysisStorageInitPromise = pool.query(
+      `CREATE TABLE IF NOT EXISTS case_document_analysis (
+        document_id UUID PRIMARY KEY REFERENCES case_documents(id) ON DELETE CASCADE,
+        analysis_json JSONB NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`
+    ).catch((error) => {
+      analysisStorageInitPromise = null;
+      throw error;
+    });
+  }
+
+  await analysisStorageInitPromise;
+}
+
+async function loadStoredDocumentAnalysis(documentId) {
+  try {
+    await ensureAnalysisStorageTable();
+    const result = await pool.query(
+      "SELECT analysis_json FROM case_document_analysis WHERE document_id = $1 LIMIT 1",
+      [documentId]
+    );
+    return result.rows[0]?.analysis_json || null;
+  } catch (error) {
+    console.error("Load stored analysis warning:", error.message);
+    return null;
+  }
+}
+
+async function saveDocumentAnalysis(documentId, analysis) {
+  try {
+    await ensureAnalysisStorageTable();
+    await pool.query(
+      `INSERT INTO case_document_analysis (document_id, analysis_json, updated_at)
+       VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
+       ON CONFLICT (document_id)
+       DO UPDATE SET analysis_json = EXCLUDED.analysis_json, updated_at = CURRENT_TIMESTAMP`,
+      [documentId, JSON.stringify(analysis || {})]
+    );
+  } catch (error) {
+    console.error("Save analysis warning:", error.message);
+  }
 }
 
 function extractTitleFromText(rawText) {
@@ -903,7 +950,11 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
     return buildFallbackAnalysis(fallback);
   }
 
-  const textSnippet = String(documentText || "").slice(0, 12000);
+  const normalizedDocumentText = String(documentText || "");
+  const maxChars = 50000;
+  const textSnippet = normalizedDocumentText.length <= maxChars
+    ? normalizedDocumentText
+    : `${normalizedDocumentText.slice(0, 30000)}\n\n[... gekuerzt ...]\n\n${normalizedDocumentText.slice(-20000)}`;
   if (!textSnippet.trim()) {
     return buildFallbackAnalysis(fallback);
   }
@@ -1506,6 +1557,7 @@ router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
 router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();
+  const forceRefresh = ["1", "true", "yes"].includes(String(req.query.refresh || "").toLowerCase());
 
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
@@ -1520,6 +1572,13 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     const file = result.rows[0];
     if (!file) {
       return res.status(404).json({ error: "Datei nicht gefunden." });
+    }
+
+    if (!forceRefresh) {
+      const stored = await loadStoredDocumentAnalysis(file.id);
+      if (stored && typeof stored === "object") {
+        return res.json(stored);
+      }
     }
 
     const fileBuffer = await downloadStorageFile(caseId, file.stored_name);
@@ -1543,10 +1602,11 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
         const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
         const focused = applyProtectedPersonFocus(aiResult, parsed?.text || "", protectedPersonName);
+        await saveDocumentAnalysis(file.id, focused);
         return res.json(focused);
       } catch (pdfError) {
         console.error("PDF parse warning:", pdfError.message);
-        return res.json({
+        const fallback = {
           status: "empty",
           title: "",
           author: "",
@@ -1554,7 +1614,9 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
           people: [],
           disadvantagedPerson: "",
           message: "PDF-Inhalt konnte nicht gelesen werden (m├Âglicherweise Scan oder defekter Textlayer)."
-        });
+        };
+        await saveDocumentAnalysis(file.id, fallback);
+        return res.json(fallback);
       }
     }
 
@@ -1562,10 +1624,11 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       const protectedPersonName = await getCaseProtectedPerson(caseId);
       const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name);
       const focused = applyProtectedPersonFocus(imageResult, "", protectedPersonName);
+      await saveDocumentAnalysis(file.id, focused);
       return res.json(focused);
     }
 
-    return res.json({
+    const unsupported = {
       status: "empty",
       title: "",
       author: "",
@@ -1573,7 +1636,9 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       people: [],
       disadvantagedPerson: "",
       message: "Analyse f├╝r diesen Dateityp nicht verf├╝gbar."
-    });
+    };
+    await saveDocumentAnalysis(file.id, unsupported);
+    return res.json(unsupported);
   } catch (err) {
     if (Number(err?.statusCode || 0) === 404 || Number(err?.statusCode || 0) === 503) {
       return res.status(err.statusCode).json({ error: err.message });

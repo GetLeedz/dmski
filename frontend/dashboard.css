@@ -50,14 +50,18 @@ body {
   top: 0;
   z-index: 50;
   height: var(--topbar-h);
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0 2rem;
-  background: transparent;
-  border-bottom: 0;
-  box-shadow: none;
+  padding: 0 max(1rem, calc((100vw - 1040px) / 2 + 2rem));
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(168, 196, 208, 0.48);
+  box-shadow: 0 6px 24px rgba(15, 43, 54, 0.08);
 }
 
 .brand-lockup {
@@ -873,7 +877,7 @@ td {
    PREVIEW CELL
    ================================================================ */
 .preview-cell {
-  width: 48rem;
+  width: 36rem;
   cursor: zoom-in;
 }
 
@@ -901,13 +905,13 @@ td {
 }
 
 .row-preview-box {
-  width: clamp(30rem, 62vw, 48rem);
+  width: clamp(24rem, 46vw, 36rem);
   aspect-ratio: 210 / 297;
 }
 
 .row-preview-loading,
 .row-preview-empty {
-  width: clamp(30rem, 62vw, 48rem);
+  width: clamp(24rem, 46vw, 36rem);
   aspect-ratio: 1 / 1.414;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -922,7 +926,7 @@ td {
 
 .row-preview-frame,
 .row-preview-image {
-  width: clamp(30rem, 62vw, 48rem);
+  width: clamp(24rem, 46vw, 36rem);
   aspect-ratio: 210 / 297;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -970,7 +974,8 @@ td {
 }
 
 .analysis-cell {
-  min-width: 340px;
+  width: 42%;
+  min-width: 420px;
 }
 
 .analysis-cell-top {
