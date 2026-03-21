@@ -921,11 +921,45 @@ function buildNameNeedles(name) {
   return Array.from(new Set([full, ...parts]));
 }
 
-function countProtectedMentions(rawText, protectedName, impactRanking = []) {
+function parsePartyAliases(value) {
+  const raw = normalizeWhitespace(value);
+  if (!raw) {
+    return { primary: "", aliases: [] };
+  }
+
+  const aliases = raw
+    .split(",")
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+
+  const primary = aliases[0] || raw;
+  return { primary, aliases: aliases.length > 0 ? aliases : [primary] };
+}
+
+function hasAnyPartyNeedle(text, aliases = []) {
+  const lowerText = normalizeForSearch(text);
+  if (!lowerText) {
+    return false;
+  }
+
+  const needles = Array.from(new Set(
+    (Array.isArray(aliases) ? aliases : [])
+      .flatMap((alias) => buildNameNeedles(alias))
+      .filter(Boolean)
+  ));
+
+  return needles.some((needle) => new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(lowerText));
+}
+
+function countProtectedMentions(rawText, protectedName, impactRanking = [], aliases = []) {
   const name = normalizeWhitespace(protectedName);
   if (!name) {
     return { positiveMentions: 0, negativeMentions: 0 };
   }
+
+  const aliasList = Array.isArray(aliases) && aliases.length > 0
+    ? aliases.map((entry) => normalizeWhitespace(entry)).filter(Boolean)
+    : [name];
 
   let positiveMentions = 0;
   let negativeMentions = 0;
@@ -956,7 +990,7 @@ function countProtectedMentions(rawText, protectedName, impactRanking = []) {
 
   const normalizedText = String(rawText || "");
   const normalizedSearchText = normalizeForSearch(normalizedText);
-  const needles = buildNameNeedles(name);
+  const needles = Array.from(new Set(aliasList.flatMap((alias) => buildNameNeedles(alias))));
   const sentenceCandidates = normalizedSearchText
     .split(/(?<=[.!?])\s+|\n+/)
     .map((part) => part.trim())
@@ -2093,8 +2127,10 @@ async function getCaseParties(caseId) {
 }
 
 function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", opposingPartyName = "") {
-  const protectedName = normalizeWhitespace(protectedPersonName);
-  const opposingName = normalizeWhitespace(opposingPartyName);
+  const protectedIdentity = parsePartyAliases(protectedPersonName);
+  const opposingIdentity = parsePartyAliases(opposingPartyName);
+  const protectedName = normalizeWhitespace(protectedIdentity.primary);
+  const opposingName = normalizeWhitespace(opposingIdentity.primary);
   if ((!protectedName && !opposingName) || !analysis || typeof analysis !== "object") {
     return analysis;
   }
@@ -2107,11 +2143,11 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
 
   const hasProtectedInPeople = output.people.some((entry) => {
     const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name);
-    return name.toLowerCase() === protectedName.toLowerCase();
+    return hasAnyPartyNeedle(name, protectedIdentity.aliases);
   });
 
   const lowerText = String(rawText || "").toLowerCase();
-  const nameInText = protectedName ? lowerText.includes(protectedName.toLowerCase()) : false;
+  const nameInText = hasAnyPartyNeedle(rawText, protectedIdentity.aliases);
   const hasAttackTerms = /(benachteilig|diskriminier|beleidig|angriff|abwert|verletz|schlecht\s+gemacht|unterschiedlich\s+gut|ungleich\s+behand)/.test(lowerText);
   const assessmentSuggestsHarm = /benachteiligt/i.test(String(output.impactAssessment || ""));
 
@@ -2121,7 +2157,7 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
 
   const hasOpposingInPeople = output.people.some((entry) => {
     const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name);
-    return name.toLowerCase() === opposingName.toLowerCase();
+    return hasAnyPartyNeedle(name, opposingIdentity.aliases);
   });
   if (opposingName && !hasOpposingInPeople) {
     output.people.push({ name: opposingName, affiliation: "Privatperson", allowSingleToken: true });
@@ -2166,11 +2202,11 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   output.people = normalizedPeople;
   output.impactRanking = buildImpactRanking(normalizedPeople, output.disadvantagedPerson || "", aiLookup);
 
-  const mentionSummaryProtected = countProtectedMentions(rawText, protectedName, output.impactRanking);
+  const mentionSummaryProtected = countProtectedMentions(rawText, protectedName, output.impactRanking, protectedIdentity.aliases);
   output.positiveMentions = Math.max(Math.max(0, Number(output.positiveMentions || 0)), mentionSummaryProtected.positiveMentions);
   output.negativeMentions = Math.max(Math.max(0, Number(output.negativeMentions || 0)), mentionSummaryProtected.negativeMentions);
 
-  const mentionSummaryOpposing = countProtectedMentions(rawText, opposingName, output.impactRanking);
+  const mentionSummaryOpposing = countProtectedMentions(rawText, opposingName, output.impactRanking, opposingIdentity.aliases);
   output.opposingPositiveMentions = Math.max(Math.max(0, Number(output.opposingPositiveMentions || 0)), mentionSummaryOpposing.positiveMentions);
   output.opposingNegativeMentions = Math.max(Math.max(0, Number(output.opposingNegativeMentions || 0)), mentionSummaryOpposing.negativeMentions);
 
@@ -2182,11 +2218,20 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   const senderLower = senderRaw.toLowerCase();
   const authorLower = normalizeWhitespace(output.author).toLowerCase();
   const senderLooksInstitutional = /\b(kesb|gericht|amt|behoerde|behörde|verwaltung|kanzlei|anwal|schule|bank|versicherung|gmbh|\bag\b|zivil|bezirks|kantons)\b/i.test(senderRaw);
+  const textSuggestsInstitution = /\b(kesb\s+[a-z]|kesb|gericht|behoerde|behörde|kanzlei|amt|verwaltung)\b/i.test(String(rawText || ""));
+
+  if ((!senderRaw || senderLower === "privat") && textSuggestsInstitution) {
+    const extracted = extractSenderInstitution(rawText, output.author || "");
+    if (extracted) {
+      output.senderInstitution = extracted;
+    }
+  }
 
   if (/\bbrief\b/i.test(String(output.documentType || ""))
     && normalizeWhitespace(output.author)
     && looksLikePersonName(output.author)
     && !senderLooksInstitutional
+    && !textSuggestsInstitution
     && (!senderLower || senderLower === authorLower || senderLower.endsWith("(privat)"))) {
     output.senderInstitution = "Privat";
   }
