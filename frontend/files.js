@@ -84,7 +84,7 @@ let currentCaseProtectedPerson = "";
 let currentCaseName = "";
 let currentCaseOpposingParty = "";
 
-listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
+listTitle.textContent = `Files für Fall ${currentCaseId}`;
 
 function setMessage(el, text, type) {
   el.textContent = text;
@@ -572,6 +572,8 @@ async function getDocumentAnalysis(file, options = {}) {
         impactRanking: normalizeImpactRanking(payload.impactRanking),
         positiveMentions: Number.isFinite(Number(payload.positiveMentions)) ? Number(payload.positiveMentions) : 0,
         negativeMentions: Number.isFinite(Number(payload.negativeMentions)) ? Number(payload.negativeMentions) : 0,
+        opposingPositiveMentions: Number.isFinite(Number(payload.opposingPositiveMentions)) ? Number(payload.opposingPositiveMentions) : 0,
+        opposingNegativeMentions: Number.isFinite(Number(payload.opposingNegativeMentions)) ? Number(payload.opposingNegativeMentions) : 0,
         message: normalizeTitleText(payload.message)
       };
     })
@@ -588,6 +590,8 @@ async function getDocumentAnalysis(file, options = {}) {
       impactRanking: [],
       positiveMentions: 0,
       negativeMentions: 0,
+      opposingPositiveMentions: 0,
+      opposingNegativeMentions: 0,
       message: "Analyse konnte nicht geladen werden."
     }));
 
@@ -730,6 +734,8 @@ async function loadRowAnalysis(file, options = {}) {
   const points = Math.max(protectedCount, protectedEvidenceCount);
   const positiveMentions = Math.max(0, Number(analysis.positiveMentions || 0));
   const negativeMentions = Math.max(0, Number(analysis.negativeMentions || 0));
+  const opposingPositiveMentions = Math.max(0, Number(analysis.opposingPositiveMentions || 0));
+  const opposingNegativeMentions = Math.max(0, Number(analysis.opposingNegativeMentions || 0));
 
   box.innerHTML = `
     <div class="analysis-glass">
@@ -768,6 +774,8 @@ async function loadRowAnalysis(file, options = {}) {
       <section class="analysis-section analysis-mention-box">
         <p class="analysis-label">Benachteiligte Person erwähnt</p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv: ${positiveMentions} | Negativ: ${negativeMentions}</span></p>
+        <p class="analysis-label analysis-sub-label">Gegenpartei erwähnt</p>
+        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv: ${opposingPositiveMentions} | Negativ: ${opposingNegativeMentions}</span></p>
       </section>
     </div>
   `;
@@ -962,18 +970,14 @@ async function loadCaseContext() {
     currentCaseOpposingParty = normalizeTitleText(active.opposing_party || "");
     currentCaseName = normalizeTitleText(active.case_name || "");
     listTitle.textContent = currentCaseName
-      ? `Dateiliste · ${currentCaseName} (${currentCaseId})`
-      : `Dateiliste für Fall ${currentCaseId}`;
+      ? `Files · ${currentCaseName} (${currentCaseId})`
+      : `Files für Fall ${currentCaseId}`;
 
     const personsRow = document.getElementById("casePersonsRow");
     if (personsRow) {
       const parts = [];
-      if (currentCaseProtectedPerson) {
-        parts.push(`<span class="case-person-chip is-protected" title="Benachteiligte Person">${currentCaseProtectedPerson}</span>`);
-      }
-      if (currentCaseOpposingParty) {
-        parts.push(`<span class="case-person-chip is-opposing" title="Gegenpartei">${currentCaseOpposingParty}</span>`);
-      }
+      parts.push(`<div class="case-person-field is-protected"><span class="case-person-label">Benachteiligte Person</span><span class="case-person-value">${currentCaseProtectedPerson || "Nicht gesetzt"}</span></div>`);
+      parts.push(`<div class="case-person-field is-opposing"><span class="case-person-label">Gegenpartei</span><span class="case-person-value">${currentCaseOpposingParty || "Nicht gesetzt"}</span></div>`);
       personsRow.innerHTML = parts.join("");
     }
   } catch {

@@ -1015,7 +1015,7 @@ function parsePdfMetadataDate(value) {
   return `${day}.${month}.${year}`;
 }
 
-function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], positiveMentions = 0, negativeMentions = 0, rawText = "", message = "" }) {
+function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], positiveMentions = 0, negativeMentions = 0, opposingPositiveMentions = 0, opposingNegativeMentions = 0, rawText = "", message = "" }) {
   const normalizedAuthor = normalizeWhitespace(author);
   const normalizedTitle = normalizeWhitespace(title);
 
@@ -1074,6 +1074,8 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
     impactRanking: normalizedImpactRanking,
     positiveMentions: Number(positiveMentions) || 0,
     negativeMentions: Number(negativeMentions) || 0,
+    opposingPositiveMentions: Number(opposingPositiveMentions) || 0,
+    opposingNegativeMentions: Number(opposingNegativeMentions) || 0,
     message: normalizeWhitespace(message)
   };
 }
@@ -1144,6 +1146,8 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     impactRanking: Array.isArray(src.impactRanking) && src.impactRanking.length > 0 ? src.impactRanking : fallback.impactRanking,
     positiveMentions: src.positiveMentions ?? fallback.positiveMentions ?? 0,
     negativeMentions: src.negativeMentions ?? fallback.negativeMentions ?? 0,
+    opposingPositiveMentions: src.opposingPositiveMentions ?? fallback.opposingPositiveMentions ?? 0,
+    opposingNegativeMentions: src.opposingNegativeMentions ?? fallback.opposingNegativeMentions ?? 0,
     rawText: effectiveRawText,
     message: src.benachteiligung_indiz || src.message || fallback.message
   });
@@ -1579,24 +1583,42 @@ async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opp
   }
 }
 
-async function getCaseProtectedPerson(caseId) {
+async function getCaseParties(caseId) {
   try {
     const result = await pool.query(
-      "SELECT protected_person_name FROM cases WHERE id = $1 LIMIT 1",
+      "SELECT protected_person_name, opposing_party FROM cases WHERE id = $1 LIMIT 1",
       [caseId]
     );
-    return normalizeWhitespace(result.rows[0]?.protected_person_name || "");
+    return {
+      protectedPersonName: normalizeWhitespace(result.rows[0]?.protected_person_name || ""),
+      opposingPartyName: normalizeWhitespace(result.rows[0]?.opposing_party || "")
+    };
   } catch (err) {
     if (err?.code === "42703") {
-      return "";
+      try {
+        const fallback = await pool.query(
+          "SELECT protected_person_name FROM cases WHERE id = $1 LIMIT 1",
+          [caseId]
+        );
+        return {
+          protectedPersonName: normalizeWhitespace(fallback.rows[0]?.protected_person_name || ""),
+          opposingPartyName: ""
+        };
+      } catch (err2) {
+        if (err2?.code === "42703") {
+          return { protectedPersonName: "", opposingPartyName: "" };
+        }
+        throw err2;
+      }
     }
     throw err;
   }
 }
 
-function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") {
+function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", opposingPartyName = "") {
   const protectedName = normalizeWhitespace(protectedPersonName);
-  if (!protectedName || !analysis || typeof analysis !== "object") {
+  const opposingName = normalizeWhitespace(opposingPartyName);
+  if ((!protectedName && !opposingName) || !analysis || typeof analysis !== "object") {
     return analysis;
   }
 
@@ -1612,7 +1634,7 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") 
   });
 
   const lowerText = String(rawText || "").toLowerCase();
-  const nameInText = lowerText.includes(protectedName.toLowerCase());
+  const nameInText = protectedName ? lowerText.includes(protectedName.toLowerCase()) : false;
   const hasAttackTerms = /(benachteilig|diskriminier|beleidig|angriff|abwert|verletz|schlecht\s+gemacht|unterschiedlich\s+gut|ungleich\s+behand)/.test(lowerText);
   const assessmentSuggestsHarm = /benachteiligt/i.test(String(output.impactAssessment || ""));
 
@@ -1620,7 +1642,9 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") 
     output.people.push({ name: protectedName, affiliation: "Privatperson", allowSingleToken: true });
   }
 
-  const shouldFlagProtected = (nameInText && hasAttackTerms) || (hasProtectedInPeople && assessmentSuggestsHarm);
+  const shouldFlagProtected = protectedName
+    ? (nameInText && hasAttackTerms) || (hasProtectedInPeople && assessmentSuggestsHarm)
+    : false;
   if (shouldFlagProtected) {
     output.disadvantagedPerson = protectedName;
     output.impactAssessment = "Person benachteiligt";
@@ -1656,9 +1680,14 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") 
 
   output.people = normalizedPeople;
   output.impactRanking = buildImpactRanking(normalizedPeople, output.disadvantagedPerson || "", aiLookup);
-  const mentionSummary = countProtectedMentions(rawText, protectedName, output.impactRanking);
-  output.positiveMentions = mentionSummary.positiveMentions;
-  output.negativeMentions = mentionSummary.negativeMentions;
+
+  const mentionSummaryProtected = countProtectedMentions(rawText, protectedName, output.impactRanking);
+  output.positiveMentions = mentionSummaryProtected.positiveMentions;
+  output.negativeMentions = mentionSummaryProtected.negativeMentions;
+
+  const mentionSummaryOpposing = countProtectedMentions(rawText, opposingName, output.impactRanking);
+  output.opposingPositiveMentions = mentionSummaryOpposing.positiveMentions;
+  output.opposingNegativeMentions = mentionSummaryOpposing.negativeMentions;
 
   if (normalizeWhitespace(output.senderInstitution).toLowerCase() !== "privat"
     && /\bbrief\b/i.test(String(output.documentType || ""))
@@ -1920,7 +1949,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
 
     if (String(file.mime_type || "").includes("pdf")) {
       try {
-        const protectedPersonName = await getCaseProtectedPerson(caseId);
+        const parties = await getCaseParties(caseId);
         const pdfParse = getPdfParse();
         if (!pdfParse) {
           return res.json({
@@ -1936,7 +1965,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
         const parsed = await pdfParse(fileBuffer);
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
         const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
-        const focused = applyProtectedPersonFocus(aiResult, parsed?.text || "", protectedPersonName);
+        const focused = applyProtectedPersonFocus(aiResult, parsed?.text || "", parties.protectedPersonName, parties.opposingPartyName);
         await saveDocumentAnalysis(file.id, focused);
         return res.json(focused);
       } catch (pdfError) {
@@ -1956,9 +1985,9 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     }
 
     if (String(file.mime_type || "").startsWith("image/")) {
-      const protectedPersonName = await getCaseProtectedPerson(caseId);
+      const parties = await getCaseParties(caseId);
       const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name);
-      const focused = applyProtectedPersonFocus(imageResult, "", protectedPersonName);
+      const focused = applyProtectedPersonFocus(imageResult, "", parties.protectedPersonName, parties.opposingPartyName);
       await saveDocumentAnalysis(file.id, focused);
       return res.json(focused);
     }
