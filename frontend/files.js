@@ -309,9 +309,11 @@ function renderMentionDots(count, tone) {
   const safeCount = Math.max(0, Number(count) || 0);
   const dotClass = tone === "positive" ? "is-positive" : "is-negative";
 
-  const dots = safeCount > 0
-    ? Array.from({ length: safeCount }, () => `<span class="analysis-dot ${dotClass}" aria-hidden="true"></span>`).join("")
-    : `<span class="analysis-dot-empty">0</span>`;
+  if (safeCount <= 0) {
+    return `<span class="analysis-dot-wrap"><span class="analysis-dot-count">0</span></span>`;
+  }
+
+  const dots = Array.from({ length: safeCount }, () => `<span class="analysis-dot ${dotClass}" aria-hidden="true"></span>`).join("");
 
   return `<span class="analysis-dot-wrap"><span class="analysis-dot-track" aria-label="${safeCount}">${dots}</span><span class="analysis-dot-count">${safeCount}</span></span>`;
 }

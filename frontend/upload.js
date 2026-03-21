@@ -317,7 +317,7 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     const safeCount = Math.max(0, Number(count) || 0);
     const cls = tone === "positive" ? "is-positive" : "is-negative";
     if (safeCount <= 0) {
-      return `<span class="qa-dot-wrap"><span class="qa-dot-empty">0</span><span class="qa-dot-count">0</span></span>`;
+      return `<span class="qa-dot-wrap"><span class="qa-dot-count">0</span></span>`;
     }
     return `<span class="qa-dot-wrap"><span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span><span class="qa-dot-count">${safeCount}</span></span>`;
   };
@@ -355,7 +355,7 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     <div class="qa-mentions">
       <div class="qa-persons-grid">
         <div class="qa-person-col">
-          <div class="qa-person-col-label">Benachteiligte</div>
+          <div class="qa-person-col-label">Benachteiligte Person</div>
           <div class="qa-badge-rows">
             <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(positiveMentions, "positive")}</div>
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
