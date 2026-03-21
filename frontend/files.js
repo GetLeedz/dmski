@@ -85,6 +85,8 @@ let currentCaseName = "";
 let currentCaseOpposingParty = "";
 let currentCaseCountry = "";
 let currentCaseLocality = "";
+let currentCaseRegion = "";
+let currentCaseCity = "";
 
 listTitle.textContent = `Files für Fall ${currentCaseId}`;
 
@@ -995,6 +997,8 @@ async function loadCaseContext() {
     currentCaseOpposingParty = normalizeTitleText(active.opposing_party || "");
     currentCaseCountry = normalizeTitleText(active.country || "");
     currentCaseLocality = normalizeTitleText(active.locality || "");
+    currentCaseRegion = normalizeTitleText(active.region || active.locality || "");
+    currentCaseCity = normalizeTitleText(active.city || "");
     currentCaseName = normalizeTitleText(active.case_name || "");
     listTitle.textContent = currentCaseName
       ? `Files · ${currentCaseName} (${currentCaseId})`
@@ -1005,8 +1009,12 @@ async function loadCaseContext() {
       const parts = [];
       parts.push(`<div class="case-person-field is-protected"><span class="case-person-label">Benachteiligte Person</span><span class="case-person-value">${currentCaseProtectedPerson || "Nicht gesetzt"}</span></div>`);
       parts.push(`<div class="case-person-field is-opposing"><span class="case-person-label">Gegenpartei</span><span class="case-person-value">${currentCaseOpposingParty || "Nicht gesetzt"}</span></div>`);
+      const regionLabel = currentCaseCountry === "Schweiz" ? "Kanton" : currentCaseCountry ? "Bundesland" : "Kanton / Bundesland";
       parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Land</span><span class="case-person-value">${currentCaseCountry || "Nicht gesetzt"}</span></div>`);
-      parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Ortschaft</span><span class="case-person-value">${currentCaseLocality || "Nicht gesetzt"}</span></div>`);
+      parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">${regionLabel}</span><span class="case-person-value">${currentCaseRegion || "Nicht gesetzt"}</span></div>`);
+      if (currentCaseCity) {
+        parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Ortschaft / Sitz des Gerichts</span><span class="case-person-value">${currentCaseCity}</span></div>`);
+      }
       personsRow.innerHTML = parts.join("");
     }
   } catch {

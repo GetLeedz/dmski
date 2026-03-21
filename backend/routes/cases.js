@@ -1678,6 +1678,8 @@ async function ensureCaseOptionalColumns() {
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS opposing_party text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS country text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS locality text");
+        await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS region text");
+        await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS city text");
       } catch (err) {
         // If permissions are restricted, the compat fallbacks below still keep app functional.
         console.warn("Ensure case columns warning:", err.message);
@@ -1685,10 +1687,12 @@ async function ensureCaseOptionalColumns() {
 
       try {
         await pool.query(
-          "CREATE TABLE IF NOT EXISTS case_party_fallback (case_id text PRIMARY KEY, protected_person_name text, opposing_party text, country text, locality text)"
+          "CREATE TABLE IF NOT EXISTS case_party_fallback (case_id text PRIMARY KEY, protected_person_name text, opposing_party text, country text, locality text, region text, city text)"
         );
         await pool.query("ALTER TABLE case_party_fallback ADD COLUMN IF NOT EXISTS country text");
         await pool.query("ALTER TABLE case_party_fallback ADD COLUMN IF NOT EXISTS locality text");
+        await pool.query("ALTER TABLE case_party_fallback ADD COLUMN IF NOT EXISTS region text");
+        await pool.query("ALTER TABLE case_party_fallback ADD COLUMN IF NOT EXISTS city text");
       } catch (err) {
         console.warn("Ensure case fallback table warning:", err.message);
       }
@@ -1698,7 +1702,7 @@ async function ensureCaseOptionalColumns() {
   await ensureCaseColumnsPromise;
 }
 
-async function upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality) {
+async function upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality, region, city) {
   const normalizedId = String(caseId || "").trim();
   if (!/^\d{6}$/.test(normalizedId)) {
     return;
@@ -1706,8 +1710,8 @@ async function upsertCasePartiesFallback(caseId, protectedPerson, opposingParty,
 
   try {
     await pool.query(
-      "INSERT INTO case_party_fallback (case_id, protected_person_name, opposing_party, country, locality) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (case_id) DO UPDATE SET protected_person_name = EXCLUDED.protected_person_name, opposing_party = EXCLUDED.opposing_party, country = EXCLUDED.country, locality = EXCLUDED.locality",
-      [normalizedId, protectedPerson || null, opposingParty || null, country || null, locality || null]
+      "INSERT INTO case_party_fallback (case_id, protected_person_name, opposing_party, country, locality, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (case_id) DO UPDATE SET protected_person_name = EXCLUDED.protected_person_name, opposing_party = EXCLUDED.opposing_party, country = EXCLUDED.country, locality = EXCLUDED.locality, region = EXCLUDED.region, city = EXCLUDED.city",
+      [normalizedId, protectedPerson || null, opposingParty || null, country || null, locality || null, region || null, city || null]
     );
   } catch (err) {
     // Non-fatal: main flow must not break if fallback table is unavailable.
@@ -1726,7 +1730,7 @@ async function loadCasePartiesFallbackMap(caseIds = []) {
 
   try {
     const result = await pool.query(
-      "SELECT case_id, protected_person_name, opposing_party, country, locality FROM case_party_fallback WHERE case_id = ANY($1::text[])",
+      "SELECT case_id, protected_person_name, opposing_party, country, locality, region, city FROM case_party_fallback WHERE case_id = ANY($1::text[])",
       [normalizedIds]
     );
 
@@ -1736,7 +1740,9 @@ async function loadCasePartiesFallbackMap(caseIds = []) {
         protected_person_name: normalizeWhitespace(row.protected_person_name || ""),
         opposing_party: normalizeWhitespace(row.opposing_party || ""),
         country: normalizeWhitespace(row.country || ""),
-        locality: normalizeWhitespace(row.locality || "")
+        locality: normalizeWhitespace(row.locality || ""),
+        region: normalizeWhitespace(row.region || ""),
+        city: normalizeWhitespace(row.city || "")
       });
     }
     return map;
@@ -1759,7 +1765,9 @@ async function mergeCasePartiesFromFallback(rows = []) {
         protected_person_name: row?.protected_person_name ?? null,
         opposing_party: row?.opposing_party ?? null,
         country: row?.country ?? null,
-        locality: row?.locality ?? null
+        locality: row?.locality ?? null,
+        region: row?.region ?? null,
+        city: row?.city ?? null
       };
     }
 
@@ -1767,13 +1775,17 @@ async function mergeCasePartiesFromFallback(rows = []) {
     const opposingFromRow = normalizeWhitespace(row?.opposing_party || "");
     const countryFromRow = normalizeWhitespace(row?.country || "");
     const localityFromRow = normalizeWhitespace(row?.locality || "");
+    const regionFromRow = normalizeWhitespace(row?.region || "");
+    const cityFromRow = normalizeWhitespace(row?.city || "");
 
     return {
       ...row,
       protected_person_name: protectedFromRow || fallback.protected_person_name || null,
       opposing_party: opposingFromRow || fallback.opposing_party || null,
       country: countryFromRow || fallback.country || null,
-      locality: localityFromRow || fallback.locality || null
+      locality: localityFromRow || fallback.locality || null,
+      region: regionFromRow || fallback.region || null,
+      city: cityFromRow || fallback.city || null
     };
   });
 }
@@ -1782,20 +1794,20 @@ async function listCasesCompat() {
   await ensureCaseOptionalColumns();
   try {
     const result = await pool.query(
-      "SELECT id, case_date, case_name, protected_person_name, opposing_party, country, locality, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+      "SELECT id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
     );
     return mergeCasePartiesFromFallback(result.rows);
   } catch (err) {
     if (err?.code === "42703") {
       try {
         const fallback = await pool.query(
-          "SELECT id, case_date, case_name, protected_person_name, country, locality, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+          "SELECT id, case_date, case_name, protected_person_name, country, locality, region, city, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
         );
         return mergeCasePartiesFromFallback(fallback.rows.map((row) => ({ ...row, opposing_party: null })));
       } catch (err2) {
         if (err2?.code === "42703") {
           const fallback2 = await pool.query(
-            "SELECT id, case_date, case_name, country, locality, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+            "SELECT id, case_date, case_name, country, locality, region, city, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
           );
           return mergeCasePartiesFromFallback(fallback2.rows.map((row) => ({ ...row, protected_person_name: null, opposing_party: null })));
         }
@@ -1806,31 +1818,31 @@ async function listCasesCompat() {
   }
 }
 
-async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality) {
+async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality, region, city) {
   await ensureCaseOptionalColumns();
   try {
     const result = await pool.query(
-      "INSERT INTO cases (id, case_date, case_name, protected_person_name, opposing_party, country, locality) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, case_date, case_name, protected_person_name, opposing_party, country, locality, created_at",
-      [caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality]
+      "INSERT INTO cases (id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city, created_at",
+      [caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality, region, city]
     );
-    await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality);
+    await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality, region, city);
     return result.rows[0];
   } catch (err) {
     if (err?.code === "42703") {
       try {
         const fallback = await pool.query(
-          "INSERT INTO cases (id, case_date, case_name, protected_person_name, country, locality) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, case_date, case_name, protected_person_name, country, locality, created_at",
-          [caseId, caseDate, caseName, protectedPerson, country, locality]
+          "INSERT INTO cases (id, case_date, case_name, protected_person_name, country, locality, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, case_date, case_name, protected_person_name, country, locality, region, city, created_at",
+          [caseId, caseDate, caseName, protectedPerson, country, locality, region, city]
         );
-        await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality);
+        await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality, region, city);
         return { ...fallback.rows[0], opposing_party: null };
       } catch (err2) {
         if (err2?.code === "42703") {
           const fallback2 = await pool.query(
-            "INSERT INTO cases (id, case_date, case_name, country, locality) VALUES ($1, $2, $3, $4, $5) RETURNING id, case_date, case_name, country, locality, created_at",
-            [caseId, caseDate, caseName, country, locality]
+            "INSERT INTO cases (id, case_date, case_name, country, locality, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, case_date, case_name, country, locality, region, city, created_at",
+            [caseId, caseDate, caseName, country, locality, region, city]
           );
-          await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality);
+          await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality, region, city);
           return { ...fallback2.rows[0], protected_person_name: null, opposing_party: null };
         }
         throw err2;
@@ -1844,45 +1856,53 @@ async function getCaseParties(caseId) {
   await ensureCaseOptionalColumns();
   try {
     const result = await pool.query(
-      "SELECT protected_person_name, opposing_party, country, locality FROM cases WHERE id = $1 LIMIT 1",
+      "SELECT protected_person_name, opposing_party, country, locality, region, city FROM cases WHERE id = $1 LIMIT 1",
       [caseId]
     );
     const fallbackMap = await loadCasePartiesFallbackMap([caseId]);
-    const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "", country: "", locality: "" };
+    const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "", country: "", locality: "", region: "", city: "" };
     const protectedFromRow = normalizeWhitespace(result.rows[0]?.protected_person_name || "");
     const opposingFromRow = normalizeWhitespace(result.rows[0]?.opposing_party || "");
     const countryFromRow = normalizeWhitespace(result.rows[0]?.country || "");
     const localityFromRow = normalizeWhitespace(result.rows[0]?.locality || "");
+    const regionFromRow = normalizeWhitespace(result.rows[0]?.region || "");
+    const cityFromRow = normalizeWhitespace(result.rows[0]?.city || "");
     return {
       protectedPersonName: protectedFromRow || fb.protected_person_name,
       opposingPartyName: opposingFromRow || fb.opposing_party,
       country: countryFromRow || fb.country,
-      locality: localityFromRow || fb.locality
+      locality: localityFromRow || fb.locality,
+      region: regionFromRow || fb.region,
+      city: cityFromRow || fb.city
     };
   } catch (err) {
     if (err?.code === "42703") {
       try {
         const fallback = await pool.query(
-          "SELECT protected_person_name, country, locality FROM cases WHERE id = $1 LIMIT 1",
+          "SELECT protected_person_name, country, locality, region, city FROM cases WHERE id = $1 LIMIT 1",
           [caseId]
         );
         const fallbackMap = await loadCasePartiesFallbackMap([caseId]);
-        const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "", country: "", locality: "" };
+        const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "", country: "", locality: "", region: "", city: "" };
         return {
           protectedPersonName: normalizeWhitespace(fallback.rows[0]?.protected_person_name || "") || fb.protected_person_name,
           opposingPartyName: fb.opposing_party,
           country: normalizeWhitespace(fallback.rows[0]?.country || "") || fb.country,
-          locality: normalizeWhitespace(fallback.rows[0]?.locality || "") || fb.locality
+          locality: normalizeWhitespace(fallback.rows[0]?.locality || "") || fb.locality,
+          region: normalizeWhitespace(fallback.rows[0]?.region || "") || fb.region,
+          city: normalizeWhitespace(fallback.rows[0]?.city || "") || fb.city
         };
       } catch (err2) {
         if (err2?.code === "42703") {
           const fallbackMap = await loadCasePartiesFallbackMap([caseId]);
-          const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "", country: "", locality: "" };
+          const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "", country: "", locality: "", region: "", city: "" };
           return {
             protectedPersonName: fb.protected_person_name,
             opposingPartyName: fb.opposing_party,
             country: fb.country,
-            locality: fb.locality
+            locality: fb.locality,
+            region: fb.region,
+            city: fb.city
           };
         }
         throw err2;
@@ -1990,7 +2010,9 @@ router.post("/", requireAuth, async (req, res) => {
     protected_person_name: protectedPersonInput,
     opposing_party: opposingPartyInput,
     country: countryInput,
-    locality: localityInput
+    locality: localityInput,
+    region: regionInput,
+    city: cityInput
   } = req.body;
 
   if (!caseId || !caseDate || !caseName) {
@@ -2009,7 +2031,9 @@ router.post("/", requireAuth, async (req, res) => {
     const opposingParty = String(opposingPartyInput || "").trim() || null;
     const country = String(countryInput || "").trim() || null;
     const locality = String(localityInput || "").trim() || null;
-    const created = await createCaseCompat(normalizedCaseId, caseDate, normalizedCaseName, protectedPerson, opposingParty, country, locality);
+    const region = String(regionInput || "").trim() || null;
+    const city = String(cityInput || "").trim() || null;
+    const created = await createCaseCompat(normalizedCaseId, caseDate, normalizedCaseName, protectedPerson, opposingParty, country, locality, region, city);
     return res.status(201).json(created);
   } catch (err) {
     if (err.code === "23505") {

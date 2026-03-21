@@ -48,7 +48,8 @@ const caseForm = document.getElementById("caseForm");
 const caseMessage = document.getElementById("caseMessage");
 const caseNameInput = document.getElementById("caseName");
 const countrySelect = document.getElementById("countrySelect");
-const localitySelect = document.getElementById("localitySelect");
+const regionSelect = document.getElementById("regionSelect");
+const cityInput = document.getElementById("cityInput");
 const protectedPersonNameInput = document.getElementById("protectedPersonName");
 const opposingPartyNameInput = document.getElementById("opposingPartyName");
 const createCaseBtn = document.getElementById("createCaseBtn");
@@ -56,34 +57,61 @@ const logoutBtn = document.getElementById("logoutBtn");
 const existingCasesSelect = document.getElementById("existingCasesSelect");
 const copyrightYearEl = document.getElementById("copyrightYear");
 
-const LOCALITIES_BY_COUNTRY = {
-  Schweiz: ["Aarau", "Arlesheim", "Basel", "Bern", "Binningen", "Bottmingen", "Liestal", "Luzern", "Muttenz", "Pratteln", "Solothurn", "Winterthur", "Zürich"],
-  Deutschland: ["Berlin", "Bremen", "Dresden", "Düsseldorf", "Frankfurt am Main", "Hamburg", "Hannover", "Köln", "Leipzig", "München", "Nürnberg", "Stuttgart"],
-  Österreich: ["Bregenz", "Graz", "Innsbruck", "Klagenfurt", "Linz", "Salzburg", "Sankt Pölten", "Villach", "Wels", "Wien"]
+const REGIONS_BY_COUNTRY = {
+  Schweiz: {
+    label: "Kanton",
+    options: [
+      "Aargau", "Appenzell Ausserrhoden", "Appenzell Innerrhoden", "Basel-Landschaft",
+      "Basel-Stadt", "Bern", "Freiburg", "Genf", "Glarus", "Graubünden", "Jura",
+      "Luzern", "Neuenburg", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz",
+      "Solothurn", "St. Gallen", "Tessin", "Thurgau", "Uri", "Waadt", "Wallis",
+      "Zug", "Zürich"
+    ]
+  },
+  Deutschland: {
+    label: "Bundesland",
+    options: [
+      "Baden-Württemberg", "Bayern", "Berlin", "Brandenburg", "Bremen", "Hamburg",
+      "Hessen", "Mecklenburg-Vorpommern", "Niedersachsen", "Nordrhein-Westfalen",
+      "Rheinland-Pfalz", "Saarland", "Sachsen", "Sachsen-Anhalt",
+      "Schleswig-Holstein", "Thüringen"
+    ]
+  },
+  Österreich: {
+    label: "Bundesland",
+    options: [
+      "Burgenland", "Kärnten", "Niederösterreich", "Oberösterreich",
+      "Salzburg", "Steiermark", "Tirol", "Vorarlberg", "Wien"
+    ]
+  }
 };
 
-function populateLocalityOptions(country, preferred = "") {
+function populateRegionOptions(country, preferred = "") {
   const selectedCountry = String(country || "").trim();
-  const localities = LOCALITIES_BY_COUNTRY[selectedCountry] || [];
+  const entry = REGIONS_BY_COUNTRY[selectedCountry];
+  const regions = entry?.options || [];
+  const label = entry?.label || "Region";
 
-  localitySelect.innerHTML = "";
+  regionSelect.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = localities.length > 0 ? "Ortschaft wählen" : "Zuerst Land wählen";
-  localitySelect.appendChild(placeholder);
+  placeholder.textContent = regions.length > 0 ? `${label} wählen` : "Zuerst Land wählen";
+  regionSelect.appendChild(placeholder);
 
-  for (const locality of localities) {
+  for (const region of regions) {
     const option = document.createElement("option");
-    option.value = locality;
-    option.textContent = locality;
-    localitySelect.appendChild(option);
+    option.value = region;
+    option.textContent = region;
+    regionSelect.appendChild(option);
   }
 
-  localitySelect.disabled = localities.length === 0;
-  if (preferred && localities.includes(preferred)) {
-    localitySelect.value = preferred;
+  regionSelect.disabled = regions.length === 0;
+  regionSelect.setAttribute("aria-label", label);
+
+  if (preferred && regions.includes(preferred)) {
+    regionSelect.value = preferred;
   } else {
-    localitySelect.value = "";
+    regionSelect.value = "";
   }
 }
 
@@ -155,11 +183,13 @@ async function loadCasesList() {
       const createdLabel = formatCaseTimestamp(item.created_at);
       const protectedLabel = String(item.protected_person_name || "").trim();
       const countryLabel = String(item.country || "").trim();
-      const localityLabel = String(item.locality || "").trim();
+      const localityLabel = String(item.locality || item.region || "").trim();
       const placeLabel = [localityLabel, countryLabel].filter(Boolean).join(", ");
+      const cityLabel = String(item.city || "").trim();
+      const placeDetail = [cityLabel, localityLabel, countryLabel].filter(Boolean).join(", ");
       option.textContent = protectedLabel
-        ? `${createdLabel} - ${item.id} - ${item.case_name} (${placeLabel || "Ort nicht gesetzt"}; Benachteiligte Person: ${protectedLabel})`
-        : `${createdLabel} - ${item.id} - ${item.case_name}${placeLabel ? ` (${placeLabel})` : ""}`;
+        ? `${createdLabel} - ${item.id} - ${item.case_name} (${placeDetail || "Ort nicht gesetzt"}; Benachteiligte Person: ${protectedLabel})`
+        : `${createdLabel} - ${item.id} - ${item.case_name}${placeDetail ? ` (${placeDetail})` : ""}`;
       existingCasesSelect.appendChild(option);
     }
   } catch {
@@ -197,7 +227,8 @@ caseForm.addEventListener("submit", async (event) => {
   const caseDate = todayIsoDate();
   const caseName = String(caseNameInput.value || "").trim();
   const country = String(countrySelect?.value || "").trim();
-  const locality = String(localitySelect?.value || "").trim();
+  const region = String(regionSelect?.value || "").trim();
+  const city = String(cityInput?.value || "").trim();
   const protectedPersonName = String(protectedPersonNameInput?.value || "").trim();
   const opposingPartyName = String(opposingPartyNameInput?.value || "").trim();
 
@@ -206,8 +237,8 @@ caseForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (!country || !locality) {
-    setMessage(caseMessage, "Bitte zuerst Land und danach Ortschaft auswählen.", "error");
+  if (!country || !region) {
+    setMessage(caseMessage, "Bitte zuerst Land und danach Region (Kanton/Bundesland) auswählen.", "error");
     return;
   }
 
@@ -231,7 +262,8 @@ caseForm.addEventListener("submit", async (event) => {
           caseDate,
           caseName,
           country: country || null,
-          locality: locality || null,
+          region: region || null,
+          city: city || null,
           protected_person_name: protectedPersonName || null,
           opposing_party: opposingPartyName || null
         })
@@ -280,11 +312,11 @@ logoutBtn.addEventListener("click", () => {
   window.location.href = "/";
 });
 
-if (countrySelect instanceof HTMLSelectElement && localitySelect instanceof HTMLSelectElement) {
+if (countrySelect instanceof HTMLSelectElement && regionSelect instanceof HTMLSelectElement) {
   countrySelect.addEventListener("change", () => {
-    populateLocalityOptions(countrySelect.value);
+    populateRegionOptions(countrySelect.value);
   });
-  populateLocalityOptions(countrySelect.value);
+  populateRegionOptions(countrySelect.value);
 }
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
