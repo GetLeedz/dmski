@@ -515,13 +515,15 @@ button:disabled {
 .qa-dot-track {
   display: inline-flex;
   align-items: center;
-  gap: 0.18rem;
+  gap: 0.16rem;
   flex-wrap: wrap;
+  row-gap: 0.22rem;
+  max-inline-size: 22rem;
 }
 
 .qa-dot {
-  width: 0.82rem;
-  height: 0.3rem;
+  width: 1.15rem;
+  height: 0.2rem;
   border-radius: 999px;
   display: inline-block;
   border: 1px solid transparent;
@@ -1538,13 +1540,15 @@ td {
 .analysis-dot-track {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.16rem;
   flex-wrap: wrap;
+  row-gap: 0.22rem;
+  max-inline-size: 24rem;
 }
 
 .analysis-dot {
-  width: 0.9rem;
-  height: 0.32rem;
+  width: 1.2rem;
+  height: 0.22rem;
   border-radius: 999px;
   display: inline-block;
   border: 1px solid transparent;
