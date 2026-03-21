@@ -1150,8 +1150,9 @@ td {
   padding: 0;
   list-style: none;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
 }
 
 .analysis-people li {
@@ -1159,9 +1160,16 @@ td {
   background: #f4fbfd;
   color: #1b4756;
   border-radius: 999px;
-  padding: 0.2rem 0.6rem;
+  padding: 0.2rem 0.7rem;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.analysis-people li.is-protected {
+  border-color: #116b73;
+  background: #e4f4f5;
+  color: #0d5760;
+  font-weight: 700;
 }
 
 .analysis-score-box {

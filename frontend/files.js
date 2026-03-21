@@ -641,8 +641,12 @@ async function loadRowAnalysis(file, options = {}) {
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
   const people = collectAnalysisPeople(analysis, protectedName, analysis.author);
 
+  const protectedKey = protectedName.toLowerCase();
   const peopleMarkup = people.length > 0
-    ? `<ul class="analysis-people">${people.map((name) => `<li>${name}</li>`).join("")}</ul>`
+    ? `<ul class="analysis-people">${people.map((name) => {
+        const cls = samePersonFuzzy(name.toLowerCase(), protectedKey) ? " class=\"is-protected\"" : "";
+        return `<li${cls}>${name}</li>`;
+      }).join("")}</ul>`
     : '<p class="analysis-value muted">Keine eindeutigen Personen erkannt</p>';
 
   const titleMarkup = analysis.title
