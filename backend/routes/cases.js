@@ -1174,12 +1174,16 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     : [];
 
   const score = src.analyse_score && typeof src.analyse_score === "object" ? src.analyse_score : {};
-  const disadvantagedFromStats = stats.benachteiligte_person && typeof stats.benachteiligte_person === "object"
+  const disadvantagedFromStats = (stats.fokus_person && typeof stats.fokus_person === "object")
+    ? stats.fokus_person
+    : (stats.benachteiligte_person && typeof stats.benachteiligte_person === "object"
     ? stats.benachteiligte_person
-    : null;
-  const opposingFromStats = stats.gegenpartei && typeof stats.gegenpartei === "object"
+    : null);
+  const opposingFromStats = (stats.referenz_person && typeof stats.referenz_person === "object")
+    ? stats.referenz_person
+    : (stats.gegenpartei && typeof stats.gegenpartei === "object"
     ? stats.gegenpartei
-    : null;
+    : null);
   const disadvantaged = disadvantagedFromStats || (score.benachteiligte_person && typeof score.benachteiligte_person === "object"
     ? score.benachteiligte_person
     : {});
@@ -1190,17 +1194,17 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const disadvantagedName = normalizeWhitespace(disadvantaged.name || fallback.disadvantagedPerson || "");
   const opposingName = normalizeWhitespace(opposing.name || "");
 
-  const disadvantagedNeg = Math.max(0, Number(disadvantaged.negativ_count ?? disadvantaged.punkte_negativ ?? 0));
-  const disadvantagedPos = Math.max(0, Number(disadvantaged.positiv_count ?? disadvantaged.punkte_positiv ?? 0));
-  const opposingNeg = Math.max(0, Number(opposing.negativ_count ?? opposing.punkte_negativ ?? 0));
-  const opposingPos = Math.max(0, Number(opposing.positiv_count ?? opposing.punkte_positiv ?? 0));
+  const disadvantagedNeg = Math.max(0, Number(disadvantaged.rot_anzahl ?? disadvantaged.negativ_count ?? disadvantaged.punkte_negativ ?? 0));
+  const disadvantagedPos = Math.max(0, Number(disadvantaged.gruen_anzahl ?? disadvantaged.positiv_count ?? disadvantaged.punkte_positiv ?? 0));
+  const opposingNeg = Math.max(0, Number(opposing.rot_anzahl ?? opposing.negativ_count ?? opposing.punkte_negativ ?? 0));
+  const opposingPos = Math.max(0, Number(opposing.gruen_anzahl ?? opposing.positiv_count ?? opposing.punkte_positiv ?? 0));
 
   const derivedPeople = [];
   if (disadvantagedName) {
-    derivedPeople.push({ name: disadvantagedName, affiliation: "Fokusperson" });
+    derivedPeople.push({ name: disadvantagedName, affiliation: "Fokus-Person" });
   }
   if (opposingName && opposingName.toLowerCase() !== disadvantagedName.toLowerCase()) {
-    derivedPeople.push({ name: opposingName, affiliation: "Gegenpartei" });
+    derivedPeople.push({ name: opposingName, affiliation: "Referenz-Person" });
   }
 
   const impactRanking = [];
@@ -1224,7 +1228,8 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const effectivePeople = mappedPeople.length > 0 ? mappedPeople : (derivedPeople.length > 0 ? derivedPeople : fallback.people);
   const effectiveRawText = effectivePeople.length > 0 ? "" : rawText;
   const biasRatio = normalizeWhitespace(src.bias_verhaeltnis || "");
-  const alarmLevel = normalizeWhitespace(String(src.alarm_stufe ?? src.alarm_level ?? ""));
+  const qualitativeSummary = normalizeWhitespace(src.zusammenfassung || src.fazit_voreingenommenheit || "");
+  const biasIndex = normalizeWhitespace(String(src.fbi_bias_index ?? src.alarm_stufe ?? src.alarm_level ?? ""));
 
   return buildFallbackAnalysis({
     title: meta.titel || fallback.title,
@@ -1234,14 +1239,14 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     people: effectivePeople,
     disadvantagedPerson: disadvantagedName || fallback.disadvantagedPerson,
     senderInstitution: meta.herkunft || normalizeWhitespace(src.herkunft || "") || fallback.senderInstitution,
-    impactAssessment: biasRatio ? `Bias-Verhältnis: ${biasRatio}` : (normalizeWhitespace(src.fazit_voreingenommenheit || "") || fallback.impactAssessment),
+    impactAssessment: qualitativeSummary || (biasRatio ? `Bias-Verhaeltnis: ${biasRatio}` : fallback.impactAssessment),
     impactRanking: impactRanking.length > 0 ? impactRanking : fallback.impactRanking,
     positiveMentions: disadvantagedPos,
     negativeMentions: disadvantagedNeg,
     opposingPositiveMentions: opposingPos,
     opposingNegativeMentions: opposingNeg,
     rawText: effectiveRawText,
-    message: alarmLevel ? `Alarmstufe: ${alarmLevel}` : fallback.message
+    message: biasIndex ? `FBI-Bias-Index: ${biasIndex}` : fallback.message
   });
 }
 
@@ -1250,40 +1255,35 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
   const referenceName = normalizeWhitespace(opposingPartyName) || "Unbekannt";
 
   return [
-    "Du bist ein forensischer Daten-Analyst. Deine Aufgabe ist die rein quantitative Erfassung von wertenden Aussagen in Bezug auf zwei vordefinierte Personen.",
+    "Du bist ein forensischer Linguistik-Experte. Deine Aufgabe ist die rein quantitative und qualitative Analyse von einseitiger Darstellung (Bias).",
     "",
-    "### 1. ANALYSE-PARAMETER (Vorgegebene Namen):",
+    "### 1. ANALYSE-FOKUS (Vorgegebene Parteien):",
     `- Fokus-Person (Benachteiligt): ${focusName}`,
     `- Referenz-Person (Gegenpartei): ${referenceName}`,
     "",
-    "### 2. QUANTITATIVE ERFASSUNG:",
-    "Untersuche den Text auf psychologische und rhetorische Bewertungsmuster:",
-    `- NEGATIV-PUNKT (-): Jedes Mal, wenn ${focusName} kritisiert, abgewertet, als unkooperativ dargestellt oder ihr ein Defizit unterstellt wird.`,
-    `- POSITIV-PUNKT (+): Jedes Mal, wenn ${referenceName} gelobt, aufgewertet, als kompetent dargestellt oder ihr Verhalten gerechtfertigt wird.`,
+    "### 2. QUANTITATIVES ZAEHL-VERFAHREN (SCORING):",
+    "Untersuche das Dokument Wort fuer Wort auf wertende Zuschreibungen:",
+    "- ROT-PUNKTE (Negativ): Jede Stelle, an der Kritik, Abwertung, Defizitzuschreibung oder negative Adjektive in Bezug auf eine Person fallen.",
+    "- GRUEN-PUNKTE (Positiv): Jede Stelle, an der Lob, Kompetenz, Empathie oder positive Adjektive in Bezug auf eine Person fallen.",
     "",
-    "WICHTIG: Erfasse auch die umgekehrte Logik (Negativ-Punkte für die Gegenpartei oder Positiv-Punkte für die Fokus-Person), falls vorhanden.",
+    "Wichtig: Zaehle jede einzelne Textstelle separat. Wenn ein Satz zwei Vorwuerfe enthaelt, sind das 2 Punkte.",
     "",
-    "### 3. KEINE TEXTAUSGABE:",
-    "Gib KEINE Zitate oder Belege aus. Der Anwalt liest das Originaldokument selbst. Wir benötigen nur die reinen Zählwerte für die statistische Visualisierung.",
-    "",
-    "### 4. OUTPUT-FORMAT (JSON):",
+    "### 3. OUTPUT-STRUKTUR (STRENGES JSON):",
     "{",
-    '  "herkunft": "Name der Behörde/Institution",',
-    '  "verfasser": "Name der Person",',
     '  "statistik": {',
-    '    "benachteiligte_person": {',
+    '    "fokus_person": {',
     `      "name": "${focusName}",`,
-    '      "negativ_count": 0,',
-    '      "positiv_count": 0',
+    '      "rot_anzahl": 0,',
+    '      "gruen_anzahl": 0',
     '    },',
-    '    "gegenpartei": {',
+    '    "referenz_person": {',
     `      "name": "${referenceName}",`,
-    '      "negativ_count": 0,',
-    '      "positiv_count": 0',
+    '      "rot_anzahl": 0,',
+    '      "gruen_anzahl": 0',
     '    }',
     '  },',
-    '  "bias_verhaeltnis": "z.B. 10:1 (Negativ Fokus vs. Negativ Gegenpartei)",',
-    '  "alarm_stufe": 1',
+    '  "zusammenfassung": "Analysiere hier die psychologische Tendenz des Dokuments. Beschreibe das Muster der Benachteiligung und die Einseitigkeit der Argumentation, ohne Zahlen zu nennen.",',
+    '  "fbi_bias_index": 1',
     "}"
   ].join("\n");
 }
