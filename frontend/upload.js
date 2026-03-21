@@ -356,11 +356,17 @@ function renderAnalysisInQueueRow(fileKey, payload) {
       <div class="qa-persons-grid">
         <div class="qa-person-col">
           <div class="qa-person-col-label">Benachteiligte</div>
-          <div class="qa-badges">${renderMentionBars(positiveMentions, "positive")}${renderMentionBars(negativeMentions, "negative")}</div>
+          <div class="qa-badge-rows">
+            <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(positiveMentions, "positive")}</div>
+            <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
+          </div>
         </div>
         <div class="qa-person-col">
           <div class="qa-person-col-label">Gegenpartei</div>
-          <div class="qa-badges">${renderMentionBars(opposingPositiveMentions, "positive")}${renderMentionBars(opposingNegativeMentions, "negative")}</div>
+          <div class="qa-badge-rows">
+            <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(opposingPositiveMentions, "positive")}</div>
+            <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(opposingNegativeMentions, "negative")}</div>
+          </div>
         </div>
       </div>
     </div>

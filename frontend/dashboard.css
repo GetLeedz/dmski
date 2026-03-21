@@ -480,6 +480,33 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.qa-badge-rows {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.qa-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  flex-wrap: wrap;
+}
+
+.qa-badge-row-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 3.4rem;
+  letter-spacing: 0.01em;
+}
+
+.qa-badge-row-label.is-positive {
+  color: #1d7a3e;
+}
+
+.qa-badge-row-label.is-negative {
+  color: #c0392b;
+}
+
 .qa-badge {
   display: inline-flex;
   align-items: center;

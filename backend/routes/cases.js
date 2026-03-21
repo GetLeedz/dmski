@@ -1914,8 +1914,16 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   const hasAttackTerms = /(benachteilig|diskriminier|beleidig|angriff|abwert|verletz|schlecht\s+gemacht|unterschiedlich\s+gut|ungleich\s+behand)/.test(lowerText);
   const assessmentSuggestsHarm = /benachteiligt/i.test(String(output.impactAssessment || ""));
 
-  if (!hasProtectedInPeople && nameInText) {
+  if (!hasProtectedInPeople && (nameInText || protectedName)) {
     output.people.push({ name: protectedName, affiliation: "Privatperson", allowSingleToken: true });
+  }
+
+  const hasOpposingInPeople = output.people.some((entry) => {
+    const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name);
+    return name.toLowerCase() === opposingName.toLowerCase();
+  });
+  if (opposingName && !hasOpposingInPeople) {
+    output.people.push({ name: opposingName, affiliation: "Privatperson", allowSingleToken: true });
   }
 
   const shouldFlagProtected = protectedName
@@ -1958,12 +1966,16 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   output.impactRanking = buildImpactRanking(normalizedPeople, output.disadvantagedPerson || "", aiLookup);
 
   const mentionSummaryProtected = countProtectedMentions(rawText, protectedName, output.impactRanking);
-  output.positiveMentions = mentionSummaryProtected.positiveMentions;
-  output.negativeMentions = mentionSummaryProtected.negativeMentions;
+  output.positiveMentions = Math.max(Math.max(0, Number(output.positiveMentions || 0)), mentionSummaryProtected.positiveMentions);
+  output.negativeMentions = Math.max(Math.max(0, Number(output.negativeMentions || 0)), mentionSummaryProtected.negativeMentions);
 
   const mentionSummaryOpposing = countProtectedMentions(rawText, opposingName, output.impactRanking);
-  output.opposingPositiveMentions = mentionSummaryOpposing.positiveMentions;
-  output.opposingNegativeMentions = mentionSummaryOpposing.negativeMentions;
+  output.opposingPositiveMentions = Math.max(Math.max(0, Number(output.opposingPositiveMentions || 0)), mentionSummaryOpposing.positiveMentions);
+  output.opposingNegativeMentions = Math.max(Math.max(0, Number(output.opposingNegativeMentions || 0)), mentionSummaryOpposing.negativeMentions);
+
+  if (!normalizeWhitespace(output.author) && normalizeWhitespace(output.senderInstitution)) {
+    output.author = normalizeWhitespace(output.senderInstitution);
+  }
 
   const senderRaw = normalizeWhitespace(output.senderInstitution);
   const senderLower = senderRaw.toLowerCase();
