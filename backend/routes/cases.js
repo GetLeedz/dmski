@@ -1153,6 +1153,80 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   });
 }
 
+function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
+  const src = parsed && typeof parsed === "object" ? parsed : {};
+  const meta = src.metadaten && typeof src.metadaten === "object" ? src.metadaten : {};
+
+  const mappedPeople = Array.isArray(src.personen)
+    ? src.personen
+      .map((entry) => {
+        const name = normalizeWhitespace(entry?.name || "");
+        if (!name) {
+          return null;
+        }
+        return {
+          name,
+          affiliation: normalizeWhitespace(entry?.rolle || "") || "Privatperson"
+        };
+      })
+      .filter(Boolean)
+    : [];
+
+  const score = src.analyse_score && typeof src.analyse_score === "object" ? src.analyse_score : {};
+  const disadvantaged = score.benachteiligte_person && typeof score.benachteiligte_person === "object"
+    ? score.benachteiligte_person
+    : {};
+  const opposing = score.gegenpartei && typeof score.gegenpartei === "object"
+    ? score.gegenpartei
+    : {};
+
+  const disadvantagedName = normalizeWhitespace(disadvantaged.name || fallback.disadvantagedPerson || "");
+  const opposingName = normalizeWhitespace(opposing.name || "");
+
+  const disadvantagedNeg = Math.max(0, Number(disadvantaged.punkte_negativ || 0));
+  const disadvantagedPos = Math.max(0, Number(disadvantaged.punkte_positiv || 0));
+  const opposingNeg = Math.max(0, Number(opposing.punkte_negativ || 0));
+  const opposingPos = Math.max(0, Number(opposing.punkte_positiv || 0));
+
+  const impactRanking = [];
+  if (disadvantagedName) {
+    impactRanking.push({
+      name: disadvantagedName,
+      impact: disadvantagedNeg > 0 ? "benachteiligt" : "neutral",
+      count: disadvantagedNeg,
+      items: Array.isArray(disadvantaged.belege_negativ) ? disadvantaged.belege_negativ : []
+    });
+  }
+  if (opposingName) {
+    impactRanking.push({
+      name: opposingName,
+      impact: opposingNeg > 0 ? "benachteiligt" : "neutral",
+      count: opposingNeg,
+      items: Array.isArray(opposing.belege_positiv) ? opposing.belege_positiv : []
+    });
+  }
+
+  const effectiveRawText = mappedPeople.length > 0 ? "" : rawText;
+
+  return buildFallbackAnalysis({
+    title: meta.titel || fallback.title,
+    author: meta.verfasser || fallback.author,
+    documentType: fallback.documentType || "Brief",
+    authoredDate: meta.datum || fallback.authoredDate,
+    people: mappedPeople.length > 0 ? mappedPeople : fallback.people,
+    disadvantagedPerson: disadvantagedName || fallback.disadvantagedPerson,
+    senderInstitution: meta.herkunft || fallback.senderInstitution,
+    impactAssessment: normalizeWhitespace(src.fazit_voreingenommenheit || "") || fallback.impactAssessment,
+    impactRanking: impactRanking.length > 0 ? impactRanking : fallback.impactRanking,
+    positiveMentions: disadvantagedPos,
+    negativeMentions: disadvantagedNeg,
+    opposingPositiveMentions: opposingPos,
+    opposingNegativeMentions: opposingNeg,
+    rawText: effectiveRawText,
+    message: normalizeWhitespace(src.alarm_level || "") || fallback.message
+  });
+}
+
 function mapChatForensicJsonToAnalysis(parsed, fallback = {}) {
   const src = parsed && typeof parsed === "object" ? parsed : {};
   const links = src?.beteiligte?.links || {};
@@ -1246,18 +1320,49 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
         {
           role: "system",
           content: [
-            "Du bist ein forensischer Analyst fuer Schweizer Familienrecht.",
-            "DEINE AUFGABE: Extrahiere Daten STRENG nach diesen Regeln:",
-            "1. VERFASSER: Wer hat unterschrieben? (Meist ganz unten oder oben rechts im Brief).",
-            "2. DATUM: Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
-            "3. PERSONEN: Liste NUR reale Menschen.",
-            "   IGNORIERE STRENG: Orte (Binningen, Liestal, Basel, Muttenz), Grussformeln (Freundliche Gruesse, Mit freundlichen Gruessen), Wochentage (Montag, Dienstag, etc.), Abteilungen und Behoerdenbezeichnungen (Abteilung Unterhaltsbeitraege, Sozialamt, Debitoren).",
-            "4. ROLLEN-FIXIERUNG:",
-            "   - Ayhan Ergen = Vater",
-            "   - Alexandra Schifferli = Mutter",
-            "   - Nael Schifferli = Kind",
-            "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
-            "JSON-SCHEMA: {\"dokument_typ\":\"Chat|Brief|E-Mail|Foto|Film|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+            "Du bist ein KI-Forensiker fuer juristische Dokumentenanalyse. Deine Aufgabe ist die objektive Quantifizierung von Voreingenommenheit (Bias) und Datenextraktion.",
+            "",
+            "1. IDENTIFIKATION DER PARTEIEN:",
+            "- Analysiere den Briefkopf/Absender: Wer ist der Verfasser (Institution/Person)?",
+            "- Identifiziere die Hauptbeteiligten: Wer ist die benachteiligte Person (Fokusperson) und wer ist die Gegenpartei?",
+            "- Extrahiere ALLE genannten Klarnamen (auch Kinder, Sachbearbeiter, Anwaelte).",
+            "",
+            "2. QUANTITATIVES SENTIMENT-TRACKING (PUNKTE):",
+            "- POSITIV (+): Kompetenz, Kooperation, Wohlwollen oder positive Charakterzuege.",
+            "- NEGATIV (-): Defizite, mangelnde Kooperation, Aggressivitaet oder negative Charakterzuege.",
+            "",
+            "3. BIAS-ANALYSE:",
+            "- Pruefe auf Double Standards.",
+            "- Zaehle die negativen Zuschreibungen pro Partei.",
+            "",
+            "4. OUTPUT-FORMAT (STRENGES JSON):",
+            "{",
+            "  \"metadaten\": {",
+            "    \"titel\": \"Dokumententitel\",",
+            "    \"herkunft\": \"Behoerde oder Privat\",",
+            "    \"verfasser\": \"Vollstaendiger Name\",",
+            "    \"datum\": \"DD.MM.YYYY\"",
+            "  },",
+            "  \"personen\": [",
+            "    { \"name\": \"Name\", \"rolle\": \"Vater/Mutter/Kind/Behoerde\" }",
+            "  ],",
+            "  \"analyse_score\": {",
+            "    \"benachteiligte_person\": {",
+            "      \"name\": \"Name\",",
+            "      \"punkte_positiv\": 0,",
+            "      \"punkte_negativ\": 0,",
+            "      \"belege_negativ\": [\"Zitat 1\", \"Zitat 2\"]",
+            "    },",
+            "    \"gegenpartei\": {",
+            "      \"name\": \"Name\",",
+            "      \"punkte_positiv\": 0,",
+            "      \"punkte_negativ\": 0,",
+            "      \"belege_positiv\": [\"Zitat 1\"]",
+            "    }",
+            "  },",
+            "  \"fazit_voreingenommenheit\": \"Kurze Analyse der einseitigen Darstellung.\",",
+            "  \"alarm_level\": \"Skala 1-10 (Basiert auf der Einseitigkeit der negativen Punkte)\"",
+            "}"
           ].join("\n")
         },
         {
@@ -1279,6 +1384,10 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
     const parsed = extractJsonObject(responseText);
     if (!parsed || typeof parsed !== "object") {
       return buildFallbackAnalysis(fallback);
+    }
+
+    if (parsed?.metadaten || parsed?.analyse_score) {
+      return mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
     }
 
     return mapSwissForensicJsonToAnalysis(parsed, fallback, textSnippet);
@@ -1346,18 +1455,49 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
               "}"
             ].join("\n")
             : [
-              "Du bist ein forensischer Analyst fuer Schweizer Familienrecht.",
-              "DEINE AUFGABE: Extrahiere Daten STRENG nach diesen Regeln:",
-              "1. VERFASSER: Wer hat unterschrieben? (Meist ganz unten oder oben rechts im Bild).",
-              "2. DATUM: Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
-              "3. PERSONEN: Liste NUR reale Menschen.",
-              "   IGNORIERE STRENG: Orte (Binningen, Liestal, Basel, Muttenz), Grussformeln (Freundliche Gruesse), Wochentage, Abteilungen und Behoerdenbezeichnungen.",
-              "4. ROLLEN-FIXIERUNG:",
-              "   - Ayhan Ergen = Vater",
-              "   - Alexandra Schifferli = Mutter",
-              "   - Nael Schifferli = Kind",
-              "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
-              "JSON-SCHEMA: {\"dokument_typ\":\"Chat|Brief|E-Mail|Foto|Film|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+              "Du bist ein KI-Forensiker fuer juristische Dokumentenanalyse. Deine Aufgabe ist die objektive Quantifizierung von Voreingenommenheit (Bias) und Datenextraktion.",
+              "",
+              "1. IDENTIFIKATION DER PARTEIEN:",
+              "- Analysiere den Briefkopf/Absender: Wer ist der Verfasser (Institution/Person)?",
+              "- Identifiziere die Hauptbeteiligten: Wer ist die benachteiligte Person (Fokusperson) und wer ist die Gegenpartei?",
+              "- Extrahiere ALLE genannten Klarnamen (auch Kinder, Sachbearbeiter, Anwaelte).",
+              "",
+              "2. QUANTITATIVES SENTIMENT-TRACKING (PUNKTE):",
+              "- POSITIV (+): Kompetenz, Kooperation, Wohlwollen oder positive Charakterzuege.",
+              "- NEGATIV (-): Defizite, mangelnde Kooperation, Aggressivitaet oder negative Charakterzuege.",
+              "",
+              "3. BIAS-ANALYSE:",
+              "- Pruefe auf Double Standards.",
+              "- Zaehle die negativen Zuschreibungen pro Partei.",
+              "",
+              "4. OUTPUT-FORMAT (STRENGES JSON):",
+              "{",
+              "  \"metadaten\": {",
+              "    \"titel\": \"Dokumententitel\",",
+              "    \"herkunft\": \"Behoerde oder Privat\",",
+              "    \"verfasser\": \"Vollstaendiger Name\",",
+              "    \"datum\": \"DD.MM.YYYY\"",
+              "  },",
+              "  \"personen\": [",
+              "    { \"name\": \"Name\", \"rolle\": \"Vater/Mutter/Kind/Behoerde\" }",
+              "  ],",
+              "  \"analyse_score\": {",
+              "    \"benachteiligte_person\": {",
+              "      \"name\": \"Name\",",
+              "      \"punkte_positiv\": 0,",
+              "      \"punkte_negativ\": 0,",
+              "      \"belege_negativ\": [\"Zitat 1\", \"Zitat 2\"]",
+              "    },",
+              "    \"gegenpartei\": {",
+              "      \"name\": \"Name\",",
+              "      \"punkte_positiv\": 0,",
+              "      \"punkte_negativ\": 0,",
+              "      \"belege_positiv\": [\"Zitat 1\"]",
+              "    }",
+              "  },",
+              "  \"fazit_voreingenommenheit\": \"Kurze Analyse der einseitigen Darstellung.\",",
+              "  \"alarm_level\": \"Skala 1-10 (Basiert auf der Einseitigkeit der negativen Punkte)\"",
+              "}"
             ].join("\n")
         },
         {
@@ -1394,7 +1534,9 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
 
     const normalized = parsed?.beteiligte
       ? mapChatForensicJsonToAnalysis(parsed, {})
-      : mapSwissForensicJsonToAnalysis(parsed, {}, "");
+      : (parsed?.metadaten || parsed?.analyse_score)
+        ? mapBiasForensicJsonToAnalysis(parsed, {}, "")
+        : mapSwissForensicJsonToAnalysis(parsed, {}, "");
 
     if (!normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
       return {
@@ -1689,10 +1831,16 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   output.opposingPositiveMentions = mentionSummaryOpposing.positiveMentions;
   output.opposingNegativeMentions = mentionSummaryOpposing.negativeMentions;
 
-  if (normalizeWhitespace(output.senderInstitution).toLowerCase() !== "privat"
-    && /\bbrief\b/i.test(String(output.documentType || ""))
+  const senderRaw = normalizeWhitespace(output.senderInstitution);
+  const senderLower = senderRaw.toLowerCase();
+  const authorLower = normalizeWhitespace(output.author).toLowerCase();
+  const senderLooksInstitutional = /\b(kesb|gericht|amt|behoerde|behörde|verwaltung|kanzlei|anwal|schule|bank|versicherung|gmbh|\bag\b|zivil|bezirks|kantons)\b/i.test(senderRaw);
+
+  if (/\bbrief\b/i.test(String(output.documentType || ""))
     && normalizeWhitespace(output.author)
-    && looksLikePersonName(output.author)) {
+    && looksLikePersonName(output.author)
+    && !senderLooksInstitutional
+    && (!senderLower || senderLower === authorLower || senderLower.endsWith("(privat)"))) {
     output.senderInstitution = "Privat";
   }
 
