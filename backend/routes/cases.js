@@ -1040,6 +1040,38 @@ function extractResponseText(response) {
   return "";
 }
 
+function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
+  const src = parsed && typeof parsed === "object" ? parsed : {};
+  const mappedPeople = Array.isArray(src.personen)
+    ? src.personen
+      .map((entry) => {
+        const name = normalizeWhitespace(entry?.name || "");
+        if (!name) {
+          return null;
+        }
+        const rolle = normalizeWhitespace(entry?.rolle || "");
+        return {
+          name,
+          affiliation: rolle || "Privatperson"
+        };
+      })
+      .filter(Boolean)
+    : (Array.isArray(src.people) ? src.people : []);
+
+  return buildFallbackAnalysis({
+    title: src.dokument_titel || src.title || fallback.title,
+    author: src.verfasser || src.author || fallback.author,
+    authoredDate: src.datum_verfassung || src.authoredDate || fallback.authoredDate,
+    people: mappedPeople.length > 0 ? mappedPeople : fallback.people,
+    disadvantagedPerson: src.disadvantagedPerson || fallback.disadvantagedPerson,
+    senderInstitution: src.herkunft || src.senderInstitution || fallback.senderInstitution,
+    impactAssessment: src.bewertung_kurz || src.impactAssessment || fallback.impactAssessment,
+    impactRanking: Array.isArray(src.impactRanking) && src.impactRanking.length > 0 ? src.impactRanking : fallback.impactRanking,
+    rawText,
+    message: src.benachteiligung_indiz || src.message || fallback.message
+  });
+}
+
 async function analyzeTextWithAi(documentText, fallback = {}) {
   const client = getOpenAiClient();
   if (!client) {
@@ -1073,37 +1105,26 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
         {
           role: "user",
           content: [
-            "Du bist ein forensischer Dokumentanalyst. Untersuche den Text auf sprachliche Benachteiligung, Diskriminierung und ungleiche Behandlung von Personen.",
-            "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
-            '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":"","count":0,"items":[""]}],"message":""}',
-            "Regeln:",
-            "- title = kurzer Dokumenttitel aus dem Inhalt, nicht der Dateiname und nicht nur ein Personenname.",
-            "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
-            "- authoredDate = Sendedatum (Priorität: 'Sendedatum', 'Von:' Header), sonst Verfassungsdatum im Schweizer Format DD.MM.YYYY.",
-            "- people = alle relevanten Personennamen OHNE Verfasser, als Array von Objekten {name, affiliation}.",
-            "- people muss nur echte Personennamen enthalten: Vorname Nachname, gueltige Einzelnamen oder Alias (Kindsvater/Kindsmutter).",
-            "- people muss ALLE im Dokument genannten natuerlichen Personen enthalten (ueber alle Seiten, auch Seite 2+).",
-            "- Wenn mehrere Personen denselben Nachnamen tragen, JEDE Person einzeln mit vollem Namen auffuehren (z.B. Nael Schifferli, Alexandra Schifferli).",
-            "- Wenn ein Name in Titel, Betreff oder Formulierungen wie 'fuer <Name>' / 'für <Name>' vorkommt, ist diese Person in people aufzunehmen.",
-            "- Keine Person auslassen, nur weil sie nur einmal oder erst auf einer spaeteren Seite erscheint.",
-            "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
-            "- VERBOTEN in people: Abteilung, Gruesse, Datum, Monat, Kantonales Sozialamt, Unterhaltszahlungen, Orte, Strassen, Wochentage, Titelzeilen.",
-            "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
-            "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
-            "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
-            "- senderInstitution = NUR vom Absender ableiten, nie vom Empfänger/Fallgegner.",
-            "- Wenn der Absender eine Privatperson ist: '<Author Name> (Privat)' (z. B. Ayhan Ergen (Privat)).",
-            "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
-            "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
-            "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen oder diskriminieren; 0 wenn neutral.",
-            "- items = Array kurzer Textzitate (max. 75 Zeichen je Eintrag) als direkte Belege für die Benachteiligung; [] wenn neutral.",
-            "- Achte auch auf subtile Diskriminierung: unterschiedliche Wertungen (z.B. 'unterschiedlich gute Zusammenarbeit'), abwertende Adjektive, ungleiche Behandlung oder selektive Formulierungen.",
-            "- message = kurzer Hinweis, falls etwas unklar ist.",
-            "- Wenn etwas fehlt, leeres Feld verwenden.",
+            "Du bist ein forensischer Analyst fuer Schweizer Familienrecht. Deine Aufgabe ist die praezise Datenextraktion aus Rechtsdokumenten.",
+            "",
+            "EXTRAKTIONS-REGELN:",
+            "1. VERFASSER: Identifiziere die Person, die das Dokument unterzeichnet hat oder als Absender (Behoerde/Amt) fungiert.",
+            "2. DATUM: Extrahiere das Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
+            "3. ROLLEN-ZUORDNUNG:",
+            "   - Ayhan Ergen = Rolle: Vater",
+            "   - Alexandra Schifferli = Rolle: Mutter",
+            "   - Nael Schifferli = Rolle: Kind",
+            "4. PERSONEN-FILTER: Liste NUR reale Personennamen auf.",
+            "   - IGNORIERE: Orte (Liestal, Binningen), Grussformeln (Freundliche Gruesse), Strassennamen, Abteilungen (Unterhaltsbeitraege) oder Wochentage.",
+            "5. ANALYSE: Identifiziere den Kern des Schreibens (Mahnung, Verfuegung, Bericht).",
+            "",
+            "ANTWORTE AUSSCHLIESSLICH IM DIESEM JSON-FORMAT:",
+            '{"dokument_titel":"Kurzer Titel","verfasser":"Name der unterzeichnenden Person","herkunft":"Institution/Amt","datum_verfassung":"DD.MM.YYYY","personen":[{"name":"Vollstaendiger Name","rolle":"Vater/Mutter/Kind/Sachbearbeiter"}],"bewertung_kurz":"Ein Satz zum Inhalt","benachteiligung_indiz":"Ja/Nein + kurze Begruendung"}',
             aiCandidateNames.length > 0
               ? `- Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
               : "- Potenzielle Namen aus Voranalyse: (keine)",
-            "Dokumenttext:",
+            "",
+            "TEXT ZUM ANALYSIEREN:",
             textSnippet
           ].join("\n")
         }
@@ -1116,18 +1137,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
       return buildFallbackAnalysis(fallback);
     }
 
-    return buildFallbackAnalysis({
-      title: parsed.title || fallback.title,
-      author: parsed.author || fallback.author,
-      authoredDate: parsed.authoredDate || fallback.authoredDate,
-      people: Array.isArray(parsed.people) && parsed.people.length > 0 ? parsed.people : fallback.people,
-      disadvantagedPerson: parsed.disadvantagedPerson || fallback.disadvantagedPerson,
-      senderInstitution: parsed.senderInstitution || fallback.senderInstitution,
-      impactAssessment: parsed.impactAssessment || fallback.impactAssessment,
-      impactRanking: Array.isArray(parsed.impactRanking) && parsed.impactRanking.length > 0 ? parsed.impactRanking : fallback.impactRanking,
-      rawText: textSnippet,
-      message: parsed.message || fallback.message
-    });
+    return mapSwissForensicJsonToAnalysis(parsed, fallback, textSnippet);
   } catch (error) {
     console.error("Analyze text error:", error.message);
     return buildFallbackAnalysis(fallback);
@@ -1161,31 +1171,21 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
             {
               type: "text",
               text: [
-                "Du bist ein forensischer Dokumentanalyst. Untersuche das Dokumentbild auf sprachliche Benachteiligung, Diskriminierung und ungleiche Behandlung von Personen.",
-                "Antworte ausschliesslich als JSON-Objekt mit genau diesen Feldern:",
-                '{"title":"","author":"","authoredDate":"","people":[{"name":"","affiliation":""}],"disadvantagedPerson":"","senderInstitution":"","impactAssessment":"","impactRanking":[{"name":"","impact":"","count":0,"items":[""]}],"message":""}',
-                "Regeln:",
-                "- title = kurzer sichtbarer Dokumenttitel, kein reiner Personenname.",
-                "- author = sichtbarer Verfasser/Absender aus Briefkopf oder Unterschrift.",
-                "- authoredDate = sichtbares Verfassungsdatum im Schweizer Format DD.MM.YYYY.",
-                "- people = alle erkennbaren Personennamen OHNE Verfasser als Objekte {name, affiliation}.",
-                "- people muss nur echte Personennamen enthalten: Vorname Nachname, gueltige Einzelnamen oder Alias (Kindsvater/Kindsmutter).",
-                "- people muss ALLE sichtbaren natuerlichen Personen enthalten, auch aus Titel/Betreff und spaeteren Seiten.",
-                "- Wenn ein Name in Titel, Betreff oder Formulierungen wie 'fuer <Name>' / 'für <Name>' steht, muss diese Person in people erscheinen.",
-                "- VERBOTEN in people: Abteilung, Gruesse, Datum, Monat, Kantonales Sozialamt, Unterhaltszahlungen, Orte, Strassen, Wochentage, Titelzeilen.",
-                "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten, wenn sichtbar.",
-                "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
-                "- people darf KEINE Strassen, Orte oder Satzfragmente enthalten.",
-                "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
-                "- senderInstitution = NUR vom sichtbaren Absender ableiten, nie vom Empfänger.",
-                "- Bei Privatabsender: '<Author Name> (Privat)'.",
-                "- impactAssessment = entweder 'Neutral' oder 'Person benachteiligt'.",
-                "- impactRanking = sortierte Liste aller Personen {name, impact, count, items}; benachteiligte Personen zuerst.",
-                "- count = Anzahl konkreter Textstellen, die diese Person benachteiligen; 0 wenn neutral.",
-                "- items = Array kurzer Textzitate (max. 75 Zeichen je Eintrag) als Belege für die Benachteiligung; [] wenn neutral.",
-                "- Achte auch auf subtile Diskriminierung: unterschiedliche Wertungen, abwertende Adjektive, ungleiche Behandlung.",
-                "- message = kurzer Hinweis, wenn etwas nicht sicher lesbar ist.",
-                "- Wenn nichts erkennbar ist, Felder leer lassen."
+                "Du bist ein forensischer Analyst fuer Schweizer Familienrecht. Deine Aufgabe ist die praezise Datenextraktion aus Rechtsdokumenten.",
+                "",
+                "EXTRAKTIONS-REGELN:",
+                "1. VERFASSER: Identifiziere die Person, die das Dokument unterzeichnet hat oder als Absender (Behoerde/Amt) fungiert.",
+                "2. DATUM: Extrahiere das Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
+                "3. ROLLEN-ZUORDNUNG:",
+                "   - Ayhan Ergen = Rolle: Vater",
+                "   - Alexandra Schifferli = Rolle: Mutter",
+                "   - Nael Schifferli = Rolle: Kind",
+                "4. PERSONEN-FILTER: Liste NUR reale Personennamen auf.",
+                "   - IGNORIERE: Orte (Liestal, Binningen), Grussformeln (Freundliche Gruesse), Strassennamen, Abteilungen (Unterhaltsbeitraege) oder Wochentage.",
+                "5. ANALYSE: Identifiziere den Kern des Schreibens (Mahnung, Verfuegung, Bericht).",
+                "",
+                "ANTWORTE AUSSCHLIESSLICH IM DIESEM JSON-FORMAT:",
+                '{"dokument_titel":"Kurzer Titel","verfasser":"Name der unterzeichnenden Person","herkunft":"Institution/Amt","datum_verfassung":"DD.MM.YYYY","personen":[{"name":"Vollstaendiger Name","rolle":"Vater/Mutter/Kind/Sachbearbeiter"}],"bewertung_kurz":"Ein Satz zum Inhalt","benachteiligung_indiz":"Ja/Nein + kurze Begruendung"}'
               ].join("\n")
             },
             {
@@ -1212,18 +1212,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
       };
     }
 
-    const normalized = buildFallbackAnalysis({
-      title: parsed.title,
-      author: parsed.author,
-      authoredDate: parsed.authoredDate,
-      people: parsed.people,
-      disadvantagedPerson: parsed.disadvantagedPerson,
-      senderInstitution: parsed.senderInstitution,
-      impactAssessment: parsed.impactAssessment,
-      impactRanking: parsed.impactRanking,
-      rawText: "",
-      message: parsed.message
-    });
+    const normalized = mapSwissForensicJsonToAnalysis(parsed, {}, "");
 
     if (!normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
       return {
