@@ -583,6 +583,23 @@ function extractPeopleFromFullText(rawText, blockedNames = new Set()) {
   return normalizePeopleWithBlacklist(names, blockedNames).slice(0, 24);
 }
 
+function extractPeopleFromStructuredRows(rawText, blockedNames = new Set()) {
+  const text = String(rawText || "");
+  const names = [];
+
+  const surnameFirstWithMeta = text.matchAll(/\b([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})\s+([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})\s*,\s*\d{2,}(?:\s*,\s*\d{2}\.\d{2}\.\d{4})?/gu);
+  for (const match of surnameFirstWithMeta) {
+    names.push(`${match[2]} ${match[1]}`);
+  }
+
+  const paymentRows = text.matchAll(/\bf(?:u|ü)r\s+(?:Kinder\s+)?([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})\s+([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})\b/giu);
+  for (const match of paymentRows) {
+    names.push(`${match[2]} ${match[1]}`);
+  }
+
+  return normalizePeopleWithBlacklist(names, blockedNames).slice(0, 24);
+}
+
 function extractPeopleFromContextPhrases(rawText, blockedNames = new Set()) {
   const text = String(rawText || "");
   const candidates = [];
@@ -862,7 +879,8 @@ function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
     ...extractPeopleFromSalutation(rawText, blockedPeople),
     ...extractPeopleFromText(rawText, blockedPeople),
     ...extractPeopleFromContextPhrases(rawText, blockedPeople),
-    ...extractPeopleFromFullText(rawText, blockedPeople)
+    ...extractPeopleFromFullText(rawText, blockedPeople),
+    ...extractPeopleFromStructuredRows(rawText, blockedPeople)
   ], rawText, blockedPeople, author);
 
   const disadvantagedPerson = extractDisadvantagedPerson(rawText, people, author);
@@ -912,7 +930,9 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     ...extractPeopleFromLabeledFields(rawText, new Set()),
     ...extractPeopleFromSalutation(rawText, new Set()),
     ...extractPeopleFromText(rawText, new Set()),
-    ...extractPeopleFromContextPhrases(rawText, new Set())
+    ...extractPeopleFromContextPhrases(rawText, new Set()),
+    ...extractPeopleFromFullText(rawText, new Set()),
+    ...extractPeopleFromStructuredRows(rawText, new Set())
   ];
 
   const normalizedPeople = normalizePeopleDetailed(mergedPeople, rawText, new Set(), correctedAuthor);
@@ -1000,7 +1020,8 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
     ...extractPeopleFromLabeledFields(normalizedDocumentText, new Set()),
     ...extractPeopleFromSalutation(normalizedDocumentText, new Set()),
     ...extractPeopleFromContextPhrases(normalizedDocumentText, new Set()),
-    ...extractPeopleFromFullText(normalizedDocumentText, new Set())
+    ...extractPeopleFromFullText(normalizedDocumentText, new Set()),
+    ...extractPeopleFromStructuredRows(normalizedDocumentText, new Set())
   ]
     .map((entry) => (typeof entry === "string" ? normalizeWhitespace(entry) : normalizeWhitespace(entry?.name)))
     .filter(Boolean)

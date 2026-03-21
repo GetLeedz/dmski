@@ -1048,7 +1048,8 @@ td {
 }
 
 .analysis-box {
-  min-height: 11rem;
+  min-height: 0;
+  display: flex;
 }
 
 .analysis-loading {
@@ -1080,12 +1081,28 @@ td {
   width: 100%;
   max-width: none;
   margin-left: 0;
+  min-height: clamp(38rem, 52vw, 47rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.55), transparent 34%);
+  pointer-events: none;
 }
 
 .analysis-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.6rem;
+  position: relative;
+  z-index: 1;
 }
 
 .analysis-section {
@@ -1094,6 +1111,8 @@ td {
   background: rgba(255, 255, 255, 0.72);
   padding: 0.6rem 0.65rem;
   margin-top: 0.55rem;
+  position: relative;
+  z-index: 1;
 }
 
 .analysis-section:first-child,
@@ -1357,6 +1376,10 @@ td {
 
   .analysis-cell {
     min-width: 0;
+  }
+
+  .analysis-glass {
+    min-height: 0;
   }
 
   #createCaseBtn  { width: 100%; }
