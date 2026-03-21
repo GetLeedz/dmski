@@ -548,6 +548,18 @@ button:disabled {
   max-inline-size: 22rem;
 }
 
+.qa-dot-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+}
+
+.qa-dot-count {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #2a5a69;
+}
+
 .qa-dot {
   width: 1.15rem;
   height: 0.2rem;
@@ -1571,6 +1583,18 @@ td {
   flex-wrap: wrap;
   row-gap: 0.22rem;
   max-inline-size: 24rem;
+}
+
+.analysis-dot-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+}
+
+.analysis-dot-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2a5a69;
 }
 
 .analysis-dot {

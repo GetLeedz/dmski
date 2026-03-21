@@ -313,7 +313,7 @@ function renderMentionDots(count, tone) {
     ? Array.from({ length: safeCount }, () => `<span class="analysis-dot ${dotClass}" aria-hidden="true"></span>`).join("")
     : `<span class="analysis-dot-empty">0</span>`;
 
-  return `<span class="analysis-dot-track" aria-label="${safeCount}">${dots}</span>`;
+  return `<span class="analysis-dot-wrap"><span class="analysis-dot-track" aria-label="${safeCount}">${dots}</span><span class="analysis-dot-count">${safeCount}</span></span>`;
 }
 
 function normalizePersonName(value) {

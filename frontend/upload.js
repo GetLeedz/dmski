@@ -317,9 +317,9 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     const safeCount = Math.max(0, Number(count) || 0);
     const cls = tone === "positive" ? "is-positive" : "is-negative";
     if (safeCount <= 0) {
-      return `<span class="qa-dot-empty">0</span>`;
+      return `<span class="qa-dot-wrap"><span class="qa-dot-empty">0</span><span class="qa-dot-count">0</span></span>`;
     }
-    return `<span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span>`;
+    return `<span class="qa-dot-wrap"><span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span><span class="qa-dot-count">${safeCount}</span></span>`;
   };
 
   const docType = String(payload?.documentType || "").trim();

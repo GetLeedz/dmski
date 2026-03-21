@@ -866,6 +866,44 @@ function classifyMentionPolarity(text) {
   return "neutral";
 }
 
+function countPolaritySignals(text) {
+  const lower = normalizeWhitespace(text).toLowerCase();
+  if (!lower) {
+    return { positive: 0, negative: 0 };
+  }
+
+  const negativeRegex = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert|unkooperativ|defizit|untauglich|ungeeignet|vorwurf)/g;
+  const positiveRegex = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher|kompetent|kooperativ|konstruktiv|empath)/g;
+
+  return {
+    negative: (lower.match(negativeRegex) || []).length,
+    positive: (lower.match(positiveRegex) || []).length
+  };
+}
+
+function normalizeForSearch(value) {
+  return normalizeWhitespace(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function buildNameNeedles(name) {
+  const raw = normalizeWhitespace(name);
+  if (!raw) {
+    return [];
+  }
+
+  const stopwords = new Set(["der", "die", "das", "und", "von", "vom", "zur", "zum", "im", "in"]);
+  const parts = raw
+    .split(/\s+/)
+    .map((part) => normalizeForSearch(part))
+    .filter((part) => part.length >= 3 && !stopwords.has(part));
+
+  const full = normalizeForSearch(raw);
+  return Array.from(new Set([full, ...parts]));
+}
+
 function countProtectedMentions(rawText, protectedName, impactRanking = []) {
   const name = normalizeWhitespace(protectedName);
   if (!name) {
@@ -881,11 +919,17 @@ function countProtectedMentions(rawText, protectedName, impactRanking = []) {
 
   const evidenceItems = Array.isArray(rankingEntry?.items) ? rankingEntry.items : [];
   for (const item of evidenceItems) {
-    const polarity = classifyMentionPolarity(item);
-    if (polarity === "positive") {
-      positiveMentions += 1;
-    } else if (polarity === "negative") {
-      negativeMentions += 1;
+    const counts = countPolaritySignals(item);
+    if (counts.positive === 0 && counts.negative === 0) {
+      const polarity = classifyMentionPolarity(item);
+      if (polarity === "positive") {
+        positiveMentions += 1;
+      } else if (polarity === "negative") {
+        negativeMentions += 1;
+      }
+    } else {
+      positiveMentions += counts.positive;
+      negativeMentions += counts.negative;
     }
   }
 
@@ -893,21 +937,26 @@ function countProtectedMentions(rawText, protectedName, impactRanking = []) {
     return { positiveMentions, negativeMentions };
   }
 
-  const lowerText = String(rawText || "").toLowerCase();
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(escaped, "gi");
-  let match;
-  while ((match = regex.exec(lowerText)) !== null) {
-    const idx = match.index;
-    const windowStart = Math.max(0, idx - 120);
-    const windowEnd = Math.min(lowerText.length, idx + name.length + 120);
-    const windowText = lowerText.slice(windowStart, windowEnd);
-    const polarity = classifyMentionPolarity(windowText);
-    if (polarity === "positive") {
-      positiveMentions += 1;
-    } else if (polarity === "negative") {
-      negativeMentions += 1;
-    }
+  const normalizedText = String(rawText || "");
+  const normalizedSearchText = normalizeForSearch(normalizedText);
+  const needles = buildNameNeedles(name);
+  const sentenceCandidates = normalizedSearchText
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const mentionsInText = sentenceCandidates.filter((sentence) =>
+    needles.some((needle) => new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(sentence))
+  );
+
+  for (const sentence of mentionsInText) {
+    const counts = countPolaritySignals(sentence);
+    positiveMentions += counts.positive;
+    negativeMentions += counts.negative;
+  }
+
+  if ((positiveMentions === 0 && negativeMentions === 0) && Number(rankingEntry?.count || 0) > 0) {
+    negativeMentions = Math.max(negativeMentions, Number(rankingEntry.count || 0));
   }
 
   return { positiveMentions, negativeMentions };
@@ -1233,7 +1282,7 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
 
   return buildFallbackAnalysis({
     title: meta.titel || fallback.title,
-    author: meta.verfasser || normalizeWhitespace(src.verfasser || "") || fallback.author,
+    author: meta.verfasser || normalizeWhitespace(src.verfasser || "") || meta.herkunft || normalizeWhitespace(src.herkunft || "") || fallback.author,
     documentType: fallback.documentType || "Brief",
     authoredDate: meta.datum || fallback.authoredDate,
     people: effectivePeople,
