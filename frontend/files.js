@@ -1,12 +1,14 @@
 const token = sessionStorage.getItem("token");
 if (!token) {
-  window.location.href = "/";
+  window.location.replace("/");
 }
 
 const currentCaseId = String(sessionStorage.getItem("currentCaseId") || "").trim();
 if (!/^\d{6}$/.test(currentCaseId)) {
-  window.location.href = "/dashboard.html";
+  window.location.replace("/dashboard.html");
 }
+
+document.body.style.visibility = "visible";
 
 const host = String(window.location.hostname || "").toLowerCase();
 const isLocalHost = host === "localhost"
@@ -314,7 +316,8 @@ function normalizeImpactRanking(entries) {
     .filter(Boolean);
 }
 
-async function getDocumentAnalysis(file) {
+async function getDocumentAnalysis(file, options = {}) {
+  const forceRefresh = Boolean(options.forceRefresh);
   if (analysisCache.has(file.id)) {
     return analysisCache.get(file.id);
   }
@@ -323,7 +326,7 @@ async function getDocumentAnalysis(file) {
     return analysisPromiseCache.get(file.id);
   }
 
-  const request = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/analysis`, {
+  const request = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/analysis${forceRefresh ? "?refresh=1" : ""}`, {
     headers: { Authorization: `Bearer ${token}` }
   })
     .then(async (response) => {
@@ -439,7 +442,7 @@ async function loadRowPreview(file) {
   box.innerHTML = `<img class="row-preview-image" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
 }
 
-async function loadRowAnalysis(file) {
+async function loadRowAnalysis(file, options = {}) {
   const box = filesTableBody.querySelector(`.analysis-box[data-file-id="${file.id}"]`);
   if (!(box instanceof HTMLElement)) {
     return;
@@ -450,7 +453,7 @@ async function loadRowAnalysis(file) {
       <span class="spinner spinner--ai" aria-label="KI analysiert"></span>
       <span class="analysis-loading-text">KI analysiert Dokument&hellip;<br /><small>Das kann bei Bildern l&auml;nger dauern.</small></span>
     </div>`;
-  const analysis = await getDocumentAnalysis(file);
+  const analysis = await getDocumentAnalysis(file, options);
 
   const toDisplayName = (value) => {
     if (typeof value === "string") {
@@ -631,7 +634,7 @@ async function refreshAnalysis(fileId, triggerButton) {
   analysisPromiseCache.delete(fileId);
 
   try {
-    await loadRowAnalysis(file);
+    await loadRowAnalysis(file, { forceRefresh: true });
     setMessage(listMessage, "Analyse aktualisiert.", "success");
   } catch {
     setMessage(listMessage, "Analyse konnte nicht aktualisiert werden.", "error");

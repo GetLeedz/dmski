@@ -1,6 +1,8 @@
 const token = sessionStorage.getItem("token");
 if (!token) {
-  window.location.href = "/";
+  window.location.replace("/");
+} else {
+  document.body.style.visibility = "visible";
 }
 
 const host = String(window.location.hostname || "").toLowerCase();

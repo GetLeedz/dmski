@@ -1,12 +1,14 @@
 const token = sessionStorage.getItem("token");
 if (!token) {
-  window.location.href = "/";
+  window.location.replace("/");
 }
 
 const currentCaseId = String(sessionStorage.getItem("currentCaseId") || "").trim();
 if (!/^\d{6}$/.test(currentCaseId)) {
-  window.location.href = "/dashboard.html";
+  window.location.replace("/dashboard.html");
 }
+
+document.body.style.visibility = "visible";
 
 const host = String(window.location.hostname || "").toLowerCase();
 const isLocalHost = host === "localhost"
