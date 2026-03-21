@@ -399,6 +399,86 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(29, 122, 62, 0.14);
 }
 
+.queue-item.done .queue-analysis {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  background: linear-gradient(135deg, rgba(241,248,251,0.97), rgba(228,244,245,0.9));
+  border: 1px solid #d4e4ea;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.qa-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.73rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.12rem 0.6rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.15rem;
+  align-self: flex-start;
+}
+
+.qa-field {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--ink);
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+
+.qa-label {
+  font-weight: 700;
+  color: var(--ink-soft);
+  min-width: 5rem;
+  flex-shrink: 0;
+}
+
+.queue-item.done .queue-analysis {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  background: linear-gradient(135deg, rgba(241,248,251,0.97), rgba(228,244,245,0.9));
+  border: 1px solid #d4e4ea;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.qa-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.73rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.12rem 0.6rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.15rem;
+  align-self: flex-start;
+}
+
+.qa-field {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--ink);
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+
+.qa-label {
+  font-weight: 700;
+  color: var(--ink-soft);
+  min-width: 5rem;
+  flex-shrink: 0;
+}
+
 /* ================================================================
    UPLOAD QUEUE
    ================================================================ */

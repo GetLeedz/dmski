@@ -526,6 +526,7 @@ async function getDocumentAnalysis(file, options = {}) {
       const payload = await response.json().catch(() => ({}));
       return {
         status: payload.status || "ok",
+        documentType: normalizeTitleText(payload.documentType),
         title: normalizeTitleText(payload.title),
         author: normalizeTitleText(payload.author),
         authoredDate: normalizeTitleText(payload.authoredDate),
@@ -649,6 +650,10 @@ async function loadRowAnalysis(file, options = {}) {
         return `<li${cls}>${name}</li>`;
       }).join("")}</ul>`
     : '<p class="analysis-value muted">Keine eindeutigen Personen erkannt</p>';
+
+  const docTypeMarkup = analysis.documentType
+    ? `<p class="analysis-value analysis-doctype">${analysis.documentType}</p>`
+    : '';
 
   const titleMarkup = analysis.title
     ? `<p class="analysis-value analysis-title">${analysis.title}</p>`

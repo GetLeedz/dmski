@@ -950,7 +950,7 @@ function parsePdfMetadataDate(value) {
   return `${day}.${month}.${year}`;
 }
 
-function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], rawText = "", message = "" }) {
+function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], rawText = "", message = "" }) {
   const normalizedAuthor = normalizeWhitespace(author);
   const normalizedTitle = normalizeWhitespace(title);
 
@@ -997,6 +997,7 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     status: "ok",
     title: correctedTitle,
     author: correctedAuthor,
+    documentType: normalizeWhitespace(documentType),
     authoredDate: normalizeDateSwiss(authoredDate),
     people: normalizedPeople,
     disadvantagedPerson: normalizedDisadvantaged,
@@ -1058,16 +1059,20 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
       .filter(Boolean)
     : (Array.isArray(src.people) ? src.people : []);
 
+  // When AI returned persons, do NOT re-run heuristics (they add garbage).
+  const effectiveRawText = mappedPeople.length > 0 ? "" : rawText;
+
   return buildFallbackAnalysis({
     title: src.dokument_titel || src.title || fallback.title,
     author: src.verfasser || src.author || fallback.author,
+    documentType: src.dokument_typ || src.documentType || fallback.documentType || "",
     authoredDate: src.datum_verfassung || src.authoredDate || fallback.authoredDate,
     people: mappedPeople.length > 0 ? mappedPeople : fallback.people,
     disadvantagedPerson: src.disadvantagedPerson || fallback.disadvantagedPerson,
     senderInstitution: src.herkunft || src.senderInstitution || fallback.senderInstitution,
     impactAssessment: src.bewertung_kurz || src.impactAssessment || fallback.impactAssessment,
     impactRanking: Array.isArray(src.impactRanking) && src.impactRanking.length > 0 ? src.impactRanking : fallback.impactRanking,
-    rawText,
+    rawText: effectiveRawText,
     message: src.benachteiligung_indiz || src.message || fallback.message
   });
 }
@@ -1117,7 +1122,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             "   - Alexandra Schifferli = Mutter",
             "   - Nael Schifferli = Kind",
             "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
-            "JSON-SCHEMA: {\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+            "JSON-SCHEMA: {\"dokument_typ\":\"E-Mail|Brief|Beschluss|Verfuegung|Foto|WhatsApp|Bericht|Rechnung|Formular|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
           ].join("\n")
         },
         {
@@ -1184,7 +1189,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
             "   - Alexandra Schifferli = Mutter",
             "   - Nael Schifferli = Kind",
             "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
-            "JSON-SCHEMA: {\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+            "JSON-SCHEMA: {\"dokument_typ\":\"E-Mail|Brief|Beschluss|Verfuegung|Foto|WhatsApp|Bericht|Rechnung|Formular|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
           ].join("\n")
         },
         {

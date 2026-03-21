@@ -285,6 +285,42 @@ function uploadSingleFile(file) {
   });
 }
 
+function renderAnalysisInQueueRow(fileKey, payload) {
+  const row = uploadQueue.querySelector(`.queue-item[data-file-key="${CSS.escape(fileKey)}"]`);
+  if (!(row instanceof HTMLElement)) {
+    return;
+  }
+
+  const existing = row.querySelector(".queue-analysis");
+  if (existing) {
+    existing.remove();
+  }
+
+  const docType = String(payload?.documentType || "").trim();
+  const title = String(payload?.title || "").trim();
+  const author = String(payload?.author || "").trim();
+  const date = String(payload?.authoredDate || "").trim();
+  const people = Array.isArray(payload?.people)
+    ? payload.people.map((p) => String(p?.name || p || "").trim()).filter(Boolean)
+    : [];
+
+  if (!docType && !title && !author && !date && people.length === 0) {
+    return;
+  }
+
+  const parts = [];
+  if (docType) parts.push(`<span class="qa-tag">${docType}</span>`);
+  if (title) parts.push(`<span class="qa-field"><span class="qa-label">Titel</span>${title}</span>`);
+  if (author) parts.push(`<span class="qa-field"><span class="qa-label">Verfasser</span>${author}</span>`);
+  if (date) parts.push(`<span class="qa-field"><span class="qa-label">Datum</span>${date}</span>`);
+  if (people.length > 0) parts.push(`<span class="qa-field"><span class="qa-label">Personen</span>${people.join(" · ")}</span>`);
+
+  const card = document.createElement("div");
+  card.className = "queue-analysis";
+  card.innerHTML = parts.join("");
+  row.appendChild(card);
+}
+
 async function triggerRealtimeAnalysis(fileId, fileName, fileKey) {
   if (!fileId) {
     return;
@@ -312,11 +348,12 @@ async function triggerRealtimeAnalysis(fileId, fileName, fileKey) {
   }
 
   const payload = await response.json().catch(() => ({}));
-  const hasExtractedData = Boolean(payload?.title || payload?.author || payload?.authoredDate)
+  const hasExtractedData = Boolean(payload?.title || payload?.author || payload?.authoredDate || payload?.documentType)
     || (Array.isArray(payload?.people) && payload.people.length > 0);
 
   if (hasExtractedData) {
     updateQueueProgress(fileKey, 100, "Analysiert", "done");
+    renderAnalysisInQueueRow(fileKey, payload);
     return;
   }
 
