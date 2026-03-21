@@ -50,7 +50,6 @@ const uploadQueue = document.getElementById("uploadQueue");
 const activeCaseBanner = document.getElementById("activeCaseBanner");
 const workspaceHint = document.getElementById("workspaceHint");
 const goToListBtn = document.getElementById("goToListBtn");
-const backToCasesBtn = document.getElementById("backToCasesBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const copyrightYearEl = document.getElementById("copyrightYear");
 
@@ -457,12 +456,8 @@ uploadQueue.addEventListener("click", async (event) => {
   await deleteUploadedFile(fileId, fileKey);
 });
 
-goToListBtn.addEventListener("click", () => {
+goToListBtn?.addEventListener("click", () => {
   window.location.href = "/files.html";
-});
-
-backToCasesBtn.addEventListener("click", () => {
-  window.location.href = "/dashboard.html";
 });
 
 logoutBtn.addEventListener("click", () => {

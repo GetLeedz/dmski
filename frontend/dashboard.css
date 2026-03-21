@@ -619,6 +619,23 @@ button:disabled {
 
 .list-header-row h2 { margin: 0; }
 
+.upload-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.upload-card-header h2 {
+  margin: 0;
+}
+
+.upload-files-btn {
+  min-width: 8rem;
+  align-self: center;
+}
+
 .case-persons-row {
   display: flex;
   flex-wrap: wrap;

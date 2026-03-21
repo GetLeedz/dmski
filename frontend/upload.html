@@ -18,15 +18,18 @@
         </a>
       </div>
       <div class="actions-cell">
-        <button id="goToListBtn" type="button" class="ghost">Zur Dateiliste</button>
-        <button id="backToCasesBtn" type="button" class="ghost">Dossiers</button>
         <button id="logoutBtn" type="button" class="ghost">Logout</button>
       </div>
     </header>
 
     <section class="card">
-      <h2>Datei-Upload & Analyse in Realtime</h2>
-      <p id="activeCaseBanner" class="active-case-banner"></p>
+      <div class="upload-card-header">
+        <div>
+          <h2>Datei-Upload & Analyse in Realtime</h2>
+          <p id="activeCaseBanner" class="active-case-banner"></p>
+        </div>
+        <button id="goToListBtn" type="button" class="filter-btn upload-files-btn">Files</button>
+      </div>
       <p id="workspaceHint" class="hint"></p>
 
       <p>Erlaubte Formate: PDF, JPG, JPEG, PNG. Mehrere Dateien gleichzeitig möglich.</p>
