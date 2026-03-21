@@ -1668,7 +1668,26 @@ async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "")
   }
 }
 
+let ensureCaseColumnsPromise = null;
+
+async function ensureCaseOptionalColumns() {
+  if (!ensureCaseColumnsPromise) {
+    ensureCaseColumnsPromise = (async () => {
+      try {
+        await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS protected_person_name text");
+        await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS opposing_party text");
+      } catch (err) {
+        // If permissions are restricted, the compat fallbacks below still keep app functional.
+        console.warn("Ensure case columns warning:", err.message);
+      }
+    })();
+  }
+
+  await ensureCaseColumnsPromise;
+}
+
 async function listCasesCompat() {
+  await ensureCaseOptionalColumns();
   try {
     const result = await pool.query(
       "SELECT id, case_date, case_name, protected_person_name, opposing_party, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
@@ -1696,6 +1715,7 @@ async function listCasesCompat() {
 }
 
 async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opposingParty) {
+  await ensureCaseOptionalColumns();
   try {
     const result = await pool.query(
       "INSERT INTO cases (id, case_date, case_name, protected_person_name, opposing_party) VALUES ($1, $2, $3, $4, $5) RETURNING id, case_date, case_name, protected_person_name, opposing_party, created_at",
@@ -1726,6 +1746,7 @@ async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opp
 }
 
 async function getCaseParties(caseId) {
+  await ensureCaseOptionalColumns();
   try {
     const result = await pool.query(
       "SELECT protected_person_name, opposing_party FROM cases WHERE id = $1 LIMIT 1",
