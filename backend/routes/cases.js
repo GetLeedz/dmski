@@ -1099,36 +1099,40 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
 
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
+      temperature: 0,
       max_tokens: 1300,
       messages: [
         {
+          role: "system",
+          content: [
+            "Du bist ein forensischer Analyst fuer Schweizer Familienrecht.",
+            "DEINE AUFGABE: Extrahiere Daten STRENG nach diesen Regeln:",
+            "1. VERFASSER: Wer hat unterschrieben? (Meist ganz unten oder oben rechts im Brief).",
+            "2. DATUM: Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
+            "3. PERSONEN: Liste NUR reale Menschen.",
+            "   IGNORIERE STRENG: Orte (Binningen, Liestal, Basel, Muttenz), Grussformeln (Freundliche Gruesse, Mit freundlichen Gruessen), Wochentage (Montag, Dienstag, etc.), Abteilungen und Behoerdenbezeichnungen (Abteilung Unterhaltsbeitraege, Sozialamt, Debitoren).",
+            "4. ROLLEN-FIXIERUNG:",
+            "   - Ayhan Ergen = Vater",
+            "   - Alexandra Schifferli = Mutter",
+            "   - Nael Schifferli = Kind",
+            "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
+            "JSON-SCHEMA: {\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+          ].join("\n")
+        },
+        {
           role: "user",
           content: [
-            "Du bist ein forensischer Analyst fuer Schweizer Familienrecht. Deine Aufgabe ist die praezise Datenextraktion aus Rechtsdokumenten.",
-            "",
-            "EXTRAKTIONS-REGELN:",
-            "1. VERFASSER: Identifiziere die Person, die das Dokument unterzeichnet hat oder als Absender (Behoerde/Amt) fungiert.",
-            "2. DATUM: Extrahiere das Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
-            "3. ROLLEN-ZUORDNUNG:",
-            "   - Ayhan Ergen = Rolle: Vater",
-            "   - Alexandra Schifferli = Rolle: Mutter",
-            "   - Nael Schifferli = Rolle: Kind",
-            "4. PERSONEN-FILTER: Liste NUR reale Personennamen auf.",
-            "   - IGNORIERE: Orte (Liestal, Binningen), Grussformeln (Freundliche Gruesse), Strassennamen, Abteilungen (Unterhaltsbeitraege) oder Wochentage.",
-            "5. ANALYSE: Identifiziere den Kern des Schreibens (Mahnung, Verfuegung, Bericht).",
-            "",
-            "ANTWORTE AUSSCHLIESSLICH IM DIESEM JSON-FORMAT:",
-            '{"dokument_titel":"Kurzer Titel","verfasser":"Name der unterzeichnenden Person","herkunft":"Institution/Amt","datum_verfassung":"DD.MM.YYYY","personen":[{"name":"Vollstaendiger Name","rolle":"Vater/Mutter/Kind/Sachbearbeiter"}],"bewertung_kurz":"Ein Satz zum Inhalt","benachteiligung_indiz":"Ja/Nein + kurze Begruendung"}',
             aiCandidateNames.length > 0
-              ? `- Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
-              : "- Potenzielle Namen aus Voranalyse: (keine)",
+              ? `Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
+              : "Potenzielle Namen aus Voranalyse: (keine)",
             "",
             "TEXT ZUM ANALYSIEREN:",
             textSnippet
           ].join("\n")
         }
-      ]
+      ],
+      response_format: { type: "json_object" }
     });
 
     const responseText = response?.choices?.[0]?.message?.content || "";
@@ -1162,31 +1166,33 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
 
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
+      temperature: 0,
       max_tokens: 900,
       messages: [
+        {
+          role: "system",
+          content: [
+            "Du bist ein forensischer Analyst fuer Schweizer Familienrecht.",
+            "DEINE AUFGABE: Extrahiere Daten STRENG nach diesen Regeln:",
+            "1. VERFASSER: Wer hat unterschrieben? (Meist ganz unten oder oben rechts im Bild).",
+            "2. DATUM: Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
+            "3. PERSONEN: Liste NUR reale Menschen.",
+            "   IGNORIERE STRENG: Orte (Binningen, Liestal, Basel, Muttenz), Grussformeln (Freundliche Gruesse), Wochentage, Abteilungen und Behoerdenbezeichnungen.",
+            "4. ROLLEN-FIXIERUNG:",
+            "   - Ayhan Ergen = Vater",
+            "   - Alexandra Schifferli = Mutter",
+            "   - Nael Schifferli = Kind",
+            "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
+            "JSON-SCHEMA: {\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+          ].join("\n")
+        },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: [
-                "Du bist ein forensischer Analyst fuer Schweizer Familienrecht. Deine Aufgabe ist die praezise Datenextraktion aus Rechtsdokumenten.",
-                "",
-                "EXTRAKTIONS-REGELN:",
-                "1. VERFASSER: Identifiziere die Person, die das Dokument unterzeichnet hat oder als Absender (Behoerde/Amt) fungiert.",
-                "2. DATUM: Extrahiere das Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
-                "3. ROLLEN-ZUORDNUNG:",
-                "   - Ayhan Ergen = Rolle: Vater",
-                "   - Alexandra Schifferli = Rolle: Mutter",
-                "   - Nael Schifferli = Rolle: Kind",
-                "4. PERSONEN-FILTER: Liste NUR reale Personennamen auf.",
-                "   - IGNORIERE: Orte (Liestal, Binningen), Grussformeln (Freundliche Gruesse), Strassennamen, Abteilungen (Unterhaltsbeitraege) oder Wochentage.",
-                "5. ANALYSE: Identifiziere den Kern des Schreibens (Mahnung, Verfuegung, Bericht).",
-                "",
-                "ANTWORTE AUSSCHLIESSLICH IM DIESEM JSON-FORMAT:",
-                '{"dokument_titel":"Kurzer Titel","verfasser":"Name der unterzeichnenden Person","herkunft":"Institution/Amt","datum_verfassung":"DD.MM.YYYY","personen":[{"name":"Vollstaendiger Name","rolle":"Vater/Mutter/Kind/Sachbearbeiter"}],"bewertung_kurz":"Ein Satz zum Inhalt","benachteiligung_indiz":"Ja/Nein + kurze Begruendung"}'
-              ].join("\n")
+              text: "Analysiere dieses Dokument und gib das JSON zurueck:"
             },
             {
               type: "image_url",
