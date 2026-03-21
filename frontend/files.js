@@ -118,6 +118,8 @@ let modalZoom = 1;
 let pendingDelete = null;
 let isMultiDeleteMode = false;
 const selectedFileIds = new Set();
+let currentCaseProtectedKeywords = "";
+let currentCaseOpposingKeywords = "";
 let currentCaseProtectedPerson = "";
 let currentCaseName = "";
 let currentCaseOpposingParty = "";
@@ -823,6 +825,8 @@ async function loadRowAnalysis(file, options = {}) {
   const protectedNegDots = renderMentionDots(negativeMentions, "negative");
   const opposingPosDots = renderMentionDots(opposingPositiveMentions, "positive");
   const opposingNegDots = renderMentionDots(opposingNegativeMentions, "negative");
+  const protectedKeywords = normalizeTitleText(currentCaseProtectedKeywords) || "Nicht gesetzt";
+  const opposingKeywords = normalizeTitleText(currentCaseOpposingKeywords) || "Nicht gesetzt";
 
   box.innerHTML = `
     <div class="analysis-glass">
@@ -860,9 +864,11 @@ async function loadRowAnalysis(file, options = {}) {
       ` : ""}
       <section class="analysis-section analysis-mention-box">
         <p class="analysis-label">Benachteiligte Person erwähnt</p>
+        <p class="analysis-meta-line"><span class="analysis-mention-values">Keywords:</span><span>${protectedKeywords}</span></p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${protectedPosDots}</p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${protectedNegDots}</p>
         <p class="analysis-label analysis-sub-label">Gegenpartei erwähnt</p>
+        <p class="analysis-meta-line"><span class="analysis-mention-values">Keywords:</span><span>${opposingKeywords}</span></p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${opposingPosDots}</p>
         <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${opposingNegDots}</p>
       </section>
@@ -1060,6 +1066,8 @@ async function loadCaseContext() {
 
     currentCaseProtectedPerson = normalizeTitleText(active.protected_person_name || "");
     currentCaseOpposingParty = normalizeTitleText(active.opposing_party || "");
+    currentCaseProtectedKeywords = String(active.protected_person_name || "").trim();
+    currentCaseOpposingKeywords = String(active.opposing_party || "").trim();
     currentCaseCountry = normalizeTitleText(active.country || "");
     currentCaseLocality = normalizeTitleText(active.locality || "");
     currentCaseRegion = normalizeTitleText(active.region || active.locality || "");

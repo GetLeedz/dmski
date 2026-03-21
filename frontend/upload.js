@@ -112,6 +112,8 @@ let isUploading = false;
 let totalUploadedCount = 0;
 let currentCaseProtectedLabel = "Benachteiligte Person";
 let currentCaseOpposingLabel = "Gegenpartei";
+let currentCaseProtectedKeywords = "";
+let currentCaseOpposingKeywords = "";
 const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
@@ -169,6 +171,8 @@ async function loadCasePartyLabels() {
 
     currentCaseProtectedLabel = "Benachteiligte Person";
     currentCaseOpposingLabel = "Gegenpartei";
+    currentCaseProtectedKeywords = String(active?.protected_person_name || "").trim();
+    currentCaseOpposingKeywords = String(active?.opposing_party || "").trim();
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
       return;
@@ -438,6 +442,8 @@ function renderAnalysisInQueueRow(fileKey, payload) {
   const negativeMentions = Math.max(0, Number(payload?.negativeMentions || 0));
   const opposingPositiveMentions = Math.max(0, Number(payload?.opposingPositiveMentions || 0));
   const opposingNegativeMentions = Math.max(0, Number(payload?.opposingNegativeMentions || 0));
+  const protectedKeywords = currentCaseProtectedKeywords || "Nicht gesetzt";
+  const opposingKeywords = currentCaseOpposingKeywords || "Nicht gesetzt";
   const people = Array.isArray(payload?.people)
     ? payload.people.map((p) => String(p?.name || p || "").trim()).filter(Boolean)
     : [];
@@ -462,6 +468,7 @@ function renderAnalysisInQueueRow(fileKey, payload) {
       <div class="qa-persons-grid">
         <div class="qa-person-col">
           <div class="qa-person-col-label">${escapeHtml(currentCaseProtectedLabel)}</div>
+          <div class="qa-person-col-meta"><span class="qa-label">Keywords</span>${escapeHtml(protectedKeywords)}</div>
           <div class="qa-badge-rows">
             <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(positiveMentions, "positive")}</div>
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
@@ -469,6 +476,7 @@ function renderAnalysisInQueueRow(fileKey, payload) {
         </div>
         <div class="qa-person-col">
           <div class="qa-person-col-label">${escapeHtml(currentCaseOpposingLabel)}</div>
+          <div class="qa-person-col-meta"><span class="qa-label">Keywords</span>${escapeHtml(opposingKeywords)}</div>
           <div class="qa-badge-rows">
             <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(opposingPositiveMentions, "positive")}</div>
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(opposingNegativeMentions, "negative")}</div>
