@@ -1149,6 +1149,65 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   });
 }
 
+function mapChatForensicJsonToAnalysis(parsed, fallback = {}) {
+  const src = parsed && typeof parsed === "object" ? parsed : {};
+  const links = src?.beteiligte?.links || {};
+  const rechts = src?.beteiligte?.rechts || {};
+  const leftName = normalizeWhitespace(links?.name || "");
+  const rightName = normalizeWhitespace(rechts?.name || "");
+
+  const leftScore = src?.forensik_score?.links || {};
+  const rightScore = src?.forensik_score?.rechts || {};
+  const leftNeg = Math.max(0, Number(leftScore?.negativ_count || 0));
+  const rightNeg = Math.max(0, Number(rightScore?.negativ_count || 0));
+
+  let disadvantagedPerson = "";
+  if (leftNeg > rightNeg && rightName && !/unbekannt/i.test(rightName)) {
+    disadvantagedPerson = rightName;
+  } else if (rightNeg > leftNeg && leftName && !/unbekannt/i.test(leftName)) {
+    disadvantagedPerson = leftName;
+  }
+
+  const people = [];
+  if (leftName && !/unbekannt/i.test(leftName)) {
+    people.push({ name: leftName, affiliation: normalizeWhitespace(links?.rolle || "Partei A") || "Partei A" });
+  }
+  if (rightName && !/unbekannt/i.test(rightName)) {
+    people.push({ name: rightName, affiliation: normalizeWhitespace(rechts?.rolle || "Partei B") || "Partei B" });
+  }
+
+  const impactRanking = [];
+  if (leftName && !/unbekannt/i.test(leftName)) {
+    impactRanking.push({
+      name: leftName,
+      impact: leftNeg > 0 ? "benachteiligt" : "neutral",
+      count: leftNeg,
+      items: Array.isArray(leftScore?.belege_negativ) ? leftScore.belege_negativ : []
+    });
+  }
+  if (rightName && !/unbekannt/i.test(rightName)) {
+    impactRanking.push({
+      name: rightName,
+      impact: rightNeg > 0 ? "benachteiligt" : "neutral",
+      count: rightNeg,
+      items: Array.isArray(rightScore?.belege_negativ) ? rightScore.belege_negativ : []
+    });
+  }
+
+  return buildFallbackAnalysis({
+    title: "Forensische Chat-Analyse",
+    author: leftName && !/unbekannt/i.test(leftName) ? leftName : "",
+    documentType: "Chat",
+    authoredDate: "",
+    people,
+    disadvantagedPerson,
+    senderInstitution: "Privat",
+    impactAssessment: normalizeWhitespace(src?.analyse_fazit || ""),
+    impactRanking,
+    message: normalizeWhitespace(src?.benachteiligung_score || "") || fallback.message
+  });
+}
+
 async function analyzeTextWithAi(documentText, fallback = {}) {
   const client = getOpenAiClient();
   if (!client) {
@@ -1225,7 +1284,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
   }
 }
 
-async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
+async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = "") {
   const client = getOpenAiClient();
   if (!client) {
     return {
@@ -1241,28 +1300,61 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
 
   const base64 = fileBuffer.toString("base64");
 
+  const isChatHint = /whats?app|chat|nachricht|dialog|sms|signal|telegram|screen|screenshot/i.test(String(originalName || "").toLowerCase());
+
   try {
     const response = await client.chat.completions.create({
       model: "gpt-4o",
       temperature: 0,
-      max_tokens: 900,
+      max_tokens: 1200,
       messages: [
         {
           role: "system",
-          content: [
-            "Du bist ein forensischer Analyst fuer Schweizer Familienrecht.",
-            "DEINE AUFGABE: Extrahiere Daten STRENG nach diesen Regeln:",
-            "1. VERFASSER: Wer hat unterschrieben? (Meist ganz unten oder oben rechts im Bild).",
-            "2. DATUM: Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
-            "3. PERSONEN: Liste NUR reale Menschen.",
-            "   IGNORIERE STRENG: Orte (Binningen, Liestal, Basel, Muttenz), Grussformeln (Freundliche Gruesse), Wochentage, Abteilungen und Behoerdenbezeichnungen.",
-            "4. ROLLEN-FIXIERUNG:",
-            "   - Ayhan Ergen = Vater",
-            "   - Alexandra Schifferli = Mutter",
-            "   - Nael Schifferli = Kind",
-            "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
-            "JSON-SCHEMA: {\"dokument_typ\":\"Chat|Brief|E-Mail|Foto|Film|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
-          ].join("\n")
+          content: isChatHint
+            ? [
+              "Du bist ein forensischer Analyst fuer Dokumenten- und Kommunikationspruefung. Deine Aufgabe ist es, die Dynamik in diesem Dialog objektiv zu quantifizieren.",
+              "",
+              "1. ROLLEN-IDENTIFIKATION (VISUELLE LOGIK):",
+              "- PARTEI A (Links/Absender): Die Person oder Sprechblase auf der linken Seite.",
+              "- PARTEI B (Rechts/Empfaenger): Die Person oder Sprechblase auf der rechten Seite.",
+              "- Identifiziere die Klarnamen beider Parteien aus dem Textinhalt, falls vorhanden.",
+              "",
+              "2. QUANTITATIVE BEPUNKTUNG (SENTIMENT-CHECK):",
+              "Zaehle fuer jede Partei separat:",
+              "- POSITIVE HINWEISE (+): Sachlichkeit, Kooperationsbereitschaft, Lob, neutrale Information.",
+              "- NEGATIVE HINWEISE (-): Vorwuerfe, Beleidigungen, manipulative Unterstellungen, Drohungen, Rufschaedigung.",
+              "",
+              "3. FORENSISCHE MUSTERERKENNUNG:",
+              "Suche nach Anzeichen von Charakter-Assassination, einseitiger Aggression und Systembenachteiligung.",
+              "",
+              "4. OUTPUT-FORMAT (STRENGES JSON):",
+              "{",
+              "  \"beteiligte\": {",
+              "    \"links\": { \"name\": \"Name oder 'Unbekannt'\", \"rolle\": \"Partei A\" },",
+              "    \"rechts\": { \"name\": \"Name oder 'Unbekannt'\", \"rolle\": \"Partei B\" }",
+              "  },",
+              "  \"forensik_score\": {",
+              "    \"links\": { \"positiv_count\": 0, \"negativ_count\": 0, \"belege_negativ\": [] },",
+              "    \"rechts\": { \"positiv_count\": 0, \"negativ_count\": 0, \"belege_negativ\": [] }",
+              "  },",
+              "  \"analyse_fazit\": \"Zusammenfassung der Dynamik und Identifikation der benachteiligten/angegriffenen Person.\",",
+              "  \"benachteiligung_score\": \"Skala 1-10 (10 = extreme einseitige Benachteiligung)\"",
+              "}"
+            ].join("\n")
+            : [
+              "Du bist ein forensischer Analyst fuer Schweizer Familienrecht.",
+              "DEINE AUFGABE: Extrahiere Daten STRENG nach diesen Regeln:",
+              "1. VERFASSER: Wer hat unterschrieben? (Meist ganz unten oder oben rechts im Bild).",
+              "2. DATUM: Erstellungsdatum des Dokuments (Format: DD.MM.YYYY).",
+              "3. PERSONEN: Liste NUR reale Menschen.",
+              "   IGNORIERE STRENG: Orte (Binningen, Liestal, Basel, Muttenz), Grussformeln (Freundliche Gruesse), Wochentage, Abteilungen und Behoerdenbezeichnungen.",
+              "4. ROLLEN-FIXIERUNG:",
+              "   - Ayhan Ergen = Vater",
+              "   - Alexandra Schifferli = Mutter",
+              "   - Nael Schifferli = Kind",
+              "5. FORMAT: Antworte NUR im JSON-Format ohne Erklaerungen.",
+              "JSON-SCHEMA: {\"dokument_typ\":\"Chat|Brief|E-Mail|Foto|Film|Sonstiges\",\"dokument_titel\":\"string\",\"verfasser\":\"string\",\"herkunft\":\"string\",\"datum_verfassung\":\"DD.MM.YYYY\",\"personen\":[{\"name\":\"string\",\"rolle\":\"string\"}],\"bewertung_kurz\":\"string\",\"benachteiligung_indiz\":\"string\"}"
+            ].join("\n")
         },
         {
           role: "user",
@@ -1277,7 +1369,8 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
             }
           ]
         }
-      ]
+      ],
+      response_format: { type: "json_object" }
     });
 
     const responseText = response?.choices?.[0]?.message?.content || "";
@@ -1295,7 +1388,9 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
       };
     }
 
-    const normalized = mapSwissForensicJsonToAnalysis(parsed, {}, "");
+    const normalized = parsed?.beteiligte
+      ? mapChatForensicJsonToAnalysis(parsed, {})
+      : mapSwissForensicJsonToAnalysis(parsed, {}, "");
 
     if (!normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
       return {
@@ -1372,7 +1467,7 @@ async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "")
   const fileNameTitle = deriveTitleFromFileName(originalName);
 
   try {
-    const imageResult = await extractTitleFromImageWithAi(fileBuffer, mimeType);
+    const imageResult = await extractTitleFromImageWithAi(fileBuffer, mimeType, originalName);
     if (imageResult.status !== "needs-ocr" && imageResult.status !== "needs-config") {
       return imageResult;
     }
