@@ -571,6 +571,18 @@ function extractPeopleFromText(rawText, blockedNames = new Set()) {
   return normalizePeopleWithBlacklist(people, blockedNames);
 }
 
+function extractPeopleFromFullText(rawText, blockedNames = new Set()) {
+  const text = String(rawText || "");
+  const matches = text.matchAll(/\b(\p{Lu}[\p{Ll}\p{M}'-]{1,}\s+\p{Lu}[\p{Ll}\p{M}'-]{1,})\b/gu);
+  const names = [];
+
+  for (const match of matches) {
+    names.push(match[1]);
+  }
+
+  return normalizePeopleWithBlacklist(names, blockedNames).slice(0, 24);
+}
+
 function extractPeopleFromContextPhrases(rawText, blockedNames = new Set()) {
   const text = String(rawText || "");
   const candidates = [];
@@ -848,7 +860,9 @@ function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
   const people = normalizePeopleDetailed([
     ...extractPeopleFromLabeledFields(rawText, blockedPeople),
     ...extractPeopleFromSalutation(rawText, blockedPeople),
-    ...extractPeopleFromText(rawText, blockedPeople)
+    ...extractPeopleFromText(rawText, blockedPeople),
+    ...extractPeopleFromContextPhrases(rawText, blockedPeople),
+    ...extractPeopleFromFullText(rawText, blockedPeople)
   ], rawText, blockedPeople, author);
 
   const disadvantagedPerson = extractDisadvantagedPerson(rawText, people, author);
@@ -981,6 +995,16 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
   const textSnippet = normalizedDocumentText.length <= maxChars
     ? normalizedDocumentText
     : `${normalizedDocumentText.slice(0, 30000)}\n\n[... gekuerzt ...]\n\n${normalizedDocumentText.slice(-20000)}`;
+
+  const aiCandidateNames = [
+    ...extractPeopleFromLabeledFields(normalizedDocumentText, new Set()),
+    ...extractPeopleFromSalutation(normalizedDocumentText, new Set()),
+    ...extractPeopleFromContextPhrases(normalizedDocumentText, new Set()),
+    ...extractPeopleFromFullText(normalizedDocumentText, new Set())
+  ]
+    .map((entry) => (typeof entry === "string" ? normalizeWhitespace(entry) : normalizeWhitespace(entry?.name)))
+    .filter(Boolean)
+    .slice(0, 24);
   if (!textSnippet.trim()) {
     return buildFallbackAnalysis(fallback);
   }
@@ -1016,6 +1040,9 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             "- Achte auch auf subtile Diskriminierung: unterschiedliche Wertungen (z.B. 'unterschiedlich gute Zusammenarbeit'), abwertende Adjektive, ungleiche Behandlung oder selektive Formulierungen.",
             "- message = kurzer Hinweis, falls etwas unklar ist.",
             "- Wenn etwas fehlt, leeres Feld verwenden.",
+            aiCandidateNames.length > 0
+              ? `- Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
+              : "- Potenzielle Namen aus Voranalyse: (keine)",
             "Dokumenttext:",
             textSnippet
           ].join("\n")

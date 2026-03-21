@@ -64,10 +64,9 @@ body {
 .topbar::before {
   content: "";
   position: absolute;
-  inset: 0;
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  inset-inline: calc(50% - 50vw);
   background: rgba(255, 255, 255, 0.54);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);

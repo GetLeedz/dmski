@@ -343,6 +343,11 @@ function collectAnalysisPeople(analysis, protectedName = "") {
   if (analysis?.disadvantagedPerson) {
     candidates.push(...extractNamesFromChunk(analysis.disadvantagedPerson));
   }
+
+  if (analysis?.title) {
+    candidates.push(...extractNamesFromChunk(analysis.title));
+  }
+
   if (protectedName) {
     candidates.push(...extractNamesFromChunk(protectedName));
   }
