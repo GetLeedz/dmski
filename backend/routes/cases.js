@@ -2245,14 +2245,6 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   output.people = normalizedPeople;
   output.impactRanking = buildImpactRanking(normalizedPeople, output.disadvantagedPerson || "", aiLookup);
 
-  const mentionSummaryProtected = countProtectedMentions(rawText, protectedName, output.impactRanking, protectedIdentity.aliases);
-  output.positiveMentions = Math.max(Math.max(0, Number(output.positiveMentions || 0)), mentionSummaryProtected.positiveMentions);
-  output.negativeMentions = Math.max(Math.max(0, Number(output.negativeMentions || 0)), mentionSummaryProtected.negativeMentions);
-
-  const mentionSummaryOpposing = countProtectedMentions(rawText, opposingName, output.impactRanking, opposingIdentity.aliases);
-  output.opposingPositiveMentions = Math.max(Math.max(0, Number(output.opposingPositiveMentions || 0)), mentionSummaryOpposing.positiveMentions);
-  output.opposingNegativeMentions = Math.max(Math.max(0, Number(output.opposingNegativeMentions || 0)), mentionSummaryOpposing.negativeMentions);
-
   if (!normalizeWhitespace(output.author) && normalizeWhitespace(output.senderInstitution)) {
     output.author = normalizeWhitespace(output.senderInstitution);
   }
