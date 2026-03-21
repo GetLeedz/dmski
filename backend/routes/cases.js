@@ -1285,7 +1285,13 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const effectivePeople = mappedPeople.length > 0 ? mappedPeople : (derivedPeople.length > 0 ? derivedPeople : fallback.people);
   const effectiveRawText = effectivePeople.length > 0 ? "" : rawText;
   const biasRatio = normalizeWhitespace(src.bias_verhaeltnis || "");
-  const qualitativeSummary = normalizeWhitespace(src.zusammenfassung || src.fazit_voreingenommenheit || "");
+  const qualitativeSummaryRaw = normalizeWhitespace(src.zusammenfassung || src.fazit_voreingenommenheit || "");
+  const qualitativeSummary = normalizeWhitespace(
+    qualitativeSummaryRaw
+      .replace(/\bMoechten\s+Sie\b[\s\S]*$/i, "")
+      .replace(/\bMöchten\s+Sie\b[\s\S]*$/i, "")
+      .replace(/\d+/g, "")
+  );
   const biasIndex = normalizeWhitespace(String(src.fbi_bias_index ?? src.alarm_stufe ?? src.alarm_level ?? ""));
   const topTitle = normalizeWhitespace(src.titel || "");
   const topAuthor = normalizeWhitespace(src.verfasser || "");
@@ -1309,6 +1315,43 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     rawText: effectiveRawText,
     message: biasIndex ? `FBI-Bias-Index: ${biasIndex}` : fallback.message
   });
+}
+
+function hasStrictForensicShape(parsed) {
+  if (!parsed || typeof parsed !== "object") {
+    return false;
+  }
+
+  const evalData = parsed.auswertung;
+  if (!evalData || typeof evalData !== "object") {
+    return false;
+  }
+
+  const fokus = evalData.fokus;
+  const referenz = evalData.referenz;
+  if (!fokus || !referenz || typeof fokus !== "object" || typeof referenz !== "object") {
+    return false;
+  }
+
+  const nums = [fokus.pos, fokus.neg, referenz.pos, referenz.neg].map((value) => Number(value));
+  const allFinite = nums.every((value) => Number.isFinite(value) && value >= 0);
+  return allFinite;
+}
+
+function hasUsableForensicResult(result) {
+  const safe = result && typeof result === "object" ? result : {};
+  const totalMentions = Number(safe.positiveMentions || 0)
+    + Number(safe.negativeMentions || 0)
+    + Number(safe.opposingPositiveMentions || 0)
+    + Number(safe.opposingNegativeMentions || 0);
+
+  return Boolean(
+    normalizeWhitespace(safe.title || "")
+    || normalizeWhitespace(safe.author || "")
+    || normalizeWhitespace(safe.senderInstitution || "")
+    || (Array.isArray(safe.people) && safe.people.length > 0)
+    || totalMentions > 0
+  );
 }
 
 function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingPartyName = "") {
@@ -1338,6 +1381,8 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "### 4. OUTPUT-REGELN:",
     "- ZUSAMMENFASSUNG: Beschreibe das Muster der asymmetrischen Darstellung und die psychologische Tendenz des Verfassers (max. 2 Saetze). Erwaehne KEINE Zahlen im Text.",
     "- NULLEN-LOGIK: Gib fuer jede Person exakt EINE Summe fuer Positiv und EINE Summe fuer Negativ zurueck.",
+    "- KEINE RUECKFRAGE: Stelle am Ende keine Frage und keine Empfehlung.",
+    "- NUR JSON: Gib ausschliesslich ein valides JSON-Objekt ohne Markdown und ohne zusaetzlichen Text aus.",
     "",
     "### JSON-AUSGABE:",
     "{",
@@ -1465,16 +1510,70 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     });
 
     const responseText = response?.choices?.[0]?.message?.content || "";
-    const parsed = extractJsonObject(responseText);
-    if (!parsed || typeof parsed !== "object") {
-      return buildFallbackAnalysis(fallback);
+    let parsed = extractJsonObject(responseText);
+    let mapped = null;
+
+    if (parsed && typeof parsed === "object") {
+      if (parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
+        mapped = mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
+      } else {
+        mapped = mapSwissForensicJsonToAnalysis(parsed, fallback, textSnippet);
+      }
     }
 
-    if (parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
-      return mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
+    const needsRetry = !parsed
+      || !hasStrictForensicShape(parsed)
+      || !hasUsableForensicResult(mapped);
+
+    if (!needsRetry) {
+      return mapped;
     }
 
-    return mapSwissForensicJsonToAnalysis(parsed, fallback, textSnippet);
+    const retry = await client.chat.completions.create({
+      model: "gpt-4o",
+      temperature: 0,
+      max_tokens: 1300,
+      messages: [
+        {
+          role: "system",
+          content: [
+            buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName),
+            "",
+            "KORREKTURHINWEIS:",
+            "Deine letzte Antwort war nicht schema-konform oder nicht ausreichend auswertbar.",
+            "Erzeuge jetzt NUR ein valides JSON gemass Schema.",
+            "Keine Erklaerung, keine Einleitung, keine Rueckfrage."
+          ].join("\n")
+        },
+        {
+          role: "user",
+          content: [
+            aiCandidateNames.length > 0
+              ? `Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
+              : "Potenzielle Namen aus Voranalyse: (keine)",
+            "",
+            "TEXT ZUM ANALYSIEREN:",
+            textSnippet
+          ].join("\n")
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const retryText = retry?.choices?.[0]?.message?.content || "";
+    const retryParsed = extractJsonObject(retryText);
+    if (retryParsed && typeof retryParsed === "object") {
+      if (retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
+        const retryMapped = mapBiasForensicJsonToAnalysis(retryParsed, fallback, textSnippet);
+        if (hasUsableForensicResult(retryMapped)) {
+          return retryMapped;
+        }
+      }
+    }
+
+    return mapped && hasUsableForensicResult(mapped)
+      ? mapped
+      : buildFallbackAnalysis(fallback);
   } catch (error) {
     console.error("Analyze text error:", error.message);
     return buildFallbackAnalysis(fallback);
