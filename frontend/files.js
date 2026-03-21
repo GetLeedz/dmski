@@ -323,6 +323,46 @@ function extractNamesFromChunk(value) {
   return names;
 }
 
+function isLikelyValidPersonLabel(value) {
+  const cleaned = normalizePersonName(value);
+  if (!cleaned || /\d/.test(cleaned)) {
+    return false;
+  }
+
+  const aliasSet = new Set(["kindsvater", "kindsmutter", "kindesvater", "kindesmutter"]);
+  const blockedWords = new Set([
+    "abteilung", "freundliche", "gruesse", "grusse", "datum", "monat", "kantonales", "sozialamt",
+    "unterhaltszahlungen", "ausstehende", "liestal", "sachbearbeiter", "sachbearbeiterin", "kinder",
+    "debitoren", "kontoauszug", "alimente", "montag", "dienstag", "mittwoch", "donnerstag", "freitag",
+    "samstag", "sonntag", "herr", "frau", "beilage", "beilagen", "zahlungsrueckstand"
+  ]);
+
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 4) {
+    return false;
+  }
+
+  const lower = cleaned.toLowerCase();
+  if (aliasSet.has(lower)) {
+    return true;
+  }
+
+  for (const word of words) {
+    const lw = word.toLowerCase();
+    if (blockedWords.has(lw)) {
+      return false;
+    }
+  }
+
+  const capitalizedWord = /^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,}$/;
+
+  if (words.length === 1) {
+    return capitalizedWord.test(words[0]);
+  }
+
+  return words.every((word) => capitalizedWord.test(word));
+}
+
 function collectAnalysisPeople(analysis, protectedName = "", authorName = "") {
   const candidates = [];
 
@@ -368,6 +408,9 @@ function collectAnalysisPeople(analysis, protectedName = "", authorName = "") {
   for (const candidate of candidates) {
     const cleaned = normalizePersonName(candidate);
     if (!cleaned) {
+      continue;
+    }
+    if (!isLikelyValidPersonLabel(cleaned)) {
       continue;
     }
     const key = cleaned.toLowerCase();
