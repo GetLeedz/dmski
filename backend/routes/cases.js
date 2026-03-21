@@ -1302,49 +1302,48 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
 function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const src = parsed && typeof parsed === "object" ? parsed : {};
 
-  // --- New per-person array schema (personen_auswertung) ---
-  const personenArr = Array.isArray(src.personen_auswertung) ? src.personen_auswertung : [];
+  // --- target_a / target_b schema ---
+  const targetA = src.target_a && typeof src.target_a === "object" ? src.target_a : {};
+  const targetB = src.target_b && typeof src.target_b === "object" ? src.target_b : {};
 
-  const mappedPeople = personenArr
+  const stmtsA = Array.isArray(targetA.statements) ? targetA.statements : [];
+  const stmtsB = Array.isArray(targetB.statements) ? targetB.statements : [];
+
+  const posA = Math.max(stmtsA.filter((s) => s?.sentiment === "positive").length, Math.max(0, Number(targetA.positive || 0)));
+  const negA = Math.max(stmtsA.filter((s) => s?.sentiment === "negative").length, Math.max(0, Number(targetA.negative || 0)));
+  const posB = Math.max(stmtsB.filter((s) => s?.sentiment === "positive").length, Math.max(0, Number(targetB.positive || 0)));
+  const negB = Math.max(stmtsB.filter((s) => s?.sentiment === "negative").length, Math.max(0, Number(targetB.negative || 0)));
+
+  // People list
+  const peopleSource = Array.isArray(src.personen) ? src.personen : [];
+  const mappedPeople = peopleSource
     .map((entry) => {
-      const name = normalizeWhitespace(entry?.name || "");
+      const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name || "");
       if (!name) return null;
       return { name, affiliation: "Privatperson" };
     })
     .filter(Boolean);
 
-  const impactRanking = personenArr
-    .map((entry) => {
-      const name = normalizeWhitespace(entry?.name || "");
-      if (!name) return null;
-      const neg = Math.max(0, Number(entry?.neg || 0));
-      const negItems = Array.isArray(entry?.belege_neg) ? entry.belege_neg.filter(Boolean) : [];
-      return {
-        name,
-        impact: neg > 0 ? "benachteiligt" : "neutral",
-        count: neg,
-        items: negItems
-      };
-    })
-    .filter(Boolean);
-
-  // Store full per-person data so applyProtectedPersonFocus can match later
-  const personenScores = personenArr
-    .map((entry) => {
-      const name = normalizeWhitespace(entry?.name || "");
-      if (!name) return null;
-      const belegePos = Array.isArray(entry?.belege_pos) ? entry.belege_pos.filter(Boolean) : [];
-      const belegeNeg = Array.isArray(entry?.belege_neg) ? entry.belege_neg.filter(Boolean) : [];
-      return {
-        name,
-        pos: Math.max(belegePos.length, Math.max(0, Number(entry?.pos || 0))),
-        neg: Math.max(belegeNeg.length, Math.max(0, Number(entry?.neg || 0))),
-        belege_pos: belegePos,
-        belege_neg: belegeNeg,
-        tendenz: normalizeWhitespace(entry?.tendenz || "")
-      };
-    })
-    .filter(Boolean);
+  // Impact ranking from statements
+  const impactRanking = [];
+  const negItemsA = stmtsA.filter((s) => s?.sentiment === "negative").map((s) => normalizeWhitespace(s?.text || "")).filter(Boolean);
+  const negItemsB = stmtsB.filter((s) => s?.sentiment === "negative").map((s) => normalizeWhitespace(s?.text || "")).filter(Boolean);
+  if (negA > 0 || posA > 0) {
+    impactRanking.push({
+      name: fallback.disadvantagedPerson || "Benachteiligte Person",
+      impact: negA > 0 ? "benachteiligt" : "neutral",
+      count: negA,
+      items: negItemsA
+    });
+  }
+  if (negB > 0 || posB > 0) {
+    impactRanking.push({
+      name: "Gegenpartei",
+      impact: negB > 0 ? "benachteiligt" : "neutral",
+      count: negB,
+      items: negItemsB
+    });
+  }
 
   const qualitativeSummaryRaw = normalizeWhitespace(src.zusammenfassung || "");
   const qualitativeSummary = normalizeWhitespace(
@@ -1361,7 +1360,7 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
 
   const effectivePeople = mappedPeople.length > 0 ? mappedPeople : fallback.people;
 
-  const result = buildFallbackAnalysis({
+  return buildFallbackAnalysis({
     title: topTitle || fallback.title,
     author: topAuthor || topSender || fallback.author,
     documentType: fallback.documentType || "Brief",
@@ -1371,17 +1370,13 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     senderInstitution: topSender || fallback.senderInstitution,
     impactAssessment: qualitativeSummary || fallback.impactAssessment,
     impactRanking: impactRanking.length > 0 ? impactRanking : fallback.impactRanking,
-    positiveMentions: 0,
-    negativeMentions: 0,
-    opposingPositiveMentions: 0,
-    opposingNegativeMentions: 0,
+    positiveMentions: posA,
+    negativeMentions: negA,
+    opposingPositiveMentions: posB,
+    opposingNegativeMentions: negB,
     rawText: effectivePeople.length > 0 ? "" : rawText,
     message: fallback.message
   });
-
-  // Attach per-person scores for downstream party matching
-  result._personenScores = personenScores;
-  return result;
 }
 
 function hasStrictForensicShape(parsed) {
@@ -1389,19 +1384,21 @@ function hasStrictForensicShape(parsed) {
     return false;
   }
 
-  const arr = parsed.personen_auswertung;
-  if (!Array.isArray(arr) || arr.length === 0) {
+  const tA = parsed.target_a;
+  const tB = parsed.target_b;
+  if (!tA || !tB || typeof tA !== "object" || typeof tB !== "object") {
     return false;
   }
 
-  return arr.every((entry) => {
-    if (!entry || typeof entry !== "object") return false;
-    const name = normalizeWhitespace(entry.name || "");
-    if (!name) return false;
-    const pos = Number(entry.pos);
-    const neg = Number(entry.neg);
-    return Number.isFinite(pos) && pos >= 0 && Number.isFinite(neg) && neg >= 0;
-  });
+  const nums = [tA.positive, tA.negative, tB.positive, tB.negative].map((v) => Number(v));
+  const allFinite = nums.every((v) => Number.isFinite(v) && v >= 0);
+  if (!allFinite) {
+    return false;
+  }
+
+  const hasStatements = Array.isArray(tA.statements) || Array.isArray(tB.statements);
+  const hasNonZero = nums.some((v) => v > 0);
+  return hasStatements || hasNonZero;
 }
 
 function hasUsableForensicResult(result) {
@@ -1421,62 +1418,72 @@ function hasUsableForensicResult(result) {
 }
 
 function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingPartyName = "") {
+  const focusRaw = normalizeWhitespace(protectedPersonName);
+  const referenceRaw = normalizeWhitespace(opposingPartyName);
+
+  const focusAliases = focusRaw
+    .split(",")
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+  const referenceAliases = referenceRaw
+    .split(",")
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+
+  const focusKeywords = focusAliases.length > 0 ? focusAliases.join(", ") : "(keine)";
+  const referenceKeywords = referenceAliases.length > 0 ? referenceAliases.join(", ") : "(keine)";
+
   return [
-    "Du bist ein forensischer Dokumentenanalyst.",
+    "Du bist ein forensischer Dokumentenanalyst fuer Rechtstexte.",
     "",
     "### AUFGABE:",
-    "Analysiere das gesamte Dokument – jede Zeile, jede Seite, jeden Absatz – und identifiziere ALLE darin genannten Personen.",
-    "Bewerte dann, wie jede Person dargestellt wird.",
+    "Analysiere den gesamten Text und zaehle, wie viele explizite positive und negative wertende Aussagen ueber die zwei Zielgruppen gemacht werden.",
     "",
-    "### 1. METADATEN-EXTRAKTION:",
+    "### EINGABE-VARIABLEN:",
+    `BENACHTEILIGTE_PERSON_KEYWORDS = [${focusKeywords}]`,
+    `GEGENPARTEI_KEYWORDS = [${referenceKeywords}]`,
+    "",
+    "WICHTIG: Diese Keyword-Listen sind nur Aliase. Alle Aliase in einer Liste bezeichnen EINE einzige Zielgruppe.",
+    "Worte wie 'Mutter', 'Vater', 'Kindsmutter', 'Kindsvater' sind NUR dann Aliase, wenn sie zu einer der obigen Listen passen.",
+    "",
+    "### METADATEN-EXTRAKTION:",
     "- titel: Praeziser Titel basierend auf Betreff/Inhalt.",
     "- verfasser: Die natuerliche Person, die unterzeichnet hat (kein Institutionsname).",
     "- datum: Erstellungsdatum im Format DD.MM.YYYY.",
     "- absender: Voller Institutionsname inkl. Orts-/Regionszusatz aus dem Briefkopf (z.B. 'KESB Leimental', nicht nur 'KESB').",
+    "- personen: Array aller Klarnamen (Kinder, Eltern, Sachbearbeiter, Anwaelte etc.).",
     "",
-    "### 2. PERSONEN-ERKENNUNG:",
-    "- Nimm KEINE Namen vorweg.",
-    "- Erkenne automatisch ALLE Personen und Entitaeten im Text.",
-    "- Liste jeden erkannten Klarnamen auf (Kinder, Eltern, Sachbearbeiter, Anwaelte etc.).",
+    "### METHODIK (exakt befolgen):",
     "",
-    "### 3. FORENSISCHES SCORING – STRIKTE REGELN:",
-    "Fuer JEDE erkannte Person: Gehe den GESAMTEN Text von Anfang bis Ende durch.",
+    "SCHRITT 1: Alias-Normalisierung",
+    "- Ordne alle Woerter aus BENACHTEILIGTE_PERSON_KEYWORDS → TARGET_A",
+    "- Ordne alle Woerter aus GEGENPARTEI_KEYWORDS → TARGET_B",
     "",
-    "Zaehle NUR explizite wertende Aussagen. Ignoriere neutrale, sachliche oder verfahrenstechnische Aussagen.",
-    "Jede Aussage zaehlt genau EINMAL.",
-    "Ordne Aussagen NUR zu, wenn sie EINDEUTIG einer Person zuzuordnen sind.",
-    "Interpretiere oder schlussfolgere NICHT ueber den Text hinaus.",
+    "SCHRITT 2: Nur wertende Aussagen extrahieren",
+    "- Zerlege den Text in Aussagen.",
+    "- Behalte NUR Aussagen, die eine explizite Bewertung enthalten.",
     "",
-    "POSITIV zaehlt als 1 Punkt pro Stelle (Kompetenz, Kooperation, Stabilitaet, Glaubwuerdigkeit, Foerderlichkeit):",
-    "- Lob, Anerkennung, Kompetenzzuschreibung",
-    "- Validierung von Argumenten, Haltungen oder Verhalten",
-    "- Positive Attribute: reflektiert, stabil, kooperativ, empathisch, zuverlaessig, flexibel, engagiert, geeignet",
-    "- Formulierungen: 'gute Beziehung', 'dem Wohl dienlich', 'kompetent', 'stabilisierend'",
-    "- Positive Prognosen, Empfehlungen zugunsten der Person",
+    "SCHRITT 3: Ziel zuordnen",
+    "- Ordne jede wertende Aussage TARGET_A, TARGET_B, beiden oder keinem zu.",
     "",
-    "NEGATIV zaehlt als 1 Punkt pro Stelle (Kritik, Einschraenkung, Risiko, Konfliktverhalten, Unfaehigkeit):",
-    "- Direkte oder indirekte Kritik, Abwertung, Defizitzuschreibung",
-    "- Unterstellung mangelnder Kooperation, Egoismus, Sturheit, Rigidität",
-    "- Charakter-Diskreditierung: egozentrisch, narzisstisch, uneinsichtig, manipulativ",
-    "- Vorwuerfe: 'wenig kompromissbereit', 'verweigert', 'instrumentalisiert'",
-    "- Einschraenkungen: 'nur eingeschraenkt', 'kaum', 'selten gelingt', 'Muehe mit'",
-    "- Mangel-Formulierungen: 'es fehlt an', 'kein Verstaendnis', 'ohne Einsicht'",
-    "- Negative Prognosen, Risiko-Zuschreibungen",
+    "SCHRITT 4: Konservativ zaehlen",
+    "- Zaehle nur eindeutige Bewertungen.",
+    "- Vermeide Doppelzaehlung von Paraphrasen derselben Aussage.",
     "",
-    "ZAEHL-REGELN:",
-    "- Zaehle JEDE wertende Stelle EINZELN – auch wenn mehrere im selben Satz stehen.",
-    "- Sammle fuer jede Person 'belege_pos' und 'belege_neg' Arrays mit Kurzzitat/Paraphrase (max. 15 Woerter) je Fundstelle.",
-    "- pos MUSS exakt = Laenge von belege_pos. neg MUSS exakt = Laenge von belege_neg.",
-    "- Sei streng, konservativ und objektiv.",
+    "### KERNREGELN:",
+    "1. Zaehle NUR explizite wertende Aussagen ueber eine Zielgruppe.",
+    "2. Zaehle NICHT: neutrale Fakten, Verfahrensaussagen, Daten, Adressen, Ueberschriften, Rollenbezeichnungen.",
+    "3. Zaehle dieselbe Aussage NICHT doppelt, auch wenn mehrere Aliase derselben Zielgruppe vorkommen.",
+    "4. Wenn ein Satz mehrere negative oder positive Behauptungen ueber dieselbe Zielgruppe enthaelt, zaehle jede eigenstaendige Bewertung separat.",
+    "5. Wenn ein Satz beide Seiten vergleicht, bewerte jede Seite separat.",
+    "6. Zaehle nur Aussagen, die eindeutig einer der zwei Zielgruppen zuordenbar sind.",
+    "7. Ignoriere Aussagen ueber Kinder, Behoerden, Gutachter, Grosseltern, Dritte oder den Verfasser – AUSSER sie bewerten direkt eine der zwei Zielgruppen.",
+    "8. Interpretiere KEINEN verborgenen Sinn. Halte dich strikt an den Wortlaut.",
+    "9. Behandle blossen Sorgerechts-Status, Wohnsituation, Verfahrensstellung oder bestehende Betreuungsregelung NICHT automatisch als positiv oder negativ – nur wenn der Satz sie explizit wertend einordnet.",
     "",
-    "### 4. TENDENZ-REGEL pro Person:",
-    "- positiv > negativ → 'positiv'",
-    "- negativ > positiv → 'negativ'",
-    "- gleich → 'neutral'",
-    "",
-    "### 5. OUTPUT-REGELN:",
-    "- zusammenfassung: Max. 2 Saetze ueber das Muster der Darstellung. KEINE Zahlen, KEINE Rueckfrage, KEINE Empfehlung.",
-    "- NUR JSON. Kein Markdown. Kein zusaetzlicher Text.",
+    "### DEFINITION WERTENDER AUSSAGEN:",
+    "POSITIV: explizite Kompetenz, Kooperation, Stabilitaet, Glaubwuerdigkeit, kindesorientiertes Verhalten, Vernuenftigkeit, konstruktives Verhalten",
+    "NEGATIV: explizite Kritik, Rigiditaet, Konfliktverhalten, Unfaehigkeit, Eigeninteresse, mangelnde Kooperation, schlechtes Urteilsvermoegen, Kindeswohlgefaehrdung",
     "",
     "### JSON-SCHEMA (exakt einhalten):",
     "{",
@@ -1484,18 +1491,27 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '  "verfasser": "",',
     '  "datum": "",',
     '  "absender": "",',
-    '  "personen_auswertung": [',
-    '    {',
-    '      "name": "Erkannter Name",',
-    '      "pos": 0,',
-    '      "neg": 0,',
-    '      "belege_pos": ["Kurzzitat ..."],',
-    '      "belege_neg": ["Kurzzitat ..."],',
-    '      "tendenz": "positiv|negativ|neutral"',
-    '    }',
-    '  ],',
-    '  "zusammenfassung": ""',
-    "}"
+    '  "personen": ["Name1", "Name2"],',
+    '  "target_a": {',
+    '    "label": "benachteiligte_person",',
+    '    "positive": 0,',
+    '    "negative": 0,',
+    '    "statements": [',
+    '      { "text": "Kurzzitat max 15 Woerter", "sentiment": "positive" }',
+    "    ]",
+    "  },",
+    '  "target_b": {',
+    '    "label": "gegenpartei",',
+    '    "positive": 0,',
+    '    "negative": 0,',
+    '    "statements": [',
+    '      { "text": "Kurzzitat max 15 Woerter", "sentiment": "negative" }',
+    "    ]",
+    "  },",
+    '  "zusammenfassung": "Max 2 Saetze, keine Zahlen, keine Rueckfrage"',
+    "}",
+    "",
+    "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
   ].join("\n");
 }
 
@@ -1612,7 +1628,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     let mapped = null;
 
     if (parsed && typeof parsed === "object") {
-      if (parsed?.personen_auswertung || parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
+      if (parsed?.target_a || parsed?.target_b || parsed?.personen_auswertung || parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
         mapped = mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
       } else {
         mapped = mapSwissForensicJsonToAnalysis(parsed, fallback, textSnippet);
@@ -1660,7 +1676,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     const retryText = retry?.choices?.[0]?.message?.content || "";
     const retryParsed = extractJsonObject(retryText);
     if (retryParsed && typeof retryParsed === "object") {
-      if (retryParsed?.personen_auswertung || retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
+      if (retryParsed?.target_a || retryParsed?.target_b || retryParsed?.personen_auswertung || retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
         const retryMapped = mapBiasForensicJsonToAnalysis(retryParsed, fallback, textSnippet);
         if (hasUsableForensicResult(retryMapped)) {
           return retryMapped;
@@ -2168,36 +2184,6 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     impactRanking: Array.isArray(analysis.impactRanking) ? [...analysis.impactRanking] : []
   };
 
-  // --- Match auto-detected persons to case parties ---
-  const personenScores = Array.isArray(analysis._personenScores) ? analysis._personenScores : [];
-  if (personenScores.length > 0) {
-    let matchedProtected = null;
-    let matchedOpposing = null;
-
-    for (const ps of personenScores) {
-      const psName = normalizeWhitespace(ps.name);
-      if (protectedName && hasAnyPartyNeedle(psName, protectedIdentity.aliases)) {
-        matchedProtected = matchedProtected
-          ? { ...matchedProtected, pos: matchedProtected.pos + ps.pos, neg: matchedProtected.neg + ps.neg }
-          : { ...ps };
-      } else if (opposingName && hasAnyPartyNeedle(psName, opposingIdentity.aliases)) {
-        matchedOpposing = matchedOpposing
-          ? { ...matchedOpposing, pos: matchedOpposing.pos + ps.pos, neg: matchedOpposing.neg + ps.neg }
-          : { ...ps };
-      }
-    }
-
-    if (matchedProtected) {
-      output.positiveMentions = matchedProtected.pos;
-      output.negativeMentions = matchedProtected.neg;
-    }
-    if (matchedOpposing) {
-      output.opposingPositiveMentions = matchedOpposing.pos;
-      output.opposingNegativeMentions = matchedOpposing.neg;
-    }
-    delete output._personenScores;
-  }
-
   const hasProtectedInPeople = output.people.some((entry) => {
     const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name);
     return hasAnyPartyNeedle(name, protectedIdentity.aliases);
@@ -2293,7 +2279,6 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     output.senderInstitution = "Privat";
   }
 
-  delete output._personenScores;
   return output;
 }
 
