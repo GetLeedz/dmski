@@ -929,8 +929,8 @@ function countPolaritySignals(text) {
     return { positive: 0, negative: 0 };
   }
 
-  const negativeRegex = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert|unkooperativ|defizit|untauglich|ungeeignet|vorwurf|durchbox|mehr\s+muehe|muehe\s+.*akzept|nicht\s+.*interessen\s+.*kinder|konfliktarsenal|unp[uü]nkt|selten\s+gelingt|immer\s+wieder\s+nicht)/g;
-  const positiveRegex = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher|kompetent|kooperativ|konstruktiv|empath|nimmt\s+.*aufgaben\s+.*wahr|zugetraut|in\s+der\s+lage|gute\s+argumente|kontinuitaet|beibehaltung\s+.*obhut|alleinzuweisung|geeignet|faehig|flexibil|umsetzung\s+von\s+empfehl)/g;
+  const negativeRegex = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert|unkooperativ|defizit|untauglich|ungeeignet|vorwurf|durchbox|mehr\s+muehe|muehe\s+.*akzept|nicht\s+.*interessen\s+.*kinder|konfliktarsenal|unp[uü]nkt|selten\s+gelingt|immer\s+wieder\s+nicht|egozentrisch|narziss|rigide?\b|stur\b|uneinsicht|unflexib|wenig\s+kompromiss|nicht\s+in\s+der\s+lage|instrumentalis|mangel|es\s+fehlt\s+an|kein\s+verstaendnis|ohne\s+einsicht|eingeschraenkt\s+.*faehig|kaum\s+.*bereit|destruktiv|feindsel|eskalier|blockier|provozi|entwert|herabsetz|diskreditier|unverantwort|r[uü]cksichtslos|manipulat|grenzueberschreit|parentifizier|kindswohl.*gefaehrd|obstrukt|verweigerungshalt|loyalit[aä]tskonflikt|entfremd)/g;
+  const positiveRegex = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher|kompetent|kooperativ|konstruktiv|empath|nimmt\s+.*aufgaben\s+.*wahr|zugetraut|in\s+der\s+lage|gute\s+argumente|kontinuitaet|beibehaltung\s+.*obhut|alleinzuweisung|geeignet|faehig|flexibil|umsetzung\s+von\s+empfehl|reflektiert|stabil|zuverl[aä]ssig|engagiert|stabilisier|verantwortungsvoll|dem\s+wohl\s+.*dienlich|liebevoll|foerderlich|warmherzig|beziehungsf[aä]hig|bindungstol|einfuehlsam|selbstreflekt|ausgewogen|kindgerecht|altersgerecht|ressourcenorient|loesungsorient|wertschaetz|verlaesslich|aufmerksam|f[uü]rsorglich)/g;
 
   return {
     negative: (lower.match(negativeRegex) || []).length,
@@ -1328,6 +1328,12 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const score = src.analyse_score && typeof src.analyse_score === "object" ? src.analyse_score : {};
   const focusFromEval = evalData.fokus && typeof evalData.fokus === "object" ? evalData.fokus : null;
   const referenceFromEval = evalData.referenz && typeof evalData.referenz === "object" ? evalData.referenz : null;
+
+  const focusBelegePos = Array.isArray(focusFromEval?.belege_pos) ? focusFromEval.belege_pos.filter(Boolean) : [];
+  const focusBelegeNeg = Array.isArray(focusFromEval?.belege_neg) ? focusFromEval.belege_neg.filter(Boolean) : [];
+  const refBelegePos = Array.isArray(referenceFromEval?.belege_pos) ? referenceFromEval.belege_pos.filter(Boolean) : [];
+  const refBelegeNeg = Array.isArray(referenceFromEval?.belege_neg) ? referenceFromEval.belege_neg.filter(Boolean) : [];
+
   const disadvantagedFromStats = (stats.fokus_person && typeof stats.fokus_person === "object")
     ? stats.fokus_person
     : (stats.benachteiligte_person && typeof stats.benachteiligte_person === "object"
@@ -1348,10 +1354,10 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const disadvantagedName = normalizeWhitespace(disadvantaged.name || fallback.disadvantagedPerson || "");
   const opposingName = normalizeWhitespace(opposing.name || "");
 
-  const disadvantagedNeg = Math.max(0, Number(focusFromEval?.neg ?? disadvantaged.rot_anzahl ?? disadvantaged.negativ_count ?? disadvantaged.punkte_negativ ?? 0));
-  const disadvantagedPos = Math.max(0, Number(focusFromEval?.pos ?? disadvantaged.gruen_anzahl ?? disadvantaged.positiv_count ?? disadvantaged.punkte_positiv ?? 0));
-  const opposingNeg = Math.max(0, Number(referenceFromEval?.neg ?? opposing.rot_anzahl ?? opposing.negativ_count ?? opposing.punkte_negativ ?? 0));
-  const opposingPos = Math.max(0, Number(referenceFromEval?.pos ?? opposing.gruen_anzahl ?? opposing.positiv_count ?? opposing.punkte_positiv ?? 0));
+  const disadvantagedNeg = Math.max(focusBelegeNeg.length, Math.max(0, Number(focusFromEval?.neg ?? disadvantaged.rot_anzahl ?? disadvantaged.negativ_count ?? disadvantaged.punkte_negativ ?? 0)));
+  const disadvantagedPos = Math.max(focusBelegePos.length, Math.max(0, Number(focusFromEval?.pos ?? disadvantaged.gruen_anzahl ?? disadvantaged.positiv_count ?? disadvantaged.punkte_positiv ?? 0)));
+  const opposingNeg = Math.max(refBelegeNeg.length, Math.max(0, Number(referenceFromEval?.neg ?? opposing.rot_anzahl ?? opposing.negativ_count ?? opposing.punkte_negativ ?? 0)));
+  const opposingPos = Math.max(refBelegePos.length, Math.max(0, Number(referenceFromEval?.pos ?? opposing.gruen_anzahl ?? opposing.positiv_count ?? opposing.punkte_positiv ?? 0)));
 
   const derivedPeople = [];
   if (disadvantagedName) {
@@ -1363,19 +1369,25 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
 
   const impactRanking = [];
   if (disadvantagedName) {
+    const negItems = focusBelegeNeg.length > 0
+      ? focusBelegeNeg
+      : (Array.isArray(disadvantaged.belege_negativ) ? disadvantaged.belege_negativ : []);
     impactRanking.push({
       name: disadvantagedName,
       impact: disadvantagedNeg > 0 ? "benachteiligt" : "neutral",
       count: disadvantagedNeg,
-      items: Array.isArray(disadvantaged.belege_negativ) ? disadvantaged.belege_negativ : []
+      items: negItems
     });
   }
   if (opposingName) {
+    const posItems = refBelegePos.length > 0
+      ? refBelegePos
+      : (Array.isArray(opposing.belege_positiv) ? opposing.belege_positiv : []);
     impactRanking.push({
       name: opposingName,
       impact: opposingNeg > 0 ? "benachteiligt" : "neutral",
       count: opposingNeg,
-      items: Array.isArray(opposing.belege_positiv) ? opposing.belege_positiv : []
+      items: posItems
     });
   }
 
@@ -1432,7 +1444,14 @@ function hasStrictForensicShape(parsed) {
 
   const nums = [fokus.pos, fokus.neg, referenz.pos, referenz.neg].map((value) => Number(value));
   const allFinite = nums.every((value) => Number.isFinite(value) && value >= 0);
-  return allFinite;
+  if (!allFinite) {
+    return false;
+  }
+
+  const hasBelege = Array.isArray(fokus.belege_pos) || Array.isArray(fokus.belege_neg)
+    || Array.isArray(referenz.belege_pos) || Array.isArray(referenz.belege_neg);
+  const hasNonZeroCounts = nums.some((value) => value > 0);
+  return hasBelege || hasNonZeroCounts;
 }
 
 function hasUsableForensicResult(result) {
@@ -1471,45 +1490,72 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
   const referenceAliasText = referenceAliases.length > 1 ? referenceAliases.slice(1).join(", ") : "keine";
 
   return [
-    "Du bist ein forensischer Linguistik-Experte fuer die Analyse von Behoerden- und Gerichtskommunikation. Deine Aufgabe ist die objektive Dekonstruktion von Texten auf institutionelle Voreingenommenheit (Bias).",
+    "Du bist ein forensischer Linguistik-Experte mit Spezialisierung auf KESB-, Gerichts- und Behoerdenkommunikation im DACH-Raum.",
+    "Deine Aufgabe: Objektive, lueckenlose Dekonstruktion des Textes auf Voreingenommenheit (Bias) gegenueber den genannten Personen.",
     "",
-    "### 1. DYNAMISCHE DATEN-EXTRAKTION:",
-    "- TITEL: Erstelle einen praezisen Titel basierend auf dem Betreff oder Inhalt.",
-    "- VERFASSER: Identifiziere die natuerliche Person, die das Dokument erstellt oder unterzeichnet hat.",
-    "- DATUM: Extrahiere das Erstellungsdatum (DD.MM.YYYY).",
-    "- ABSENDER: Identifiziere die Behoerde, das Amt oder die Kanzlei im Briefkopf.",
-    "- PERSONEN: Extrahiere ALLE im Text genannten Klarnamen (inkl. Kinder, Partner, Sachbearbeiter). Liste diese als Array auf.",
+    "### 1. METADATEN-EXTRAKTION:",
+    "- TITEL: Praeziser Titel basierend auf Betreff/Inhalt.",
+    "- VERFASSER: Die natuerliche Person, die unterzeichnet hat (kein Institutionsname).",
+    "- DATUM: Erstellungsdatum im Format DD.MM.YYYY.",
+    "- ABSENDER: Voller Institutionsname inkl. Orts-/Regionszusatz aus dem Briefkopf (z.B. 'KESB Leimental', nicht nur 'KESB').",
+    "- PERSONEN: Array aller Klarnamen (Kinder, Eltern, Sachbearbeiter, Anwaelte etc.).",
     "",
-    "### 2. ROLLENZUORDNUNG & SCORING:",
-    "Ordne die im Dokument gefundenen Aussagen den im System definierten Rollen zu:",
-    `- Fokus-Person (Benachteiligt): ${focusName}`,
-    `- Fokus-Aliase: ${focusAliasText}`,
-    `- Referenz-Person (Gegenpartei): ${referenceName}`,
-    `- Referenz-Aliase: ${referenceAliasText}`,
+    "### 2. ROLLENZUORDNUNG:",
+    `- FOKUS-PERSON: ${focusName}`,
+    `  Aliase: ${focusAliasText}`,
+    `- REFERENZ-PERSON: ${referenceName}`,
+    `  Aliase: ${referenceAliasText}`,
     "",
-    "### 3. METHODISCHES ZAEHLVERFAHREN (FBI-PROFILING):",
-    "Zaehle jede wertende Textstelle streng getrennt:",
-    "- ROT-SCORE (Negativ): Jede Stelle, an der Kritik, Abwertung, Defizitzuschreibung, Unterstellung von mangelnder Kooperation oder Charakter-Diskreditierung erfolgt.",
-    "- GRUEN-SCORE (Positiv): Jede Stelle, an der Lob, Kompetenzzuschreibung, Validierung von Argumenten oder Empathie durch den Autor erfolgt.",
+    "### 3. FORENSISCHES SCORING – STRIKTE REGELN:",
+    "Gehe den GESAMTEN Text Satz fuer Satz durch. Fuer JEDEN Satz, der eine Person bewertet, entscheide:",
+    "",
+    "NEGATIV zaehlt als 1 Punkt pro Stelle:",
+    "- Direkte oder indirekte Kritik, Abwertung, Defizitzuschreibung",
+    "- Unterstellung mangelnder Kooperation, Egoismus, Sturheit",
+    "- Charakter-Diskreditierung (egozentrisch, narzisstisch, unflexibel, stur, rigide, uneinsichtig)",
+    "- Vorwuerfe wie: 'wenig kompromissbereit', 'nicht in der Lage', 'verweigert', 'instrumentalisiert'",
+    "- Einschraenkungen wie: 'nur eingeschraenkt', 'kaum', 'selten gelingt'",
+    "- Mangel-Formulierungen: 'es fehlt an', 'kein Verstaendnis', 'ohne Einsicht'",
+    "- Negative Prognosen oder Risiko-Zuschreibungen",
+    "",
+    "POSITIV zaehlt als 1 Punkt pro Stelle:",
+    "- Lob, Anerkennung, Kompetenzzuschreibung",
+    "- Validierung von Argumenten oder Verhalten",
+    "- Positive Attribute: reflektiert, stabil, kooperativ, empathisch, zuverlaessig, flexibel, engagiert",
+    "- Formulierungen wie: 'gute Beziehung', 'dem Wohl dienlich', 'kompetent', 'stabilisierend'",
+    "- Positive Prognosen oder Empfehlungen zugunsten der Person",
+    "",
+    "WICHTIG:",
+    "- Zaehle JEDE wertende Stelle einzeln, auch wenn mehrere im selben Absatz stehen.",
+    "- Wenn ein Satz BEIDE Personen bewertet, zaehle fuer JEDE Person separat.",
+    "- Sammle fuer jede Person ein Array 'belege_pos' und 'belege_neg' mit kurzem Zitat/Paraphrase je Fundstelle.",
+    "- pos = Laenge von belege_pos, neg = Laenge von belege_neg. Die Zahlen MUESSEN exakt der Array-Laenge entsprechen.",
     "",
     "### 4. OUTPUT-REGELN:",
-    "- ZUSAMMENFASSUNG: Beschreibe das Muster der asymmetrischen Darstellung und die psychologische Tendenz des Verfassers (max. 2 Saetze). Erwaehne KEINE Zahlen im Text.",
-    "- NULLEN-LOGIK: Gib fuer jede Person exakt EINE Summe fuer Positiv und EINE Summe fuer Negativ zurueck.",
-    "- ABSENDER-PRAEZISION: Wenn im Briefkopf ein Institutionsname mit Orts-/Regionszusatz steht, gib den vollen Namen aus (z.B. 'KESB Leimental', nicht nur 'KESB').",
-    "- KEINE RUECKFRAGE: Stelle am Ende keine Frage und keine Empfehlung.",
-    "- NUR JSON: Gib ausschliesslich ein valides JSON-Objekt ohne Markdown und ohne zusaetzlichen Text aus.",
+    "- zusammenfassung: Max. 2 Saetze ueber das Muster der Darstellung. KEINE Zahlen, KEINE Rueckfrage, KEINE Empfehlung.",
+    "- NUR JSON. Kein Markdown. Kein zusaetzlicher Text.",
     "",
-    "### JSON-AUSGABE:",
+    "### JSON-SCHEMA (exakt einhalten):",
     "{",
     '  "titel": "",',
     '  "verfasser": "",',
     '  "datum": "",',
     '  "absender": "",',
-    '  "personen": [],',
+    '  "personen": ["Name1", "Name2"],',
     '  "auswertung": {',
-    '    "fokus": { "pos": 0, "neg": 0 },',
-    '    "referenz": { "pos": 0, "neg": 0 }',
+    '    "fokus": {',
+    '      "pos": 0,',
+    '      "neg": 0,',
+    '      "belege_pos": ["Kurzzitat oder Paraphrase ..."],',
+    '      "belege_neg": ["Kurzzitat oder Paraphrase ..."]',
     '    },',
+    '    "referenz": {',
+    '      "pos": 0,',
+    '      "neg": 0,',
+    '      "belege_pos": ["Kurzzitat oder Paraphrase ..."],',
+    '      "belege_neg": ["Kurzzitat oder Paraphrase ..."]',
+    '    }',
+    '  },',
     '  "zusammenfassung": ""',
     "}"
   ].join("\n");
@@ -1602,7 +1648,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
   try {
     const response = await createChatCompletionWithFallback(client, {
       temperature: 0,
-      max_tokens: 1300,
+      max_tokens: 2000,
       messages: [
         {
           role: "system",
@@ -1645,7 +1691,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
 
     const retry = await createChatCompletionWithFallback(client, {
       temperature: 0,
-      max_tokens: 1300,
+      max_tokens: 2000,
       messages: [
         {
           role: "system",
