@@ -161,7 +161,10 @@ caseForm.addEventListener("submit", async (event) => {
   const caseDate = todayIsoDate();
   const caseName = String(caseNameInput.value || "").trim();
   const protectedPersonName = String(protectedPersonNameInput?.value || "").trim();
-    const opposingPartyName = String(opposingPartyNameInput?.value || "").trim();
+  const opposingPartyName = String(opposingPartyNameInput?.value || "").trim();
+
+  if (!caseName) {
+    setMessage(caseMessage, "Bitte einen Namen eingeben.", "error");
     return;
   }
 
