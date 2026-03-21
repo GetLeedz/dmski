@@ -457,7 +457,7 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
     });
   }
 
-  return list.slice(0, 12);
+  return list.slice(0, 20);
 }
 
 function normalizePeopleWithBlacklist(values, blockedNames) {
