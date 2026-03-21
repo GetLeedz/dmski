@@ -300,6 +300,29 @@ function normalizeWhitespace(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+const BACKEND_INSTANCE_STARTED_AT = new Date().toISOString();
+
+function getAnalysisEngineVersion() {
+  const raw = String(
+    process.env.RAILWAY_GIT_COMMIT_SHA
+    || process.env.VERCEL_GIT_COMMIT_SHA
+    || process.env.RENDER_GIT_COMMIT
+    || process.env.SOURCE_VERSION
+    || process.env.npm_package_version
+    || "local"
+  ).trim();
+  return raw.length > 12 ? raw.slice(0, 12) : raw;
+}
+
+function withAnalysisRuntimeMeta(payload) {
+  const safe = payload && typeof payload === "object" ? payload : {};
+  return {
+    ...safe,
+    analysisEngineVersion: getAnalysisEngineVersion(),
+    backendStartedAt: BACKEND_INSTANCE_STARTED_AT
+  };
+}
+
 function looksLikePersonName(value) {
   const text = normalizeWhitespace(value);
   if (!text) {
@@ -1222,7 +1245,9 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
     negativeMentions: Number(negativeMentions) || 0,
     opposingPositiveMentions: Number(opposingPositiveMentions) || 0,
     opposingNegativeMentions: Number(opposingNegativeMentions) || 0,
-    message: normalizeWhitespace(message)
+    message: normalizeWhitespace(message),
+    analysisEngineVersion: getAnalysisEngineVersion(),
+    backendStartedAt: BACKEND_INSTANCE_STARTED_AT
   };
 }
 
@@ -2560,10 +2585,10 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     if (!forceRefresh) {
       const stored = await loadStoredDocumentAnalysis(file.id);
       if (stored && typeof stored === "object") {
-        return res.json(stored);
+        return res.json(withAnalysisRuntimeMeta(stored));
       }
       if (onlyStored) {
-        return res.json({
+        return res.json(withAnalysisRuntimeMeta({
           status: "empty",
           documentType: "",
           title: "",
@@ -2575,7 +2600,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
           impactAssessment: "",
           impactRanking: [],
           message: "Analyse noch nicht vorhanden. Bitte auf das KI-Icon klicken oder beim Upload analysieren."
-        });
+        }));
       }
     }
 
@@ -2586,7 +2611,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
         const parties = await getCaseParties(caseId);
         const pdfParse = getPdfParse();
         if (!pdfParse) {
-          return res.json({
+          return res.json(withAnalysisRuntimeMeta({
             status: "empty",
             title: "",
             author: "",
@@ -2594,14 +2619,14 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
             people: [],
             disadvantagedPerson: "",
             message: "PDF-Parser ist aktuell nicht verfuegbar."
-          });
+          }));
         }
         const parsed = await pdfParse(fileBuffer);
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
         const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback, parties.protectedPersonName, parties.opposingPartyName);
         const focused = applyProtectedPersonFocus(aiResult, parsed?.text || "", parties.protectedPersonName, parties.opposingPartyName);
         await saveDocumentAnalysis(file.id, focused);
-        return res.json(focused);
+        return res.json(withAnalysisRuntimeMeta(focused));
       } catch (pdfError) {
         console.error("PDF parse warning:", pdfError.message);
         const fallback = {
@@ -2614,7 +2639,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
           message: "PDF-Inhalt konnte nicht gelesen werden (m├Âglicherweise Scan oder defekter Textlayer)."
         };
         await saveDocumentAnalysis(file.id, fallback);
-        return res.json(fallback);
+        return res.json(withAnalysisRuntimeMeta(fallback));
       }
     }
 
@@ -2623,7 +2648,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name, parties.protectedPersonName, parties.opposingPartyName);
       const focused = applyProtectedPersonFocus(imageResult, "", parties.protectedPersonName, parties.opposingPartyName);
       await saveDocumentAnalysis(file.id, focused);
-      return res.json(focused);
+      return res.json(withAnalysisRuntimeMeta(focused));
     }
 
     const unsupported = {
@@ -2636,7 +2661,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       message: "Analyse f├╝r diesen Dateityp nicht verf├╝gbar."
     };
     await saveDocumentAnalysis(file.id, unsupported);
-    return res.json(unsupported);
+    return res.json(withAnalysisRuntimeMeta(unsupported));
   } catch (err) {
     if (Number(err?.statusCode || 0) === 404 || Number(err?.statusCode || 0) === 503) {
       return res.status(err.statusCode).json({ error: err.message });

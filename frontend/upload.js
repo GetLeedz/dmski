@@ -442,6 +442,8 @@ function renderAnalysisInQueueRow(fileKey, payload) {
   const negativeMentions = Math.max(0, Number(payload?.negativeMentions || 0));
   const opposingPositiveMentions = Math.max(0, Number(payload?.opposingPositiveMentions || 0));
   const opposingNegativeMentions = Math.max(0, Number(payload?.opposingNegativeMentions || 0));
+  const analysisEngineVersion = String(payload?.analysisEngineVersion || "").trim();
+  const backendStartedAt = String(payload?.backendStartedAt || "").trim();
   const protectedKeywords = currentCaseProtectedKeywords || "Nicht gesetzt";
   const opposingKeywords = currentCaseOpposingKeywords || "Nicht gesetzt";
   const people = Array.isArray(payload?.people)
@@ -462,6 +464,7 @@ function renderAnalysisInQueueRow(fileKey, payload) {
       <span class="qa-field"><span class="qa-label">Datum</span>${date || "Unbekannt"}</span>
       <span class="qa-field"><span class="qa-label">Herkunft</span>${senderInstitution || "Unbekannt"}</span>
       <span class="qa-field"><span class="qa-label">Personen</span>${people.length > 0 ? people.join(" · ") : "Keine"}</span>
+      ${analysisEngineVersion || backendStartedAt ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span>${escapeHtml(analysisEngineVersion || "unbekannt")}${backendStartedAt ? ` · Instanz ${escapeHtml(backendStartedAt)}` : ""}</span>` : ""}
       ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span>${impactAssessment}</span>` : ""}
     </div>
     <div class="qa-mentions">

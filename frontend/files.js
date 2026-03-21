@@ -821,6 +821,8 @@ async function loadRowAnalysis(file, options = {}) {
   const negativeMentions = Math.max(0, Number(analysis.negativeMentions || 0));
   const opposingPositiveMentions = Math.max(0, Number(analysis.opposingPositiveMentions || 0));
   const opposingNegativeMentions = Math.max(0, Number(analysis.opposingNegativeMentions || 0));
+  const analysisEngineVersion = normalizeTitleText(analysis.analysisEngineVersion || "");
+  const backendStartedAt = normalizeTitleText(analysis.backendStartedAt || "");
   const protectedPosDots = renderMentionDots(positiveMentions, "positive");
   const protectedNegDots = renderMentionDots(negativeMentions, "negative");
   const opposingPosDots = renderMentionDots(opposingPositiveMentions, "positive");
@@ -856,6 +858,12 @@ async function loadRowAnalysis(file, options = {}) {
         <p class="analysis-label">Personen im Dokument</p>
         ${peopleMarkup}
       </section>
+      ${(analysisEngineVersion || backendStartedAt) ? `
+        <section class="analysis-section">
+          <p class="analysis-label">Analyse-Engine</p>
+          <p class="analysis-value">${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}</p>
+        </section>
+      ` : ""}
       ${protectedName ? `
         <section class="analysis-section analysis-score-box">
           <p class="analysis-label">Punkte gegen Fallperson</p>
