@@ -18,14 +18,16 @@
         </a>
       </div>
       <div class="actions-cell">
-        <button id="backToCasesBtn" type="button" class="ghost">Dossiers</button>
         <button id="logoutBtn" type="button" class="ghost">Logout</button>
       </div>
     </header>
 
     <section class="card files-card">
       <div class="list-header-row">
-        <h2 id="listTitle">Dateiliste</h2>
+        <div>
+          <h2 id="listTitle">Dateiliste</h2>
+          <div id="casePersonsRow" class="case-persons-row"></div>
+        </div>
         <button id="deleteCaseBtn" type="button" class="icon-btn danger" aria-label="Dossier löschen" title="Dossier löschen">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9z" />

@@ -1353,34 +1353,55 @@ async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "")
 async function listCasesCompat() {
   try {
     const result = await pool.query(
-      "SELECT id, case_date, case_name, protected_person_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+      "SELECT id, case_date, case_name, protected_person_name, opposing_party, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
     );
     return result.rows;
   } catch (err) {
     if (err?.code === "42703") {
-      const fallback = await pool.query(
-        "SELECT id, case_date, case_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
-      );
-      return fallback.rows.map((row) => ({ ...row, protected_person_name: null }));
+      try {
+        const fallback = await pool.query(
+          "SELECT id, case_date, case_name, protected_person_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+        );
+        return fallback.rows.map((row) => ({ ...row, opposing_party: null }));
+      } catch (err2) {
+        if (err2?.code === "42703") {
+          const fallback2 = await pool.query(
+            "SELECT id, case_date, case_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
+          );
+          return fallback2.rows.map((row) => ({ ...row, protected_person_name: null, opposing_party: null }));
+        }
+        throw err2;
+      }
     }
     throw err;
   }
 }
 
-async function createCaseCompat(caseId, caseDate, caseName, protectedPerson) {
+async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opposingParty) {
   try {
     const result = await pool.query(
-      "INSERT INTO cases (id, case_date, case_name, protected_person_name) VALUES ($1, $2, $3, $4) RETURNING id, case_date, case_name, protected_person_name, created_at",
-      [caseId, caseDate, caseName, protectedPerson]
+      "INSERT INTO cases (id, case_date, case_name, protected_person_name, opposing_party) VALUES ($1, $2, $3, $4, $5) RETURNING id, case_date, case_name, protected_person_name, opposing_party, created_at",
+      [caseId, caseDate, caseName, protectedPerson, opposingParty]
     );
     return result.rows[0];
   } catch (err) {
     if (err?.code === "42703") {
-      const fallback = await pool.query(
-        "INSERT INTO cases (id, case_date, case_name) VALUES ($1, $2, $3) RETURNING id, case_date, case_name, created_at",
-        [caseId, caseDate, caseName]
-      );
-      return { ...fallback.rows[0], protected_person_name: null };
+      try {
+        const fallback = await pool.query(
+          "INSERT INTO cases (id, case_date, case_name, protected_person_name) VALUES ($1, $2, $3, $4) RETURNING id, case_date, case_name, protected_person_name, created_at",
+          [caseId, caseDate, caseName, protectedPerson]
+        );
+        return { ...fallback.rows[0], opposing_party: null };
+      } catch (err2) {
+        if (err2?.code === "42703") {
+          const fallback2 = await pool.query(
+            "INSERT INTO cases (id, case_date, case_name) VALUES ($1, $2, $3) RETURNING id, case_date, case_name, created_at",
+            [caseId, caseDate, caseName]
+          );
+          return { ...fallback2.rows[0], protected_person_name: null, opposing_party: null };
+        }
+        throw err2;
+      }
     }
     throw err;
   }
@@ -1467,7 +1488,7 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "") 
 }
 
 router.post("/", requireAuth, async (req, res) => {
-  const { caseId, caseDate, caseName, protected_person_name: protectedPersonInput } = req.body;
+  const { caseId, caseDate, caseName, protected_person_name: protectedPersonInput, opposing_party: opposingPartyInput } = req.body;
 
   if (!caseId || !caseDate || !caseName) {
     return res.status(400).json({ error: "ID, Datum und Name sind erforderlich." });
@@ -1482,7 +1503,8 @@ router.post("/", requireAuth, async (req, res) => {
 
   try {
     const protectedPerson = String(protectedPersonInput || "").trim() || null;
-    const created = await createCaseCompat(normalizedCaseId, caseDate, normalizedCaseName, protectedPerson);
+    const opposingParty = String(opposingPartyInput || "").trim() || null;
+    const created = await createCaseCompat(normalizedCaseId, caseDate, normalizedCaseName, protectedPerson, opposingParty);
     return res.status(201).json(created);
   } catch (err) {
     if (err.code === "23505") {

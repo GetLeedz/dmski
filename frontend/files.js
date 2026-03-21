@@ -82,6 +82,7 @@ let isMultiDeleteMode = false;
 const selectedFileIds = new Set();
 let currentCaseProtectedPerson = "";
 let currentCaseName = "";
+let currentCaseOpposingParty = "";
 
 listTitle.textContent = `Dateiliste für Fall ${currentCaseId}`;
 
@@ -776,7 +777,6 @@ function renderFiles(files) {
 
   for (const file of files) {
     void loadRowPreview(file);
-    void loadRowAnalysis(file);
   }
 }
 
@@ -904,10 +904,23 @@ async function loadCaseContext() {
     }
 
     currentCaseProtectedPerson = normalizeTitleText(active.protected_person_name || "");
+    currentCaseOpposingParty = normalizeTitleText(active.opposing_party || "");
     currentCaseName = normalizeTitleText(active.case_name || "");
     listTitle.textContent = currentCaseName
       ? `Dateiliste · ${currentCaseName} (${currentCaseId})`
       : `Dateiliste für Fall ${currentCaseId}`;
+
+    const personsRow = document.getElementById("casePersonsRow");
+    if (personsRow) {
+      const parts = [];
+      if (currentCaseProtectedPerson) {
+        parts.push(`<span class="case-person-chip is-protected" title="Benachteiligte Person">${currentCaseProtectedPerson}</span>`);
+      }
+      if (currentCaseOpposingParty) {
+        parts.push(`<span class="case-person-chip is-opposing" title="Gegenpartei">${currentCaseOpposingParty}</span>`);
+      }
+      personsRow.innerHTML = parts.join("");
+    }
   } catch {
     // Keep default title when case context cannot be loaded.
   }
@@ -1083,7 +1096,7 @@ goToUploadBtn.addEventListener("click", () => {
   window.location.href = "/upload.html";
 });
 
-backToCasesBtn.addEventListener("click", () => {
+backToCasesBtn?.addEventListener("click", () => {
   window.location.href = "/dashboard.html";
 });
 

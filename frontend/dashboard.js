@@ -48,6 +48,7 @@ const caseForm = document.getElementById("caseForm");
 const caseMessage = document.getElementById("caseMessage");
 const caseNameInput = document.getElementById("caseName");
 const protectedPersonNameInput = document.getElementById("protectedPersonName");
+const opposingPartyNameInput = document.getElementById("opposingPartyName");
 const createCaseBtn = document.getElementById("createCaseBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const existingCasesSelect = document.getElementById("existingCasesSelect");
@@ -160,9 +161,7 @@ caseForm.addEventListener("submit", async (event) => {
   const caseDate = todayIsoDate();
   const caseName = String(caseNameInput.value || "").trim();
   const protectedPersonName = String(protectedPersonNameInput?.value || "").trim();
-
-  if (!caseName) {
-    setMessage(caseMessage, "Bitte einen Namen eingeben.", "error");
+    const opposingPartyName = String(opposingPartyNameInput?.value || "").trim();
     return;
   }
 
@@ -185,7 +184,8 @@ caseForm.addEventListener("submit", async (event) => {
           caseId: nextCaseId,
           caseDate,
           caseName,
-          protected_person_name: protectedPersonName || null
+          protected_person_name: protectedPersonName || null,
+          opposing_party: opposingPartyName || null
         })
       });
 
