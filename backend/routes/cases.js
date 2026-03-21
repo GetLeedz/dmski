@@ -1302,19 +1302,33 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
 function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const src = parsed && typeof parsed === "object" ? parsed : {};
 
-  // --- Flat 4-number schema ---
-  const posA = Math.max(0, Number(src.benachteiligte_person_positiv || 0));
-  const negA = Math.max(0, Number(src.benachteiligte_person_negativ || 0));
-  const posB = Math.max(0, Number(src.gegenpartei_positiv || 0));
-  const negB = Math.max(0, Number(src.gegenpartei_negativ || 0));
+  const disadvantaged = src.benachteiligte_person && typeof src.benachteiligte_person === "object"
+    ? src.benachteiligte_person
+    : null;
+  const opposing = src.gegenpartei && typeof src.gegenpartei === "object"
+    ? src.gegenpartei
+    : null;
 
-  // Fallback: also accept target_a/target_b if AI uses old schema
+  // Backward compatibility for previous prompt iterations.
   const targetA = src.target_a && typeof src.target_a === "object" ? src.target_a : null;
   const targetB = src.target_b && typeof src.target_b === "object" ? src.target_b : null;
-  const finalPosA = posA || Math.max(0, Number(targetA?.positive || 0));
-  const finalNegA = negA || Math.max(0, Number(targetA?.negative || 0));
-  const finalPosB = posB || Math.max(0, Number(targetB?.positive || 0));
-  const finalNegB = negB || Math.max(0, Number(targetB?.negative || 0));
+
+  const finalPosA = Math.max(
+    0,
+    Number(disadvantaged?.positiv ?? src.benachteiligte_person_positiv ?? targetA?.positive ?? 0)
+  );
+  const finalNegA = Math.max(
+    0,
+    Number(disadvantaged?.negativ ?? src.benachteiligte_person_negativ ?? targetA?.negative ?? 0)
+  );
+  const finalPosB = Math.max(
+    0,
+    Number(opposing?.positiv ?? src.gegenpartei_positiv ?? targetB?.positive ?? 0)
+  );
+  const finalNegB = Math.max(
+    0,
+    Number(opposing?.negativ ?? src.gegenpartei_negativ ?? targetB?.negative ?? 0)
+  );
 
   // People list
   const peopleSource = Array.isArray(src.personen) ? src.personen : [];
@@ -1383,6 +1397,22 @@ function hasStrictForensicShape(parsed) {
     return false;
   }
 
+  const disadvantaged = parsed.benachteiligte_person;
+  const opposing = parsed.gegenpartei;
+  const hasNestedGroups = disadvantaged && opposing
+    && typeof disadvantaged === "object"
+    && typeof opposing === "object";
+
+  if (hasNestedGroups) {
+    const nums = [
+      disadvantaged.positiv,
+      disadvantaged.negativ,
+      opposing.positiv,
+      opposing.negativ
+    ].map((v) => Number(v));
+    return nums.every((v) => Number.isFinite(v) && v >= 0);
+  }
+
   // Flat 4-number schema
   const hasFlatKeys = "benachteiligte_person_positiv" in parsed
     && "benachteiligte_person_negativ" in parsed
@@ -1442,92 +1472,91 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
   const referenceKeywords = referenceAliases.length > 0 ? referenceAliases.join(", ") : "(keine)";
 
   return [
-    "Du bist ein forensischer Bewerter fuer Rechts- und Verwaltungsdokumente.",
+    "You are a strict forensic counting engine for legal documents.",
     "",
-    "### AUFGABE:",
-    "Identifiziere und zaehle explizite wertende Behauptungen (Claims) ueber genau zwei Zielgruppen.",
+    "Task:",
+    "Count the number of positive and negative evaluative claims for two keyword groups.",
     "",
-    "### EINGABE-VARIABLEN:",
-    `TARGET_A_ALIASES = [${focusKeywords}]`,
-    `TARGET_B_ALIASES = [${referenceKeywords}]`,
+    "INPUT:",
+    `BENACHTEILIGTE_PERSON_KEYWORDS = [${focusKeywords}]`,
+    `GEGENPARTEI_KEYWORDS = [${referenceKeywords}]`,
     "",
-    "WICHTIG:",
-    "- Alle Aliase in einer Liste bezeichnen EINE einzige Zielgruppe.",
-    "- Aliase nie als separate Personen behandeln.",
-    "- Zaehle Claims, nicht Woerter.",
+    "Interpretation:",
+    "- All keywords in BENACHTEILIGTE_PERSON_KEYWORDS belong to GROUP_A",
+    "- All keywords in GEGENPARTEI_KEYWORDS belong to GROUP_B",
+    "- Do NOT split aliases into separate persons",
     "",
-    "### METADATEN-EXTRAKTION:",
+    "Definition of a claim:",
+    "A claim is a minimal statement (clause) that explicitly evaluates a group.",
+    "",
+    "Examples of POSITIVE claims:",
+    "- is able to",
+    "- is suitable",
+    "- is reasonable",
+    "- is cooperative",
+    "- is more capable",
+    "- is appropriate",
+    "- is sensible",
+    "- is justified",
+    "- should remain",
+    "- should be assigned",
+    "- is recommended",
+    "",
+    "Examples of NEGATIVE claims:",
+    "- fails to",
+    "- has difficulty",
+    "- is rigid",
+    "- pushes own interests",
+    "- does not consider",
+    "- is less capable",
+    "- cannot find solutions",
+    "- is problematic",
+    "",
+    "Counting rules:",
+    "1. Count claims, not sentences.",
+    "2. Split sentences into clauses.",
+    "3. If one clause contains one evaluation -> count 1.",
+    "4. If one clause contains two distinct evaluations -> count 2.",
+    "5. If a sentence compares GROUP_A and GROUP_B -> count separately for each group.",
+    "6. If multiple keywords of the same group appear -> count only once for that claim.",
+    "7. Recommendations and endorsements count as positive claims.",
+    "8. Statements about stability, suitability, or keeping an arrangement count as positive ONLY if explicitly justified or recommended.",
+    "9. Ignore neutral facts (e.g. lives with, has custody) unless evaluative language is present.",
+    "10. Be conservative but do NOT ignore clear evaluative wording.",
+    "",
+    "Process:",
+    "- Normalize aliases -> GROUP_A / GROUP_B",
+    "- Split into clauses",
+    "- Extract evaluative claims only",
+    "- Assign each claim to GROUP_A or GROUP_B",
+    "- Count totals",
+    "",
+    "Additional metadata to extract:",
     "- titel: Praeziser Titel basierend auf Betreff/Inhalt.",
-    "- verfasser: Die natuerliche Person, die unterzeichnet hat (kein Institutionsname).",
-    "- datum: Erstellungsdatum im Format DD.MM.YYYY.",
+    "- verfasser: Natuerliche Person, die unterzeichnet hat (kein Institutionsname).",
+    "- datum: Erstellungsdatum DD.MM.YYYY.",
     "- absender: Voller Institutionsname inkl. Orts-/Regionszusatz (z.B. 'KESB Leimental').",
     "- personen: Array aller Klarnamen (Kinder, Eltern, Sachbearbeiter, Anwaelte etc.).",
     "",
-    "### WAS ZAEHLT ALS CLAIM:",
-    "Ein Claim zaehlt NUR, wenn der Text explizit bewertet, vergleicht, bevorzugt, kritisiert, empfiehlt,",
-    "oder Faehigkeit / Unfaehigkeit / Eignung / Ungeeignetheit einer Zielgruppe zuschreibt.",
-    "",
-    "POSITIV zaehlen, wenn der Text ein Target explizit darstellt als:",
-    "- kooperativer, vernuenftiger, glaubwuerdiger, stabiler, kindesorientierter",
-    "- besser in der Lage, Argumente zu beruecksichtigen",
-    "- geeignet, sinnvoll, angemessen, gerechtfertigt oder empfohlen fuer Verantwortung, Sorgerecht, Entscheidungsfindung oder Kontinuitaet",
-    "- unterstuetzt durch eine foerderliche oder stabilisierende Betreuungsregelung",
-    "",
-    "NEGATIV zaehlen, wenn der Text ein Target explizit darstellt als:",
-    "- weniger kooperativ, rigide, eigennuetzig, konfliktorientiert",
-    "- unfaehig Loesungen zu finden oder andere Positionen zu akzeptieren",
-    "- unzureichend kindesorientiert",
-    "- ungeeignet oder problematisch fuer Verantwortung oder Entscheidungsfindung",
-    "- ein Risiko oder Bedenken im Verhalten oder Urteilsvermoegen darstellend",
-    "",
-    "### NICHT ZAEHLEN:",
-    "- Namen, Titel, Rollenbezeichnungen, Adressen, Daten, Ueberschriften",
-    "- Reine Fakten ohne Bewertung",
-    "- Verfahrensgeschichte",
-    "- Abstrakte rechtliche Hintergrundregeln",
-    "- Aussagen ueber Kinder oder Dritte, AUSSER sie bewerten explizit TARGET_A oder TARGET_B",
-    "",
-    "### SPEZIALREGELN:",
-    "1. Vergleichssaetze muessen in separate Claims pro Target aufgeteilt werden.",
-    "   Beispiel: 'A ist weniger faehig' = 1 negativ fuer A; 'B ist faehiger' = 1 positiv fuer B.",
-    "2. Empfehlungen/Befuerwortungen zaehlen als wertende Claims, wenn sie ein Target bevorzugen.",
-    "   Beispiel: 'Obhut soll bei X bleiben' = positiv fuer X.",
-    "3. Kontinuitaet/Stabilitaet zaehlt als positiv NUR wenn der Text die Regelung explizit als sinnvoll, angemessen oder vorzuziehen einordnet.",
-    "4. Wenn ein Satz mehrere eigenstaendige wertende Aussagen ueber dasselbe Target enthaelt, zaehle jede separat.",
-    "5. Sei konservativ aber nicht uebertrieben restriktiv. Wenn der Text eindeutig die Eignung einer Seite bestaetigt oder das Verhalten einer Seite kritisiert, zaehle es.",
-    "",
-    "### METHODIK:",
-    "Schritt 1: Alias-Normalisierung – TARGET_A_ALIASES → TARGET_A, TARGET_B_ALIASES → TARGET_B",
-    "Schritt 2: Text in Aussagen und Teilsaetze zerlegen",
-    "Schritt 3: Nur wertende Claims extrahieren",
-    "Schritt 4: Jeden Claim zuordnen: TARGET_A, TARGET_B, beiden oder keinem",
-    "Schritt 5: Totale zaehlen",
-    "",
-    "### JSON-SCHEMA (exakt einhalten):",
+    "Output STRICT JSON:",
     "{",
     '  "titel": "",',
     '  "verfasser": "",',
     '  "datum": "",',
     '  "absender": "",',
     '  "personen": ["Name1", "Name2"],',
-    '  "target_a": {',
-    '    "positive": 0,',
-    '    "negative": 0,',
-    '    "claims": [',
-    '      { "sentiment": "positive", "text": "Kurzzitat", "reason": "Warum dies zaehlt" }',
-    "    ]",
-    "  },",
-    '  "target_b": {',
-    '    "positive": 0,',
-    '    "negative": 0,',
-    '    "claims": [',
-    '      { "sentiment": "negative", "text": "Kurzzitat", "reason": "Warum dies zaehlt" }',
-    "    ]",
-    "  },",
-    '  "zusammenfassung": "Max 2 Saetze, keine Zahlen, keine Rueckfrage"',
+    '  "benachteiligte_person": {',
+    '    "positiv": 0,',
+    '    "negativ": 0',
+    '  },',
+    '  "gegenpartei": {',
+    '    "positiv": 0,',
+    '    "negativ": 0',
+    '  },',
+    '  "zusammenfassung": "Max 2 Saetze"',
     "}",
     "",
-    "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
+    "Return only strict JSON."
   ].join("\n");
 }
 
@@ -1644,7 +1673,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     let mapped = null;
 
     if (parsed && typeof parsed === "object") {
-      if ("benachteiligte_person_positiv" in parsed || parsed?.target_a || parsed?.target_b || parsed?.personen_auswertung || parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
+      if (parsed?.benachteiligte_person || parsed?.gegenpartei || "benachteiligte_person_positiv" in parsed || parsed?.target_a || parsed?.target_b || parsed?.personen_auswertung || parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
         mapped = mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
       } else {
         mapped = mapSwissForensicJsonToAnalysis(parsed, fallback, textSnippet);
@@ -1692,7 +1721,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     const retryText = retry?.choices?.[0]?.message?.content || "";
     const retryParsed = extractJsonObject(retryText);
     if (retryParsed && typeof retryParsed === "object") {
-      if ("benachteiligte_person_positiv" in retryParsed || retryParsed?.target_a || retryParsed?.target_b || retryParsed?.personen_auswertung || retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
+      if (retryParsed?.benachteiligte_person || retryParsed?.gegenpartei || "benachteiligte_person_positiv" in retryParsed || retryParsed?.target_a || retryParsed?.target_b || retryParsed?.personen_auswertung || retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
         const retryMapped = mapBiasForensicJsonToAnalysis(retryParsed, fallback, textSnippet);
         if (hasUsableForensicResult(retryMapped)) {
           return retryMapped;
