@@ -21,6 +21,44 @@ const API_BASE = isLocalHost
 
 const OUTAGE_STATUSES = new Set([502, 503, 504]);
 let serviceAlertEl = null;
+let authRedirectStarted = false;
+
+function buildLoginRedirectMessage(detail) {
+  const normalized = String(detail || "").trim().toLowerCase();
+  if (normalized.includes("nicht autorisiert")) {
+    return "Bitte erneut anmelden.";
+  }
+  return "Sitzung abgelaufen. Bitte erneut anmelden.";
+}
+
+function redirectToLogin(detail) {
+  if (authRedirectStarted) {
+    return;
+  }
+
+  authRedirectStarted = true;
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("currentCaseId");
+  sessionStorage.setItem("loginMessage", buildLoginRedirectMessage(detail));
+  window.location.replace("/");
+}
+
+async function apiFetch(input, init) {
+  const response = await fetch(input, init);
+  if (response.status !== 401) {
+    return response;
+  }
+
+  let payload = null;
+  try {
+    payload = await response.clone().json();
+  } catch {
+    payload = null;
+  }
+
+  redirectToLogin(payload?.error);
+  throw new Error("AUTH_REDIRECT");
+}
 
 function showServiceAlert(detail) {
   if (!serviceAlertEl) {
@@ -235,7 +273,7 @@ function formatCaseTimestamp(value) {
 
 async function loadCasesList() {
   try {
-    const res = await fetch(`${API_BASE}/cases`, {
+    const res = await apiFetch(`${API_BASE}/cases`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -273,7 +311,10 @@ async function loadCasesList() {
         : `${createdLabel} - ${item.id} - ${item.case_name}${placeDetail ? ` (${placeDetail})` : ""}`;
       existingCasesSelect.appendChild(option);
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     showServiceAlert("Keine Verbindung zum Backend");
     existingCasesSelect.innerHTML = "<option value=\"\">Fallliste konnte nicht geladen werden</option>";
     setMessage(caseMessage, "Backend nicht erreichbar. Bitte Seite neu laden.", "error");
@@ -332,7 +373,7 @@ caseForm.addEventListener("submit", async (event) => {
 
     while (!created && tries < 6) {
       tries += 1;
-      const res = await fetch(`${API_BASE}/cases`, {
+      const res = await apiFetch(`${API_BASE}/cases`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -374,7 +415,10 @@ caseForm.addEventListener("submit", async (event) => {
 
     sessionStorage.setItem("currentCaseId", created.id);
     window.location.href = "/upload.html";
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     showServiceAlert("Keine Verbindung zum Backend");
     setMessage(caseMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
   } finally {

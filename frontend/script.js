@@ -25,6 +25,7 @@ const API_BASE = isLocalHost
   : "https://lively-reverence-production-def3.up.railway.app";
 
 const REMEMBER_EMAIL_KEY = "dmski.remember.email";
+const LOGIN_MESSAGE_KEY = "loginMessage";
 
 function restoreRememberedEmail() {
   const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
@@ -68,7 +69,18 @@ function setMessage(text, type) {
   if (type) messageEl.classList.add(type);
 }
 
+function consumeLoginMessage() {
+  const message = sessionStorage.getItem(LOGIN_MESSAGE_KEY);
+  if (!message) {
+    return;
+  }
+
+  sessionStorage.removeItem(LOGIN_MESSAGE_KEY);
+  setMessage(message, "error");
+}
+
 restoreRememberedEmail();
+consumeLoginMessage();
 togglePasswordButton.addEventListener("click", togglePasswordVisibility);
 if (copyrightYearEl) {
   copyrightYearEl.textContent = String(new Date().getFullYear());

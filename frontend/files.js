@@ -26,6 +26,44 @@ const API_BASE = isLocalHost
 
 const OUTAGE_STATUSES = new Set([502, 503, 504]);
 let serviceAlertEl = null;
+let authRedirectStarted = false;
+
+function buildLoginRedirectMessage(detail) {
+  const normalized = String(detail || "").trim().toLowerCase();
+  if (normalized.includes("nicht autorisiert")) {
+    return "Bitte erneut anmelden.";
+  }
+  return "Sitzung abgelaufen. Bitte erneut anmelden.";
+}
+
+function redirectToLogin(detail) {
+  if (authRedirectStarted) {
+    return;
+  }
+
+  authRedirectStarted = true;
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("currentCaseId");
+  sessionStorage.setItem("loginMessage", buildLoginRedirectMessage(detail));
+  window.location.replace("/");
+}
+
+async function apiFetch(input, init) {
+  const response = await fetch(input, init);
+  if (response.status !== 401) {
+    return response;
+  }
+
+  let payload = null;
+  try {
+    payload = await response.clone().json();
+  } catch {
+    payload = null;
+  }
+
+  redirectToLogin(payload?.error);
+  throw new Error("AUTH_REDIRECT");
+}
 
 function showServiceAlert(detail) {
   if (!serviceAlertEl) {
@@ -225,7 +263,7 @@ async function getPreviewUrl(file) {
     return previewPromiseCache.get(file.id);
   }
 
-  const promise = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
+  const promise = apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 
@@ -234,8 +272,11 @@ async function getPreviewUrl(file) {
   let response;
   try {
     response = await promise;
-  } catch {
+  } catch (error) {
     previewPromiseCache.delete(file.id);
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return null;
+    }
     showServiceAlert("Keine Verbindung zum Backend");
     setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
     return null;
@@ -562,7 +603,7 @@ async function getDocumentAnalysis(file, options = {}) {
     ? "?refresh=1"
     : (onlyStored ? "?onlyStored=1" : "");
 
-  const request = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/analysis${query}`, {
+  const request = apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/analysis${query}`, {
     headers: { Authorization: `Bearer ${token}` }
   })
     .then(async (response) => {
@@ -594,23 +635,45 @@ async function getDocumentAnalysis(file, options = {}) {
         message: normalizeTitleText(payload.message)
       };
     })
-    .catch(() => ({
-      status: "error",
-      documentType: "",
-      title: "",
-      author: "",
-      authoredDate: "",
-      people: [],
-      disadvantagedPerson: "",
-      senderInstitution: "",
-      impactAssessment: "",
-      impactRanking: [],
-      positiveMentions: 0,
-      negativeMentions: 0,
-      opposingPositiveMentions: 0,
-      opposingNegativeMentions: 0,
-      message: "Analyse konnte nicht geladen werden."
-    }));
+    .catch((error) => {
+      if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+        return {
+          status: "auth-redirect",
+          documentType: "",
+          title: "",
+          author: "",
+          authoredDate: "",
+          people: [],
+          disadvantagedPerson: "",
+          senderInstitution: "",
+          impactAssessment: "",
+          impactRanking: [],
+          positiveMentions: 0,
+          negativeMentions: 0,
+          opposingPositiveMentions: 0,
+          opposingNegativeMentions: 0,
+          message: ""
+        };
+      }
+
+      return {
+        status: "error",
+        documentType: "",
+        title: "",
+        author: "",
+        authoredDate: "",
+        people: [],
+        disadvantagedPerson: "",
+        senderInstitution: "",
+        impactAssessment: "",
+        impactRanking: [],
+        positiveMentions: 0,
+        negativeMentions: 0,
+        opposingPositiveMentions: 0,
+        opposingNegativeMentions: 0,
+        message: "Analyse konnte nicht geladen werden."
+      };
+    });
 
   analysisPromiseCache.set(file.id, request);
   const result = await request;
@@ -700,6 +763,9 @@ async function loadRowAnalysis(file, options = {}) {
       <span class="analysis-loading-text">KI analysiert Dokument&hellip;<br /><small>Das kann bei Bildern l&auml;nger dauern.</small></span>
     </div>`;
   const analysis = await getDocumentAnalysis(file, options);
+  if (analysis.status === "auth-redirect") {
+    return;
+  }
 
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
   const people = collectAnalysisPeople(analysis, protectedName, analysis.author);
@@ -933,7 +999,7 @@ function showUndoBar(fileName) {
 }
 
 async function commitDelete(fileId) {
-  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+  const response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -966,6 +1032,9 @@ async function flushPendingDelete() {
     analysisPromiseCache.delete(snapshot.file.id);
     setMessage(listMessage, "Datei endgültig gelöscht.", "success");
   } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     allFiles = [snapshot.file, ...allFiles];
     allFiles.sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
     renderFiles(filterFiles(allFiles));
@@ -975,7 +1044,7 @@ async function flushPendingDelete() {
 
 async function loadCaseContext() {
   try {
-    const response = await fetch(`${API_BASE}/cases`, {
+    const response = await apiFetch(`${API_BASE}/cases`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!response.ok) {
@@ -1013,7 +1082,10 @@ async function loadCaseContext() {
       }
       personsRow.innerHTML = parts.join("");
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     // Keep default title when case context cannot be loaded.
   }
 }
@@ -1035,7 +1107,7 @@ async function deleteCurrentCase() {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/cases/${currentCaseId}`, {
+    const response = await apiFetch(`${API_BASE}/cases/${currentCaseId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -1047,6 +1119,9 @@ async function deleteCurrentCase() {
     sessionStorage.removeItem("currentCaseId");
     window.location.href = "/dashboard.html";
   } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     setMessage(listMessage, error.message || "Dossier konnte nicht gelöscht werden.", "error");
   } finally {
     if (deleteCaseBtn instanceof HTMLButtonElement) {
@@ -1058,10 +1133,13 @@ async function deleteCurrentCase() {
 async function loadFiles() {
   let res;
   try {
-    res = await fetch(`${API_BASE}/cases/${currentCaseId}/files`, {
+    res = await apiFetch(`${API_BASE}/cases/${currentCaseId}/files`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     showServiceAlert("Keine Verbindung zum Backend");
     setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
     return;
@@ -1080,9 +1158,18 @@ async function loadFiles() {
 }
 
 async function downloadFile(fileId) {
-  const response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/download`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  let response;
+  try {
+    response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/download`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
+    setMessage(listMessage, "Datei konnte nicht heruntergeladen werden.", "error");
+    return;
+  }
 
   if (!response.ok) {
     setMessage(listMessage, "Datei konnte nicht heruntergeladen werden.", "error");
@@ -1275,7 +1362,7 @@ async function executeMultiDelete() {
 
   try {
     const promises = filesToDelete.map((fileId) =>
-      fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+      apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       }).then((res) => {
@@ -1307,6 +1394,9 @@ async function executeMultiDelete() {
     renderFiles(filterFiles(allFiles));
     updateMultiDeleteCount();
   } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     allFiles = originalFiles;
     renderFiles(filterFiles(allFiles));
     setMessage(listMessage, error.message || "Fehler beim Löschen.", "error");
