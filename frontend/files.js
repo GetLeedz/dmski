@@ -502,6 +502,7 @@ function normalizeImpactRanking(entries) {
 
 async function getDocumentAnalysis(file, options = {}) {
   const forceRefresh = Boolean(options.forceRefresh);
+  const onlyStored = Boolean(options.onlyStored);
   if (analysisCache.has(file.id)) {
     return analysisCache.get(file.id);
   }
@@ -510,7 +511,11 @@ async function getDocumentAnalysis(file, options = {}) {
     return analysisPromiseCache.get(file.id);
   }
 
-  const request = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/analysis${forceRefresh ? "?refresh=1" : ""}`, {
+  const query = forceRefresh
+    ? "?refresh=1"
+    : (onlyStored ? "?onlyStored=1" : "");
+
+  const request = fetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/analysis${query}`, {
     headers: { Authorization: `Bearer ${token}` }
   })
     .then(async (response) => {
@@ -782,6 +787,7 @@ function renderFiles(files) {
 
   for (const file of files) {
     void loadRowPreview(file);
+    void loadRowAnalysis(file, { onlyStored: true });
   }
 }
 

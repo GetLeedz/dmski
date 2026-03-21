@@ -1699,6 +1699,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();
   const forceRefresh = ["1", "true", "yes"].includes(String(req.query.refresh || "").toLowerCase());
+  const onlyStored = ["1", "true", "yes"].includes(String(req.query.onlyStored || "").toLowerCase());
 
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
@@ -1719,6 +1720,21 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       const stored = await loadStoredDocumentAnalysis(file.id);
       if (stored && typeof stored === "object") {
         return res.json(stored);
+      }
+      if (onlyStored) {
+        return res.json({
+          status: "empty",
+          documentType: "",
+          title: "",
+          author: "",
+          authoredDate: "",
+          people: [],
+          disadvantagedPerson: "",
+          senderInstitution: "",
+          impactAssessment: "",
+          impactRanking: [],
+          message: "Analyse noch nicht vorhanden. Bitte auf das KI-Icon klicken oder beim Upload analysieren."
+        });
       }
     }
 
