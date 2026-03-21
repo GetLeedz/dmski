@@ -303,7 +303,7 @@ function extractNamesFromChunk(value) {
   return names;
 }
 
-function collectAnalysisPeople(analysis, protectedName = "") {
+function collectAnalysisPeople(analysis, protectedName = "", authorName = "") {
   const candidates = [];
 
   const people = Array.isArray(analysis?.people) ? analysis.people : [];
@@ -344,12 +344,16 @@ function collectAnalysisPeople(analysis, protectedName = "") {
 
   const seen = new Set();
   const unique = [];
+  const authorKey = normalizePersonName(authorName).toLowerCase();
   for (const candidate of candidates) {
     const cleaned = normalizePersonName(candidate);
     if (!cleaned) {
       continue;
     }
     const key = cleaned.toLowerCase();
+    if (authorKey && key === authorKey) {
+      continue;
+    }
     if (seen.has(key)) {
       continue;
     }
@@ -546,7 +550,7 @@ async function loadRowAnalysis(file, options = {}) {
   const analysis = await getDocumentAnalysis(file, options);
 
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
-  const people = collectAnalysisPeople(analysis, protectedName);
+  const people = collectAnalysisPeople(analysis, protectedName, analysis.author);
 
   const peopleMarkup = people.length > 0
     ? `<ul class="analysis-people">${people.map((name) => `<li>${name}</li>`).join("")}</ul>`
