@@ -26,6 +26,60 @@ const API_BASE = isLocalHost
 
 const OUTAGE_STATUSES = new Set([502, 503, 504]);
 let serviceAlertEl = null;
+let authRedirectStarted = false;
+
+function buildLoginRedirectMessage(detail) {
+  const normalized = String(detail || "").trim().toLowerCase();
+  if (normalized.includes("nicht autorisiert")) {
+    return "Bitte erneut anmelden.";
+  }
+  return "Sitzung abgelaufen. Bitte erneut anmelden.";
+}
+
+function redirectToLogin(detail) {
+  if (authRedirectStarted) {
+    return;
+  }
+
+  authRedirectStarted = true;
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("currentCaseId");
+  sessionStorage.setItem("loginMessage", buildLoginRedirectMessage(detail));
+  window.location.replace("/");
+}
+
+async function apiFetch(input, init) {
+  const response = await fetch(input, init);
+  if (response.status !== 401) {
+    return response;
+  }
+
+  let payload = null;
+  try {
+    payload = await response.clone().json();
+  } catch {
+    payload = null;
+  }
+
+  redirectToLogin(payload?.error);
+  throw new Error("AUTH_REDIRECT");
+}
+
+function handleUnauthorizedStatus(status, responseText) {
+  if (Number(status) !== 401) {
+    return false;
+  }
+
+  let payload = null;
+  try {
+    payload = JSON.parse(responseText || "{}");
+  } catch {
+    payload = null;
+  }
+
+  redirectToLogin(payload?.error);
+  return true;
+}
 
 function showServiceAlert(detail) {
   if (!serviceAlertEl) {
@@ -99,7 +153,7 @@ function normalizePartyLabel(value, fallback) {
 
 async function loadCasePartyLabels() {
   try {
-    const response = await fetch(`${API_BASE}/cases`, {
+    const response = await apiFetch(`${API_BASE}/cases`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!response.ok) {
@@ -113,9 +167,12 @@ async function loadCasePartyLabels() {
       return;
     }
 
-    currentCaseProtectedLabel = normalizePartyLabel(active.protected_person_name, "Benachteiligte Person");
-    currentCaseOpposingLabel = normalizePartyLabel(active.opposing_party, "Gegenpartei");
-  } catch {
+    currentCaseProtectedLabel = "Benachteiligte Person";
+    currentCaseOpposingLabel = "Gegenpartei";
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     // Keep defaults when lookup fails.
   }
 }
@@ -314,6 +371,11 @@ function uploadSingleFile(file) {
         return;
       }
 
+      if (handleUnauthorizedStatus(xhr.status, xhr.responseText)) {
+        reject(new Error("AUTH_REDIRECT"));
+        return;
+      }
+
       if (OUTAGE_STATUSES.has(Number(xhr.status))) {
         showServiceAlert("Upload-Service derzeit gestört");
       }
@@ -427,10 +489,13 @@ async function triggerRealtimeAnalysis(fileId, fileName, fileKey) {
 
   let response;
   try {
-    response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/analysis?refresh=true`, {
+    response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/analysis?refresh=true`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     showServiceAlert("Analyse-Service derzeit nicht erreichbar");
     updateQueueProgress(fileKey, 100, "Fertig (Analyse später)", "done");
     return;
@@ -485,6 +550,10 @@ async function startUpload() {
       }
       successCount += 1;
     } catch (error) {
+      if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+        isUploading = false;
+        return;
+      }
       setMessage(uploadMessage, error.message || "Upload fehlgeschlagen.", "error");
       isUploading = false;
       return;
@@ -504,11 +573,14 @@ async function startUpload() {
 async function deleteUploadedFile(fileId, fileKey) {
   let response;
   try {
-    response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
+    response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
     showServiceAlert("Keine Verbindung zum Backend");
     setMessage(uploadMessage, "Backend nicht erreichbar.", "error");
     return;
