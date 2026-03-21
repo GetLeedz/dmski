@@ -56,6 +56,8 @@ const copyrightYearEl = document.getElementById("copyrightYear");
 let pendingFiles = [];
 let isUploading = false;
 let totalUploadedCount = 0;
+let currentCaseProtectedLabel = "Benachteiligte Person";
+let currentCaseOpposingLabel = "Gegenpartei";
 const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
 const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
 
@@ -73,6 +75,48 @@ function decodeUtf8Safe(text) {
     return decoded || input;
   } catch {
     return input;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function normalizePartyLabel(value, fallback) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return fallback;
+  }
+
+  const firstAlias = raw.split(",")[0].trim();
+  return firstAlias || fallback;
+}
+
+async function loadCasePartyLabels() {
+  try {
+    const response = await fetch(`${API_BASE}/cases`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = await response.json().catch(() => ({}));
+    const list = Array.isArray(payload?.cases) ? payload.cases : [];
+    const active = list.find((item) => String(item?.id || "") === currentCaseId);
+    if (!active) {
+      return;
+    }
+
+    currentCaseProtectedLabel = normalizePartyLabel(active.protected_person_name, "Benachteiligte Person");
+    currentCaseOpposingLabel = normalizePartyLabel(active.opposing_party, "Gegenpartei");
+  } catch {
+    // Keep defaults when lookup fails.
   }
 }
 
@@ -355,14 +399,14 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     <div class="qa-mentions">
       <div class="qa-persons-grid">
         <div class="qa-person-col">
-          <div class="qa-person-col-label">Benachteiligte Person</div>
+          <div class="qa-person-col-label">${escapeHtml(currentCaseProtectedLabel)}</div>
           <div class="qa-badge-rows">
             <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(positiveMentions, "positive")}</div>
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
           </div>
         </div>
         <div class="qa-person-col">
-          <div class="qa-person-col-label">Gegenpartei</div>
+          <div class="qa-person-col-label">${escapeHtml(currentCaseOpposingLabel)}</div>
           <div class="qa-badge-rows">
             <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(opposingPositiveMentions, "positive")}</div>
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(opposingNegativeMentions, "negative")}</div>
@@ -557,3 +601,4 @@ logoutBtn.addEventListener("click", () => {
 });
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
+loadCasePartyLabels();

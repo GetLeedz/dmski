@@ -799,16 +799,20 @@ function extractSenderInstitution(rawText, author = "") {
 
   // Check domain for institution clues
   if (domain && domain.includes("kesb")) {
-    // Try to find "KESB <location>" pattern in next lines
     const lines = String(rawText || "")
       .split(/\r?\n/)
       .map((line) => normalizeWhitespace(line))
       .filter(Boolean);
-    
+
+    const preferredKesb = lines.find((line) => /^KESB\s+[A-Za-z].+/i.test(line) && line.length > 7);
+    if (preferredKesb) {
+      return preferredKesb;
+    }
+
     for (let i = 0; i < lines.length; i += 1) {
       const line = lines[i];
       if (/^KESB\s+/i.test(line)) {
-        return line; // e.g. "KESB Leimental"
+        return line;
       }
     }
     return "KESB";
@@ -832,17 +836,30 @@ function extractSenderInstitution(rawText, author = "") {
     .filter(Boolean);
   const authorKey = normalizeWhitespace(author).toLowerCase();
 
+  const candidates = [];
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     const lower = line.toLowerCase();
     if (
-      /\b(kesb|gericht|amt|behörde|behoerde|schule|sozialdienst|gmbh|\bag\b|versicherung|bank|verwaltung)\b/i.test(line)
+      /\b(kesb|gericht|amt|behoerde|behörde|schule|sozialdienst|gmbh|\bag\b|versicherung|bank|verwaltung|kanzlei)\b/i.test(line)
       && !looksLikePersonName(line)
-      && !/\d/.test(line)
+      && !/\d{3,}/.test(line)
       && lower !== authorKey
     ) {
-      return line;
+      candidates.push(line);
     }
+  }
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => {
+      const kesbA = /kesb/i.test(a) ? 1 : 0;
+      const kesbB = /kesb/i.test(b) ? 1 : 0;
+      if (kesbA !== kesbB) {
+        return kesbB - kesbA;
+      }
+      return b.length - a.length;
+    });
+    return candidates[0];
   }
 
   return "";
@@ -1355,8 +1372,23 @@ function hasUsableForensicResult(result) {
 }
 
 function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingPartyName = "") {
-  const focusName = normalizeWhitespace(protectedPersonName) || "Unbekannt";
-  const referenceName = normalizeWhitespace(opposingPartyName) || "Unbekannt";
+  const focusRaw = normalizeWhitespace(protectedPersonName);
+  const referenceRaw = normalizeWhitespace(opposingPartyName);
+
+  const focusAliases = focusRaw
+    .split(",")
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+  const referenceAliases = referenceRaw
+    .split(",")
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+
+  const focusName = focusAliases[0] || "Unbekannt";
+  const referenceName = referenceAliases[0] || "Unbekannt";
+
+  const focusAliasText = focusAliases.length > 1 ? focusAliases.slice(1).join(", ") : "keine";
+  const referenceAliasText = referenceAliases.length > 1 ? referenceAliases.slice(1).join(", ") : "keine";
 
   return [
     "Du bist ein forensischer Linguistik-Experte fuer die Analyse von Behoerden- und Gerichtskommunikation. Deine Aufgabe ist die objektive Dekonstruktion von Texten auf institutionelle Voreingenommenheit (Bias).",
@@ -1371,7 +1403,9 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "### 2. ROLLENZUORDNUNG & SCORING:",
     "Ordne die im Dokument gefundenen Aussagen den im System definierten Rollen zu:",
     `- Fokus-Person (Benachteiligt): ${focusName}`,
+    `- Fokus-Aliase: ${focusAliasText}`,
     `- Referenz-Person (Gegenpartei): ${referenceName}`,
+    `- Referenz-Aliase: ${referenceAliasText}`,
     "",
     "### 3. METHODISCHES ZAEHLVERFAHREN (FBI-PROFILING):",
     "Zaehle jede wertende Textstelle streng getrennt:",
@@ -1381,6 +1415,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "### 4. OUTPUT-REGELN:",
     "- ZUSAMMENFASSUNG: Beschreibe das Muster der asymmetrischen Darstellung und die psychologische Tendenz des Verfassers (max. 2 Saetze). Erwaehne KEINE Zahlen im Text.",
     "- NULLEN-LOGIK: Gib fuer jede Person exakt EINE Summe fuer Positiv und EINE Summe fuer Negativ zurueck.",
+    "- ABSENDER-PRAEZISION: Wenn im Briefkopf ein Institutionsname mit Orts-/Regionszusatz steht, gib den vollen Namen aus (z.B. 'KESB Leimental', nicht nur 'KESB').",
     "- KEINE RUECKFRAGE: Stelle am Ende keine Frage und keine Empfehlung.",
     "- NUR JSON: Gib ausschliesslich ein valides JSON-Objekt ohne Markdown und ohne zusaetzlichen Text aus.",
     "",
