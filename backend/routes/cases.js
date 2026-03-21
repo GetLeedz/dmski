@@ -556,7 +556,7 @@ function extractPeopleFromText(rawText, blockedNames = new Set()) {
   ];
 
   for (const line of lines) {
-    if (!line || line.length > 140) {
+    if (!line || line.length > 320) {
       continue;
     }
 
@@ -569,6 +569,24 @@ function extractPeopleFromText(rawText, blockedNames = new Set()) {
   }
 
   return normalizePeopleWithBlacklist(people, blockedNames);
+}
+
+function extractPeopleFromContextPhrases(rawText, blockedNames = new Set()) {
+  const text = String(rawText || "");
+  const candidates = [];
+  const patterns = [
+    /\b(?:fuer|für|gegen|zulasten von|zu lasten von|betreffend)\s+([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+)/giu,
+    /\b([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+)\s+ist\s+/giu
+  ];
+
+  for (const pattern of patterns) {
+    const matches = text.matchAll(pattern);
+    for (const match of matches) {
+      candidates.push(match[1]);
+    }
+  }
+
+  return normalizePeopleWithBlacklist(candidates, blockedNames);
 }
 
 function extractLabeledValue(rawText, labels) {
@@ -875,7 +893,15 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     ? ""
     : normalizedTitle;
 
-  const normalizedPeople = normalizePeopleDetailed(Array.isArray(people) ? people : [], rawText, new Set(), correctedAuthor);
+  const mergedPeople = [
+    ...(Array.isArray(people) ? people : []),
+    ...extractPeopleFromLabeledFields(rawText, new Set()),
+    ...extractPeopleFromSalutation(rawText, new Set()),
+    ...extractPeopleFromText(rawText, new Set()),
+    ...extractPeopleFromContextPhrases(rawText, new Set())
+  ];
+
+  const normalizedPeople = normalizePeopleDetailed(mergedPeople, rawText, new Set(), correctedAuthor);
   const explicitDisadvantaged = normalizeWhitespace(disadvantagedPerson);
   const computedDisadvantaged = explicitDisadvantaged || extractDisadvantagedPerson(rawText, normalizedPeople, correctedAuthor);
   const normalizedDisadvantaged = computedDisadvantaged.toLowerCase() === correctedAuthor.toLowerCase()
@@ -962,7 +988,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
   try {
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      max_tokens: 900,
+      max_tokens: 1300,
       messages: [
         {
           role: "user",
@@ -975,6 +1001,8 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
             "- authoredDate = Sendedatum (Priorität: 'Sendedatum', 'Von:' Header), sonst Verfassungsdatum im Schweizer Format DD.MM.YYYY.",
             "- people = alle relevanten Personennamen OHNE Verfasser, als Array von Objekten {name, affiliation}.",
+            "- people muss ALLE im Dokument genannten natuerlichen Personen enthalten (ueber alle Seiten, auch Seite 2+).",
+            "- Wenn mehrere Personen denselben Nachnamen tragen, JEDE Person einzeln mit vollem Namen auffuehren (z.B. Nael Schifferli, Alexandra Schifferli).",
             "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
             "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
             "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",

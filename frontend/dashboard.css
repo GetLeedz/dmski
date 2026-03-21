@@ -50,18 +50,36 @@ body {
   top: 0;
   z-index: 50;
   height: var(--topbar-h);
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
+  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0 max(1rem, calc((100vw - 1040px) / 2 + 2rem));
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(168, 196, 208, 0.48);
-  box-shadow: 0 6px 24px rgba(15, 43, 54, 0.08);
+  padding: 0 2rem;
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+}
+
+.topbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.54);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(168, 196, 208, 0.36);
+  box-shadow: 0 4px 18px rgba(15, 43, 54, 0.06);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.topbar > * {
+  position: relative;
+  z-index: 1;
 }
 
 .brand-lockup {
@@ -975,7 +993,7 @@ td {
 
 .analysis-cell {
   width: 42%;
-  min-width: 420px;
+  min-width: 460px;
 }
 
 .analysis-cell-top {
@@ -1018,7 +1036,7 @@ td {
 
 .analysis-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.6rem;
 }
 
