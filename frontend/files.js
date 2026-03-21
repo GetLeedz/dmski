@@ -270,6 +270,101 @@ function normalizeTitleText(text) {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
 
+function normalizePersonName(value) {
+  const raw = normalizeTitleText(value)
+    .replace(/\bPrivatperson\b/gi, "")
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return raw;
+}
+
+function extractNamesFromChunk(value) {
+  const text = normalizePersonName(value);
+  if (!text) {
+    return [];
+  }
+
+  const chunks = text
+    .split(/[;,\n]/)
+    .map((part) => normalizePersonName(part))
+    .filter(Boolean);
+
+  const names = [];
+  const namePattern = /([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,}\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})/g;
+  for (const chunk of chunks) {
+    const matches = [...chunk.matchAll(namePattern)].map((m) => normalizePersonName(m[1]));
+    if (matches.length > 0) {
+      names.push(...matches);
+      continue;
+    }
+
+    const single = normalizePersonName(chunk);
+    if (single) {
+      names.push(single);
+    }
+  }
+
+  return names;
+}
+
+function collectAnalysisPeople(analysis, protectedName = "") {
+  const candidates = [];
+
+  const people = Array.isArray(analysis?.people) ? analysis.people : [];
+  for (const entry of people) {
+    if (typeof entry === "string") {
+      candidates.push(...extractNamesFromChunk(entry));
+      continue;
+    }
+
+    if (entry && typeof entry === "object") {
+      if (entry.name) {
+        candidates.push(...extractNamesFromChunk(entry.name));
+      }
+      if (entry.fullName) {
+        candidates.push(...extractNamesFromChunk(entry.fullName));
+      }
+      const combined = normalizeTitleText(`${entry.firstName || ""} ${entry.lastName || ""}`);
+      if (combined) {
+        candidates.push(...extractNamesFromChunk(combined));
+      }
+    }
+  }
+
+  const ranking = Array.isArray(analysis?.impactRanking) ? analysis.impactRanking : [];
+  for (const item of ranking) {
+    if (item?.name) {
+      candidates.push(...extractNamesFromChunk(item.name));
+    }
+  }
+
+  if (analysis?.disadvantagedPerson) {
+    candidates.push(...extractNamesFromChunk(analysis.disadvantagedPerson));
+  }
+  if (protectedName) {
+    candidates.push(...extractNamesFromChunk(protectedName));
+  }
+
+  const seen = new Set();
+  const unique = [];
+  for (const candidate of candidates) {
+    const cleaned = normalizePersonName(candidate);
+    if (!cleaned) {
+      continue;
+    }
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    unique.push(cleaned);
+  }
+
+  return unique.slice(0, 16);
+}
+
 function normalizePeople(people) {
   if (!Array.isArray(people)) {
     return [];
@@ -455,34 +550,11 @@ async function loadRowAnalysis(file, options = {}) {
     </div>`;
   const analysis = await getDocumentAnalysis(file, options);
 
-  const toDisplayName = (value) => {
-    if (typeof value === "string") {
-      return normalizeTitleText(value);
-    }
-    if (value && typeof value === "object") {
-      if (typeof value.name === "string") {
-        return normalizeTitleText(value.name);
-      }
-      if (typeof value.fullName === "string") {
-        return normalizeTitleText(value.fullName);
-      }
-      const first = typeof value.firstName === "string" ? normalizeTitleText(value.firstName) : "";
-      const last = typeof value.lastName === "string" ? normalizeTitleText(value.lastName) : "";
-      return normalizeTitleText(`${first} ${last}`);
-    }
-    return "";
-  };
-
-  const people = Array.isArray(analysis.people)
-    ? analysis.people
-      .map((entry) => (typeof entry === "string"
-        ? { name: toDisplayName(entry), affiliation: "Privatperson" }
-        : { name: toDisplayName(entry), affiliation: normalizeTitleText(entry?.affiliation || "Privatperson") }))
-      .filter((entry) => entry.name)
-    : [];
+  const protectedName = normalizeTitleText(currentCaseProtectedPerson);
+  const people = collectAnalysisPeople(analysis, protectedName);
 
   const peopleMarkup = people.length > 0
-    ? `<ul class="analysis-people">${people.map((person) => `<li><span>${person.name}</span><span class="analysis-person-affiliation">${person.affiliation}</span></li>`).join("")}</ul>`
+    ? `<ul class="analysis-people">${people.map((name) => `<li>${name}</li>`).join("")}</ul>`
     : '<p class="analysis-value muted">Keine eindeutigen Personen erkannt</p>';
 
   const titleMarkup = analysis.title
@@ -509,51 +581,56 @@ async function loadRowAnalysis(file, options = {}) {
   const impactRankingItems = Array.isArray(analysis.impactRanking)
     ? analysis.impactRanking
       .map((entry) => ({
-        name: normalizeTitleText(entry?.name),
+        name: normalizePersonName(entry?.name),
         impact: normalizeTitleText(entry?.impact),
-        count: typeof entry?.count === "number" ? entry.count : 0,
+        count: Number.isFinite(Number(entry?.count)) ? Number(entry.count) : 0,
         items: Array.isArray(entry?.items) ? entry.items.filter((s) => typeof s === "string" && s.trim()) : []
       }))
       .filter((entry) => entry.name)
     : [];
 
-  const protectedName = normalizeTitleText(currentCaseProtectedPerson);
   const protectedEntry = protectedName
     ? impactRankingItems.find((entry) => entry.name.toLowerCase() === protectedName.toLowerCase())
     : null;
   const protectedCount = protectedEntry ? Math.max(0, Number(protectedEntry.count || 0)) : 0;
-
-  const hintMarkup = analysis.message
-    ? `<p class="analysis-hint">${analysis.message}</p>`
-    : "";
+  const protectedEvidenceCount = protectedEntry ? protectedEntry.items.length : 0;
+  const points = Math.max(protectedCount, protectedEvidenceCount);
 
   box.innerHTML = `
-    <div class="analysis-section">
-      <p class="analysis-label">Dokumenttitel</p>
-      ${titleMarkup}
+    <div class="analysis-glass">
+      <div class="analysis-grid">
+        <section class="analysis-section">
+          <p class="analysis-label">Dokumenttitel</p>
+          ${titleMarkup}
+        </section>
+        <section class="analysis-section">
+          <p class="analysis-label">Verfasser</p>
+          ${authorMarkup}
+        </section>
+        <section class="analysis-section">
+          <p class="analysis-label">Datum Verfassung</p>
+          ${dateMarkup}
+        </section>
+        <section class="analysis-section">
+          <p class="analysis-label">Herkunft Schreiben</p>
+          ${senderInstitutionMarkup}
+        </section>
+      </div>
+      <section class="analysis-section analysis-people-section">
+        <p class="analysis-label">Personen im Dokument</p>
+        ${peopleMarkup}
+      </section>
+      <section class="analysis-section">
+        <p class="analysis-label">KI Bewertung</p>
+        ${impactAssessmentMarkup}
+      </section>
+      ${protectedName ? `
+        <section class="analysis-section analysis-score-box">
+          <p class="analysis-label">Punkte gegen Fallperson</p>
+          <p class="analysis-score"><span class="analysis-score-label">Punkt:</span><span class="analysis-score-value">${points}</span></p>
+        </section>
+      ` : ""}
     </div>
-    <div class="analysis-section">
-      <p class="analysis-label">Verfasser</p>
-      ${authorMarkup}
-    </div>
-    <div class="analysis-section">
-      <p class="analysis-label">Datum Verfassung</p>
-      ${dateMarkup}
-    </div>
-    <div class="analysis-section">
-      <p class="analysis-label">Personen im Dokument</p>
-      ${peopleMarkup}
-    </div>
-    <div class="analysis-section">
-      <p class="analysis-label">Herkunft Schreiben</p>
-      ${senderInstitutionMarkup}
-    </div>
-    <div class="analysis-section">
-      <p class="analysis-label">KI Bewertung</p>
-      ${impactAssessmentMarkup}
-    </div>
-    ${protectedName ? `<div class="analysis-section"><p class="analysis-label">Vorfälle Fallperson</p><p class="analysis-value">${protectedCount}</p></div>` : ""}
-    ${hintMarkup}
   `;
 }
 
@@ -627,7 +704,8 @@ async function refreshAnalysis(fileId, triggerButton) {
 
   if (triggerButton instanceof HTMLButtonElement) {
     triggerButton.disabled = true;
-    triggerButton.textContent = "Analysiere...";
+    triggerButton.dataset.prevHtml = triggerButton.innerHTML;
+    triggerButton.classList.add("is-loading");
   }
 
   analysisCache.delete(fileId);
@@ -641,7 +719,10 @@ async function refreshAnalysis(fileId, triggerButton) {
   } finally {
     if (triggerButton instanceof HTMLButtonElement) {
       triggerButton.disabled = false;
-      triggerButton.textContent = "Analyse neu";
+      triggerButton.classList.remove("is-loading");
+      if (triggerButton.dataset.prevHtml) {
+        triggerButton.innerHTML = triggerButton.dataset.prevHtml;
+      }
     }
   }
 }
