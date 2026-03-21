@@ -1302,17 +1302,19 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
 function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const src = parsed && typeof parsed === "object" ? parsed : {};
 
-  // --- target_a / target_b schema ---
-  const targetA = src.target_a && typeof src.target_a === "object" ? src.target_a : {};
-  const targetB = src.target_b && typeof src.target_b === "object" ? src.target_b : {};
+  // --- Flat 4-number schema ---
+  const posA = Math.max(0, Number(src.benachteiligte_person_positiv || 0));
+  const negA = Math.max(0, Number(src.benachteiligte_person_negativ || 0));
+  const posB = Math.max(0, Number(src.gegenpartei_positiv || 0));
+  const negB = Math.max(0, Number(src.gegenpartei_negativ || 0));
 
-  const stmtsA = Array.isArray(targetA.claims) ? targetA.claims : (Array.isArray(targetA.statements) ? targetA.statements : []);
-  const stmtsB = Array.isArray(targetB.claims) ? targetB.claims : (Array.isArray(targetB.statements) ? targetB.statements : []);
-
-  const posA = Math.max(stmtsA.filter((s) => s?.sentiment === "positive").length, Math.max(0, Number(targetA.positive || 0)));
-  const negA = Math.max(stmtsA.filter((s) => s?.sentiment === "negative").length, Math.max(0, Number(targetA.negative || 0)));
-  const posB = Math.max(stmtsB.filter((s) => s?.sentiment === "positive").length, Math.max(0, Number(targetB.positive || 0)));
-  const negB = Math.max(stmtsB.filter((s) => s?.sentiment === "negative").length, Math.max(0, Number(targetB.negative || 0)));
+  // Fallback: also accept target_a/target_b if AI uses old schema
+  const targetA = src.target_a && typeof src.target_a === "object" ? src.target_a : null;
+  const targetB = src.target_b && typeof src.target_b === "object" ? src.target_b : null;
+  const finalPosA = posA || Math.max(0, Number(targetA?.positive || 0));
+  const finalNegA = negA || Math.max(0, Number(targetA?.negative || 0));
+  const finalPosB = posB || Math.max(0, Number(targetB?.positive || 0));
+  const finalNegB = negB || Math.max(0, Number(targetB?.negative || 0));
 
   // People list
   const peopleSource = Array.isArray(src.personen) ? src.personen : [];
@@ -1324,24 +1326,21 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     })
     .filter(Boolean);
 
-  // Impact ranking from statements
   const impactRanking = [];
-  const negItemsA = stmtsA.filter((s) => s?.sentiment === "negative").map((s) => normalizeWhitespace(s?.text || "")).filter(Boolean);
-  const negItemsB = stmtsB.filter((s) => s?.sentiment === "negative").map((s) => normalizeWhitespace(s?.text || "")).filter(Boolean);
-  if (negA > 0 || posA > 0) {
+  if (finalNegA > 0 || finalPosA > 0) {
     impactRanking.push({
       name: fallback.disadvantagedPerson || "Benachteiligte Person",
-      impact: negA > 0 ? "benachteiligt" : "neutral",
-      count: negA,
-      items: negItemsA
+      impact: finalNegA > 0 ? "benachteiligt" : "neutral",
+      count: finalNegA,
+      items: []
     });
   }
-  if (negB > 0 || posB > 0) {
+  if (finalNegB > 0 || finalPosB > 0) {
     impactRanking.push({
       name: "Gegenpartei",
-      impact: negB > 0 ? "benachteiligt" : "neutral",
-      count: negB,
-      items: negItemsB
+      impact: finalNegB > 0 ? "benachteiligt" : "neutral",
+      count: finalNegB,
+      items: []
     });
   }
 
@@ -1370,10 +1369,10 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     senderInstitution: topSender || fallback.senderInstitution,
     impactAssessment: qualitativeSummary || fallback.impactAssessment,
     impactRanking: impactRanking.length > 0 ? impactRanking : fallback.impactRanking,
-    positiveMentions: posA,
-    negativeMentions: negA,
-    opposingPositiveMentions: posB,
-    opposingNegativeMentions: negB,
+    positiveMentions: finalPosA,
+    negativeMentions: finalNegA,
+    opposingPositiveMentions: finalPosB,
+    opposingNegativeMentions: finalNegB,
     rawText: effectivePeople.length > 0 ? "" : rawText,
     message: fallback.message
   });
@@ -1384,21 +1383,30 @@ function hasStrictForensicShape(parsed) {
     return false;
   }
 
+  // Flat 4-number schema
+  const hasFlatKeys = "benachteiligte_person_positiv" in parsed
+    && "benachteiligte_person_negativ" in parsed
+    && "gegenpartei_positiv" in parsed
+    && "gegenpartei_negativ" in parsed;
+
+  if (hasFlatKeys) {
+    const nums = [
+      parsed.benachteiligte_person_positiv,
+      parsed.benachteiligte_person_negativ,
+      parsed.gegenpartei_positiv,
+      parsed.gegenpartei_negativ
+    ].map((v) => Number(v));
+    return nums.every((v) => Number.isFinite(v) && v >= 0);
+  }
+
+  // Fallback: target_a/target_b schema
   const tA = parsed.target_a;
   const tB = parsed.target_b;
   if (!tA || !tB || typeof tA !== "object" || typeof tB !== "object") {
     return false;
   }
-
   const nums = [tA.positive, tA.negative, tB.positive, tB.negative].map((v) => Number(v));
-  const allFinite = nums.every((v) => Number.isFinite(v) && v >= 0);
-  if (!allFinite) {
-    return false;
-  }
-
-  const hasStatements = Array.isArray(tA.claims) || Array.isArray(tA.statements) || Array.isArray(tB.claims) || Array.isArray(tB.statements);
-  const hasNonZero = nums.some((v) => v > 0);
-  return hasStatements || hasNonZero;
+  return nums.every((v) => Number.isFinite(v) && v >= 0);
 }
 
 function hasUsableForensicResult(result) {
@@ -1636,7 +1644,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     let mapped = null;
 
     if (parsed && typeof parsed === "object") {
-      if (parsed?.target_a || parsed?.target_b || parsed?.personen_auswertung || parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
+      if ("benachteiligte_person_positiv" in parsed || parsed?.target_a || parsed?.target_b || parsed?.personen_auswertung || parsed?.auswertung || parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
         mapped = mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
       } else {
         mapped = mapSwissForensicJsonToAnalysis(parsed, fallback, textSnippet);
@@ -1684,7 +1692,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     const retryText = retry?.choices?.[0]?.message?.content || "";
     const retryParsed = extractJsonObject(retryText);
     if (retryParsed && typeof retryParsed === "object") {
-      if (retryParsed?.target_a || retryParsed?.target_b || retryParsed?.personen_auswertung || retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
+      if ("benachteiligte_person_positiv" in retryParsed || retryParsed?.target_a || retryParsed?.target_b || retryParsed?.personen_auswertung || retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
         const retryMapped = mapBiasForensicJsonToAnalysis(retryParsed, fallback, textSnippet);
         if (hasUsableForensicResult(retryMapped)) {
           return retryMapped;
