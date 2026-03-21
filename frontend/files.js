@@ -307,19 +307,13 @@ function resolveDocumentTypeLabel(aiType, file) {
 
 function renderMentionDots(count, tone) {
   const safeCount = Math.max(0, Number(count) || 0);
-  const maxDots = 12;
-  const dotsToShow = Math.min(safeCount, maxDots);
-  const overflow = Math.max(0, safeCount - maxDots);
   const dotClass = tone === "positive" ? "is-positive" : "is-negative";
 
-  const dots = dotsToShow > 0
-    ? Array.from({ length: dotsToShow }, () => `<span class="analysis-dot ${dotClass}" aria-hidden="true"></span>`).join("")
+  const dots = safeCount > 0
+    ? Array.from({ length: safeCount }, () => `<span class="analysis-dot ${dotClass}" aria-hidden="true"></span>`).join("")
     : `<span class="analysis-dot-empty">0</span>`;
 
-  const overflowText = overflow > 0 ? `<span class="analysis-dot-overflow">+${overflow}</span>` : "";
-  const totalText = `<span class="analysis-dot-total">(${safeCount})</span>`;
-
-  return `<span class="analysis-dot-track" aria-label="${safeCount}">${dots}${overflowText}${totalText}</span>`;
+  return `<span class="analysis-dot-track" aria-label="${safeCount}">${dots}</span>`;
 }
 
 function normalizePersonName(value) {

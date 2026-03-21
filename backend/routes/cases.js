@@ -1156,6 +1156,7 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
 function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const src = parsed && typeof parsed === "object" ? parsed : {};
   const meta = src.metadaten && typeof src.metadaten === "object" ? src.metadaten : {};
+  const stats = src.statistik && typeof src.statistik === "object" ? src.statistik : {};
 
   const mappedPeople = Array.isArray(src.personen)
     ? src.personen
@@ -1173,20 +1174,34 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     : [];
 
   const score = src.analyse_score && typeof src.analyse_score === "object" ? src.analyse_score : {};
-  const disadvantaged = score.benachteiligte_person && typeof score.benachteiligte_person === "object"
+  const disadvantagedFromStats = stats.benachteiligte_person && typeof stats.benachteiligte_person === "object"
+    ? stats.benachteiligte_person
+    : null;
+  const opposingFromStats = stats.gegenpartei && typeof stats.gegenpartei === "object"
+    ? stats.gegenpartei
+    : null;
+  const disadvantaged = disadvantagedFromStats || (score.benachteiligte_person && typeof score.benachteiligte_person === "object"
     ? score.benachteiligte_person
-    : {};
-  const opposing = score.gegenpartei && typeof score.gegenpartei === "object"
+    : {});
+  const opposing = opposingFromStats || (score.gegenpartei && typeof score.gegenpartei === "object"
     ? score.gegenpartei
-    : {};
+    : {});
 
   const disadvantagedName = normalizeWhitespace(disadvantaged.name || fallback.disadvantagedPerson || "");
   const opposingName = normalizeWhitespace(opposing.name || "");
 
-  const disadvantagedNeg = Math.max(0, Number(disadvantaged.punkte_negativ || 0));
-  const disadvantagedPos = Math.max(0, Number(disadvantaged.punkte_positiv || 0));
-  const opposingNeg = Math.max(0, Number(opposing.punkte_negativ || 0));
-  const opposingPos = Math.max(0, Number(opposing.punkte_positiv || 0));
+  const disadvantagedNeg = Math.max(0, Number(disadvantaged.negativ_count ?? disadvantaged.punkte_negativ ?? 0));
+  const disadvantagedPos = Math.max(0, Number(disadvantaged.positiv_count ?? disadvantaged.punkte_positiv ?? 0));
+  const opposingNeg = Math.max(0, Number(opposing.negativ_count ?? opposing.punkte_negativ ?? 0));
+  const opposingPos = Math.max(0, Number(opposing.positiv_count ?? opposing.punkte_positiv ?? 0));
+
+  const derivedPeople = [];
+  if (disadvantagedName) {
+    derivedPeople.push({ name: disadvantagedName, affiliation: "Fokusperson" });
+  }
+  if (opposingName && opposingName.toLowerCase() !== disadvantagedName.toLowerCase()) {
+    derivedPeople.push({ name: opposingName, affiliation: "Gegenpartei" });
+  }
 
   const impactRanking = [];
   if (disadvantagedName) {
@@ -1206,25 +1221,71 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     });
   }
 
-  const effectiveRawText = mappedPeople.length > 0 ? "" : rawText;
+  const effectivePeople = mappedPeople.length > 0 ? mappedPeople : (derivedPeople.length > 0 ? derivedPeople : fallback.people);
+  const effectiveRawText = effectivePeople.length > 0 ? "" : rawText;
+  const biasRatio = normalizeWhitespace(src.bias_verhaeltnis || "");
+  const alarmLevel = normalizeWhitespace(String(src.alarm_stufe ?? src.alarm_level ?? ""));
 
   return buildFallbackAnalysis({
     title: meta.titel || fallback.title,
-    author: meta.verfasser || fallback.author,
+    author: meta.verfasser || normalizeWhitespace(src.verfasser || "") || fallback.author,
     documentType: fallback.documentType || "Brief",
     authoredDate: meta.datum || fallback.authoredDate,
-    people: mappedPeople.length > 0 ? mappedPeople : fallback.people,
+    people: effectivePeople,
     disadvantagedPerson: disadvantagedName || fallback.disadvantagedPerson,
-    senderInstitution: meta.herkunft || fallback.senderInstitution,
-    impactAssessment: normalizeWhitespace(src.fazit_voreingenommenheit || "") || fallback.impactAssessment,
+    senderInstitution: meta.herkunft || normalizeWhitespace(src.herkunft || "") || fallback.senderInstitution,
+    impactAssessment: biasRatio ? `Bias-Verhältnis: ${biasRatio}` : (normalizeWhitespace(src.fazit_voreingenommenheit || "") || fallback.impactAssessment),
     impactRanking: impactRanking.length > 0 ? impactRanking : fallback.impactRanking,
     positiveMentions: disadvantagedPos,
     negativeMentions: disadvantagedNeg,
     opposingPositiveMentions: opposingPos,
     opposingNegativeMentions: opposingNeg,
     rawText: effectiveRawText,
-    message: normalizeWhitespace(src.alarm_level || "") || fallback.message
+    message: alarmLevel ? `Alarmstufe: ${alarmLevel}` : fallback.message
   });
+}
+
+function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingPartyName = "") {
+  const focusName = normalizeWhitespace(protectedPersonName) || "Unbekannt";
+  const referenceName = normalizeWhitespace(opposingPartyName) || "Unbekannt";
+
+  return [
+    "Du bist ein forensischer Daten-Analyst. Deine Aufgabe ist die rein quantitative Erfassung von wertenden Aussagen in Bezug auf zwei vordefinierte Personen.",
+    "",
+    "### 1. ANALYSE-PARAMETER (Vorgegebene Namen):",
+    `- Fokus-Person (Benachteiligt): ${focusName}`,
+    `- Referenz-Person (Gegenpartei): ${referenceName}`,
+    "",
+    "### 2. QUANTITATIVE ERFASSUNG:",
+    "Untersuche den Text auf psychologische und rhetorische Bewertungsmuster:",
+    `- NEGATIV-PUNKT (-): Jedes Mal, wenn ${focusName} kritisiert, abgewertet, als unkooperativ dargestellt oder ihr ein Defizit unterstellt wird.`,
+    `- POSITIV-PUNKT (+): Jedes Mal, wenn ${referenceName} gelobt, aufgewertet, als kompetent dargestellt oder ihr Verhalten gerechtfertigt wird.`,
+    "",
+    "WICHTIG: Erfasse auch die umgekehrte Logik (Negativ-Punkte für die Gegenpartei oder Positiv-Punkte für die Fokus-Person), falls vorhanden.",
+    "",
+    "### 3. KEINE TEXTAUSGABE:",
+    "Gib KEINE Zitate oder Belege aus. Der Anwalt liest das Originaldokument selbst. Wir benötigen nur die reinen Zählwerte für die statistische Visualisierung.",
+    "",
+    "### 4. OUTPUT-FORMAT (JSON):",
+    "{",
+    '  "herkunft": "Name der Behörde/Institution",',
+    '  "verfasser": "Name der Person",',
+    '  "statistik": {',
+    '    "benachteiligte_person": {',
+    `      "name": "${focusName}",`,
+    '      "negativ_count": 0,',
+    '      "positiv_count": 0',
+    '    },',
+    '    "gegenpartei": {',
+    `      "name": "${referenceName}",`,
+    '      "negativ_count": 0,',
+    '      "positiv_count": 0',
+    '    }',
+    '  },',
+    '  "bias_verhaeltnis": "z.B. 10:1 (Negativ Fokus vs. Negativ Gegenpartei)",',
+    '  "alarm_stufe": 1',
+    "}"
+  ].join("\n");
 }
 
 function mapChatForensicJsonToAnalysis(parsed, fallback = {}) {
@@ -1286,7 +1347,7 @@ function mapChatForensicJsonToAnalysis(parsed, fallback = {}) {
   });
 }
 
-async function analyzeTextWithAi(documentText, fallback = {}) {
+async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonName = "", opposingPartyName = "") {
   const client = getOpenAiClient();
   if (!client) {
     return buildFallbackAnalysis(fallback);
@@ -1319,51 +1380,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
       messages: [
         {
           role: "system",
-          content: [
-            "Du bist ein KI-Forensiker fuer juristische Dokumentenanalyse. Deine Aufgabe ist die objektive Quantifizierung von Voreingenommenheit (Bias) und Datenextraktion.",
-            "",
-            "1. IDENTIFIKATION DER PARTEIEN:",
-            "- Analysiere den Briefkopf/Absender: Wer ist der Verfasser (Institution/Person)?",
-            "- Identifiziere die Hauptbeteiligten: Wer ist die benachteiligte Person (Fokusperson) und wer ist die Gegenpartei?",
-            "- Extrahiere ALLE genannten Klarnamen (auch Kinder, Sachbearbeiter, Anwaelte).",
-            "",
-            "2. QUANTITATIVES SENTIMENT-TRACKING (PUNKTE):",
-            "- POSITIV (+): Kompetenz, Kooperation, Wohlwollen oder positive Charakterzuege.",
-            "- NEGATIV (-): Defizite, mangelnde Kooperation, Aggressivitaet oder negative Charakterzuege.",
-            "",
-            "3. BIAS-ANALYSE:",
-            "- Pruefe auf Double Standards.",
-            "- Zaehle die negativen Zuschreibungen pro Partei.",
-            "",
-            "4. OUTPUT-FORMAT (STRENGES JSON):",
-            "{",
-            "  \"metadaten\": {",
-            "    \"titel\": \"Dokumententitel\",",
-            "    \"herkunft\": \"Behoerde oder Privat\",",
-            "    \"verfasser\": \"Vollstaendiger Name\",",
-            "    \"datum\": \"DD.MM.YYYY\"",
-            "  },",
-            "  \"personen\": [",
-            "    { \"name\": \"Name\", \"rolle\": \"Vater/Mutter/Kind/Behoerde\" }",
-            "  ],",
-            "  \"analyse_score\": {",
-            "    \"benachteiligte_person\": {",
-            "      \"name\": \"Name\",",
-            "      \"punkte_positiv\": 0,",
-            "      \"punkte_negativ\": 0,",
-            "      \"belege_negativ\": [\"Zitat 1\", \"Zitat 2\"]",
-            "    },",
-            "    \"gegenpartei\": {",
-            "      \"name\": \"Name\",",
-            "      \"punkte_positiv\": 0,",
-            "      \"punkte_negativ\": 0,",
-            "      \"belege_positiv\": [\"Zitat 1\"]",
-            "    }",
-            "  },",
-            "  \"fazit_voreingenommenheit\": \"Kurze Analyse der einseitigen Darstellung.\",",
-            "  \"alarm_level\": \"Skala 1-10 (Basiert auf der Einseitigkeit der negativen Punkte)\"",
-            "}"
-          ].join("\n")
+          content: buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName)
         },
         {
           role: "user",
@@ -1386,7 +1403,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
       return buildFallbackAnalysis(fallback);
     }
 
-    if (parsed?.metadaten || parsed?.analyse_score) {
+    if (parsed?.statistik || parsed?.metadaten || parsed?.analyse_score) {
       return mapBiasForensicJsonToAnalysis(parsed, fallback, textSnippet);
     }
 
@@ -1397,7 +1414,7 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
   }
 }
 
-async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = "") {
+async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = "", protectedPersonName = "", opposingPartyName = "") {
   const client = getOpenAiClient();
   if (!client) {
     return {
@@ -1454,51 +1471,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
               "  \"benachteiligung_score\": \"Skala 1-10 (10 = extreme einseitige Benachteiligung)\"",
               "}"
             ].join("\n")
-            : [
-              "Du bist ein KI-Forensiker fuer juristische Dokumentenanalyse. Deine Aufgabe ist die objektive Quantifizierung von Voreingenommenheit (Bias) und Datenextraktion.",
-              "",
-              "1. IDENTIFIKATION DER PARTEIEN:",
-              "- Analysiere den Briefkopf/Absender: Wer ist der Verfasser (Institution/Person)?",
-              "- Identifiziere die Hauptbeteiligten: Wer ist die benachteiligte Person (Fokusperson) und wer ist die Gegenpartei?",
-              "- Extrahiere ALLE genannten Klarnamen (auch Kinder, Sachbearbeiter, Anwaelte).",
-              "",
-              "2. QUANTITATIVES SENTIMENT-TRACKING (PUNKTE):",
-              "- POSITIV (+): Kompetenz, Kooperation, Wohlwollen oder positive Charakterzuege.",
-              "- NEGATIV (-): Defizite, mangelnde Kooperation, Aggressivitaet oder negative Charakterzuege.",
-              "",
-              "3. BIAS-ANALYSE:",
-              "- Pruefe auf Double Standards.",
-              "- Zaehle die negativen Zuschreibungen pro Partei.",
-              "",
-              "4. OUTPUT-FORMAT (STRENGES JSON):",
-              "{",
-              "  \"metadaten\": {",
-              "    \"titel\": \"Dokumententitel\",",
-              "    \"herkunft\": \"Behoerde oder Privat\",",
-              "    \"verfasser\": \"Vollstaendiger Name\",",
-              "    \"datum\": \"DD.MM.YYYY\"",
-              "  },",
-              "  \"personen\": [",
-              "    { \"name\": \"Name\", \"rolle\": \"Vater/Mutter/Kind/Behoerde\" }",
-              "  ],",
-              "  \"analyse_score\": {",
-              "    \"benachteiligte_person\": {",
-              "      \"name\": \"Name\",",
-              "      \"punkte_positiv\": 0,",
-              "      \"punkte_negativ\": 0,",
-              "      \"belege_negativ\": [\"Zitat 1\", \"Zitat 2\"]",
-              "    },",
-              "    \"gegenpartei\": {",
-              "      \"name\": \"Name\",",
-              "      \"punkte_positiv\": 0,",
-              "      \"punkte_negativ\": 0,",
-              "      \"belege_positiv\": [\"Zitat 1\"]",
-              "    }",
-              "  },",
-              "  \"fazit_voreingenommenheit\": \"Kurze Analyse der einseitigen Darstellung.\",",
-              "  \"alarm_level\": \"Skala 1-10 (Basiert auf der Einseitigkeit der negativen Punkte)\"",
-              "}"
-            ].join("\n")
+            : buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName)
         },
         {
           role: "user",
@@ -1534,11 +1507,17 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
 
     const normalized = parsed?.beteiligte
       ? mapChatForensicJsonToAnalysis(parsed, {})
-      : (parsed?.metadaten || parsed?.analyse_score)
+      : (parsed?.statistik || parsed?.metadaten || parsed?.analyse_score)
         ? mapBiasForensicJsonToAnalysis(parsed, {}, "")
         : mapSwissForensicJsonToAnalysis(parsed, {}, "");
 
-    if (!normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
+    const hasQuantitativeStats = Number(normalized.positiveMentions || 0) > 0
+      || Number(normalized.negativeMentions || 0) > 0
+      || Number(normalized.opposingPositiveMentions || 0) > 0
+      || Number(normalized.opposingNegativeMentions || 0) > 0
+      || Boolean(normalizeWhitespace(normalized.senderInstitution || ""));
+
+    if (!hasQuantitativeStats && !normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
       return {
         status: "empty",
         title: "",
@@ -1609,11 +1588,11 @@ async function extractTextFromImageWithOcr(fileBuffer) {
   }
 }
 
-async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "") {
+async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "", protectedPersonName = "", opposingPartyName = "") {
   const fileNameTitle = deriveTitleFromFileName(originalName);
 
   try {
-    const imageResult = await extractTitleFromImageWithAi(fileBuffer, mimeType, originalName);
+    const imageResult = await extractTitleFromImageWithAi(fileBuffer, mimeType, originalName, protectedPersonName, opposingPartyName);
     if (imageResult.status !== "needs-ocr" && imageResult.status !== "needs-config") {
       return imageResult;
     }
@@ -1629,7 +1608,7 @@ async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "")
 
     const fallback = buildHeuristicAnalysisFromText(ocrText, {});
     if (getOpenAiClient()) {
-      const aiFromText = await analyzeTextWithAi(ocrText, fallback);
+      const aiFromText = await analyzeTextWithAi(ocrText, fallback, protectedPersonName, opposingPartyName);
       if (aiFromText.status === "ok") {
         return aiFromText;
       }
@@ -2281,7 +2260,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
         }
         const parsed = await pdfParse(fileBuffer);
         const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
-        const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback);
+        const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback, parties.protectedPersonName, parties.opposingPartyName);
         const focused = applyProtectedPersonFocus(aiResult, parsed?.text || "", parties.protectedPersonName, parties.opposingPartyName);
         await saveDocumentAnalysis(file.id, focused);
         return res.json(focused);
@@ -2303,7 +2282,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
 
     if (String(file.mime_type || "").startsWith("image/")) {
       const parties = await getCaseParties(caseId);
-      const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name);
+      const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name, parties.protectedPersonName, parties.opposingPartyName);
       const focused = applyProtectedPersonFocus(imageResult, "", parties.protectedPersonName, parties.opposingPartyName);
       await saveDocumentAnalysis(file.id, focused);
       return res.json(focused);

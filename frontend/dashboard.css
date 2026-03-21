@@ -516,12 +516,13 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 0.18rem;
+  flex-wrap: wrap;
 }
 
 .qa-dot {
-  width: 0.52rem;
-  height: 0.52rem;
-  border-radius: 50%;
+  width: 0.82rem;
+  height: 0.3rem;
+  border-radius: 999px;
   display: inline-block;
   border: 1px solid transparent;
 }
@@ -1538,12 +1539,13 @@ td {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
+  flex-wrap: wrap;
 }
 
 .analysis-dot {
-  width: 0.58rem;
-  height: 0.58rem;
-  border-radius: 50%;
+  width: 0.9rem;
+  height: 0.32rem;
+  border-radius: 999px;
   display: inline-block;
   border: 1px solid transparent;
 }

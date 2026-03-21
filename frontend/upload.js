@@ -313,12 +313,13 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     thinking.remove();
   }
 
-  const renderMentionBadge = (count, tone) => {
+  const renderMentionBars = (count, tone) => {
     const safeCount = Math.max(0, Number(count) || 0);
-    if (tone === "positive") {
-      return `<span class="qa-badge is-positive" title="${safeCount} positive Erwähnungen"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="2,8 6,12 14,4"/></svg>${safeCount}</span>`;
+    const cls = tone === "positive" ? "is-positive" : "is-negative";
+    if (safeCount <= 0) {
+      return `<span class="qa-dot-empty">0</span>`;
     }
-    return `<span class="qa-badge is-negative" title="${safeCount} negative Erwähnungen"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>${safeCount}</span>`;
+    return `<span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span>`;
   };
 
   const docType = String(payload?.documentType || "").trim();
@@ -355,11 +356,11 @@ function renderAnalysisInQueueRow(fileKey, payload) {
       <div class="qa-persons-grid">
         <div class="qa-person-col">
           <div class="qa-person-col-label">Benachteiligte</div>
-          <div class="qa-badges">${renderMentionBadge(positiveMentions, "positive")}${renderMentionBadge(negativeMentions, "negative")}</div>
+          <div class="qa-badges">${renderMentionBars(positiveMentions, "positive")}${renderMentionBars(negativeMentions, "negative")}</div>
         </div>
         <div class="qa-person-col">
           <div class="qa-person-col-label">Gegenpartei</div>
-          <div class="qa-badges">${renderMentionBadge(opposingPositiveMentions, "positive")}${renderMentionBadge(opposingNegativeMentions, "negative")}</div>
+          <div class="qa-badges">${renderMentionBars(opposingPositiveMentions, "positive")}${renderMentionBars(opposingNegativeMentions, "negative")}</div>
         </div>
       </div>
     </div>
