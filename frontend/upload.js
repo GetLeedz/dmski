@@ -427,7 +427,7 @@ async function triggerRealtimeAnalysis(fileId, fileName, fileKey) {
 
   let response;
   try {
-    response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/analysis`, {
+    response = await fetch(`${API_BASE}/cases/${currentCaseId}/files/${fileId}/analysis?refresh=true`, {
       headers: { Authorization: `Bearer ${token}` }
     });
   } catch {

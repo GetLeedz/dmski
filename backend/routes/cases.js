@@ -185,6 +185,46 @@ function getOpenAiClient() {
   return openAiClient;
 }
 
+function getPreferredAnalysisModels() {
+  const envModels = String(process.env.OPENAI_ANALYSIS_MODELS || "").trim();
+  const models = envModels
+    ? envModels.split(",").map((item) => normalizeWhitespace(item)).filter(Boolean)
+    : ["gpt-4.1", "gpt-4o"];
+
+  return models.length > 0 ? models : ["gpt-4o"];
+}
+
+function isRecoverableModelError(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  const code = String(error?.code || "").toLowerCase();
+  return /model|not found|unsupported|permission|access|unavailable|does not exist/.test(msg)
+    || /model|permission|not_found/.test(code);
+}
+
+async function createChatCompletionWithFallback(client, payload) {
+  const models = getPreferredAnalysisModels();
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      return await client.chat.completions.create({
+        ...payload,
+        model
+      });
+    } catch (error) {
+      lastError = error;
+      if (!isRecoverableModelError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+  throw new Error("No model available for forensic analysis.");
+}
+
 async function ensureAnalysisStorageTable() {
   if (!analysisStorageInitPromise) {
     analysisStorageInitPromise = pool.query(
@@ -889,8 +929,8 @@ function countPolaritySignals(text) {
     return { positive: 0, negative: 0 };
   }
 
-  const negativeRegex = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert|unkooperativ|defizit|untauglich|ungeeignet|vorwurf)/g;
-  const positiveRegex = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher|kompetent|kooperativ|konstruktiv|empath)/g;
+  const negativeRegex = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert|unkooperativ|defizit|untauglich|ungeeignet|vorwurf|durchbox|mehr\s+muehe|muehe\s+.*akzept|nicht\s+.*interessen\s+.*kinder|konfliktarsenal|unp[uü]nkt|selten\s+gelingt|immer\s+wieder\s+nicht)/g;
+  const positiveRegex = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher|kompetent|kooperativ|konstruktiv|empath|nimmt\s+.*aufgaben\s+.*wahr|zugetraut|in\s+der\s+lage|gute\s+argumente|kontinuitaet|beibehaltung\s+.*obhut|alleinzuweisung|geeignet|faehig|flexibil|umsetzung\s+von\s+empfehl)/g;
 
   return {
     negative: (lower.match(negativeRegex) || []).length,
@@ -1143,7 +1183,13 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
     ? ""
     : computedDisadvantaged;
   let normalizedSenderInstitution = normalizeWhitespace(senderInstitution) || extractSenderInstitution(rawText, correctedAuthor);
-  if (/\bbrief\b/i.test(String(documentType || "")) && correctedAuthor && looksLikePersonName(correctedAuthor)) {
+  const textSuggestsInstitution = /\b(kesb\s+[a-z]|kesb|gericht|behoerde|behörde|kanzlei|amt|verwaltung)\b/i.test(String(rawText || ""));
+  const senderLooksInstitutional = /\b(kesb|gericht|amt|behoerde|behörde|verwaltung|kanzlei|anwal|schule|bank|versicherung|gmbh|\bag\b|zivil|bezirks|kantons)\b/i.test(normalizedSenderInstitution);
+  if (/\bbrief\b/i.test(String(documentType || ""))
+    && correctedAuthor
+    && looksLikePersonName(correctedAuthor)
+    && !senderLooksInstitutional
+    && !textSuggestsInstitution) {
     normalizedSenderInstitution = "Privat";
   }
   const aiItemsLookup = {};
@@ -1554,8 +1600,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
   }
 
   try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o",
+    const response = await createChatCompletionWithFallback(client, {
       temperature: 0,
       max_tokens: 1300,
       messages: [
@@ -1598,8 +1643,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
       return mapped;
     }
 
-    const retry = await client.chat.completions.create({
-      model: "gpt-4o",
+    const retry = await createChatCompletionWithFallback(client, {
       temperature: 0,
       max_tokens: 1300,
       messages: [
@@ -1668,8 +1712,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
   const isChatHint = /whats?app|chat|nachricht|dialog|sms|signal|telegram|screen|screenshot/i.test(String(originalName || "").toLowerCase());
 
   try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o",
+    const response = await createChatCompletionWithFallback(client, {
       temperature: 0,
       max_tokens: 1200,
       messages: [
