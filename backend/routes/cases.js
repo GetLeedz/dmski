@@ -270,6 +270,33 @@ function looksLikePersonName(value) {
   const forbidden = [
     "strasse",
     "straße",
+    "abteilung",
+    "freundliche",
+    "gruesse",
+    "grusse",
+    "datum",
+    "monat",
+    "kantonales",
+    "sozialamt",
+    "unterhaltszahlungen",
+    "ausstehende",
+    "liestal",
+    "sachbearbeiter",
+    "sachbearbeiterin",
+    "kinder",
+    "debitoren",
+    "kontoauszug",
+    "alimente",
+    "geburtsdatum",
+    "heimatort",
+    "heimatland",
+    "montag",
+    "dienstag",
+    "mittwoch",
+    "donnerstag",
+    "freitag",
+    "samstag",
+    "sonntag",
     "assekuranz",
     "mail",
     "telefon",
@@ -303,6 +330,17 @@ function looksLikePersonName(value) {
   }
 
   return parts.every((part) => /^(?:\p{Lu}[\p{Ll}\p{M}'-]+|\p{Lu}[\p{Ll}\p{M}'-]*\.)$/u.test(part));
+}
+
+function isAliasPerson(value) {
+  const alias = normalizeWhitespace(value).toLowerCase();
+  const allowedAliases = new Set([
+    "kindsvater",
+    "kindsmutter",
+    "kindesvater",
+    "kindesmutter"
+  ]);
+  return allowedAliases.has(alias);
 }
 
 function normalizeDateSwiss(value) {
@@ -438,7 +476,7 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
       continue;
     }
 
-    if (!looksLikePersonName(normalized)) {
+    if (!looksLikePersonName(normalized) && !isAliasPerson(normalized)) {
       const singleTokenPattern = /^\p{Lu}[\p{Ll}\p{M}'-]{2,}$/u;
       if (!(allowSingleToken && singleTokenPattern.test(normalized))) {
         continue;
@@ -879,7 +917,6 @@ function buildHeuristicAnalysisFromText(rawText, pdfInfo = {}) {
     ...extractPeopleFromSalutation(rawText, blockedPeople),
     ...extractPeopleFromText(rawText, blockedPeople),
     ...extractPeopleFromContextPhrases(rawText, blockedPeople),
-    ...extractPeopleFromFullText(rawText, blockedPeople),
     ...extractPeopleFromStructuredRows(rawText, blockedPeople)
   ], rawText, blockedPeople, author);
 
@@ -931,7 +968,6 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", peo
     ...extractPeopleFromSalutation(rawText, new Set()),
     ...extractPeopleFromText(rawText, new Set()),
     ...extractPeopleFromContextPhrases(rawText, new Set()),
-    ...extractPeopleFromFullText(rawText, new Set()),
     ...extractPeopleFromStructuredRows(rawText, new Set())
   ];
 
@@ -1020,7 +1056,6 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
     ...extractPeopleFromLabeledFields(normalizedDocumentText, new Set()),
     ...extractPeopleFromSalutation(normalizedDocumentText, new Set()),
     ...extractPeopleFromContextPhrases(normalizedDocumentText, new Set()),
-    ...extractPeopleFromFullText(normalizedDocumentText, new Set()),
     ...extractPeopleFromStructuredRows(normalizedDocumentText, new Set())
   ]
     .map((entry) => (typeof entry === "string" ? normalizeWhitespace(entry) : normalizeWhitespace(entry?.name)))
@@ -1046,11 +1081,13 @@ async function analyzeTextWithAi(documentText, fallback = {}) {
             "- author = Verfasser/Absender, bevorzugt aus Unterschrift am Ende oder Briefkopf am Anfang.",
             "- authoredDate = Sendedatum (Priorität: 'Sendedatum', 'Von:' Header), sonst Verfassungsdatum im Schweizer Format DD.MM.YYYY.",
             "- people = alle relevanten Personennamen OHNE Verfasser, als Array von Objekten {name, affiliation}.",
+            "- people muss nur echte Personennamen enthalten: Vorname Nachname, gueltige Einzelnamen oder Alias (Kindsvater/Kindsmutter).",
             "- people muss ALLE im Dokument genannten natuerlichen Personen enthalten (ueber alle Seiten, auch Seite 2+).",
             "- Wenn mehrere Personen denselben Nachnamen tragen, JEDE Person einzeln mit vollem Namen auffuehren (z.B. Nael Schifferli, Alexandra Schifferli).",
             "- Wenn ein Name in Titel, Betreff oder Formulierungen wie 'fuer <Name>' / 'für <Name>' vorkommt, ist diese Person in people aufzunehmen.",
             "- Keine Person auslassen, nur weil sie nur einmal oder erst auf einer spaeteren Seite erscheint.",
             "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten (z. B. Sehr geehrte Frau X / Herr Y).",
+            "- VERBOTEN in people: Abteilung, Gruesse, Datum, Monat, Kantonales Sozialamt, Unterhaltszahlungen, Orte, Strassen, Wochentage, Titelzeilen.",
             "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
             "- people darf KEINE Strassen, Orte, Satzfragmente oder Floskeln enthalten.",
             "- disadvantagedPerson = Name der am stärksten benachteiligten Person, falls erkennbar.",
@@ -1132,8 +1169,10 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType) {
                 "- author = sichtbarer Verfasser/Absender aus Briefkopf oder Unterschrift.",
                 "- authoredDate = sichtbares Verfassungsdatum im Schweizer Format DD.MM.YYYY.",
                 "- people = alle erkennbaren Personennamen OHNE Verfasser als Objekte {name, affiliation}.",
+                "- people muss nur echte Personennamen enthalten: Vorname Nachname, gueltige Einzelnamen oder Alias (Kindsvater/Kindsmutter).",
                 "- people muss ALLE sichtbaren natuerlichen Personen enthalten, auch aus Titel/Betreff und spaeteren Seiten.",
                 "- Wenn ein Name in Titel, Betreff oder Formulierungen wie 'fuer <Name>' / 'für <Name>' steht, muss diese Person in people erscheinen.",
+                "- VERBOTEN in people: Abteilung, Gruesse, Datum, Monat, Kantonales Sozialamt, Unterhaltszahlungen, Orte, Strassen, Wochentage, Titelzeilen.",
                 "- people MUSS Empfänger aus 'An:' und Namen aus der Anrede enthalten, wenn sichtbar.",
                 "- affiliation erlaubt nur: Gericht, Firma, Behörde, Privatperson, Schule.",
                 "- people darf KEINE Strassen, Orte oder Satzfragmente enthalten.",

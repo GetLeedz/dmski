@@ -286,6 +286,14 @@ function extractNamesFromChunk(value) {
     return [];
   }
 
+  const aliasSet = new Set(["kindsvater", "kindsmutter", "kindesvater", "kindesmutter"]);
+  const blockedSingles = new Set([
+    "abteilung", "freundliche", "gruesse", "grusse", "datum", "monat", "kantonales", "sozialamt",
+    "unterhaltszahlungen", "ausstehende", "liestal", "sachbearbeiter", "sachbearbeiterin", "kinder",
+    "debitoren", "kontoauszug", "alimente", "montag", "dienstag", "mittwoch", "donnerstag", "freitag",
+    "samstag", "sonntag", "herr", "frau"
+  ]);
+
   const chunks = text
     .split(/[;,\n]/)
     .map((part) => normalizePersonName(part))
@@ -294,6 +302,18 @@ function extractNamesFromChunk(value) {
   const names = [];
   const namePattern = /([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,}\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})/g;
   for (const chunk of chunks) {
+    const single = normalizePersonName(chunk);
+    const singleLower = single.toLowerCase();
+    if (aliasSet.has(singleLower)) {
+      names.push(single.charAt(0).toUpperCase() + single.slice(1).toLowerCase());
+      continue;
+    }
+
+    if (/^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{2,}$/.test(single) && !blockedSingles.has(singleLower)) {
+      names.push(single);
+      continue;
+    }
+
     const matches = [...chunk.matchAll(namePattern)].map((m) => normalizePersonName(m[1]));
     if (matches.length > 0) {
       names.push(...matches);
