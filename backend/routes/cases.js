@@ -1680,10 +1680,90 @@ async function ensureCaseOptionalColumns() {
         // If permissions are restricted, the compat fallbacks below still keep app functional.
         console.warn("Ensure case columns warning:", err.message);
       }
+
+      try {
+        await pool.query(
+          "CREATE TABLE IF NOT EXISTS case_party_fallback (case_id text PRIMARY KEY, protected_person_name text, opposing_party text)"
+        );
+      } catch (err) {
+        console.warn("Ensure case fallback table warning:", err.message);
+      }
     })();
   }
 
   await ensureCaseColumnsPromise;
+}
+
+async function upsertCasePartiesFallback(caseId, protectedPerson, opposingParty) {
+  const normalizedId = String(caseId || "").trim();
+  if (!/^\d{6}$/.test(normalizedId)) {
+    return;
+  }
+
+  try {
+    await pool.query(
+      "INSERT INTO case_party_fallback (case_id, protected_person_name, opposing_party) VALUES ($1, $2, $3) ON CONFLICT (case_id) DO UPDATE SET protected_person_name = EXCLUDED.protected_person_name, opposing_party = EXCLUDED.opposing_party",
+      [normalizedId, protectedPerson || null, opposingParty || null]
+    );
+  } catch (err) {
+    // Non-fatal: main flow must not break if fallback table is unavailable.
+    console.warn("Upsert case fallback warning:", err.message);
+  }
+}
+
+async function loadCasePartiesFallbackMap(caseIds = []) {
+  const normalizedIds = Array.isArray(caseIds)
+    ? caseIds.map((id) => String(id || "").trim()).filter((id) => /^\d{6}$/.test(id))
+    : [];
+
+  if (normalizedIds.length === 0) {
+    return new Map();
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT case_id, protected_person_name, opposing_party FROM case_party_fallback WHERE case_id = ANY($1::text[])",
+      [normalizedIds]
+    );
+
+    const map = new Map();
+    for (const row of result.rows || []) {
+      map.set(String(row.case_id), {
+        protected_person_name: normalizeWhitespace(row.protected_person_name || ""),
+        opposing_party: normalizeWhitespace(row.opposing_party || "")
+      });
+    }
+    return map;
+  } catch (err) {
+    return new Map();
+  }
+}
+
+async function mergeCasePartiesFromFallback(rows = []) {
+  const inputRows = Array.isArray(rows) ? rows : [];
+  const ids = inputRows.map((row) => String(row?.id || "")).filter((id) => /^\d{6}$/.test(id));
+  const fallbackMap = await loadCasePartiesFallbackMap(ids);
+
+  return inputRows.map((row) => {
+    const id = String(row?.id || "");
+    const fallback = fallbackMap.get(id);
+    if (!fallback) {
+      return {
+        ...row,
+        protected_person_name: row?.protected_person_name ?? null,
+        opposing_party: row?.opposing_party ?? null
+      };
+    }
+
+    const protectedFromRow = normalizeWhitespace(row?.protected_person_name || "");
+    const opposingFromRow = normalizeWhitespace(row?.opposing_party || "");
+
+    return {
+      ...row,
+      protected_person_name: protectedFromRow || fallback.protected_person_name || null,
+      opposing_party: opposingFromRow || fallback.opposing_party || null
+    };
+  });
 }
 
 async function listCasesCompat() {
@@ -1692,20 +1772,20 @@ async function listCasesCompat() {
     const result = await pool.query(
       "SELECT id, case_date, case_name, protected_person_name, opposing_party, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
     );
-    return result.rows;
+    return mergeCasePartiesFromFallback(result.rows);
   } catch (err) {
     if (err?.code === "42703") {
       try {
         const fallback = await pool.query(
           "SELECT id, case_date, case_name, protected_person_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
         );
-        return fallback.rows.map((row) => ({ ...row, opposing_party: null }));
+        return mergeCasePartiesFromFallback(fallback.rows.map((row) => ({ ...row, opposing_party: null })));
       } catch (err2) {
         if (err2?.code === "42703") {
           const fallback2 = await pool.query(
             "SELECT id, case_date, case_name, created_at FROM cases ORDER BY created_at DESC LIMIT 200"
           );
-          return fallback2.rows.map((row) => ({ ...row, protected_person_name: null, opposing_party: null }));
+          return mergeCasePartiesFromFallback(fallback2.rows.map((row) => ({ ...row, protected_person_name: null, opposing_party: null })));
         }
         throw err2;
       }
@@ -1721,6 +1801,7 @@ async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opp
       "INSERT INTO cases (id, case_date, case_name, protected_person_name, opposing_party) VALUES ($1, $2, $3, $4, $5) RETURNING id, case_date, case_name, protected_person_name, opposing_party, created_at",
       [caseId, caseDate, caseName, protectedPerson, opposingParty]
     );
+    await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty);
     return result.rows[0];
   } catch (err) {
     if (err?.code === "42703") {
@@ -1729,6 +1810,7 @@ async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opp
           "INSERT INTO cases (id, case_date, case_name, protected_person_name) VALUES ($1, $2, $3, $4) RETURNING id, case_date, case_name, protected_person_name, created_at",
           [caseId, caseDate, caseName, protectedPerson]
         );
+        await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty);
         return { ...fallback.rows[0], opposing_party: null };
       } catch (err2) {
         if (err2?.code === "42703") {
@@ -1736,6 +1818,7 @@ async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opp
             "INSERT INTO cases (id, case_date, case_name) VALUES ($1, $2, $3) RETURNING id, case_date, case_name, created_at",
             [caseId, caseDate, caseName]
           );
+          await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty);
           return { ...fallback2.rows[0], protected_person_name: null, opposing_party: null };
         }
         throw err2;
@@ -1752,9 +1835,13 @@ async function getCaseParties(caseId) {
       "SELECT protected_person_name, opposing_party FROM cases WHERE id = $1 LIMIT 1",
       [caseId]
     );
+    const fallbackMap = await loadCasePartiesFallbackMap([caseId]);
+    const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "" };
+    const protectedFromRow = normalizeWhitespace(result.rows[0]?.protected_person_name || "");
+    const opposingFromRow = normalizeWhitespace(result.rows[0]?.opposing_party || "");
     return {
-      protectedPersonName: normalizeWhitespace(result.rows[0]?.protected_person_name || ""),
-      opposingPartyName: normalizeWhitespace(result.rows[0]?.opposing_party || "")
+      protectedPersonName: protectedFromRow || fb.protected_person_name,
+      opposingPartyName: opposingFromRow || fb.opposing_party
     };
   } catch (err) {
     if (err?.code === "42703") {
@@ -1763,13 +1850,17 @@ async function getCaseParties(caseId) {
           "SELECT protected_person_name FROM cases WHERE id = $1 LIMIT 1",
           [caseId]
         );
+        const fallbackMap = await loadCasePartiesFallbackMap([caseId]);
+        const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "" };
         return {
-          protectedPersonName: normalizeWhitespace(fallback.rows[0]?.protected_person_name || ""),
-          opposingPartyName: ""
+          protectedPersonName: normalizeWhitespace(fallback.rows[0]?.protected_person_name || "") || fb.protected_person_name,
+          opposingPartyName: fb.opposing_party
         };
       } catch (err2) {
         if (err2?.code === "42703") {
-          return { protectedPersonName: "", opposingPartyName: "" };
+          const fallbackMap = await loadCasePartiesFallbackMap([caseId]);
+          const fb = fallbackMap.get(String(caseId)) || { protected_person_name: "", opposing_party: "" };
+          return { protectedPersonName: fb.protected_person_name, opposingPartyName: fb.opposing_party };
         }
         throw err2;
       }
