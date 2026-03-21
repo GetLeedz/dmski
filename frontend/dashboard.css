@@ -407,7 +407,7 @@ button:disabled {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 0.28rem;
+  gap: 0.45rem;
 }
 
 .qa-tag {
@@ -432,11 +432,73 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.qa-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.22rem;
+}
+
+.qa-wide {
+  margin-top: 0.12rem;
+}
+
 .qa-label {
   font-weight: 700;
   color: var(--ink-soft);
   min-width: 5rem;
   flex-shrink: 0;
+}
+
+.qa-mentions {
+  border-top: 1px dashed #c9dbe1;
+  padding-top: 0.42rem;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.qa-mention-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.qa-dot-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.qa-dot {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid transparent;
+}
+
+.qa-dot.is-positive {
+  background: #29a36a;
+  border-color: #218857;
+}
+
+.qa-dot.is-negative {
+  background: #d55353;
+  border-color: #b63f3f;
+}
+
+.qa-dot-empty {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.qa-dot-overflow,
+.qa-dot-total {
+  font-size: 0.72rem;
+  color: #51717e;
+  font-weight: 700;
 }
 
 .queue-item.done .queue-analysis {

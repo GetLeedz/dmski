@@ -296,28 +296,60 @@ function renderAnalysisInQueueRow(fileKey, payload) {
     existing.remove();
   }
 
+  const renderMentionDots = (count, tone) => {
+    const safeCount = Math.max(0, Number(count) || 0);
+    const maxDots = 10;
+    const shown = Math.min(safeCount, maxDots);
+    const overflow = Math.max(0, safeCount - maxDots);
+    const cls = tone === "positive" ? "is-positive" : "is-negative";
+    const dots = shown > 0
+      ? Array.from({ length: shown }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")
+      : `<span class="qa-dot-empty">0</span>`;
+    const overflowText = overflow > 0 ? `<span class="qa-dot-overflow">+${overflow}</span>` : "";
+    return `<span class="qa-dot-track">${dots}${overflowText}<span class="qa-dot-total">(${safeCount})</span></span>`;
+  };
+
   const docType = String(payload?.documentType || "").trim();
   const title = String(payload?.title || "").trim();
   const author = String(payload?.author || "").trim();
   const date = String(payload?.authoredDate || "").trim();
+  const senderInstitution = String(payload?.senderInstitution || "").trim();
+  const disadvantagedPerson = String(payload?.disadvantagedPerson || "").trim();
+  const impactAssessment = String(payload?.impactAssessment || "").trim();
+  const message = String(payload?.message || "").trim();
+  const positiveMentions = Math.max(0, Number(payload?.positiveMentions || 0));
+  const negativeMentions = Math.max(0, Number(payload?.negativeMentions || 0));
+  const opposingPositiveMentions = Math.max(0, Number(payload?.opposingPositiveMentions || 0));
+  const opposingNegativeMentions = Math.max(0, Number(payload?.opposingNegativeMentions || 0));
   const people = Array.isArray(payload?.people)
     ? payload.people.map((p) => String(p?.name || p || "").trim()).filter(Boolean)
     : [];
 
-  if (!docType && !title && !author && !date && people.length === 0) {
+  if (!docType && !title && !author && !date && !senderInstitution && !disadvantagedPerson && !impactAssessment && !message && people.length === 0) {
     return;
   }
 
-  const parts = [];
-  if (docType) parts.push(`<span class="qa-tag">${docType}</span>`);
-  if (title) parts.push(`<span class="qa-field"><span class="qa-label">Titel</span>${title}</span>`);
-  if (author) parts.push(`<span class="qa-field"><span class="qa-label">Verfasser</span>${author}</span>`);
-  if (date) parts.push(`<span class="qa-field"><span class="qa-label">Datum</span>${date}</span>`);
-  if (people.length > 0) parts.push(`<span class="qa-field"><span class="qa-label">Personen</span>${people.join(" · ")}</span>`);
-
   const card = document.createElement("div");
   card.className = "queue-analysis";
-  card.innerHTML = parts.join("");
+  card.innerHTML = `
+    ${docType ? `<span class="qa-tag">${docType}</span>` : ""}
+    <div class="qa-grid">
+      <span class="qa-field"><span class="qa-label">Titel</span>${title || "Unbekannt"}</span>
+      <span class="qa-field"><span class="qa-label">Verfasser</span>${author || "Unbekannt"}</span>
+      <span class="qa-field"><span class="qa-label">Datum</span>${date || "Unbekannt"}</span>
+      <span class="qa-field"><span class="qa-label">Herkunft</span>${senderInstitution || "Unbekannt"}</span>
+      <span class="qa-field"><span class="qa-label">Benachteiligt</span>${disadvantagedPerson || "Nicht erkannt"}</span>
+      <span class="qa-field"><span class="qa-label">Personen</span>${people.length > 0 ? people.join(" · ") : "Keine"}</span>
+      ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span>${impactAssessment}</span>` : ""}
+      ${message ? `<span class="qa-field qa-wide"><span class="qa-label">Hinweis</span>${message}</span>` : ""}
+    </div>
+    <div class="qa-mentions">
+      <span class="qa-mention-line"><span class="qa-label">Benachteiligte Positiv</span>${renderMentionDots(positiveMentions, "positive")}</span>
+      <span class="qa-mention-line"><span class="qa-label">Benachteiligte Negativ</span>${renderMentionDots(negativeMentions, "negative")}</span>
+      <span class="qa-mention-line"><span class="qa-label">Gegenpartei Positiv</span>${renderMentionDots(opposingPositiveMentions, "positive")}</span>
+      <span class="qa-mention-line"><span class="qa-label">Gegenpartei Negativ</span>${renderMentionDots(opposingNegativeMentions, "negative")}</span>
+    </div>
+  `;
   row.appendChild(card);
 }
 
