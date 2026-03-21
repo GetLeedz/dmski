@@ -18,7 +18,6 @@
         </a>
       </div>
       <div class="actions-cell">
-        <button id="goToUploadBtn" type="button">+ Dateien hochladen</button>
         <button id="backToCasesBtn" type="button" class="ghost">Dossiers</button>
         <button id="logoutBtn" type="button" class="ghost">Logout</button>
       </div>
@@ -50,7 +49,10 @@
           <input id="dateFromFilter" type="date" />
         </label>
 
-        <button id="toggleMultiDeleteBtn" type="button" class="filter-btn">Mehrere löschen</button>
+        <div class="filter-actions">
+          <button id="toggleMultiDeleteBtn" type="button" class="filter-btn">Mehrere löschen</button>
+          <button id="goToUploadBtn" type="button" class="filter-btn">+ Dateien hochladen</button>
+        </div>
       </div>
 
       <table>
