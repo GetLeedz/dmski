@@ -41,6 +41,11 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/cases", casesRouter);
 
+// 404 catch-all – return JSON instead of HTML
+app.use((_req, res) => {
+  res.status(404).json({ error: "Route nicht gefunden." });
+});
+
 // Express 5 JSON error handler – prevents default HTML error pages
 app.use((err, _req, res, _next) => {
   const status = typeof err.status === "number" ? err.status : 500;
