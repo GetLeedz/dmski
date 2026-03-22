@@ -128,7 +128,7 @@ let currentCaseLocality = "";
 let currentCaseRegion = "";
 let currentCaseCity = "";
 
-listTitle.textContent = `Files für Fall ${currentCaseId}`;
+listTitle.textContent = `Dateien für Fall ${currentCaseId}`;
 
 function setMessage(el, text, type) {
   el.textContent = text;
@@ -482,63 +482,19 @@ function isLikelyValidPersonLabel(value) {
   return words.every((word) => capitalizedWord.test(word));
 }
 
-function collectAnalysisPeople(analysis, protectedName = "", authorName = "") {
-  const candidates = [];
-
+function collectAnalysisPeople(analysis) {
   const people = Array.isArray(analysis?.people) ? analysis.people : [];
-  for (const entry of people) {
-    if (typeof entry === "string") {
-      candidates.push(...extractNamesFromChunk(entry));
-      continue;
-    }
-
-    if (entry && typeof entry === "object") {
-      if (entry.name) {
-        candidates.push(...extractNamesFromChunk(entry.name));
-      }
-      if (entry.fullName) {
-        candidates.push(...extractNamesFromChunk(entry.fullName));
-      }
-      const combined = normalizeTitleText(`${entry.firstName || ""} ${entry.lastName || ""}`);
-      if (combined) {
-        candidates.push(...extractNamesFromChunk(combined));
-      }
-    }
-  }
-
-  const ranking = Array.isArray(analysis?.impactRanking) ? analysis.impactRanking : [];
-  for (const item of ranking) {
-    if (item?.name) {
-      candidates.push(...extractNamesFromChunk(item.name));
-    }
-  }
-
-  if (analysis?.disadvantagedPerson) {
-    candidates.push(...extractNamesFromChunk(analysis.disadvantagedPerson));
-  }
-
-  if (protectedName) {
-    candidates.push(...extractNamesFromChunk(protectedName));
-  }
-
   const unique = [];
-  const authorKey = normalizePersonName(authorName).toLowerCase();
-  for (const candidate of candidates) {
-    const cleaned = normalizePersonName(candidate);
-    if (!cleaned) {
+
+  for (const entry of people) {
+    const name = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
+    if (!name) {
       continue;
     }
-    if (!isLikelyValidPersonLabel(cleaned)) {
+    if (unique.includes(name)) {
       continue;
     }
-    const key = cleaned.toLowerCase();
-    if (authorKey && samePersonFuzzy(key, authorKey)) {
-      continue;
-    }
-    if (unique.some((existing) => samePersonFuzzy(cleaned, existing))) {
-      continue;
-    }
-    unique.push(cleaned);
+    unique.push(name);
   }
 
   return unique.slice(0, 16);
@@ -759,6 +715,15 @@ async function loadRowAnalysis(file, options = {}) {
     return;
   }
 
+  const renderMentionBars = (count, tone) => {
+    const safeCount = Math.max(0, Number(count) || 0);
+    const cls = tone === "positive" ? "is-positive" : "is-negative";
+    if (safeCount <= 0) {
+      return `<span class="qa-dot-wrap"><span class="qa-dot-count">0</span></span>`;
+    }
+    return `<span class="qa-dot-wrap"><span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span><span class="qa-dot-count">${safeCount}</span></span>`;
+  };
+
   box.innerHTML = `
     <div class="analysis-loading">
       <span class="spinner spinner--ai" aria-label="KI analysiert"></span>
@@ -770,114 +735,55 @@ async function loadRowAnalysis(file, options = {}) {
   }
 
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
-  const people = collectAnalysisPeople(analysis, protectedName, analysis.author);
-
-  const protectedKey = protectedName.toLowerCase();
-  const peopleMarkup = people.length > 0
-    ? `<ul class="analysis-people">${people.map((name) => {
-        const cls = samePersonFuzzy(name.toLowerCase(), protectedKey) ? " class=\"is-protected\"" : "";
-        return `<li${cls}>${name}</li>`;
-      }).join("")}</ul>`
-    : '<p class="analysis-value muted">Keine eindeutigen Personen erkannt</p>';
-
+  const people = collectAnalysisPeople(analysis);
   const resolvedDocType = resolveDocumentTypeLabel(analysis.documentType, file);
-  const docTypeMarkup = `<p class="analysis-value analysis-doctype">${resolvedDocType}</p>`;
-
-  const titleMarkup = analysis.title
-    ? `<p class="analysis-value analysis-title">${analysis.title}</p>`
-    : '<p class="analysis-value muted">Nicht erkannt</p>';
-
-  const authorMarkup = analysis.author
-    ? `<p class="analysis-value">${analysis.author}</p>`
-    : '<p class="analysis-value muted">Nicht erkannt</p>';
-
   const swissAuthoredDate = formatSwissAnalysisDate(analysis.authoredDate);
-  const dateMarkup = swissAuthoredDate
-    ? `<p class="analysis-value">${swissAuthoredDate}</p>`
-    : '<p class="analysis-value muted">Nicht erkannt</p>';
-
-  const senderInstitutionMarkup = analysis.senderInstitution
-    ? `<p class="analysis-value">${analysis.senderInstitution}</p>`
-    : '<p class="analysis-value muted">Nicht erkannt</p>';
-
-  const impactRankingItems = Array.isArray(analysis.impactRanking)
-    ? analysis.impactRanking
-      .map((entry) => ({
-        name: normalizePersonName(entry?.name),
-        impact: normalizeTitleText(entry?.impact),
-        count: Number.isFinite(Number(entry?.count)) ? Number(entry.count) : 0,
-        items: Array.isArray(entry?.items) ? entry.items.filter((s) => typeof s === "string" && s.trim()) : []
-      }))
-      .filter((entry) => entry.name)
-    : [];
-
-  const protectedEntry = protectedName
-    ? impactRankingItems.find((entry) => entry.name.toLowerCase() === protectedName.toLowerCase())
-    : null;
-  const protectedCount = protectedEntry ? Math.max(0, Number(protectedEntry.count || 0)) : 0;
-  const protectedEvidenceCount = protectedEntry ? protectedEntry.items.length : 0;
-  const points = Math.max(protectedCount, protectedEvidenceCount);
   const positiveMentions = Math.max(0, Number(analysis.positiveMentions || 0));
   const negativeMentions = Math.max(0, Number(analysis.negativeMentions || 0));
   const opposingPositiveMentions = Math.max(0, Number(analysis.opposingPositiveMentions || 0));
   const opposingNegativeMentions = Math.max(0, Number(analysis.opposingNegativeMentions || 0));
   const analysisEngineVersion = normalizeTitleText(analysis.analysisEngineVersion || "");
   const backendStartedAt = normalizeTitleText(analysis.backendStartedAt || "");
-  const protectedPosDots = renderMentionDots(positiveMentions, "positive");
-  const protectedNegDots = renderMentionDots(negativeMentions, "negative");
-  const opposingPosDots = renderMentionDots(opposingPositiveMentions, "positive");
-  const opposingNegDots = renderMentionDots(opposingNegativeMentions, "negative");
   const protectedKeywords = normalizeTitleText(currentCaseProtectedKeywords) || "Nicht gesetzt";
   const opposingKeywords = normalizeTitleText(currentCaseOpposingKeywords) || "Nicht gesetzt";
+  const title = analysis.title || "Unbekannt";
+  const author = analysis.author || "Unbekannt";
+  const date = swissAuthoredDate || "Unbekannt";
+  const senderInstitution = analysis.senderInstitution || "Unbekannt";
+  const impactAssessment = analysis.impactAssessment || "";
+  const peopleValue = people.length > 0 ? people.join(" · ") : "Keine";
 
   box.innerHTML = `
-    <div class="analysis-glass">
-      <div class="analysis-grid">
-        <section class="analysis-section">
-          <p class="analysis-label">Type of File</p>
-          ${docTypeMarkup}
-        </section>
-        <section class="analysis-section">
-          <p class="analysis-label">Dokumenttitel</p>
-          ${titleMarkup}
-        </section>
-        <section class="analysis-section">
-          <p class="analysis-label">Verfasser</p>
-          ${authorMarkup}
-        </section>
-        <section class="analysis-section">
-          <p class="analysis-label">Datum Verfassung</p>
-          ${dateMarkup}
-        </section>
-        <section class="analysis-section">
-          <p class="analysis-label">Herkunft Schreiben</p>
-          ${senderInstitutionMarkup}
-        </section>
+    <div class="queue-analysis">
+      <div class="qa-card-title">Forensische KI-Analyse</div>
+      ${resolvedDocType ? `<span class="qa-tag">${resolvedDocType}</span>` : ""}
+      <div class="qa-grid">
+        <span class="qa-field"><span class="qa-label">Titel</span>${title}</span>
+        <span class="qa-field"><span class="qa-label">Verfasser</span>${author}</span>
+        <span class="qa-field"><span class="qa-label">Datum</span>${date}</span>
+        <span class="qa-field"><span class="qa-label">Herkunft</span>${senderInstitution}</span>
+        <span class="qa-field"><span class="qa-label">Personen</span><span class="qa-field-value">${peopleValue}</span></span>
+        ${(analysisEngineVersion || backendStartedAt) ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span><span class="qa-field-value">${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}</span></span>` : ""}
+        ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span><span class="qa-field-value">${impactAssessment}</span></span>` : ""}
       </div>
-      <section class="analysis-section analysis-people-section">
-        <p class="analysis-label">Personen im Dokument</p>
-        ${peopleMarkup}
-      </section>
-      ${(analysisEngineVersion || backendStartedAt) ? `
-        <section class="analysis-section">
-          <p class="analysis-label">Analyse-Engine</p>
-          <p class="analysis-value">${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}</p>
-        </section>
-      ` : ""}
-      ${protectedName ? `
-        <section class="analysis-section analysis-score-box">
-          <p class="analysis-label">Punkte gegen Fallperson</p>
-          <p class="analysis-score"><span class="analysis-score-label">Punkt:</span><span class="analysis-score-value">${points}</span></p>
-        </section>
-      ` : ""}
-      <section class="analysis-section analysis-mention-box">
-        <p class="analysis-label">Benachteiligte Person <span class="analysis-label-keywords">${protectedKeywords}</span></p>
-        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${protectedPosDots}</p>
-        <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${protectedNegDots}</p>
-        <p class="analysis-label analysis-sub-label">Gegenpartei <span class="analysis-label-keywords">${opposingKeywords}</span></p>
-        <p class="analysis-mention-line"><span class="analysis-mention-values">Positiv:</span>${opposingPosDots}</p>
-        <p class="analysis-mention-line"><span class="analysis-mention-values">Negativ:</span>${opposingNegDots}</p>
-      </section>
+      <div class="qa-mentions">
+        <div class="qa-persons-grid">
+          <div class="qa-person-col">
+            <div class="qa-person-col-label"><span class="qa-person-role">${currentCaseProtectedLabel}</span><span class="qa-person-keywords">${protectedKeywords}</span></div>
+            <div class="qa-badge-rows">
+              <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(positiveMentions, "positive")}</div>
+              <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
+            </div>
+          </div>
+          <div class="qa-person-col">
+            <div class="qa-person-col-label"><span class="qa-person-role">${currentCaseOpposingLabel}</span><span class="qa-person-keywords">${opposingKeywords}</span></div>
+            <div class="qa-badge-rows">
+              <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(opposingPositiveMentions, "positive")}</div>
+              <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(opposingNegativeMentions, "negative")}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -910,9 +816,9 @@ function renderFiles(files) {
       <td class="${checkboxClass}"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
         <div class="preview-topline">
-          <div class="preview-doc-id">Doc ID: ${compactDocId(file.id)}</div>
+          <div class="preview-doc-id">Dok-ID: ${compactDocId(file.id)}</div>
           <div class="row-actions">
-            <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">Download</button>
+            <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">DOWNLOAD</button>
             <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
           </div>
         </div>
@@ -1080,8 +986,8 @@ async function loadCaseContext() {
     currentCaseCity = normalizeTitleText(active.city || "");
     currentCaseName = normalizeTitleText(active.case_name || "");
     listTitle.textContent = currentCaseName
-      ? `Files · ${currentCaseName} (${currentCaseId})`
-      : `Files für Fall ${currentCaseId}`;
+      ? `Dateien · ${currentCaseName} (${currentCaseId})`
+      : `Dateien für Fall ${currentCaseId}`;
 
     const personsRow = document.getElementById("casePersonsRow");
     if (personsRow) {
