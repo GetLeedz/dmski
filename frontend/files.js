@@ -108,6 +108,9 @@ const multiDeleteBar = document.getElementById("multiDeleteBar");
 const multiDeleteCount = document.getElementById("multiDeleteCount");
 const executeMultiDeleteBtn = document.getElementById("executeMultiDeleteBtn");
 const cancelMultiDeleteBtn = document.getElementById("cancelMultiDeleteBtn");
+const analysisReportBar = document.getElementById("analysisReportBar");
+const analysisReportGrid = document.getElementById("analysisReportGrid");
+const analysisReportHint = document.getElementById("analysisReportHint");
 
 let allFiles = [];
 const previewUrlCache = new Map();
@@ -131,6 +134,88 @@ let currentCaseRegion = "";
 let currentCaseCity = "";
 
 listTitle.textContent = `Dateien für Fall ${currentCaseId}`;
+
+function renderAnalysisReportCard(label, value, tone = "neutral") {
+  return `<article class="analysis-report-card is-${tone}"><span class="analysis-report-card-label">${label}</span><strong class="analysis-report-card-value">${value}</strong></article>`;
+}
+
+function setAnalysisReportLoading() {
+  if (!(analysisReportBar instanceof HTMLElement) || !(analysisReportGrid instanceof HTMLElement) || !(analysisReportHint instanceof HTMLElement)) {
+    return;
+  }
+
+  analysisReportBar.classList.remove("is-ready");
+  analysisReportHint.textContent = "Analysen werden geladen…";
+  analysisReportGrid.innerHTML = [
+    renderAnalysisReportCard("Dateien im Dossier", String(allFiles.length || 0)),
+    renderAnalysisReportCard("Positive Hinweise gesamt", "…"),
+    renderAnalysisReportCard("Negative Hinweise gesamt", "…"),
+    renderAnalysisReportCard("Gesamtbilanz", "…")
+  ].join("");
+}
+
+async function refreshAnalysisReport(files = allFiles) {
+  if (!(analysisReportBar instanceof HTMLElement) || !(analysisReportGrid instanceof HTMLElement) || !(analysisReportHint instanceof HTMLElement)) {
+    return;
+  }
+
+  const fileList = Array.isArray(files) ? files : [];
+  const fileCount = fileList.length;
+  if (fileCount === 0) {
+    analysisReportBar.classList.remove("is-ready");
+    analysisReportHint.textContent = "Noch keine Dateien im Dossier.";
+    analysisReportGrid.innerHTML = [
+      renderAnalysisReportCard("Dateien im Dossier", "0"),
+      renderAnalysisReportCard("Positive Hinweise gesamt", "0"),
+      renderAnalysisReportCard("Negative Hinweise gesamt", "0"),
+      renderAnalysisReportCard("Gesamtbilanz", "Neutral")
+    ].join("");
+    return;
+  }
+
+  setAnalysisReportLoading();
+
+  try {
+    const analyses = await Promise.all(fileList.map((file) => getDocumentAnalysis(file, { onlyStored: true })));
+    let totalPositive = 0;
+    let totalNegative = 0;
+
+    for (const analysis of analyses) {
+      if (!analysis || analysis.status === "auth-redirect") {
+        continue;
+      }
+      totalPositive += Math.max(0, Number(analysis.positiveMentions || 0));
+      totalPositive += Math.max(0, Number(analysis.opposingPositiveMentions || 0));
+      totalNegative += Math.max(0, Number(analysis.negativeMentions || 0));
+      totalNegative += Math.max(0, Number(analysis.opposingNegativeMentions || 0));
+    }
+
+    const balance = totalPositive - totalNegative;
+    const balanceText = balance === 0 ? "Neutral" : balance > 0 ? `+${balance}` : String(balance);
+    const balanceTone = balance === 0 ? "neutral" : balance > 0 ? "positive" : "negative";
+
+    analysisReportBar.classList.add("is-ready");
+    analysisReportHint.textContent = `${fileCount} Datei${fileCount === 1 ? "" : "en"} im Bericht berücksichtigt`;
+    analysisReportGrid.innerHTML = [
+      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "neutral"),
+      renderAnalysisReportCard("Positive Hinweise gesamt", String(totalPositive), "positive"),
+      renderAnalysisReportCard("Negative Hinweise gesamt", String(totalNegative), "negative"),
+      renderAnalysisReportCard("Gesamtbilanz", balanceText, balanceTone)
+    ].join("");
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
+    analysisReportBar.classList.remove("is-ready");
+    analysisReportHint.textContent = "Gesamtbeurteilung konnte nicht geladen werden.";
+    analysisReportGrid.innerHTML = [
+      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "neutral"),
+      renderAnalysisReportCard("Positive Hinweise gesamt", "—"),
+      renderAnalysisReportCard("Negative Hinweise gesamt", "—"),
+      renderAnalysisReportCard("Gesamtbilanz", "—")
+    ].join("");
+  }
+}
 
 function setMessage(el, text, type) {
   el.textContent = text;
@@ -869,6 +954,7 @@ async function refreshAnalysis(fileId, triggerButton) {
 
   try {
     await loadRowAnalysis(file, { forceRefresh: true });
+    await refreshAnalysisReport(allFiles);
     setMessage(listMessage, "Analyse aktualisiert.", "success");
   } catch {
     setMessage(listMessage, "Analyse konnte nicht aktualisiert werden.", "error");
@@ -912,6 +998,7 @@ function showUndoBar(fileName) {
     allFiles = [pendingDelete.file, ...allFiles];
     allFiles.sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
     renderFiles(filterFiles(allFiles));
+    void refreshAnalysisReport(allFiles);
     setMessage(listMessage, "Löschen rückgängig gemacht.", "success");
     pendingDelete = null;
     hideUndoBar();
@@ -958,6 +1045,7 @@ async function flushPendingDelete() {
     allFiles = [snapshot.file, ...allFiles];
     allFiles.sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
     renderFiles(filterFiles(allFiles));
+    void refreshAnalysisReport(allFiles);
     setMessage(listMessage, error.message || "Datei konnte nicht gelöscht werden.", "error");
   }
 }
@@ -1070,6 +1158,7 @@ async function loadFiles() {
   if (res.ok) {
     allFiles = data.files || [];
     renderFiles(filterFiles(allFiles));
+    void refreshAnalysisReport(allFiles);
     return;
   }
 
@@ -1131,6 +1220,7 @@ async function deleteFile(fileId, triggerButton) {
 
   allFiles = allFiles.filter((file) => file.id !== fileId);
   renderFiles(filterFiles(allFiles));
+  void refreshAnalysisReport(allFiles);
 
   const timerId = window.setTimeout(() => {
     void flushPendingDelete();
@@ -1281,6 +1371,7 @@ async function executeMultiDelete() {
 
   allFiles = allFiles.filter((f) => !selectedFileIds.has(f.id));
   renderFiles(filterFiles(allFiles));
+  void refreshAnalysisReport(allFiles);
 
   try {
     const promises = filesToDelete.map((fileId) =>
@@ -1314,6 +1405,7 @@ async function executeMultiDelete() {
     isMultiDeleteMode = false;
     applyMultiDeleteUiState();
     renderFiles(filterFiles(allFiles));
+    void refreshAnalysisReport(allFiles);
     updateMultiDeleteCount();
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
@@ -1321,6 +1413,7 @@ async function executeMultiDelete() {
     }
     allFiles = originalFiles;
     renderFiles(filterFiles(allFiles));
+    void refreshAnalysisReport(allFiles);
     setMessage(listMessage, error.message || "Fehler beim Löschen.", "error");
   } finally {
     executeMultiDeleteBtn.disabled = false;

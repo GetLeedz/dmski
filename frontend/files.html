@@ -27,6 +27,16 @@
         <div>
           <h2 id="listTitle">Dateien</h2>
           <div id="casePersonsRow" class="case-persons-row"></div>
+          <section id="analysisReportBar" class="analysis-report" aria-live="polite">
+            <div class="analysis-report-head">
+              <div>
+                <p class="analysis-report-eyebrow">KI-Report</p>
+                <h3 class="analysis-report-title">Gesamtbeurteilung des Dossiers</h3>
+              </div>
+              <p id="analysisReportHint" class="analysis-report-hint">Analysen werden geladen…</p>
+            </div>
+            <div id="analysisReportGrid" class="analysis-report-grid"></div>
+          </section>
         </div>
         <button id="deleteCaseBtn" type="button" class="icon-btn danger" aria-label="Dossier löschen" title="Dossier löschen">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
