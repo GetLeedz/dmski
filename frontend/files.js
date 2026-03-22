@@ -1137,7 +1137,6 @@ async function loadRowAnalysis(file, options = {}) {
         <span class="qa-field"><span class="qa-label">Personen</span><span class="qa-field-value">${escapeHtml(peopleValue)}</span></span>
         <span class="qa-field"><span class="qa-label">Extraktion</span><span class="qa-field-value">${escapeHtml(textQuality.extractionMethod)}</span></span>
         <span class="qa-field"><span class="qa-label">Textqualität</span><span class="qa-field-value">${escapeHtml(qualityValue)} · ${escapeHtml(qualityDetail)}</span></span>
-        <span class="qa-field"><span class="qa-label">Belegstellen</span><span class="qa-field-value">${escapeHtml(String(evidenceCount))}</span></span>
         ${engineText ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span><span class="qa-field-value">${escapeHtml(engineText)}</span></span>` : ""}
         <span class="qa-field qa-wide"><span class="qa-label">Methodik</span><span class="qa-field-value">${escapeHtml(methodology)}</span></span>
         ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span><span class="qa-field-value">${escapeHtml(impactAssessment)}</span></span>` : ""}
@@ -1160,25 +1159,6 @@ async function loadRowAnalysis(file, options = {}) {
           </div>
         </div>
       </div>
-      <section class="qa-evidence-shell">
-        <div class="qa-evidence-head">
-          <span class="qa-evidence-title">Belegstellen</span>
-          <span class="qa-evidence-subtitle">Kurze Textauszüge zur manuellen Plausibilisierung</span>
-        </div>
-        <div class="qa-evidence-grid">
-          <article class="qa-evidence-column">
-            <div class="qa-evidence-person">${escapeHtml(currentCaseProtectedLabel)}</div>
-            ${renderEvidenceBlock("Positiv", evidence.protectedPerson.positive, "positive", "Keine positiven Belegstellen gespeichert.")}
-            ${renderEvidenceBlock("Negativ", evidence.protectedPerson.negative, "negative", "Keine negativen Belegstellen gespeichert.")}
-          </article>
-          <article class="qa-evidence-column">
-            <div class="qa-evidence-person">${escapeHtml(currentCaseOpposingLabel)}</div>
-            ${renderEvidenceBlock("Positiv", evidence.opposingParty.positive, "positive", "Keine positiven Belegstellen gespeichert.")}
-            ${renderEvidenceBlock("Negativ", evidence.opposingParty.negative, "negative", "Keine negativen Belegstellen gespeichert.")}
-          </article>
-        </div>
-      </section>
-      ${renderImpactRanking(analysis.impactRanking)}
     </div>
   `;
 }
