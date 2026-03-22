@@ -2588,3 +2588,114 @@ td {
 .analysis-dot.is-negative {
   background: linear-gradient(90deg, #d55353, #b63f3f);
 }
+
+/* ================================================================
+   PARTY STAT BLOCKS – big number display (Pos/Neg per document)
+   ================================================================ */
+.qa-stat-row {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+
+.qa-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: 0.7rem 0.5rem 0.6rem;
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.qa-stat.is-positive {
+  background: linear-gradient(145deg, #f0fbf4, #d9f3e5);
+  border: 1.5px solid #b4ddc5;
+}
+
+.qa-stat.is-negative {
+  background: linear-gradient(145deg, #fff3f2, #fde3e1);
+  border: 1.5px solid #f5bcb8;
+}
+
+.qa-stat-num {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.qa-stat.is-positive .qa-stat-num { color: #1a6e35; }
+.qa-stat.is-negative .qa-stat-num { color: #b83030; }
+
+.qa-stat-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.06rem;
+}
+
+.qa-stat.is-positive .qa-stat-label { color: #2e8a4a; }
+.qa-stat.is-negative .qa-stat-label { color: #b83030; }
+
+/* ================================================================
+   KI REPORT PARTY CARDS – split Positiv / Negativ with big numbers
+   ================================================================ */
+.analysis-report-card.is-party {
+  border-color: #d4e8ef;
+  background: rgba(255,255,255,0.92);
+}
+
+.party-split {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.3rem;
+}
+
+.party-split-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.65rem 0.4rem 0.55rem;
+  border-radius: 10px;
+  min-width: 0;
+}
+
+.party-split-item.is-positive {
+  background: linear-gradient(145deg, #f0fbf4, #d9f3e5);
+  border: 1.5px solid #b4ddc5;
+}
+
+.party-split-item.is-negative {
+  background: linear-gradient(145deg, #fff3f2, #fde3e1);
+  border: 1.5px solid #f5bcb8;
+}
+
+.party-split-num {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.party-split-item.is-positive .party-split-num { color: #1a6e35; }
+.party-split-item.is-negative .party-split-num { color: #b83030; }
+
+.party-split-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 0.04rem;
+}
+
+.party-split-item.is-positive .party-split-label { color: #2e8a4a; }
+.party-split-item.is-negative .party-split-label { color: #b83030; }

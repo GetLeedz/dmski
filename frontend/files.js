@@ -278,6 +278,12 @@ function renderAnalysisReportCard(label, value, detail = "", tone = "neutral") {
   return `<article class="analysis-report-card is-${tone}"><span class="analysis-report-card-label">${escapeHtml(label)}</span><strong class="analysis-report-card-value">${escapeHtml(value)}</strong>${detail ? `<span class="analysis-report-card-detail">${escapeHtml(detail)}</span>` : ""}</article>`;
 }
 
+function renderPartyReportCard(label, positiveCount, negativeCount) {
+  const pos = Math.max(0, Number(positiveCount || 0));
+  const neg = Math.max(0, Number(negativeCount || 0));
+  return `<article class="analysis-report-card is-party"><span class="analysis-report-card-label">${escapeHtml(label)}</span><div class="party-split"><div class="party-split-item is-positive"><span class="party-split-num">${pos}</span><span class="party-split-label">Positiv</span></div><div class="party-split-item is-negative"><span class="party-split-num">${neg}</span><span class="party-split-label">Negativ</span></div></div></article>`;
+}
+
 function renderAnalysisReportMeta(verdict, methodology, note) {
   return [
     `<article class="analysis-report-meta-card is-${escapeHtml(verdict.tone || "neutral")}"><span class="analysis-report-meta-label">Einordnung</span><strong class="analysis-report-meta-value">${escapeHtml(verdict.label || "Neutral")}</strong><p class="analysis-report-meta-text">${escapeHtml(verdict.detail || "")}</p></article>`,
@@ -343,8 +349,8 @@ function setAnalysisReportLoading() {
   );
   analysisReportGrid.innerHTML = [
     renderAnalysisReportCard("Dateien im Dossier", String(allFiles.length || 0), "Gesamtbestand", "neutral"),
-    renderAnalysisReportCard("Benachteiligte Person", "…", "", "neutral"),
-    renderAnalysisReportCard("Gegenpartei", "…", "", "neutral")
+    renderPartyReportCard("Benachteiligte Person", 0, 0),
+    renderPartyReportCard("Gegenpartei", 0, 0)
   ].join("");
 }
 
@@ -365,8 +371,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderAnalysisReportCard("Dateien im Dossier", "0", "Noch keine Inhalte", "neutral"),
-      renderAnalysisReportCard("Benachteiligte Person", "Pos 0 · Neg 0", "", "neutral"),
-      renderAnalysisReportCard("Gegenpartei", "Pos 0 · Neg 0", "", "neutral")
+      renderPartyReportCard("Benachteiligte Person", 0, 0),
+      renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
     return;
   }
@@ -438,8 +444,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Gesamtbestand", "neutral"),
-      renderAnalysisReportCard("Benachteiligte Person", formatPartySummaryValue(protectedPositiveTotal, protectedNegativeTotal), "", derivePartySummaryTone(protectedPositiveTotal, protectedNegativeTotal)),
-      renderAnalysisReportCard("Gegenpartei", formatPartySummaryValue(opposingPositiveTotal, opposingNegativeTotal), "", derivePartySummaryTone(opposingPositiveTotal, opposingNegativeTotal))
+      renderPartyReportCard("Benachteiligte Person", protectedPositiveTotal, protectedNegativeTotal),
+      renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
     ].join("");
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
@@ -454,8 +460,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Bestand erkannt", "neutral"),
-      renderAnalysisReportCard("Benachteiligte Person", "—", "", "neutral"),
-      renderAnalysisReportCard("Gegenpartei", "—", "", "neutral")
+      renderPartyReportCard("Benachteiligte Person", 0, 0),
+      renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
   }
 }
@@ -1141,16 +1147,16 @@ async function loadRowAnalysis(file, options = {}) {
         <div class="qa-persons-grid">
           <div class="qa-person-col">
             <div class="qa-person-col-label"><span class="qa-person-role">${currentCaseProtectedLabel}</span><span class="qa-person-keywords">${protectedKeywords}</span></div>
-            <div class="qa-badge-rows">
-              <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(positiveMentions, "positive")}</div>
-              <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
+            <div class="qa-stat-row">
+              <div class="qa-stat is-positive"><span class="qa-stat-num">${positiveMentions}</span><span class="qa-stat-label">Positiv</span></div>
+              <div class="qa-stat is-negative"><span class="qa-stat-num">${negativeMentions}</span><span class="qa-stat-label">Negativ</span></div>
             </div>
           </div>
           <div class="qa-person-col">
             <div class="qa-person-col-label"><span class="qa-person-role">${currentCaseOpposingLabel}</span><span class="qa-person-keywords">${opposingKeywords}</span></div>
-            <div class="qa-badge-rows">
-              <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(opposingPositiveMentions, "positive")}</div>
-              <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(opposingNegativeMentions, "negative")}</div>
+            <div class="qa-stat-row">
+              <div class="qa-stat is-positive"><span class="qa-stat-num">${opposingPositiveMentions}</span><span class="qa-stat-label">Positiv</span></div>
+              <div class="qa-stat is-negative"><span class="qa-stat-num">${opposingNegativeMentions}</span><span class="qa-stat-label">Negativ</span></div>
             </div>
           </div>
         </div>
