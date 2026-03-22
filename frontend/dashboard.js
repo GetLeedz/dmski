@@ -101,8 +101,9 @@ const logoutBtn = document.getElementById("logoutBtn");
 const existingCasesSelect = document.getElementById("existingCasesSelect");
 const copyrightYearEl = document.getElementById("copyrightYear");
 
-const REGIONS_BY_COUNTRY = {
-  Schweiz: {
+const REGIONS_BY_COUNTRY = [
+  {
+    country: "Schweiz",
     label: "Kanton",
     options: [
       "Aargau", "Appenzell Ausserrhoden", "Appenzell Innerrhoden", "Basel-Landschaft",
@@ -112,7 +113,8 @@ const REGIONS_BY_COUNTRY = {
       "Zug", "Zürich"
     ]
   },
-  Deutschland: {
+  {
+    country: "Deutschland",
     label: "Bundesland",
     options: [
       "Baden-Württemberg", "Bayern", "Berlin", "Brandenburg", "Bremen", "Hamburg",
@@ -121,14 +123,22 @@ const REGIONS_BY_COUNTRY = {
       "Schleswig-Holstein", "Thüringen"
     ]
   },
-  Österreich: {
+  {
+    country: "Österreich",
     label: "Bundesland",
     options: [
       "Burgenland", "Kärnten", "Niederösterreich", "Oberösterreich",
       "Salzburg", "Steiermark", "Tirol", "Vorarlberg", "Wien"
     ]
   }
-};
+];
+
+function findRegionEntry(country) {
+  const needle = String(country || "").trim().toLowerCase().normalize("NFC");
+  return REGIONS_BY_COUNTRY.find(
+    (e) => e.country.toLowerCase().normalize("NFC") === needle
+  ) || null;
+}
 
 const CITIES_BY_REGION = {
   Schweiz: {
@@ -172,6 +182,7 @@ const CITIES_BY_REGION = {
     "Thüringen": ["Erfurt", "Gera", "Jena", "Weimar"]
   },
   Österreich: {
+    "Burgenland": ["Eisenstadt", "Güssing", "Jennersdorf", "Mattersburg", "Neusiedl am See", "Oberpullendorf", "Oberwart"],
     "Kärnten": ["Klagenfurt", "Spittal an der Drau", "Villach", "Wolfsberg"],
     "Niederösterreich": ["Amstetten", "Krems an der Donau", "Sankt Pölten", "Wiener Neustadt"],
     "Oberösterreich": ["Gmunden", "Linz", "Steyr", "Wels"],
@@ -185,7 +196,7 @@ const CITIES_BY_REGION = {
 
 function populateRegionOptions(country, preferred = "") {
   const selectedCountry = String(country || "").trim();
-  const entry = REGIONS_BY_COUNTRY[selectedCountry];
+  const entry = findRegionEntry(selectedCountry);
   const regions = entry?.options || [];
   const label = entry?.label || "Region";
 

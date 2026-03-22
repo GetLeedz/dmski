@@ -158,13 +158,50 @@ function buildEditableField(cssClass, apiField, label, value, style) {
   return `<div class="case-person-field ${cssClass}" data-edit-field="${apiField}"${styleAttr}><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(value || "Nicht gesetzt")}</span></div><button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button></div></div>`;
 }
 
-const COUNTRY_OPTIONS = ["Schweiz", "Deutschland", "Österreich", "Frankreich", "Italien", "Liechtenstein", "Anderes"];
-const CANTON_OPTIONS = [
-  "Aargau","Appenzell Ausserrhoden","Appenzell Innerrhoden","Basel-Landschaft","Basel-Stadt",
-  "Bern","Freiburg","Genf","Glarus","Graubünden","Jura","Luzern","Neuenburg","Nidwalden",
-  "Obwalden","Schaffhausen","Schwyz","Solothurn","St. Gallen","Tessin","Thurgau","Uri",
-  "Waadt","Wallis","Zug","Zürich"
+const COUNTRY_OPTIONS = ["Schweiz", "Deutschland", "Österreich"];
+
+const REGIONS_BY_COUNTRY_EDIT = [
+  {
+    country: "Schweiz",
+    label: "Kanton",
+    options: [
+      "Aargau","Appenzell Ausserrhoden","Appenzell Innerrhoden","Basel-Landschaft","Basel-Stadt",
+      "Bern","Freiburg","Genf","Glarus","Graubünden","Jura","Luzern","Neuenburg","Nidwalden",
+      "Obwalden","Schaffhausen","Schwyz","Solothurn","St. Gallen","Tessin","Thurgau","Uri",
+      "Waadt","Wallis","Zug","Zürich"
+    ]
+  },
+  {
+    country: "Deutschland",
+    label: "Bundesland",
+    options: [
+      "Baden-Württemberg","Bayern","Berlin","Brandenburg","Bremen","Hamburg",
+      "Hessen","Mecklenburg-Vorpommern","Niedersachsen","Nordrhein-Westfalen",
+      "Rheinland-Pfalz","Saarland","Sachsen","Sachsen-Anhalt",
+      "Schleswig-Holstein","Thüringen"
+    ]
+  },
+  {
+    country: "Österreich",
+    label: "Bundesland",
+    options: [
+      "Burgenland","Kärnten","Niederösterreich","Oberösterreich",
+      "Salzburg","Steiermark","Tirol","Vorarlberg","Wien"
+    ]
+  }
 ];
+
+function getRegionOptionsForCountry(country) {
+  const needle = String(country || "").trim().toLowerCase().normalize("NFC");
+  const found = REGIONS_BY_COUNTRY_EDIT.find(
+    (entry) => entry.country.toLowerCase().normalize("NFC") === needle
+  );
+  return found || {
+    country: "",
+    label: "Kanton / Bundesland",
+    options: REGIONS_BY_COUNTRY_EDIT[0].options
+  };
+}
 
 function buildSelectOptions(options, current) {
   return options.map((o) => `<option value="${escapeHtml(o)}"${o === current ? " selected" : ""}>${escapeHtml(o)}</option>`).join("");
@@ -184,7 +221,8 @@ function startCaseFieldEdit(fieldEl) {
   if (apiField === "country") {
     inputHtml = `<select class="case-edit-input" data-original="${escapeHtml(currentValue)}">${buildSelectOptions(COUNTRY_OPTIONS, originalValue)}</select>`;
   } else if (apiField === "region") {
-    inputHtml = `<select class="case-edit-input" data-original="${escapeHtml(currentValue)}">${buildSelectOptions(CANTON_OPTIONS, originalValue)}</select>`;
+    const regionEntry = getRegionOptionsForCountry(currentCaseCountry);
+    inputHtml = `<select class="case-edit-input" data-original="${escapeHtml(currentValue)}">${buildSelectOptions(regionEntry.options, originalValue)}</select>`;
   } else {
     inputHtml = `<input class="case-edit-input" value="${escapeHtml(originalValue)}" data-original="${escapeHtml(currentValue)}" />`;
   }
