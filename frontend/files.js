@@ -151,6 +151,69 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+const PENCIL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+function buildEditableField(cssClass, apiField, label, value, style) {
+  const styleAttr = style ? ` style="${style}"` : "";
+  return `<div class="case-person-field ${cssClass}" data-edit-field="${apiField}"${styleAttr}><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(value || "Nicht gesetzt")}</span></div><button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button></div></div>`;
+}
+
+function startCaseFieldEdit(fieldEl) {
+  const labelEl = fieldEl.querySelector(".case-person-label");
+  const valueEl = fieldEl.querySelector(".case-person-value");
+  const row = fieldEl.querySelector(".case-field-row");
+  if (!labelEl || !valueEl || !row) return;
+  const label = labelEl.textContent.trim();
+  const currentValue = valueEl.textContent.trim();
+  const originalValue = currentValue === "Nicht gesetzt" ? "" : currentValue;
+  row.innerHTML = `<div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><input class="case-edit-input" value="${escapeHtml(originalValue)}" data-original="${escapeHtml(currentValue)}" /></div><div class="case-edit-actions"><button class="case-save-btn" data-action="save-field" title="Speichern">✓</button><button class="case-cancel-btn" data-action="cancel-field" title="Abbrechen">✗</button></div>`;
+  row.querySelector(".case-edit-input")?.focus();
+}
+
+async function saveCaseField(fieldEl) {
+  const apiField = fieldEl.dataset.editField;
+  const input = fieldEl.querySelector(".case-edit-input");
+  const labelEl = fieldEl.querySelector(".case-person-label");
+  if (!input || !labelEl) return;
+  const newValue = input.value.trim();
+  const label = labelEl.textContent.trim();
+  const saveBtn = fieldEl.querySelector(".case-save-btn");
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "…"; }
+  try {
+    const response = await apiFetch(`${API_BASE}/cases/${currentCaseId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ [apiField]: newValue })
+    });
+    if (!response.ok) {
+      const p = await response.json().catch(() => ({}));
+      throw new Error(p.error || "Fehler beim Speichern.");
+    }
+    if (apiField === "case_name") currentCaseName = newValue;
+    else if (apiField === "protected_person_name") { currentCaseProtectedPerson = newValue; currentCaseProtectedKeywords = newValue; }
+    else if (apiField === "opposing_party") { currentCaseOpposingParty = newValue; currentCaseOpposingKeywords = newValue; }
+    else if (apiField === "country") currentCaseCountry = newValue;
+    else if (apiField === "region") currentCaseRegion = newValue;
+    else if (apiField === "city") currentCaseCity = newValue;
+    const row = fieldEl.querySelector(".case-field-row");
+    if (row) row.innerHTML = `<div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(newValue || "Nicht gesetzt")}</span></div><button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button>`;
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") return;
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "✓"; }
+    setMessage(listMessage, error.message || "Fehler beim Speichern.", "error");
+  }
+}
+
+function cancelCaseFieldEdit(fieldEl) {
+  const input = fieldEl.querySelector(".case-edit-input");
+  const labelEl = fieldEl.querySelector(".case-person-label");
+  if (!input || !labelEl) return;
+  const originalValue = input.dataset.original || "";
+  const label = labelEl.textContent.trim();
+  const row = fieldEl.querySelector(".case-field-row");
+  if (row) row.innerHTML = `<div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(originalValue)}</span></div><button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button>`;
+}
+
 function deriveQualityLabel(score) {
   if (!Number.isFinite(score)) {
     return "Nicht verfügbar";
@@ -348,7 +411,7 @@ function setAnalysisReportLoading() {
     "Die Übersicht wird nach jeder Analyse automatisch aktualisiert."
   );
   analysisReportGrid.innerHTML = [
-    renderAnalysisReportCard("Dateien im Dossier", String(allFiles.length || 0), "Gesamtbestand", "neutral"),
+    renderAnalysisReportCard("Anzahl Files", String(allFiles.length || 0), "Gesamtbestand", "neutral"),
     renderPartyReportCard("Benachteiligte Person", 0, 0),
     renderPartyReportCard("Gegenpartei", 0, 0)
   ].join("");
@@ -370,7 +433,7 @@ async function refreshAnalysisReport(files = allFiles) {
       "Die Gesamtbeurteilung erscheint, sobald erste Dokumente vorliegen."
     );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Dateien im Dossier", "0", "Noch keine Inhalte", "neutral"),
+      renderAnalysisReportCard("Anzahl Files", "0", "Noch keine Inhalte", "neutral"),
       renderPartyReportCard("Benachteiligte Person", 0, 0),
       renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
@@ -443,7 +506,7 @@ async function refreshAnalysisReport(files = allFiles) {
         : "Noch keine expliziten Belegstellen aus gespeicherten Analysen vorhanden."
     );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Gesamtbestand", "neutral"),
+      renderAnalysisReportCard("Anzahl Files", String(fileCount), "Gesamtbestand", "neutral"),
       renderPartyReportCard("Benachteiligte Person", protectedPositiveTotal, protectedNegativeTotal),
       renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
     ].join("");
@@ -459,7 +522,7 @@ async function refreshAnalysisReport(files = allFiles) {
       "Bitte Analyse erneut laden oder Backend-Verbindung prüfen."
     );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Bestand erkannt", "neutral"),
+      renderAnalysisReportCard("Anzahl Files", String(fileCount), "Bestand erkannt", "neutral"),
       renderPartyReportCard("Benachteiligte Person", 0, 0),
       renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
@@ -1120,28 +1183,29 @@ async function loadRowAnalysis(file, options = {}) {
 
   box.innerHTML = `
     <div class="queue-analysis">
-      <div class="qa-topline">
-        <div>
-          <div class="qa-card-title">Forensischer Kurzbericht</div>
-          <div class="qa-subtitle">Dokumentbezogene Einordnung mit Nachvollziehbarkeit</div>
+      <div class="forensic-report">
+        <div class="forensic-report-head">
+          <div class="forensic-head-left">
+            <span class="forensic-title">Forensischer Bericht</span>
+            <span class="forensic-subtitle">Dokumentbezogene Einordnung</span>
+          </div>
+          <div class="qa-chip-row">
+            ${resolvedDocType ? `<span class="qa-tag">${escapeHtml(resolvedDocType)}</span>` : ""}
+            <span class="qa-report-chip is-${escapeHtml(verdict.tone)}">${escapeHtml(verdict.label)}</span>
+          </div>
         </div>
-        <div class="qa-chip-row">
-          ${resolvedDocType ? `<span class="qa-tag">${escapeHtml(resolvedDocType)}</span>` : ""}
-          <span class="qa-report-chip is-${escapeHtml(verdict.tone)}">${escapeHtml(verdict.label)}</span>
-          <span class="qa-report-chip is-${textQuality.label === "Hoch" || textQuality.label === "Gut" ? "positive" : (textQuality.label === "Niedrig" ? "negative" : "neutral")}">${escapeHtml(qualityValue)}</span>
+        <div class="forensic-fields-grid">
+          <div class="forensic-field is-full"><span class="forensic-field-label">Titel</span><span class="forensic-field-value">${escapeHtml(title)}</span></div>
+          <div class="forensic-field"><span class="forensic-field-label">Verfasser</span><span class="forensic-field-value">${escapeHtml(author)}</span></div>
+          <div class="forensic-field"><span class="forensic-field-label">Datum</span><span class="forensic-field-value">${escapeHtml(date)}</span></div>
+          <div class="forensic-field"><span class="forensic-field-label">Herkunft</span><span class="forensic-field-value">${escapeHtml(senderInstitution)}</span></div>
+          <div class="forensic-field"><span class="forensic-field-label">Textqualität</span><span class="forensic-field-value">${escapeHtml(qualityValue)}</span></div>
+          <div class="forensic-field"><span class="forensic-field-label">Extraktion</span><span class="forensic-field-value">${escapeHtml(textQuality.extractionMethod)}</span></div>
+          ${engineText ? `<div class="forensic-field is-full"><span class="forensic-field-label">Engine</span><span class="forensic-field-value">${escapeHtml(engineText)}</span></div>` : ""}
+          <div class="forensic-field is-full"><span class="forensic-field-label">Methodik</span><span class="forensic-field-value">${escapeHtml(methodology)}</span></div>
         </div>
-      </div>
-      <div class="qa-grid">
-        <span class="qa-field"><span class="qa-label">Titel</span><span class="qa-field-value">${escapeHtml(title)}</span></span>
-        <span class="qa-field"><span class="qa-label">Verfasser</span><span class="qa-field-value">${escapeHtml(author)}</span></span>
-        <span class="qa-field"><span class="qa-label">Datum</span><span class="qa-field-value">${escapeHtml(date)}</span></span>
-        <span class="qa-field"><span class="qa-label">Herkunft</span><span class="qa-field-value">${escapeHtml(senderInstitution)}</span></span>
-        <span class="qa-field"><span class="qa-label">Personen</span><span class="qa-field-value">${escapeHtml(peopleValue)}</span></span>
-        <span class="qa-field"><span class="qa-label">Extraktion</span><span class="qa-field-value">${escapeHtml(textQuality.extractionMethod)}</span></span>
-        <span class="qa-field"><span class="qa-label">Textqualität</span><span class="qa-field-value">${escapeHtml(qualityValue)} · ${escapeHtml(qualityDetail)}</span></span>
-        ${engineText ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span><span class="qa-field-value">${escapeHtml(engineText)}</span></span>` : ""}
-        <span class="qa-field qa-wide"><span class="qa-label">Methodik</span><span class="qa-field-value">${escapeHtml(methodology)}</span></span>
-        ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span><span class="qa-field-value">${escapeHtml(impactAssessment)}</span></span>` : ""}
+        ${people.length > 0 ? `<div class="forensic-persons-row">${people.map((p) => `<span class="forensic-person-chip">${escapeHtml(p)}</span>`).join("")}</div>` : ""}
+        ${impactAssessment ? `<div class="forensic-fazit"><span class="forensic-fazit-label">Fazit</span>${escapeHtml(impactAssessment)}</div>` : ""}
       </div>
       <div class="qa-mentions">
         <div class="qa-persons-grid">
@@ -1373,14 +1437,15 @@ async function loadCaseContext() {
       const caseValue = currentCaseName
         ? `${currentCaseName} (${currentCaseId})`
         : currentCaseId;
-      parts.push(`<div class="case-person-field is-meta is-case" style="grid-column:1/-1"><span class="case-person-label">Fall</span><span class="case-person-value">${caseValue || "Nicht gesetzt"}</span></div>`);
-      parts.push(`<div class="case-person-field is-protected"><span class="case-person-label">Benachteiligte Person</span><span class="case-person-value">${currentCaseProtectedPerson || "Nicht gesetzt"}</span></div>`);
-      parts.push(`<div class="case-person-field is-opposing"><span class="case-person-label">Gegenpartei</span><span class="case-person-value">${currentCaseOpposingParty || "Nicht gesetzt"}</span></div>`);
+      parts.push(buildEditableField("is-meta is-case", "case_name", "Fallname", currentCaseName, "grid-column:1/-1"));
+      parts.push(`<div class="case-person-field is-meta"><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">Fallnummer</span><span class="case-person-value">${escapeHtml(currentCaseId)}</span></div></div></div>`);
+      parts.push(buildEditableField("is-protected", "protected_person_name", "Benachteiligte Person", currentCaseProtectedPerson));
+      parts.push(buildEditableField("is-opposing", "opposing_party", "Gegenpartei", currentCaseOpposingParty));
       const regionLabel = currentCaseCountry === "Schweiz" ? "Kanton" : currentCaseCountry ? "Bundesland" : "Kanton / Bundesland";
-      parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Land</span><span class="case-person-value">${currentCaseCountry || "Nicht gesetzt"}</span></div>`);
-      parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">${regionLabel}</span><span class="case-person-value">${currentCaseRegion || "Nicht gesetzt"}</span></div>`);
+      parts.push(buildEditableField("is-meta", "country", "Land", currentCaseCountry));
+      parts.push(buildEditableField("is-meta", "region", regionLabel, currentCaseRegion));
       if (currentCaseCity) {
-        parts.push(`<div class="case-person-field is-meta" style="grid-column:1/-1"><span class="case-person-label">Ortschaft / Sitz des Gerichts</span><span class="case-person-value">${currentCaseCity}</span></div>`);
+        parts.push(buildEditableField("is-meta", "city", "Ortschaft / Sitz des Gerichts", currentCaseCity, "grid-column:1/-1"));
       }
       personsRow.innerHTML = parts.join("");
     }
@@ -1800,6 +1865,27 @@ window.addEventListener("beforeunload", () => {
   revokeAllPreviewUrls();
   analysisCache.clear();
   analysisPromiseCache.clear();
+});
+
+// Delegated handler for inline case-field editing
+document.addEventListener("click", async (event) => {
+  const editBtn = event.target.closest(".case-edit-btn");
+  if (editBtn) {
+    const fieldEl = editBtn.closest("[data-edit-field]");
+    if (fieldEl) startCaseFieldEdit(fieldEl);
+    return;
+  }
+  const saveBtn = event.target.closest("[data-action='save-field']");
+  if (saveBtn && saveBtn.closest("[data-edit-field]")) {
+    const fieldEl = saveBtn.closest("[data-edit-field]");
+    if (fieldEl) await saveCaseField(fieldEl);
+    return;
+  }
+  const cancelBtn = event.target.closest("[data-action='cancel-field']");
+  if (cancelBtn && cancelBtn.closest("[data-edit-field]")) {
+    const fieldEl = cancelBtn.closest("[data-edit-field]");
+    if (fieldEl) cancelCaseFieldEdit(fieldEl);
+  }
 });
 
 copyrightYearEl.textContent = String(new Date().getFullYear());

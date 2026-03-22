@@ -2699,3 +2699,210 @@ td {
 
 .party-split-item.is-positive .party-split-label { color: #2e8a4a; }
 .party-split-item.is-negative .party-split-label { color: #b83030; }
+
+/* ================================================================
+   CASE FIELD EDIT – inline pencil icon + input
+   ================================================================ */
+.case-field-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.case-field-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.case-edit-btn {
+  flex-shrink: 0;
+  width: 1.45rem;
+  height: 1.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease;
+  margin-top: 0.1rem;
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+.case-person-field:hover .case-edit-btn { opacity: 1; }
+.case-edit-btn:hover { color: var(--accent); opacity: 1 !important; transform: none !important; box-shadow: none !important; filter: none !important; }
+.case-edit-btn svg { width: 0.78rem; height: 0.78rem; stroke: currentColor; }
+
+.case-edit-input {
+  width: 100%;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.22rem 0.52rem;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(17,107,115,0.12);
+}
+
+.case-edit-actions {
+  display: flex;
+  gap: 0.22rem;
+  flex-shrink: 0;
+  align-items: center;
+  margin-top: 0.1rem;
+}
+
+.case-save-btn,
+.case-cancel-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0;
+  border-radius: 5px;
+  padding: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+.case-save-btn { background: var(--ok-light); color: var(--ok); }
+.case-save-btn:hover { background: #c9efd6; transform: none !important; box-shadow: none !important; }
+.case-cancel-btn { background: var(--error-light); color: var(--error); }
+.case-cancel-btn:hover { background: #fbd8d4; transform: none !important; box-shadow: none !important; }
+
+/* ================================================================
+   FORENSISCHER BERICHT – improved layout
+   ================================================================ */
+.forensic-report {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.forensic-report-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.forensic-head-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.forensic-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0b4d57;
+  letter-spacing: -0.01em;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.forensic-subtitle {
+  font-size: 0.72rem;
+  color: #56727e;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.forensic-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.38rem 0.85rem;
+}
+
+.forensic-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.04rem;
+}
+
+.forensic-field.is-full { grid-column: 1 / -1; }
+
+.forensic-field-label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6e8a97;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.forensic-field-value {
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: #1f3e4a;
+  line-height: 1.38;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.forensic-persons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.45rem 0;
+  border-top: 1px dashed #c9dbe1;
+  border-bottom: 1px dashed #c9dbe1;
+}
+
+.forensic-person-chip {
+  display: inline-block;
+  padding: 0.18rem 0.62rem;
+  border-radius: 999px;
+  background: #f0f7f9;
+  border: 1px solid #c5dae0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #1b4756;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.forensic-fazit {
+  padding: 0.55rem 0.68rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fff9f7, #fdf1ee);
+  border: 1px solid #ecd5cf;
+  font-size: 0.81rem;
+  line-height: 1.52;
+  color: #361b17;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.forensic-fazit-label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8a4840;
+  margin-bottom: 0.22rem;
+  display: block;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.forensic-verdict-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.3rem 0;
+}
