@@ -300,6 +300,17 @@ function normalizeWhitespace(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function normalizeExtractedDocumentText(value) {
+  return String(value || "")
+    .replace(/-\s*\r?\n\s*/g, "")
+    .replace(/\r/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/(?<=\p{L})\n(?=\p{L})/gu, " ")
+    .replace(/\bsollso\b/gi, "soll so")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const BACKEND_INSTANCE_STARTED_AT = new Date().toISOString();
 
 function getAnalysisEngineVersion() {
@@ -1594,42 +1605,40 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
   const referenceKeywords = referenceAliases.length > 0 ? referenceAliases.join(", ") : "(keine)";
 
   return [
-    "Du bist ein neutraler forensischer Linguistik-Experte fuer die Analyse von Behoerden- und Gerichtskommunikation.",
-    "Deine Aufgabe ist die objektive Dekonstruktion von Texten auf institutionelle Voreingenommenheit (Bias).",
+    "Du bist ein neutraler forensischer Profiler.",
+    "Deine Aufgabe ist die mathematisch praezise Erfassung von positiven und negativen Zuschreibungen fuer BEIDE Parteien im Dokument.",
     "",
-    "### 1. DYNAMISCHE DATEN-EXTRAKTION:",
-    "Analysiere das Dokument und extrahiere folgende Metadaten:",
-    "- TITEL: Erstelle einen praezisen Titel (z.B. 'Stellungnahme KESB').",
-    "- VERFASSER: Die natuerliche Person, die das Dokument unterzeichnet hat.",
-    "- DATUM: Erstellungsdatum (DD.MM.YYYY).",
-    "- ABSENDER: Die Organisation oder Behoerde im Briefkopf (z.B. 'KESB Leimental').",
-    "- PERSONEN: Extrahiere ALLE im Text genannten Klarnamen (inkl. Kinder, Partner, Sachbearbeiter) als Liste.",
-    "",
-    "### 2. IDENTIFIKATION DER PARTEIEN:",
-    "Nutze fuer die Zuordnung der Parteien sowohl Dokumentkontext als auch die bereitgestellten Alias-Listen:",
+    "### 1. ROLLEN-IDENTIFIKATION:",
+    "- Identifiziere die Fokus-Person (Benachteiligt) und die Referenz-Person (Gegenpartei) aus dem Kontext und den Alias-Listen.",
     `- BENACHTEILIGTE_PERSON_KEYWORDS = [${focusKeywords}]`,
     `- GEGENPARTEI_KEYWORDS = [${referenceKeywords}]`,
-    "- Fokus-Person = benachteiligte Person.",
-    "- Referenz-Person = Gegenpartei.",
+    "- Extrahiere alle Namen (inkl. Kinder) und den Absender (Behoerde/Amt).",
+    "",
+    "### 2. SYMMETRISCHES ZAEHLVERFAHREN (KEYWORD-TRAINING):",
+    "- Untersuche jede Zeile bzw. jede klare Sinn-Einheit.",
+    "- Erhoehe die Zaehler nur bei expliziten positiven oder negativen Zuschreibungen.",
     "- Alle Aliase einer Liste gehoeren zu genau einer Partei und duerfen nicht als separate Personen behandelt werden.",
     "",
-    "### 3. METHODISCHES ZAEHLVERFAHREN (FBI-PROFILING):",
-    "Untersuche den Text Wort fuer Wort auf wertende Zuschreibungen und zaehle die Vorkommen im gesamten Dokument.",
+    "A) FUER DIE FOKUS-PERSON (BENACHTEILIGT):",
+    "- ROT (+1 Negativ): Kritik, Vorwuerfe, Unterstellung von Defiziten, fehlende Kooperation, Unpuenktlichkeit, Durchsetzen eigener Interessen.",
+    "- GRUEN (+1 Positiv): Lob, Bestaetigung von Kompetenz, Wohlwollen, Bemuehen, Kooperation, liebevoller Umgang.",
     "",
-    "NEGATIVE ERWAEHNUNG (ROT):",
-    "Jede Stelle, an der Kritik, Abwertung, Defizitzuschreibung, Unterstellung mangelnder Kooperation oder Charakter-Diskreditierung erfolgt.",
-    "Beispiele: 'will Interessen durchboxen', 'mangelnde Einsicht', 'weniger kooperativ', 'hat Muehe', 'selten gelingt'.",
+    "B) FUER DIE GEGENPARTEI (REFERENZ-PERSON):",
+    "- GRUEN (+1 Positiv): Aufwertung, Rechtfertigung, Lob, Loesungsorientierung, Reflektion, gute Argumente, Stabilitaet, Empfehlung zugunsten dieser Partei.",
+    "- ROT (+1 Negativ): Kritik, Fehlverhalten, mangelnde Flexibilitaet, Verweigerung, Nichteinhalten von Abmachungen.",
     "",
-    "POSITIVE ERWAEHNUNG (GRUEN):",
-    "Jede Stelle, an der Lob, Kompetenzzuschreibung, Validierung von Argumenten, Eignung, Stabilitaet oder Empathie durch den Verfasser erfolgt.",
-    "Beispiele: 'argumentationsfaehig', 'loesungsorientiert', 'geeignet', 'vertretbar', 'sinnvoll', 'eher in der Lage'.",
+    "### 3. FORENSISCHE REGELN:",
+    "- Sei extrem kritisch: Wenn der Autor eine Partei nur lobt und die andere nur kritisiert, zaehle jeden einzelnen klaren Bewertungsunterschied.",
+    "- Ignoriere neutrale Fakten, Adressen, reine Chronologie und Verfahrensgeschichte ohne Wertung.",
+    "- Empfehlungen oder Rechtfertigungen zugunsten einer Partei zaehlen als positiv fuer diese Partei.",
+    "- Zaehle Kinder (z.B. Timur, Nael) als Personen im Dokument auf, aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
     "",
-    "### 4. OUTPUT-REGELN (STRENGES FORMAT):",
-    "- ZUSAMMENFASSUNG: Beschreibe das Muster der asymmetrischen Darstellung und die psychologische Tendenz des Verfassers in maximal 2 Saetzen. Nenne KEINE Zahlen im Text.",
-    "- NULLEN-LOGIK: Gib fuer jede Person exakt EINE Summe fuer Positiv und EINE Summe fuer Negativ zurueck.",
-    "- Zaehle konservativ, aber ignoriere keine klar wertenden Formulierungen.",
-    "- Ignoriere neutrale Verfahrensangaben, reine Fakten, Adressen, Titel und Daten ohne Wertung.",
-    "- Wenn mehrere Aliase derselben Partei in einer Aussage vorkommen, zaehlt das nur einmal fuer diese Partei.",
+    "### 4. OUTPUT-STRUKTUR:",
+    "- TITEL, VERFASSER, DATUM, ABSENDER, PERSONEN extrahieren.",
+    "- ZUSAMMENFASSUNG: Beschreibe die psychologische Schieflage oder Ausgewogenheit in maximal 2 Saetzen.",
+    "- DARSTELLUNG: Am Ende nur die nackten Summen fuer Fokus-Person und Gegenpartei.",
+    "- Wenn ein Wert 0 ist, bleibt er 0.",
+    "- Gib fuer die API trotzdem NUR valides JSON gemaess Schema zurueck.",
     "",
     "### JSON-SCHEMA (exakt einhalten):",
     "{",
@@ -2390,10 +2399,22 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     || strictCounts.groupB.negative > 0;
 
   if (hasStrictCounts) {
-    output.positiveMentions = Math.max(0, strictCounts.groupA.positive);
-    output.negativeMentions = Math.max(0, strictCounts.groupA.negative);
-    output.opposingPositiveMentions = Math.max(0, strictCounts.groupB.positive);
-    output.opposingNegativeMentions = Math.max(0, strictCounts.groupB.negative);
+    output.positiveMentions = Math.max(
+      Number(output.positiveMentions || 0),
+      Math.max(0, strictCounts.groupA.positive)
+    );
+    output.negativeMentions = Math.max(
+      Number(output.negativeMentions || 0),
+      Math.max(0, strictCounts.groupA.negative)
+    );
+    output.opposingPositiveMentions = Math.max(
+      Number(output.opposingPositiveMentions || 0),
+      Math.max(0, strictCounts.groupB.positive)
+    );
+    output.opposingNegativeMentions = Math.max(
+      Number(output.opposingNegativeMentions || 0),
+      Math.max(0, strictCounts.groupB.negative)
+    );
   }
 
   if (!normalizeWhitespace(output.author) && normalizeWhitespace(output.senderInstitution)) {
@@ -2703,9 +2724,10 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
           }));
         }
         const parsed = await pdfParse(fileBuffer);
-        const fallback = buildHeuristicAnalysisFromText(parsed?.text || "", parsed?.info || {});
-        const aiResult = await analyzeTextWithAi(parsed?.text || "", fallback, parties.protectedPersonName, parties.opposingPartyName);
-        const focused = applyProtectedPersonFocus(aiResult, parsed?.text || "", parties.protectedPersonName, parties.opposingPartyName);
+        const extractedText = normalizeExtractedDocumentText(parsed?.text || "");
+        const fallback = buildHeuristicAnalysisFromText(extractedText, parsed?.info || {});
+        const aiResult = await analyzeTextWithAi(extractedText, fallback, parties.protectedPersonName, parties.opposingPartyName);
+        const focused = applyProtectedPersonFocus(aiResult, extractedText, parties.protectedPersonName, parties.opposingPartyName);
         await saveDocumentAnalysis(file.id, focused);
         return res.json(withAnalysisRuntimeMeta(focused));
       } catch (pdfError) {
