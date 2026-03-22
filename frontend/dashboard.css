@@ -399,7 +399,8 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(29, 122, 62, 0.14);
 }
 
-.queue-item.done .queue-analysis {
+.queue-item.done .queue-analysis,
+.analysis-box .queue-analysis {
   margin-top: 0.55rem;
   padding: 0.55rem 0.7rem;
   background: linear-gradient(135deg, rgba(241,248,251,0.97), rgba(228,244,245,0.9));
@@ -408,6 +409,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .qa-tag {
@@ -428,6 +431,7 @@ button:disabled {
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #0b4d57;
+  margin-bottom: 0.1rem;
 }
 
 .qa-field {
@@ -1426,6 +1430,28 @@ td {
 .analysis-box {
   min-height: 0;
   display: flex;
+  width: 100%;
+}
+
+.analysis-box .qa-grid {
+  gap: 0.3rem;
+}
+
+.analysis-box .qa-field {
+  grid-template-columns: minmax(4.7rem, auto) minmax(0, 1fr);
+}
+
+.analysis-box .qa-mentions {
+  margin-top: 0.1rem;
+}
+
+.analysis-box .qa-persons-grid {
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+}
+
+.analysis-box .qa-person-col {
+  gap: 0.45rem;
 }
 
 .analysis-loading {
