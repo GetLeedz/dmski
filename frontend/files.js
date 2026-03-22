@@ -343,9 +343,8 @@ function setAnalysisReportLoading() {
   );
   analysisReportGrid.innerHTML = [
     renderAnalysisReportCard("Dateien im Dossier", String(allFiles.length || 0), "Gesamtbestand", "neutral"),
-    renderAnalysisReportCard("Benachteiligte Person", "…", "Pos … · Neg …", "neutral"),
-    renderAnalysisReportCard("Gegenpartei", "…", "Pos … · Neg …", "neutral"),
-    renderAnalysisReportCard("Gesamtbilanz", "…", "Wird geladen", "neutral")
+    renderAnalysisReportCard("Benachteiligte Person", "…", "", "neutral"),
+    renderAnalysisReportCard("Gegenpartei", "…", "", "neutral")
   ].join("");
 }
 
@@ -366,9 +365,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderAnalysisReportCard("Dateien im Dossier", "0", "Noch keine Inhalte", "neutral"),
-      renderAnalysisReportCard("Benachteiligte Person", "Pos 0 · Neg 0", "Keine Daten", "neutral"),
-      renderAnalysisReportCard("Gegenpartei", "Pos 0 · Neg 0", "Keine Daten", "neutral"),
-      renderAnalysisReportCard("Gesamtbilanz", "Neutral", "Noch nicht bestimmbar", "neutral")
+      renderAnalysisReportCard("Benachteiligte Person", "Pos 0 · Neg 0", "", "neutral"),
+      renderAnalysisReportCard("Gegenpartei", "Pos 0 · Neg 0", "", "neutral")
     ].join("");
     return;
   }
@@ -440,9 +438,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Gesamtbestand", "neutral"),
-      renderAnalysisReportCard("Benachteiligte Person", formatPartySummaryValue(protectedPositiveTotal, protectedNegativeTotal), analyzedCount === fileCount ? "Alle Analysen berücksichtigt" : `${analyzedCount} Analysen berücksichtigt`, derivePartySummaryTone(protectedPositiveTotal, protectedNegativeTotal)),
-      renderAnalysisReportCard("Gegenpartei", formatPartySummaryValue(opposingPositiveTotal, opposingNegativeTotal), evidenceCount > 0 ? `${evidenceCount} Belegstellen im Dossier` : "Noch keine Zitate", derivePartySummaryTone(opposingPositiveTotal, opposingNegativeTotal)),
-      renderAnalysisReportCard("Gesamtbilanz", balanceText, verdict.label, balanceTone)
+      renderAnalysisReportCard("Benachteiligte Person", formatPartySummaryValue(protectedPositiveTotal, protectedNegativeTotal), "", derivePartySummaryTone(protectedPositiveTotal, protectedNegativeTotal)),
+      renderAnalysisReportCard("Gegenpartei", formatPartySummaryValue(opposingPositiveTotal, opposingNegativeTotal), "", derivePartySummaryTone(opposingPositiveTotal, opposingNegativeTotal))
     ].join("");
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
@@ -457,9 +454,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Bestand erkannt", "neutral"),
-      renderAnalysisReportCard("Benachteiligte Person", "—", "Keine Aggregation", "neutral"),
-      renderAnalysisReportCard("Gegenpartei", "—", "Keine Aggregation", "neutral"),
-      renderAnalysisReportCard("Gesamtbilanz", "—", "Keine Aggregation", "neutral")
+      renderAnalysisReportCard("Benachteiligte Person", "—", "", "neutral"),
+      renderAnalysisReportCard("Gegenpartei", "—", "", "neutral")
     ].join("");
   }
 }
@@ -1371,14 +1367,14 @@ async function loadCaseContext() {
       const caseValue = currentCaseName
         ? `${currentCaseName} (${currentCaseId})`
         : currentCaseId;
-      parts.push(`<div class="case-person-field is-meta is-case"><span class="case-person-label">Fall</span><span class="case-person-value">${caseValue || "Nicht gesetzt"}</span></div>`);
+      parts.push(`<div class="case-person-field is-meta is-case" style="grid-column:1/-1"><span class="case-person-label">Fall</span><span class="case-person-value">${caseValue || "Nicht gesetzt"}</span></div>`);
       parts.push(`<div class="case-person-field is-protected"><span class="case-person-label">Benachteiligte Person</span><span class="case-person-value">${currentCaseProtectedPerson || "Nicht gesetzt"}</span></div>`);
       parts.push(`<div class="case-person-field is-opposing"><span class="case-person-label">Gegenpartei</span><span class="case-person-value">${currentCaseOpposingParty || "Nicht gesetzt"}</span></div>`);
       const regionLabel = currentCaseCountry === "Schweiz" ? "Kanton" : currentCaseCountry ? "Bundesland" : "Kanton / Bundesland";
       parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Land</span><span class="case-person-value">${currentCaseCountry || "Nicht gesetzt"}</span></div>`);
       parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">${regionLabel}</span><span class="case-person-value">${currentCaseRegion || "Nicht gesetzt"}</span></div>`);
       if (currentCaseCity) {
-        parts.push(`<div class="case-person-field is-meta"><span class="case-person-label">Ortschaft / Sitz des Gerichts</span><span class="case-person-value">${currentCaseCity}</span></div>`);
+        parts.push(`<div class="case-person-field is-meta" style="grid-column:1/-1"><span class="case-person-label">Ortschaft / Sitz des Gerichts</span><span class="case-person-value">${currentCaseCity}</span></div>`);
       }
       personsRow.innerHTML = parts.join("");
     }

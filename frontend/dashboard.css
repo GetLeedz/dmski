@@ -1,7 +1,8 @@
 /* ================================================================
-   GLOBAL FONT OVERRIDE – Space Grotesk everywhere
+   GLOBAL FONT OVERRIDE – Inter everywhere
    ================================================================ */
-*, *::before, *::after { font-family: "Space Grotesk", system-ui, sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+*, *::before, *::after { font-family: "Inter", system-ui, sans-serif; }
 
 /* Dashboard-Form größere Felder */
 .dashboard-form input,
@@ -88,7 +89,7 @@
   align-items: center;
   justify-content: center;
   background: var(--bg, #f0f4f7);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 /* ---- Reset ---- */
@@ -96,7 +97,7 @@
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
   color: var(--ink);
   background: var(--bg);
   min-height: 100vh;
@@ -1312,7 +1313,7 @@ button:disabled {
 
 .analysis-report-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -1448,8 +1449,8 @@ button:disabled {
 }
 
 .case-person-field.is-opposing {
-  border-color: #c0392b;
-  background: var(--error-light);
+  border-color: #116b73;
+  background: #e4f4f5;
 }
 
 .case-person-field.is-meta {
@@ -1816,7 +1817,7 @@ td {
 
 .preview-doc-id {
   margin: 0;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 0.88rem;
   font-weight: 700;
   color: var(--ink-soft);
@@ -2430,10 +2431,10 @@ td {
   background: linear-gradient(135deg, rgba(228,244,245,0.9), rgba(240,250,251,0.85));
 }
 
-/* Opposing = red accent */
+/* Opposing = same teal accent */
 .qa-person-col:last-child {
-  border-color: rgba(192, 57, 43, 0.35);
-  background: linear-gradient(135deg, rgba(253,240,239,0.9), rgba(255,248,247,0.85));
+  border-color: rgba(17, 107, 115, 0.4);
+  background: linear-gradient(135deg, rgba(228,244,245,0.9), rgba(240,250,251,0.85));
 }
 
 .qa-person-col-label {
@@ -2454,7 +2455,7 @@ td {
 }
 
 .qa-person-col:first-child .qa-person-role { color: #0d5760; }
-.qa-person-col:last-child  .qa-person-role { color: #a83226; }
+.qa-person-col:last-child  .qa-person-role { color: #0d5760; }
 
 .qa-person-keywords {
   font-size: 0.82rem;
@@ -2560,14 +2561,14 @@ td {
   color: #0d5760;
 }
 
-/* "Gegenpartei" card – red */
+/* "Gegenpartei" card – same teal as Benachteiligte Person */
 .analysis-report-card.is-opposing,
 .analysis-report-grid .analysis-report-card:nth-child(3) {
-  border-color: rgba(192,57,43,0.3);
-  background: linear-gradient(135deg, #fff7f6, #fdf0ef);
+  border-color: rgba(17,107,115,0.35);
+  background: linear-gradient(135deg, #f0fafb, #e4f4f5);
 }
 .analysis-report-grid .analysis-report-card:nth-child(3) .analysis-report-card-value {
-  color: #b84434;
+  color: #0d5760;
 }
 
 /* Dot bars in analysis-box (files page) also use the bigger dots */
