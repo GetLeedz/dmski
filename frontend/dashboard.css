@@ -1,3 +1,45 @@
+/* Dashboard-Form größere Felder */
+.dashboard-form input,
+.dashboard-form select {
+  font-size: 1.08rem;
+  padding: 1rem 1.2rem;
+}
+
+/* Optisch abgesetzte Sektion für Fallauswahl */
+.open-case.open-case-highlight {
+  background: var(--accent-light);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px rgba(17,107,115,0.06);
+  padding: 2.2rem 2.25rem 1.6rem 2.25rem;
+  margin-top: 2.2rem;
+  border: 1.5px solid var(--border-soft);
+}
+
+.open-case-select-label {
+  width: 100%;
+}
+
+.open-case-select {
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-md);
+  font-size: 1.08rem;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 1px 4px rgba(17,107,115,0.04);
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .dashboard-form input,
+  .dashboard-form select,
+  .open-case-select {
+    font-size: 1rem;
+    padding: 0.8rem 0.8rem;
+  }
+  .open-case.open-case-highlight {
+    padding: 1.2rem 1rem 1rem 1rem;
+  }
+}
 /* ============================================================
    DMSKI Dashboard � Professional Light Design System
    Light mode: reduces eye fatigue when working with white docs.

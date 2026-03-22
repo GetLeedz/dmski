@@ -22,7 +22,7 @@
 
     <section class="card">
       <h2>Neuen Fall anlegen</h2>
-      <form id="caseForm" class="grid">
+      <form id="caseForm" class="grid dashboard-form">
         <label class="full form-field-inline">
           <input id="caseName" name="caseName" type="text" placeholder="Fallname" aria-label="Fallname" required />
         </label>
@@ -50,13 +50,13 @@
         <label class="form-field-inline">
           <input id="opposingPartyName" name="opposingPartyName" type="text" placeholder="Gegenpartei (Name, Behörde, Institution)" aria-label="Gegenpartei" />
         </label>
-        <button id="createCaseBtn" type="submit" class="full">Fall eröffnen</button>
+        <button id="createCaseBtn" type="submit" class="full">Fall anlegen</button>
       </form>
 
-      <div class="open-case">
-        <h3>Bestehendes Dossier öffnen</h3>
-        <label class="form-field-inline">
-          <select id="existingCasesSelect">
+      <div class="open-case open-case-highlight">
+        <h3>Bestehenden Fall öffnen</h3>
+        <label class="form-field-inline open-case-select-label">
+          <select id="existingCasesSelect" class="open-case-select">
             <option value="">Lade Fallliste...</option>
           </select>
         </label>
@@ -67,7 +67,7 @@
 
     <section class="card">
       <h2>Nächster Schritt</h2>
-      <p class="hint">Nach dem Eröffnen oder Auswählen eines Dossiers öffnet sich automatisch die Upload-Seite. Die Dateiliste ist dort über einen separaten Button erreichbar.</p>
+        <p class="hint">Nach dem Eröffnen oder Auswählen eines Falls öffnet sich automatisch die Upload-Seite. Die Dateiliste ist dort über einen separaten Button erreichbar.</p>
     </section>
 
     <footer class="dashboard-footer">
