@@ -1,8 +1,13 @@
+/* ================================================================
+   GLOBAL FONT OVERRIDE – Space Grotesk everywhere
+   ================================================================ */
+*, *::before, *::after { font-family: "Space Grotesk", system-ui, sans-serif; }
+
 /* Dashboard-Form größere Felder */
 .dashboard-form input,
 .dashboard-form select {
-  font-size: 1.08rem;
-  padding: 1rem 1.2rem;
+  font-size: 1rem;
+  padding: 0.82rem 1rem;
 }
 
 /* Optisch abgesetzte Sektion für Fallauswahl */
@@ -2398,4 +2403,187 @@ td {
   table { font-size: 0.85rem; }
 
   .header-logo { height: 1.8rem; }
+}
+
+/* ================================================================
+   PARTY COMPARISON BOXES – enhanced 2-column layout
+   ================================================================ */
+.qa-persons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.qa-person-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1.5px solid #c9dde4;
+  background: rgba(255,255,255,0.72);
+}
+
+/* Protected = teal accent */
+.qa-person-col:first-child {
+  border-color: rgba(17, 107, 115, 0.4);
+  background: linear-gradient(135deg, rgba(228,244,245,0.9), rgba(240,250,251,0.85));
+}
+
+/* Opposing = red accent */
+.qa-person-col:last-child {
+  border-color: rgba(192, 57, 43, 0.35);
+  background: linear-gradient(135deg, rgba(253,240,239,0.9), rgba(255,248,247,0.85));
+}
+
+.qa-person-col-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed rgba(0,0,0,0.08);
+  margin-bottom: 0.1rem;
+}
+
+.qa-person-role {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-soft);
+}
+
+.qa-person-col:first-child .qa-person-role { color: #0d5760; }
+.qa-person-col:last-child  .qa-person-role { color: #a83226; }
+
+.qa-person-keywords {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+/* Dot track – bigger, clearer bars */
+.qa-dot {
+  width: 1.4rem;
+  height: 0.26rem;
+  border-radius: 999px;
+  display: inline-block;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.qa-dot.is-positive {
+  background: linear-gradient(90deg, #29a36a, #1e8a55);
+}
+
+.qa-dot.is-negative {
+  background: linear-gradient(90deg, #d55353, #b63f3f);
+}
+
+.qa-dot-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+}
+
+.qa-dot-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.qa-dot-count {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1a4f5c;
+  min-width: 0.9rem;
+}
+
+.qa-badge-row-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 3.6rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* KI Report summary cards – stronger visual hierarchy */
+.analysis-report-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.85rem 0.9rem;
+  border-radius: 14px;
+  border: 1.5px solid #d9e7ec;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(15,43,54,0.06);
+  transition: box-shadow 150ms ease;
+}
+
+.analysis-report-card:hover {
+  box-shadow: 0 4px 16px rgba(15,43,54,0.1);
+}
+
+.analysis-report-card-label {
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6e8a97;
+}
+
+.analysis-report-card-value {
+  font-size: 1.25rem;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #153f4b;
+  letter-spacing: -0.01em;
+}
+
+.analysis-report-card-detail {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: #708d99;
+}
+
+/* "Benachteiligte Person" card – teal */
+.analysis-report-card.is-protected,
+.analysis-report-grid .analysis-report-card:nth-child(2) {
+  border-color: rgba(17,107,115,0.35);
+  background: linear-gradient(135deg, #f0fafb, #e4f4f5);
+}
+.analysis-report-grid .analysis-report-card:nth-child(2) .analysis-report-card-value {
+  color: #0d5760;
+}
+
+/* "Gegenpartei" card – red */
+.analysis-report-card.is-opposing,
+.analysis-report-grid .analysis-report-card:nth-child(3) {
+  border-color: rgba(192,57,43,0.3);
+  background: linear-gradient(135deg, #fff7f6, #fdf0ef);
+}
+.analysis-report-grid .analysis-report-card:nth-child(3) .analysis-report-card-value {
+  color: #b84434;
+}
+
+/* Dot bars in analysis-box (files page) also use the bigger dots */
+.analysis-dot {
+  width: 1.4rem;
+  height: 0.26rem;
+  border-radius: 999px;
+  display: inline-block;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+
+.analysis-dot.is-positive {
+  background: linear-gradient(90deg, #29a36a, #1e8a55);
+}
+
+.analysis-dot.is-negative {
+  background: linear-gradient(90deg, #d55353, #b63f3f);
 }

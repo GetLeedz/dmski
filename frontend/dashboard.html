@@ -31,6 +31,12 @@
           <input id="caseName" name="caseName" type="text" placeholder="Fallname" aria-label="Fallname" required />
         </label>
         <label class="form-field-inline">
+          <input id="protectedPersonName" name="protectedPersonName" type="text" placeholder="Benachteiligte Person (Name, Alias, Kindsvater)" aria-label="Benachteiligte Person" />
+        </label>
+        <label class="form-field-inline">
+          <input id="opposingPartyName" name="opposingPartyName" type="text" placeholder="Gegenpartei (Name, Behörde, Institution)" aria-label="Gegenpartei" />
+        </label>
+        <label class="form-field-inline">
           <select id="countrySelect" name="country" aria-label="Land" required>
             <option value="">Land wählen</option>
             <option value="Schweiz">Schweiz</option>
@@ -47,12 +53,6 @@
           <select id="citySelect" name="city" aria-label="Ortschaft / Sitz des Gerichts" disabled>
             <option value="">Zuerst Kanton / Bundesland wählen</option>
           </select>
-        </label>
-        <label class="form-field-inline">
-          <input id="protectedPersonName" name="protectedPersonName" type="text" placeholder="Benachteiligte Person (Name, Alias, Kindsvater)" aria-label="Benachteiligte Person" />
-        </label>
-        <label class="form-field-inline">
-          <input id="opposingPartyName" name="opposingPartyName" type="text" placeholder="Gegenpartei (Name, Behörde, Institution)" aria-label="Gegenpartei" />
         </label>
         <button id="createCaseBtn" type="submit" class="full">Fall anlegen</button>
       </form>
