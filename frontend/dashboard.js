@@ -140,9 +140,6 @@ const CITIES_BY_REGION = {
     "Bern": ["Bern", "Biel/Bienne", "Burgdorf", "Köniz", "Langenthal", "Münsingen", "Steffisburg", "Thun"],
     "Freiburg": ["Bulle", "Düdingen", "Freiburg", "Murten"],
     "Genf": ["Carouge", "Genf", "Lancy", "Meyrin", "Vernier"],
-      placeholder.textContent = cases.length > 0
-        ? "Bitte Fall auswählen"
-        : "Noch keine Fälle vorhanden";
     "Luzern": ["Emmen", "Horw", "Kriens", "Luzern", "Sursee", "Wolhusen"],
     "Neuenburg": ["La Chaux-de-Fonds", "Le Locle", "Neuenburg"],
     "Nidwalden": ["Buochs", "Hergiswil", "Stans"],
@@ -155,10 +152,6 @@ const CITIES_BY_REGION = {
     "Thurgau": ["Arbon", "Frauenfeld", "Kreuzlingen"],
     "Uri": ["Altdorf", "Andermatt"],
     "Waadt": ["Lausanne", "Montreux", "Nyon", "Renens", "Yverdon-les-Bains"],
-        // Show Fallnummer (item.id) and Fallname (item.case_name)
-        option.textContent = protectedLabel
-          ? `${createdLabel} – Fallnummer: ${item.id} – ${item.case_name} (${placeDetail || "Ort nicht gesetzt"}; Benachteiligte Person: ${protectedLabel})`
-          : `${createdLabel} – Fallnummer: ${item.id} – ${item.case_name} (${placeDetail || "Ort nicht gesetzt"})`;
   },
   Deutschland: {
     "Baden-Württemberg": ["Freiburg im Breisgau", "Heidelberg", "Heilbronn", "Karlsruhe", "Konstanz", "Mannheim", "Pforzheim", "Ravensburg", "Stuttgart", "Ulm"],
@@ -179,7 +172,6 @@ const CITIES_BY_REGION = {
     "Thüringen": ["Erfurt", "Gera", "Jena", "Weimar"]
   },
   Österreich: {
-        maybeShowServiceAlert(res.status, "Fallliste nicht verfügbar");
     "Kärnten": ["Klagenfurt", "Spittal an der Drau", "Villach", "Wolfsberg"],
     "Niederösterreich": ["Amstetten", "Krems an der Donau", "Sankt Pölten", "Wiener Neustadt"],
     "Oberösterreich": ["Gmunden", "Linz", "Steyr", "Wels"],
@@ -231,7 +223,7 @@ function populateCityOptions(country, region, preferred = "") {
   citySelect.appendChild(placeholder);
 
   for (const city of cities) {
-        setMessage(caseMessage, data.error || "Fall konnte nicht erstellt werden.", "error");
+    const option = document.createElement("option");
     option.value = city;
     option.textContent = city;
     citySelect.appendChild(option);
