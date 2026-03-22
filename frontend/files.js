@@ -97,6 +97,7 @@ const zoomResetBtn = document.getElementById("zoomResetBtn");
 const zoomLevel = document.getElementById("zoomLevel");
 const closePreviewBtn = document.getElementById("closePreviewBtn");
 const goToUploadBtn = document.getElementById("goToUploadBtn");
+const exportPdfReportBtn = document.getElementById("exportPdfReportBtn");
 const toggleMultiDeleteBtn = document.getElementById("toggleMultiDeleteBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
 const deleteCaseBtn = document.getElementById("deleteCaseBtn");
@@ -111,6 +112,7 @@ const cancelMultiDeleteBtn = document.getElementById("cancelMultiDeleteBtn");
 const analysisReportBar = document.getElementById("analysisReportBar");
 const analysisReportGrid = document.getElementById("analysisReportGrid");
 const analysisReportHint = document.getElementById("analysisReportHint");
+const analysisReportMeta = document.getElementById("analysisReportMeta");
 
 let allFiles = [];
 const previewUrlCache = new Map();
@@ -133,29 +135,217 @@ let currentCaseLocality = "";
 let currentCaseRegion = "";
 let currentCaseCity = "";
 
-listTitle.textContent = `Dateien für Fall ${currentCaseId}`;
+listTitle.textContent = "Fall";
 
-function renderAnalysisReportCard(label, value, tone = "neutral") {
-  return `<article class="analysis-report-card is-${tone}"><span class="analysis-report-card-label">${label}</span><strong class="analysis-report-card-value">${value}</strong></article>`;
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function deriveQualityLabel(score) {
+  if (!Number.isFinite(score)) {
+    return "Nicht verfügbar";
+  }
+  if (score >= 0.94) {
+    return "Hoch";
+  }
+  if (score >= 0.86) {
+    return "Gut";
+  }
+  if (score >= 0.74) {
+    return "Mittel";
+  }
+  return "Niedrig";
+}
+
+function normalizeTextQualityMeta(value) {
+  const score = Number.isFinite(Number(value?.score)) ? Number(value.score) : null;
+  return {
+    score,
+    label: normalizeTitleText(value?.label) || deriveQualityLabel(score),
+    confidence: normalizeTitleText(value?.confidence) || (score === null ? "Manuell prüfen" : (score >= 0.8 ? "Gut" : "Mittel")),
+    extractionMethod: normalizeTitleText(value?.extractionMethod) || "Unbekannt",
+    sourceType: normalizeTitleText(value?.sourceType) || "",
+    ocrUsed: Boolean(value?.ocrUsed)
+  };
+}
+
+function normalizeEvidence(value) {
+  const createSection = () => ({ positive: [], negative: [] });
+  const safe = {
+    protectedPerson: createSection(),
+    opposingParty: createSection()
+  };
+  const src = value && typeof value === "object" ? value : {};
+
+  for (const side of ["protectedPerson", "opposingParty"]) {
+    const sourceSection = src[side] && typeof src[side] === "object" ? src[side] : {};
+    for (const tone of ["positive", "negative"]) {
+      const items = Array.isArray(sourceSection[tone]) ? sourceSection[tone] : [];
+      safe[side][tone] = items
+        .map((item) => normalizeTitleText(item))
+        .filter(Boolean)
+        .slice(0, 3);
+    }
+  }
+
+  return safe;
+}
+
+function countEvidenceSnippets(evidence) {
+  const safe = normalizeEvidence(evidence);
+  return safe.protectedPerson.positive.length
+    + safe.protectedPerson.negative.length
+    + safe.opposingParty.positive.length
+    + safe.opposingParty.negative.length;
+}
+
+function deriveDocumentVerdict(analysis) {
+  const protectedPositive = Math.max(0, Number(analysis?.positiveMentions || 0));
+  const protectedNegative = Math.max(0, Number(analysis?.negativeMentions || 0));
+  const opposingPositive = Math.max(0, Number(analysis?.opposingPositiveMentions || 0));
+  const opposingNegative = Math.max(0, Number(analysis?.opposingNegativeMentions || 0));
+  const pressure = (protectedNegative + opposingPositive) - (protectedPositive + opposingNegative);
+
+  if (pressure >= 4) {
+    return { label: "Deutlich belastend", tone: "negative", detail: `Saldo ${pressure}` };
+  }
+  if (pressure >= 1) {
+    return { label: "Leicht belastend", tone: "negative", detail: `Saldo ${pressure}` };
+  }
+  if (pressure <= -4) {
+    return { label: "Deutlich entlastend", tone: "positive", detail: `Saldo ${pressure}` };
+  }
+  if (pressure <= -1) {
+    return { label: "Leicht entlastend", tone: "positive", detail: `Saldo ${pressure}` };
+  }
+
+  return { label: "Eher ausgewogen", tone: "neutral", detail: "Saldo 0" };
+}
+
+function deriveDossierVerdict(totalPositive, totalNegative, analyzedCount) {
+  if (analyzedCount <= 0) {
+    return {
+      label: "Noch keine belastbare Einordnung",
+      tone: "neutral",
+      detail: "Es liegen noch keine auswertbaren Dokumentanalysen vor."
+    };
+  }
+
+  const pressure = totalNegative - totalPositive;
+  if (pressure >= 6) {
+    return { label: "Belastungstendenz erkennbar", tone: "negative", detail: `Negativsaldo ${pressure}` };
+  }
+  if (pressure >= 2) {
+    return { label: "Leichte Belastungstendenz", tone: "negative", detail: `Negativsaldo ${pressure}` };
+  }
+  if (pressure <= -6) {
+    return { label: "Entlastungstendenz erkennbar", tone: "positive", detail: `Positivsaldo ${Math.abs(pressure)}` };
+  }
+  if (pressure <= -2) {
+    return { label: "Leichte Entlastungstendenz", tone: "positive", detail: `Positivsaldo ${Math.abs(pressure)}` };
+  }
+
+  return { label: "Gemischtes oder ausgeglichenes Bild", tone: "neutral", detail: "Kein deutlicher Gesamtsaldo" };
+}
+
+function derivePartySummaryTone(positiveCount, negativeCount) {
+  const positive = Math.max(0, Number(positiveCount || 0));
+  const negative = Math.max(0, Number(negativeCount || 0));
+  if (negative > positive) {
+    return "negative";
+  }
+  if (positive > negative) {
+    return "positive";
+  }
+  return "neutral";
+}
+
+function formatPartySummaryValue(positiveCount, negativeCount) {
+  return `Pos ${Math.max(0, Number(positiveCount || 0))} · Neg ${Math.max(0, Number(negativeCount || 0))}`;
+}
+
+function renderAnalysisReportCard(label, value, detail = "", tone = "neutral") {
+  return `<article class="analysis-report-card is-${tone}"><span class="analysis-report-card-label">${escapeHtml(label)}</span><strong class="analysis-report-card-value">${escapeHtml(value)}</strong>${detail ? `<span class="analysis-report-card-detail">${escapeHtml(detail)}</span>` : ""}</article>`;
+}
+
+function renderAnalysisReportMeta(verdict, methodology, note) {
+  return [
+    `<article class="analysis-report-meta-card is-${escapeHtml(verdict.tone || "neutral")}"><span class="analysis-report-meta-label">Einordnung</span><strong class="analysis-report-meta-value">${escapeHtml(verdict.label || "Neutral")}</strong><p class="analysis-report-meta-text">${escapeHtml(verdict.detail || "")}</p></article>`,
+    `<article class="analysis-report-meta-card"><span class="analysis-report-meta-label">Methodik</span><strong class="analysis-report-meta-value">Forensische Kurzprüfung</strong><p class="analysis-report-meta-text">${escapeHtml(methodology)}</p></article>`,
+    `<article class="analysis-report-meta-card"><span class="analysis-report-meta-label">Berichtshinweis</span><strong class="analysis-report-meta-value">Transparenz aktiviert</strong><p class="analysis-report-meta-text">${escapeHtml(note)}</p></article>`
+  ].join("");
+}
+
+function renderEvidenceList(items, emptyText) {
+  const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
+  if (safeItems.length === 0) {
+    return `<p class="qa-evidence-empty">${escapeHtml(emptyText)}</p>`;
+  }
+
+  return `<ul class="qa-evidence-list">${safeItems.map((item) => `<li>„${escapeHtml(item)}“</li>`).join("")}</ul>`;
+}
+
+function renderEvidenceBlock(title, items, tone, emptyText) {
+  return `
+    <div class="qa-evidence-block is-${tone}">
+      <span class="qa-evidence-label">${escapeHtml(title)}</span>
+      ${renderEvidenceList(items, emptyText)}
+    </div>
+  `;
+}
+
+function renderImpactRanking(items) {
+  const safeItems = Array.isArray(items) ? items.slice(0, 4) : [];
+  if (safeItems.length === 0) {
+    return "";
+  }
+
+  return `
+    <section class="qa-focus-strip">
+      <div class="qa-focus-head">
+        <span class="qa-focus-title">Beteiligte im Fokus</span>
+        <span class="qa-focus-subtitle">Gewichtete Auffälligkeiten aus Personenbezug und Dokumentkontext</span>
+      </div>
+      <div class="qa-focus-list">
+        ${safeItems.map((entry) => {
+          const tone = Number(entry?.count || 0) > 0 ? "negative" : "neutral";
+          const itemsText = Array.isArray(entry?.items) && entry.items.length > 0
+            ? entry.items[0]
+            : (entry?.impact || "Neutral");
+          return `<article class="qa-focus-item is-${tone}"><strong>${escapeHtml(entry?.name || "")}</strong><span>${escapeHtml(itemsText)}</span><em>${escapeHtml(String(Number(entry?.count || 0)))}</em></article>`;
+        }).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function setAnalysisReportLoading() {
-  if (!(analysisReportBar instanceof HTMLElement) || !(analysisReportGrid instanceof HTMLElement) || !(analysisReportHint instanceof HTMLElement)) {
+  if (!(analysisReportBar instanceof HTMLElement) || !(analysisReportGrid instanceof HTMLElement) || !(analysisReportHint instanceof HTMLElement) || !(analysisReportMeta instanceof HTMLElement)) {
     return;
   }
 
   analysisReportBar.classList.remove("is-ready");
   analysisReportHint.textContent = "Analysen werden geladen…";
+  analysisReportMeta.innerHTML = renderAnalysisReportMeta(
+    { label: "Bericht wird vorbereitet", tone: "neutral", detail: "Dossierdaten werden zusammengeführt." },
+    "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.",
+    "Die Übersicht wird nach jeder Analyse automatisch aktualisiert."
+  );
   analysisReportGrid.innerHTML = [
-    renderAnalysisReportCard("Dateien im Dossier", String(allFiles.length || 0)),
-    renderAnalysisReportCard("Positive Hinweise gesamt", "…"),
-    renderAnalysisReportCard("Negative Hinweise gesamt", "…"),
-    renderAnalysisReportCard("Gesamtbilanz", "…")
+    renderAnalysisReportCard("Dateien im Dossier", String(allFiles.length || 0), "Gesamtbestand", "neutral"),
+    renderAnalysisReportCard("Benachteiligte Person", "…", "Pos … · Neg …", "neutral"),
+    renderAnalysisReportCard("Gegenpartei", "…", "Pos … · Neg …", "neutral"),
+    renderAnalysisReportCard("Gesamtbilanz", "…", "Wird geladen", "neutral")
   ].join("");
 }
 
 async function refreshAnalysisReport(files = allFiles) {
-  if (!(analysisReportBar instanceof HTMLElement) || !(analysisReportGrid instanceof HTMLElement) || !(analysisReportHint instanceof HTMLElement)) {
+  if (!(analysisReportBar instanceof HTMLElement) || !(analysisReportGrid instanceof HTMLElement) || !(analysisReportHint instanceof HTMLElement) || !(analysisReportMeta instanceof HTMLElement)) {
     return;
   }
 
@@ -164,11 +354,16 @@ async function refreshAnalysisReport(files = allFiles) {
   if (fileCount === 0) {
     analysisReportBar.classList.remove("is-ready");
     analysisReportHint.textContent = "Noch keine Dateien im Dossier.";
+    analysisReportMeta.innerHTML = renderAnalysisReportMeta(
+      { label: "Leeres Dossier", tone: "neutral", detail: "Noch keine Dokumente hochgeladen." },
+      "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.",
+      "Die Gesamtbeurteilung erscheint, sobald erste Dokumente vorliegen."
+    );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Dateien im Dossier", "0"),
-      renderAnalysisReportCard("Positive Hinweise gesamt", "0"),
-      renderAnalysisReportCard("Negative Hinweise gesamt", "0"),
-      renderAnalysisReportCard("Gesamtbilanz", "Neutral")
+      renderAnalysisReportCard("Dateien im Dossier", "0", "Noch keine Inhalte", "neutral"),
+      renderAnalysisReportCard("Benachteiligte Person", "Pos 0 · Neg 0", "Keine Daten", "neutral"),
+      renderAnalysisReportCard("Gegenpartei", "Pos 0 · Neg 0", "Keine Daten", "neutral"),
+      renderAnalysisReportCard("Gesamtbilanz", "Neutral", "Noch nicht bestimmbar", "neutral")
     ].join("");
     return;
   }
@@ -179,28 +374,70 @@ async function refreshAnalysisReport(files = allFiles) {
     const analyses = await Promise.all(fileList.map((file) => getDocumentAnalysis(file, { onlyStored: true })));
     let totalPositive = 0;
     let totalNegative = 0;
+    let analyzedCount = 0;
+    let evidenceCount = 0;
+    let ocrCount = 0;
+    let protectedPositiveTotal = 0;
+    let protectedNegativeTotal = 0;
+    let opposingPositiveTotal = 0;
+    let opposingNegativeTotal = 0;
+    const qualityScores = [];
+    const methodologies = new Set();
 
     for (const analysis of analyses) {
       if (!analysis || analysis.status === "auth-redirect") {
         continue;
       }
-      totalPositive += Math.max(0, Number(analysis.positiveMentions || 0));
-      totalPositive += Math.max(0, Number(analysis.opposingPositiveMentions || 0));
-      totalNegative += Math.max(0, Number(analysis.negativeMentions || 0));
-      totalNegative += Math.max(0, Number(analysis.opposingNegativeMentions || 0));
+      if (analysis.status === "ok") {
+        analyzedCount += 1;
+      }
+      protectedPositiveTotal += Math.max(0, Number(analysis.positiveMentions || 0));
+      protectedNegativeTotal += Math.max(0, Number(analysis.negativeMentions || 0));
+      opposingPositiveTotal += Math.max(0, Number(analysis.opposingPositiveMentions || 0));
+      opposingNegativeTotal += Math.max(0, Number(analysis.opposingNegativeMentions || 0));
+      evidenceCount += countEvidenceSnippets(analysis.evidence);
+      if (analysis.textQuality?.ocrUsed) {
+        ocrCount += 1;
+      }
+      if (Number.isFinite(Number(analysis.textQuality?.score))) {
+        qualityScores.push(Number(analysis.textQuality.score));
+      }
+      if (analysis.methodology) {
+        methodologies.add(analysis.methodology);
+      }
     }
+
+    totalPositive = protectedPositiveTotal + opposingPositiveTotal;
+    totalNegative = protectedNegativeTotal + opposingNegativeTotal;
 
     const balance = totalPositive - totalNegative;
     const balanceText = balance === 0 ? "Neutral" : balance > 0 ? `+${balance}` : String(balance);
     const balanceTone = balance === 0 ? "neutral" : balance > 0 ? "positive" : "negative";
+    const averageQuality = qualityScores.length > 0
+      ? qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length
+      : null;
+    const qualityLabel = deriveQualityLabel(averageQuality);
+    const verdict = deriveDossierVerdict(totalPositive, totalNegative, analyzedCount);
+    const methodology = Array.from(methodologies)[0] || "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.";
+    const hintParts = [`${analyzedCount} von ${fileCount} Datei${fileCount === 1 ? "" : "en"} analysiert`];
+    if (ocrCount > 0) {
+      hintParts.push(`${ocrCount} mit OCR-Fallback`);
+    }
 
     analysisReportBar.classList.add("is-ready");
-    analysisReportHint.textContent = `${fileCount} Datei${fileCount === 1 ? "" : "en"} im Bericht berücksichtigt`;
+    analysisReportHint.textContent = hintParts.join(" · ");
+    analysisReportMeta.innerHTML = renderAnalysisReportMeta(
+      verdict,
+      methodology,
+      evidenceCount > 0
+        ? `${evidenceCount} Belegstelle${evidenceCount === 1 ? "" : "n"} wurden dossierweit verdichtet.`
+        : "Noch keine expliziten Belegstellen aus gespeicherten Analysen vorhanden."
+    );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "neutral"),
-      renderAnalysisReportCard("Positive Hinweise gesamt", String(totalPositive), "positive"),
-      renderAnalysisReportCard("Negative Hinweise gesamt", String(totalNegative), "negative"),
-      renderAnalysisReportCard("Gesamtbilanz", balanceText, balanceTone)
+      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Gesamtbestand", "neutral"),
+      renderAnalysisReportCard("Benachteiligte Person", formatPartySummaryValue(protectedPositiveTotal, protectedNegativeTotal), analyzedCount === fileCount ? "Alle Analysen berücksichtigt" : `${analyzedCount} Analysen berücksichtigt`, derivePartySummaryTone(protectedPositiveTotal, protectedNegativeTotal)),
+      renderAnalysisReportCard("Gegenpartei", formatPartySummaryValue(opposingPositiveTotal, opposingNegativeTotal), evidenceCount > 0 ? `${evidenceCount} Belegstellen im Dossier` : "Noch keine Zitate", derivePartySummaryTone(opposingPositiveTotal, opposingNegativeTotal)),
+      renderAnalysisReportCard("Gesamtbilanz", balanceText, verdict.label, balanceTone)
     ].join("");
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
@@ -208,11 +445,16 @@ async function refreshAnalysisReport(files = allFiles) {
     }
     analysisReportBar.classList.remove("is-ready");
     analysisReportHint.textContent = "Gesamtbeurteilung konnte nicht geladen werden.";
+    analysisReportMeta.innerHTML = renderAnalysisReportMeta(
+      { label: "Bericht nicht verfügbar", tone: "negative", detail: "Die Dossieraggregation konnte nicht erstellt werden." },
+      "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.",
+      "Bitte Analyse erneut laden oder Backend-Verbindung prüfen."
+    );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "neutral"),
-      renderAnalysisReportCard("Positive Hinweise gesamt", "—"),
-      renderAnalysisReportCard("Negative Hinweise gesamt", "—"),
-      renderAnalysisReportCard("Gesamtbilanz", "—")
+      renderAnalysisReportCard("Dateien im Dossier", String(fileCount), "Bestand erkannt", "neutral"),
+      renderAnalysisReportCard("Benachteiligte Person", "—", "Keine Aggregation", "neutral"),
+      renderAnalysisReportCard("Gegenpartei", "—", "Keine Aggregation", "neutral"),
+      renderAnalysisReportCard("Gesamtbilanz", "—", "Keine Aggregation", "neutral")
     ].join("");
   }
 }
@@ -677,7 +919,12 @@ async function getDocumentAnalysis(file, options = {}) {
         negativeMentions: Number.isFinite(Number(payload.negativeMentions)) ? Number(payload.negativeMentions) : 0,
         opposingPositiveMentions: Number.isFinite(Number(payload.opposingPositiveMentions)) ? Number(payload.opposingPositiveMentions) : 0,
         opposingNegativeMentions: Number.isFinite(Number(payload.opposingNegativeMentions)) ? Number(payload.opposingNegativeMentions) : 0,
-        message: normalizeTitleText(payload.message)
+        message: normalizeTitleText(payload.message),
+        analysisEngineVersion: normalizeTitleText(payload.analysisEngineVersion),
+        backendStartedAt: normalizeTitleText(payload.backendStartedAt),
+        methodology: normalizeTitleText(payload.methodology),
+        evidence: normalizeEvidence(payload.evidence),
+        textQuality: normalizeTextQualityMeta(payload.textQuality)
       };
     })
     .catch((error) => {
@@ -697,7 +944,12 @@ async function getDocumentAnalysis(file, options = {}) {
           negativeMentions: 0,
           opposingPositiveMentions: 0,
           opposingNegativeMentions: 0,
-          message: ""
+          message: "",
+          analysisEngineVersion: "",
+          backendStartedAt: "",
+          methodology: "",
+          evidence: normalizeEvidence(null),
+          textQuality: normalizeTextQualityMeta(null)
         };
       }
 
@@ -716,7 +968,12 @@ async function getDocumentAnalysis(file, options = {}) {
         negativeMentions: 0,
         opposingPositiveMentions: 0,
         opposingNegativeMentions: 0,
-        message: "Analyse konnte nicht geladen werden."
+        message: "Analyse konnte nicht geladen werden.",
+        analysisEngineVersion: "",
+        backendStartedAt: "",
+        methodology: "",
+        evidence: normalizeEvidence(null),
+        textQuality: normalizeTextQualityMeta(null)
       };
     });
 
@@ -831,6 +1088,9 @@ async function loadRowAnalysis(file, options = {}) {
   const opposingNegativeMentions = Math.max(0, Number(analysis.opposingNegativeMentions || 0));
   const analysisEngineVersion = normalizeTitleText(analysis.analysisEngineVersion || "");
   const backendStartedAt = normalizeTitleText(analysis.backendStartedAt || "");
+  const methodology = normalizeTitleText(analysis.methodology || "") || "Parteibezogene Positiv-/Negativzählung mit Belegstellenprüfung.";
+  const textQuality = normalizeTextQualityMeta(analysis.textQuality);
+  const evidence = normalizeEvidence(analysis.evidence);
   const protectedKeywords = normalizeTitleText(currentCaseProtectedKeywords) || "Nicht gesetzt";
   const opposingKeywords = normalizeTitleText(currentCaseOpposingKeywords) || "Nicht gesetzt";
   const title = analysis.title || "Unbekannt";
@@ -839,19 +1099,43 @@ async function loadRowAnalysis(file, options = {}) {
   const senderInstitution = analysis.senderInstitution || "Unbekannt";
   const impactAssessment = analysis.impactAssessment || "";
   const peopleValue = people.length > 0 ? people.join(" · ") : "Keine";
+  const verdict = deriveDocumentVerdict(analysis);
+  const evidenceCount = countEvidenceSnippets(evidence);
+  const qualityValue = Number.isFinite(textQuality.score)
+    ? `${textQuality.label} · ${textQuality.score.toFixed(2)}`
+    : textQuality.label;
+  const qualityDetail = Number.isFinite(textQuality.score)
+    ? `Vertrauen ${textQuality.confidence}`
+    : textQuality.confidence;
+  const engineText = analysisEngineVersion || backendStartedAt
+    ? `${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}`
+    : "";
 
   box.innerHTML = `
     <div class="queue-analysis">
-      <div class="qa-card-title">Forensische KI-Analyse</div>
-      ${resolvedDocType ? `<span class="qa-tag">${resolvedDocType}</span>` : ""}
+      <div class="qa-topline">
+        <div>
+          <div class="qa-card-title">Forensischer Kurzbericht</div>
+          <div class="qa-subtitle">Dokumentbezogene Einordnung mit Nachvollziehbarkeit</div>
+        </div>
+        <div class="qa-chip-row">
+          ${resolvedDocType ? `<span class="qa-tag">${escapeHtml(resolvedDocType)}</span>` : ""}
+          <span class="qa-report-chip is-${escapeHtml(verdict.tone)}">${escapeHtml(verdict.label)}</span>
+          <span class="qa-report-chip is-${textQuality.label === "Hoch" || textQuality.label === "Gut" ? "positive" : (textQuality.label === "Niedrig" ? "negative" : "neutral")}">${escapeHtml(qualityValue)}</span>
+        </div>
+      </div>
       <div class="qa-grid">
-        <span class="qa-field"><span class="qa-label">Titel</span>${title}</span>
-        <span class="qa-field"><span class="qa-label">Verfasser</span>${author}</span>
-        <span class="qa-field"><span class="qa-label">Datum</span>${date}</span>
-        <span class="qa-field"><span class="qa-label">Herkunft</span>${senderInstitution}</span>
-        <span class="qa-field"><span class="qa-label">Personen</span><span class="qa-field-value">${peopleValue}</span></span>
-        ${(analysisEngineVersion || backendStartedAt) ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span><span class="qa-field-value">${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}</span></span>` : ""}
-        ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span><span class="qa-field-value">${impactAssessment}</span></span>` : ""}
+        <span class="qa-field"><span class="qa-label">Titel</span><span class="qa-field-value">${escapeHtml(title)}</span></span>
+        <span class="qa-field"><span class="qa-label">Verfasser</span><span class="qa-field-value">${escapeHtml(author)}</span></span>
+        <span class="qa-field"><span class="qa-label">Datum</span><span class="qa-field-value">${escapeHtml(date)}</span></span>
+        <span class="qa-field"><span class="qa-label">Herkunft</span><span class="qa-field-value">${escapeHtml(senderInstitution)}</span></span>
+        <span class="qa-field"><span class="qa-label">Personen</span><span class="qa-field-value">${escapeHtml(peopleValue)}</span></span>
+        <span class="qa-field"><span class="qa-label">Extraktion</span><span class="qa-field-value">${escapeHtml(textQuality.extractionMethod)}</span></span>
+        <span class="qa-field"><span class="qa-label">Textqualität</span><span class="qa-field-value">${escapeHtml(qualityValue)} · ${escapeHtml(qualityDetail)}</span></span>
+        <span class="qa-field"><span class="qa-label">Belegstellen</span><span class="qa-field-value">${escapeHtml(String(evidenceCount))}</span></span>
+        ${engineText ? `<span class="qa-field qa-wide"><span class="qa-label">Engine</span><span class="qa-field-value">${escapeHtml(engineText)}</span></span>` : ""}
+        <span class="qa-field qa-wide"><span class="qa-label">Methodik</span><span class="qa-field-value">${escapeHtml(methodology)}</span></span>
+        ${impactAssessment ? `<span class="qa-field qa-wide"><span class="qa-label">Fazit</span><span class="qa-field-value">${escapeHtml(impactAssessment)}</span></span>` : ""}
       </div>
       <div class="qa-mentions">
         <div class="qa-persons-grid">
@@ -871,6 +1155,25 @@ async function loadRowAnalysis(file, options = {}) {
           </div>
         </div>
       </div>
+      <section class="qa-evidence-shell">
+        <div class="qa-evidence-head">
+          <span class="qa-evidence-title">Belegstellen</span>
+          <span class="qa-evidence-subtitle">Kurze Textauszüge zur manuellen Plausibilisierung</span>
+        </div>
+        <div class="qa-evidence-grid">
+          <article class="qa-evidence-column">
+            <div class="qa-evidence-person">${escapeHtml(currentCaseProtectedLabel)}</div>
+            ${renderEvidenceBlock("Positiv", evidence.protectedPerson.positive, "positive", "Keine positiven Belegstellen gespeichert.")}
+            ${renderEvidenceBlock("Negativ", evidence.protectedPerson.negative, "negative", "Keine negativen Belegstellen gespeichert.")}
+          </article>
+          <article class="qa-evidence-column">
+            <div class="qa-evidence-person">${escapeHtml(currentCaseOpposingLabel)}</div>
+            ${renderEvidenceBlock("Positiv", evidence.opposingParty.positive, "positive", "Keine positiven Belegstellen gespeichert.")}
+            ${renderEvidenceBlock("Negativ", evidence.opposingParty.negative, "negative", "Keine negativen Belegstellen gespeichert.")}
+          </article>
+        </div>
+      </section>
+      ${renderImpactRanking(analysis.impactRanking)}
     </div>
   `;
 }
@@ -1075,13 +1378,15 @@ async function loadCaseContext() {
     currentCaseRegion = normalizeTitleText(active.region || active.locality || "");
     currentCaseCity = normalizeTitleText(active.city || "");
     currentCaseName = normalizeTitleText(active.case_name || "");
-    listTitle.textContent = currentCaseName
-      ? `Dateien · ${currentCaseName} (${currentCaseId})`
-      : `Dateien für Fall ${currentCaseId}`;
+    listTitle.textContent = "Fall";
 
     const personsRow = document.getElementById("casePersonsRow");
     if (personsRow) {
       const parts = [];
+      const caseValue = currentCaseName
+        ? `${currentCaseName} (${currentCaseId})`
+        : currentCaseId;
+      parts.push(`<div class="case-person-field is-meta is-case"><span class="case-person-label">Fall</span><span class="case-person-value">${caseValue || "Nicht gesetzt"}</span></div>`);
       parts.push(`<div class="case-person-field is-protected"><span class="case-person-label">Benachteiligte Person</span><span class="case-person-value">${currentCaseProtectedPerson || "Nicht gesetzt"}</span></div>`);
       parts.push(`<div class="case-person-field is-opposing"><span class="case-person-label">Gegenpartei</span><span class="case-person-value">${currentCaseOpposingParty || "Nicht gesetzt"}</span></div>`);
       const regionLabel = currentCaseCountry === "Schweiz" ? "Kanton" : currentCaseCountry ? "Bundesland" : "Kanton / Bundesland";
@@ -1285,6 +1590,14 @@ for (const element of [fileTypeFilter, dateFromFilter]) {
 
 goToUploadBtn.addEventListener("click", () => {
   window.location.href = "/upload.html";
+});
+
+exportPdfReportBtn?.addEventListener("click", () => {
+  const targetUrl = `/report.html?caseId=${encodeURIComponent(currentCaseId)}&autoprint=1`;
+  const opened = window.open(targetUrl, "_blank", "noopener,noreferrer");
+  if (!opened) {
+    window.location.href = targetUrl;
+  }
 });
 
 backToCasesBtn?.addEventListener("click", () => {

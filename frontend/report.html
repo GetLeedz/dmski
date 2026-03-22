@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI PDF-Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="report.css" />
+</head>
+<body>
+  <main class="report-page">
+    <section class="report-toolbar no-print">
+      <div class="report-toolbar-copy">
+        <span class="report-toolbar-eyebrow">DMSKI</span>
+        <strong>PDF-Report</strong>
+      </div>
+      <div class="report-toolbar-actions">
+        <button id="backBtn" type="button" class="toolbar-btn is-ghost">Zurück</button>
+        <button id="printBtn" type="button" class="toolbar-btn">PDF herunterladen</button>
+      </div>
+    </section>
+
+    <article id="reportSheet" class="report-sheet" aria-live="polite">
+      <section class="report-loading">
+        <img src="assets/logo-dmski_slogan.png" alt="DMSKI" class="report-loading-logo" />
+        <p>Report wird erstellt…</p>
+      </section>
+    </article>
+  </main>
+
+  <script src="report.js"></script>
+</body>
+</html>

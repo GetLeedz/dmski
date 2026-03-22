@@ -1194,6 +1194,217 @@ function hasAnyPartyNeedle(text, aliases = []) {
   return needles.some((needle) => new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(lowerText));
 }
 
+function buildEmptyEvidenceBundle() {
+  return {
+    protectedPerson: { positive: [], negative: [] },
+    opposingParty: { positive: [], negative: [] }
+  };
+}
+
+function truncateReportSnippet(value, maxLength = 220) {
+  const normalized = normalizeWhitespace(String(value || "").replace(/^[\-•–]\s*/, ""));
+  if (!normalized) {
+    return "";
+  }
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function pushUniqueReportSnippet(list, snippet, maxItems = 3) {
+  if (!Array.isArray(list) || list.length >= maxItems) {
+    return;
+  }
+
+  const normalized = truncateReportSnippet(snippet);
+  if (!normalized) {
+    return;
+  }
+
+  const key = normalizeForSearch(normalized);
+  if (list.some((entry) => normalizeForSearch(entry) === key)) {
+    return;
+  }
+
+  list.push(normalized);
+}
+
+function appendSnippetByPolarity(target, snippet, polarity, maxItems = 3) {
+  if (!target || typeof target !== "object") {
+    return;
+  }
+
+  if (polarity === "positive") {
+    pushUniqueReportSnippet(target.positive, snippet, maxItems);
+  } else if (polarity === "negative") {
+    pushUniqueReportSnippet(target.negative, snippet, maxItems);
+  }
+}
+
+function collectImpactEvidenceForParty(target, impactRanking = [], aliases = [], maxItems = 3) {
+  const entries = Array.isArray(impactRanking) ? impactRanking : [];
+  for (const entry of entries) {
+    const name = normalizeWhitespace(entry?.name || "");
+    if (!name || !hasAnyPartyNeedle(name, aliases)) {
+      continue;
+    }
+
+    const items = Array.isArray(entry?.items) ? entry.items : [];
+    for (const item of items) {
+      const counts = countPolaritySignals(item);
+      if (counts.positive > 0) {
+        pushUniqueReportSnippet(target.positive, item, maxItems);
+      }
+      if (counts.negative > 0) {
+        pushUniqueReportSnippet(target.negative, item, maxItems);
+      }
+      if (counts.positive === 0 && counts.negative === 0) {
+        appendSnippetByPolarity(target, item, classifyMentionPolarity(item), maxItems);
+      }
+    }
+  }
+}
+
+function buildPartyEvidence(rawText, protectedAliases = [], opposingAliases = [], impactRanking = [], maxItems = 3) {
+  const evidence = buildEmptyEvidenceBundle();
+  collectImpactEvidenceForParty(evidence.protectedPerson, impactRanking, protectedAliases, maxItems);
+  collectImpactEvidenceForParty(evidence.opposingParty, impactRanking, opposingAliases, maxItems);
+
+  const clauses = splitIntoClaimClauses(rawText);
+  for (const clause of clauses) {
+    const mentionsProtected = hasAnyPartyNeedle(clause, protectedAliases);
+    const mentionsOpposing = hasAnyPartyNeedle(clause, opposingAliases);
+    if (!mentionsProtected && !mentionsOpposing) {
+      continue;
+    }
+
+    if (mentionsProtected && mentionsOpposing) {
+      continue;
+    }
+
+    const target = mentionsProtected ? evidence.protectedPerson : evidence.opposingParty;
+    const counts = countDistinctClaimSignals(clause);
+    if (counts.positive > 0) {
+      pushUniqueReportSnippet(target.positive, clause, maxItems);
+    }
+    if (counts.negative > 0) {
+      pushUniqueReportSnippet(target.negative, clause, maxItems);
+    }
+    if (counts.positive === 0 && counts.negative === 0) {
+      appendSnippetByPolarity(target, clause, classifyMentionPolarity(clause), maxItems);
+    }
+  }
+
+  return evidence;
+}
+
+function deriveQualityLabel(score) {
+  if (!Number.isFinite(score)) {
+    return "Nicht verfügbar";
+  }
+  if (score >= 0.94) {
+    return "Hoch";
+  }
+  if (score >= 0.86) {
+    return "Gut";
+  }
+  if (score >= 0.74) {
+    return "Mittel";
+  }
+  return "Niedrig";
+}
+
+function deriveConfidenceLabel(score, ocrUsed = false) {
+  if (!Number.isFinite(score)) {
+    return "Manuell prüfen";
+  }
+  if (score >= 0.9 && !ocrUsed) {
+    return "Hoch";
+  }
+  if (score >= 0.8) {
+    return "Gut";
+  }
+  if (score >= 0.68) {
+    return "Mittel";
+  }
+  return "Niedrig";
+}
+
+function buildTextQualityMeta(rawText, { sourceType = "Text", extractionMethod = "Unbekannt", ocrUsed = false } = {}) {
+  const normalized = normalizeWhitespace(rawText);
+  if (!normalized) {
+    return {
+      score: null,
+      label: "Nicht verfügbar",
+      confidence: "Manuell prüfen",
+      extractionMethod: normalizeWhitespace(extractionMethod) || "Unbekannt",
+      sourceType: normalizeWhitespace(sourceType) || "Text",
+      ocrUsed: Boolean(ocrUsed)
+    };
+  }
+
+  const score = Number(scoreExtractedTextQuality(normalized).toFixed(2));
+  return {
+    score,
+    label: deriveQualityLabel(score),
+    confidence: deriveConfidenceLabel(score, ocrUsed),
+    extractionMethod: normalizeWhitespace(extractionMethod) || "Unbekannt",
+    sourceType: normalizeWhitespace(sourceType) || "Text",
+    ocrUsed: Boolean(ocrUsed)
+  };
+}
+
+function normalizeTextQualityMeta(value) {
+  if (!value || typeof value !== "object") {
+    return buildTextQualityMeta("", {});
+  }
+
+  const score = Number.isFinite(Number(value.score)) ? Number(Number(value.score).toFixed(2)) : null;
+  const ocrUsed = Boolean(value.ocrUsed);
+  return {
+    score,
+    label: normalizeWhitespace(value.label) || deriveQualityLabel(score),
+    confidence: normalizeWhitespace(value.confidence) || deriveConfidenceLabel(score, ocrUsed),
+    extractionMethod: normalizeWhitespace(value.extractionMethod) || "Unbekannt",
+    sourceType: normalizeWhitespace(value.sourceType) || "Text",
+    ocrUsed
+  };
+}
+
+function normalizeEvidenceBundle(value) {
+  const safe = buildEmptyEvidenceBundle();
+  const src = value && typeof value === "object" ? value : {};
+  for (const section of ["protectedPerson", "opposingParty"]) {
+    const sectionSource = src[section] && typeof src[section] === "object" ? src[section] : {};
+    for (const tone of ["positive", "negative"]) {
+      const target = safe[section][tone];
+      const sourceList = Array.isArray(sectionSource[tone]) ? sectionSource[tone] : [];
+      for (const item of sourceList) {
+        pushUniqueReportSnippet(target, item, 3);
+      }
+    }
+  }
+  return safe;
+}
+
+function enrichAnalysisForReport(analysis, { rawText = "", protectedAliases = [], opposingAliases = [], textQuality = null, methodology = "" } = {}) {
+  const safe = analysis && typeof analysis === "object" ? analysis : {};
+  const reportMethodology = normalizeWhitespace(methodology)
+    || "Quantitative Parteiauswertung mit Positiv-/Negativzählung und Belegstellenprüfung.";
+
+  return {
+    ...safe,
+    textQuality: normalizeTextQualityMeta(safe.textQuality || textQuality),
+    evidence: normalizeEvidenceBundle(
+      safe.evidence || buildPartyEvidence(rawText, protectedAliases, opposingAliases, safe.impactRanking, 3)
+    ),
+    methodology: normalizeWhitespace(safe.methodology || reportMethodology)
+  };
+}
+
 function countProtectedMentions(rawText, protectedName, impactRanking = [], aliases = []) {
   const name = normalizeWhitespace(protectedName);
   if (!name) {
@@ -1358,7 +1569,7 @@ function parsePdfMetadataDate(value) {
   return `${day}.${month}.${year}`;
 }
 
-function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], positiveMentions = 0, negativeMentions = 0, opposingPositiveMentions = 0, opposingNegativeMentions = 0, rawText = "", message = "" }) {
+function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], positiveMentions = 0, negativeMentions = 0, opposingPositiveMentions = 0, opposingNegativeMentions = 0, rawText = "", message = "", textQuality = null, evidence = null, methodology = "" }) {
   const normalizedAuthor = normalizeWhitespace(author);
   const normalizedTitle = normalizeWhitespace(title);
 
@@ -1426,6 +1637,9 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
     opposingPositiveMentions: Number(opposingPositiveMentions) || 0,
     opposingNegativeMentions: Number(opposingNegativeMentions) || 0,
     message: normalizeWhitespace(message),
+    textQuality: normalizeTextQualityMeta(textQuality),
+    evidence: normalizeEvidenceBundle(evidence),
+    methodology: normalizeWhitespace(methodology),
     analysisEngineVersion: getAnalysisEngineVersion(),
     backendStartedAt: BACKEND_INSTANCE_STARTED_AT
   };
@@ -2846,7 +3060,12 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
         const ocrText = shouldUsePdfOcrFallback(parsedText)
           ? await extractTextFromPdfWithOcr(fileBuffer)
           : "";
+        const normalizedParsedText = normalizeExtractedDocumentText(parsedText);
+        const normalizedOcrText = normalizeExtractedDocumentText(ocrText);
         const extractedText = pickBetterPdfText(parsedText, ocrText);
+        const usedOcr = Boolean(normalizedOcrText)
+          && extractedText === normalizedOcrText
+          && extractedText !== normalizedParsedText;
 
         if (!extractedText) {
           return res.json(withAnalysisRuntimeMeta({
@@ -2865,8 +3084,19 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
         const fallback = buildHeuristicAnalysisFromText(extractedText, parsed?.info || {});
         const aiResult = await analyzeTextWithAi(extractedText, fallback, parties.protectedPersonName, parties.opposingPartyName);
         const focused = applyProtectedPersonFocus(aiResult, extractedText, parties.protectedPersonName, parties.opposingPartyName);
-        await saveDocumentAnalysis(file.id, focused);
-        return res.json(withAnalysisRuntimeMeta(focused));
+        const enriched = enrichAnalysisForReport(focused, {
+          rawText: extractedText,
+          protectedAliases: parsePartyAliases(parties.protectedPersonName).aliases,
+          opposingAliases: parsePartyAliases(parties.opposingPartyName).aliases,
+          textQuality: buildTextQualityMeta(extractedText, {
+            sourceType: "PDF",
+            extractionMethod: usedOcr ? "OCR-Fallback" : (normalizedParsedText ? "Direkter Textlayer" : "OCR"),
+            ocrUsed: Boolean(normalizedOcrText)
+          }),
+          methodology: "Quantitative Parteiauswertung mit Positiv-/Negativzählung, Rollenabgleich und Belegstellenprüfung."
+        });
+        await saveDocumentAnalysis(file.id, enriched);
+        return res.json(withAnalysisRuntimeMeta(enriched));
       } catch (pdfError) {
         console.error("PDF parse warning:", pdfError.message);
         const fallback = {
@@ -2887,8 +3117,22 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       const parties = await getCaseParties(caseId);
       const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name, parties.protectedPersonName, parties.opposingPartyName);
       const focused = applyProtectedPersonFocus(imageResult, "", parties.protectedPersonName, parties.opposingPartyName);
-      await saveDocumentAnalysis(file.id, focused);
-      return res.json(withAnalysisRuntimeMeta(focused));
+      const enriched = enrichAnalysisForReport(focused, {
+        rawText: "",
+        protectedAliases: parsePartyAliases(parties.protectedPersonName).aliases,
+        opposingAliases: parsePartyAliases(parties.opposingPartyName).aliases,
+        textQuality: {
+          score: null,
+          label: "Nicht verfügbar",
+          confidence: "Manuell prüfen",
+          extractionMethod: /ocr/i.test(String(focused.message || "")) ? "OCR" : "Bildanalyse",
+          sourceType: "Bild",
+          ocrUsed: /ocr/i.test(String(focused.message || ""))
+        },
+        methodology: "Bild- oder OCR-basierte Dokumentanalyse mit parteibezogener Positiv-/Negativzählung."
+      });
+      await saveDocumentAnalysis(file.id, enriched);
+      return res.json(withAnalysisRuntimeMeta(enriched));
     }
 
     const unsupported = {
