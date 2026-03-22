@@ -151,6 +151,8 @@ async function downloadStorageFile(caseId, storedName) {
 let openAiClient = null;
 let pdfParseFn;
 let pdfParseLoadLogged = false;
+let pdfJsLibPromise = null;
+let pdfJsLoadLogged = false;
 let analysisStorageInitPromise = null;
 
 function getPdfParse() {
@@ -183,6 +185,24 @@ function getOpenAiClient() {
   }
 
   return openAiClient;
+}
+
+async function getPdfJsLib() {
+  if (pdfJsLibPromise) {
+    return pdfJsLibPromise;
+  }
+
+  pdfJsLibPromise = import("pdfjs-dist/legacy/build/pdf.mjs")
+    .then((mod) => mod || null)
+    .catch((error) => {
+      if (!pdfJsLoadLogged) {
+        console.error("PDF.js unavailable:", error.message);
+        pdfJsLoadLogged = true;
+      }
+      return null;
+    });
+
+  return pdfJsLibPromise;
 }
 
 function getPreferredAnalysisModels() {
@@ -309,6 +329,58 @@ function normalizeExtractedDocumentText(value) {
     .replace(/\bsollso\b/gi, "soll so")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function countSuspiciousPdfTokens(value) {
+  return String(value || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((token) => /�|[;:_]{2,}|["'`][\p{L}\p{N}]|[\p{L}\p{N}]["'`][\p{L}\p{N}]|[\p{L}][^\s]*[";:_][^\s]*[\p{L}]/u.test(token))
+    .length;
+}
+
+function scoreExtractedTextQuality(value) {
+  const text = String(value || "");
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return 0;
+  }
+
+  const tokens = trimmed.split(/\s+/).filter(Boolean);
+  const suspiciousTokens = countSuspiciousPdfTokens(trimmed);
+  const letters = (trimmed.match(/\p{L}/gu) || []).length;
+  const readableChars = (trimmed.match(/[\p{L}\p{N}\s.,;:!?()/%-]/gu) || []).length;
+  const tokenQuality = Math.max(0, (tokens.length - suspiciousTokens) / Math.max(tokens.length, 1));
+  const charQuality = readableChars / Math.max(trimmed.length, 1);
+  const letterDensity = Math.min(1, letters / Math.max(trimmed.length * 0.45, 1));
+
+  return (tokenQuality * 0.5) + (charQuality * 0.25) + (letterDensity * 0.25);
+}
+
+function shouldUsePdfOcrFallback(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) {
+    return true;
+  }
+
+  const suspiciousTokens = countSuspiciousPdfTokens(trimmed);
+  const quality = scoreExtractedTextQuality(trimmed);
+  return suspiciousTokens >= 8 || quality < 0.84;
+}
+
+function pickBetterPdfText(primaryText, ocrText) {
+  const normalizedPrimary = normalizeExtractedDocumentText(primaryText);
+  const normalizedOcr = normalizeExtractedDocumentText(ocrText);
+  if (!normalizedOcr) {
+    return normalizedPrimary;
+  }
+  if (!normalizedPrimary) {
+    return normalizedOcr;
+  }
+
+  const primaryScore = scoreExtractedTextQuality(normalizedPrimary);
+  const ocrScore = scoreExtractedTextQuality(normalizedOcr);
+  return ocrScore >= primaryScore + 0.03 ? normalizedOcr : normalizedPrimary;
 }
 
 const BACKEND_INSTANCE_STARTED_AT = new Date().toISOString();
@@ -2013,6 +2085,63 @@ async function extractTextFromImageWithOcr(fileBuffer) {
   }
 }
 
+async function renderPdfPagesToImageBuffers(fileBuffer, maxPages = 6) {
+  try {
+    const pdfjs = await getPdfJsLib();
+    if (!pdfjs?.getDocument) {
+      return [];
+    }
+
+    const { createCanvas } = require("@napi-rs/canvas");
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(fileBuffer),
+      disableWorker: true,
+      useSystemFonts: true,
+      isEvalSupported: false
+    });
+
+    const pdfDocument = await loadingTask.promise;
+    const pageCount = Math.min(Number(pdfDocument?.numPages || 0), maxPages);
+    const renderedPages = [];
+
+    for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+      const page = await pdfDocument.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
+      const context = canvas.getContext("2d");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      await page.render({ canvasContext: context, viewport }).promise;
+      renderedPages.push(canvas.toBuffer("image/png"));
+      page.cleanup?.();
+    }
+
+    await loadingTask.destroy?.();
+    return renderedPages;
+  } catch (error) {
+    console.warn("PDF render warning:", error.message);
+    return [];
+  }
+}
+
+async function extractTextFromPdfWithOcr(fileBuffer) {
+  const renderedPages = await renderPdfPagesToImageBuffers(fileBuffer);
+  if (renderedPages.length === 0) {
+    return "";
+  }
+
+  const pageTexts = [];
+  for (const pageBuffer of renderedPages) {
+    const pageText = await extractTextFromImageWithOcr(pageBuffer);
+    if (pageText) {
+      pageTexts.push(pageText);
+    }
+  }
+
+  return normalizeExtractedDocumentText(pageTexts.join("\n\n"));
+}
+
 async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "", protectedPersonName = "", opposingPartyName = "") {
   const fileNameTitle = deriveTitleFromFileName(originalName);
 
@@ -2712,7 +2841,14 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       try {
         const parties = await getCaseParties(caseId);
         const pdfParse = getPdfParse();
-        if (!pdfParse) {
+        const parsed = pdfParse ? await pdfParse(fileBuffer) : { text: "", info: {} };
+        const parsedText = String(parsed?.text || "");
+        const ocrText = shouldUsePdfOcrFallback(parsedText)
+          ? await extractTextFromPdfWithOcr(fileBuffer)
+          : "";
+        const extractedText = pickBetterPdfText(parsedText, ocrText);
+
+        if (!extractedText) {
           return res.json(withAnalysisRuntimeMeta({
             status: "empty",
             title: "",
@@ -2720,11 +2856,12 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
             authoredDate: "",
             people: [],
             disadvantagedPerson: "",
-            message: "PDF-Parser ist aktuell nicht verfuegbar."
+            message: pdfParse
+              ? "PDF-Inhalt konnte nicht gelesen werden (möglicherweise Scan oder defekter Textlayer)."
+              : "PDF-Parser ist aktuell nicht verfuegbar und OCR lieferte keinen klaren Text."
           }));
         }
-        const parsed = await pdfParse(fileBuffer);
-        const extractedText = normalizeExtractedDocumentText(parsed?.text || "");
+
         const fallback = buildHeuristicAnalysisFromText(extractedText, parsed?.info || {});
         const aiResult = await analyzeTextWithAi(extractedText, fallback, parties.protectedPersonName, parties.opposingPartyName);
         const focused = applyProtectedPersonFocus(aiResult, extractedText, parties.protectedPersonName, parties.opposingPartyName);
