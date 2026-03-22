@@ -1437,7 +1437,7 @@ async function loadCaseContext() {
       const caseValue = currentCaseName
         ? `${currentCaseName} (${currentCaseId})`
         : currentCaseId;
-      parts.push(buildEditableField("is-meta is-case", "case_name", "Fallname", currentCaseName, "grid-column:1/-1"));
+      parts.push(buildEditableField("is-meta is-case", "case_name", "Fallname", currentCaseName));
       parts.push(`<div class="case-person-field is-meta"><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">Fallnummer</span><span class="case-person-value">${escapeHtml(currentCaseId)}</span></div></div></div>`);
       parts.push(buildEditableField("is-protected", "protected_person_name", "Benachteiligte Person", currentCaseProtectedPerson));
       parts.push(buildEditableField("is-opposing", "opposing_party", "Gegenpartei", currentCaseOpposingParty));
@@ -1445,7 +1445,7 @@ async function loadCaseContext() {
       parts.push(buildEditableField("is-meta", "country", "Land", currentCaseCountry));
       parts.push(buildEditableField("is-meta", "region", regionLabel, currentCaseRegion));
       if (currentCaseCity) {
-        parts.push(buildEditableField("is-meta", "city", "Ortschaft / Sitz des Gerichts", currentCaseCity, "grid-column:1/-1"));
+        parts.push(buildEditableField("is-meta", "city", "Ortschaft / Sitz des Gerichts", currentCaseCity));
       }
       personsRow.innerHTML = parts.join("");
     }

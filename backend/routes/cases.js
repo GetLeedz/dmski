@@ -2841,6 +2841,52 @@ router.get("/", requireAuth, async (_req, res) => {
   }
 });
 
+router.patch("/:caseId", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+
+  const allowedFields = ["case_name", "protected_person_name", "opposing_party", "country", "region", "city", "locality"];
+  const updates = {};
+  for (const field of allowedFields) {
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      updates[field] = String(req.body[field] || "").trim() || null;
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: "Keine Felder zum Aktualisieren angegeben." });
+  }
+
+  try {
+    await ensureCaseOptionalColumns();
+    const setClauses = Object.keys(updates).map((field, i) => `${field} = $${i + 2}`).join(", ");
+    const values = [caseId, ...Object.values(updates)];
+    await pool.query(`UPDATE cases SET ${setClauses} WHERE id = $1`, values);
+
+    const partiesChanged = ["protected_person_name", "opposing_party", "country", "region", "city", "locality"]
+      .some((f) => f in updates);
+    if (partiesChanged) {
+      const current = await getCaseParties(caseId);
+      await upsertCasePartiesFallback(
+        caseId,
+        updates.protected_person_name !== undefined ? updates.protected_person_name : current.protectedPersonName,
+        updates.opposing_party !== undefined ? updates.opposing_party : current.opposingPartyName,
+        updates.country !== undefined ? updates.country : current.country,
+        updates.locality !== undefined ? updates.locality : current.locality,
+        updates.region !== undefined ? updates.region : current.region,
+        updates.city !== undefined ? updates.city : current.city
+      );
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Patch case error:", err.message);
+    return res.status(500).json({ error: "Fall konnte nicht aktualisiert werden." });
+  }
+});
+
 router.delete("/:caseId", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
