@@ -158,15 +158,38 @@ function buildEditableField(cssClass, apiField, label, value, style) {
   return `<div class="case-person-field ${cssClass}" data-edit-field="${apiField}"${styleAttr}><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(value || "Nicht gesetzt")}</span></div><button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button></div></div>`;
 }
 
+const COUNTRY_OPTIONS = ["Schweiz", "Deutschland", "Österreich", "Frankreich", "Italien", "Liechtenstein", "Anderes"];
+const CANTON_OPTIONS = [
+  "Aargau","Appenzell Ausserrhoden","Appenzell Innerrhoden","Basel-Landschaft","Basel-Stadt",
+  "Bern","Freiburg","Genf","Glarus","Graubünden","Jura","Luzern","Neuenburg","Nidwalden",
+  "Obwalden","Schaffhausen","Schwyz","Solothurn","St. Gallen","Tessin","Thurgau","Uri",
+  "Waadt","Wallis","Zug","Zürich"
+];
+
+function buildSelectOptions(options, current) {
+  return options.map((o) => `<option value="${escapeHtml(o)}"${o === current ? " selected" : ""}>${escapeHtml(o)}</option>`).join("");
+}
+
 function startCaseFieldEdit(fieldEl) {
   const labelEl = fieldEl.querySelector(".case-person-label");
   const valueEl = fieldEl.querySelector(".case-person-value");
   const row = fieldEl.querySelector(".case-field-row");
   if (!labelEl || !valueEl || !row) return;
   const label = labelEl.textContent.trim();
+  const apiField = fieldEl.dataset.editField;
   const currentValue = valueEl.textContent.trim();
   const originalValue = currentValue === "Nicht gesetzt" ? "" : currentValue;
-  row.innerHTML = `<div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><input class="case-edit-input" value="${escapeHtml(originalValue)}" data-original="${escapeHtml(currentValue)}" /></div><div class="case-edit-actions"><button class="case-save-btn" data-action="save-field" title="Speichern">✓</button><button class="case-cancel-btn" data-action="cancel-field" title="Abbrechen">✗</button></div>`;
+
+  let inputHtml;
+  if (apiField === "country") {
+    inputHtml = `<select class="case-edit-input" data-original="${escapeHtml(currentValue)}">${buildSelectOptions(COUNTRY_OPTIONS, originalValue)}</select>`;
+  } else if (apiField === "region") {
+    inputHtml = `<select class="case-edit-input" data-original="${escapeHtml(currentValue)}">${buildSelectOptions(CANTON_OPTIONS, originalValue)}</select>`;
+  } else {
+    inputHtml = `<input class="case-edit-input" value="${escapeHtml(originalValue)}" data-original="${escapeHtml(currentValue)}" />`;
+  }
+
+  row.innerHTML = `<div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span>${inputHtml}</div><div class="case-edit-actions"><button class="case-save-btn" data-action="save-field" title="Speichern">✓</button><button class="case-cancel-btn" data-action="cancel-field" title="Abbrechen">✗</button></div>`;
   row.querySelector(".case-edit-input")?.focus();
 }
 
