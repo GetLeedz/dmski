@@ -134,9 +134,9 @@ const CITIES_BY_REGION = {
     "Bern": ["Bern", "Biel/Bienne", "Burgdorf", "Köniz", "Langenthal", "Münsingen", "Steffisburg", "Thun"],
     "Freiburg": ["Bulle", "Düdingen", "Freiburg", "Murten"],
     "Genf": ["Carouge", "Genf", "Lancy", "Meyrin", "Vernier"],
-    "Glarus": ["Glarus", "Glarus Nord", "Glarus Süd"],
-    "Graubünden": ["Chur", "Davos", "Ilanz", "Samedan", "St. Moritz"],
-    "Jura": ["Delémont", "Porrentruy", "Saignelégier"],
+      placeholder.textContent = cases.length > 0
+        ? "Bitte Fall auswählen"
+        : "Noch keine Fälle vorhanden";
     "Luzern": ["Emmen", "Horw", "Kriens", "Luzern", "Sursee", "Wolhusen"],
     "Neuenburg": ["La Chaux-de-Fonds", "Le Locle", "Neuenburg"],
     "Nidwalden": ["Buochs", "Hergiswil", "Stans"],
@@ -149,9 +149,10 @@ const CITIES_BY_REGION = {
     "Thurgau": ["Arbon", "Frauenfeld", "Kreuzlingen"],
     "Uri": ["Altdorf", "Andermatt"],
     "Waadt": ["Lausanne", "Montreux", "Nyon", "Renens", "Yverdon-les-Bains"],
-    "Wallis": ["Brig", "Monthey", "Sion/Sitten", "Visp"],
-    "Zug": ["Baar", "Cham", "Steinhausen", "Zug"],
-    "Zürich": ["Bülach", "Dietikon", "Dübendorf", "Frenkendorf", "Kloten", "Uster", "Winterthur", "Zürich"]
+        // Show Fallnummer (item.id) and Fallname (item.case_name)
+        option.textContent = protectedLabel
+          ? `${createdLabel} – Fallnummer: ${item.id} – ${item.case_name} (${placeDetail || "Ort nicht gesetzt"}; Benachteiligte Person: ${protectedLabel})`
+          : `${createdLabel} – Fallnummer: ${item.id} – ${item.case_name} (${placeDetail || "Ort nicht gesetzt"})`;
   },
   Deutschland: {
     "Baden-Württemberg": ["Freiburg im Breisgau", "Heidelberg", "Heilbronn", "Karlsruhe", "Konstanz", "Mannheim", "Pforzheim", "Ravensburg", "Stuttgart", "Ulm"],
@@ -172,7 +173,7 @@ const CITIES_BY_REGION = {
     "Thüringen": ["Erfurt", "Gera", "Jena", "Weimar"]
   },
   Österreich: {
-    "Burgenland": ["Eisenstadt", "Neusiedl am See", "Oberwart"],
+        maybeShowServiceAlert(res.status, "Fallliste nicht verfügbar");
     "Kärnten": ["Klagenfurt", "Spittal an der Drau", "Villach", "Wolfsberg"],
     "Niederösterreich": ["Amstetten", "Krems an der Donau", "Sankt Pölten", "Wiener Neustadt"],
     "Oberösterreich": ["Gmunden", "Linz", "Steyr", "Wels"],
@@ -224,7 +225,7 @@ function populateCityOptions(country, region, preferred = "") {
   citySelect.appendChild(placeholder);
 
   for (const city of cities) {
-    const option = document.createElement("option");
+        setMessage(caseMessage, data.error || "Fall konnte nicht erstellt werden.", "error");
     option.value = city;
     option.textContent = city;
     citySelect.appendChild(option);
@@ -306,9 +307,7 @@ async function loadCasesList() {
       const placeLabel = [localityLabel, countryLabel].filter(Boolean).join(", ");
       const cityLabel = String(item.city || "").trim();
       const placeDetail = [cityLabel, localityLabel, countryLabel].filter(Boolean).join(", ");
-      option.textContent = protectedLabel
-        ? `${createdLabel} - ${item.id} - ${item.case_name} (${placeDetail || "Ort nicht gesetzt"}; Benachteiligte Person: ${protectedLabel})`
-        : `${createdLabel} - ${item.id} - ${item.case_name}${placeDetail ? ` (${placeDetail})` : ""}`;
+        option.textContent = `Fallnummer: ${item.id} – ${item.case_name}`;
       existingCasesSelect.appendChild(option);
     }
   } catch (error) {
