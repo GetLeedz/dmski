@@ -8,7 +8,12 @@ if (!/^\d{6}$/.test(currentCaseId)) {
   window.location.replace("/dashboard.html");
 }
 
-document.body.style.visibility = "visible";
+const authGate = document.getElementById("authGate");
+const dashboardMain = document.getElementById("dashboardMain");
+if (token && dashboardMain) {
+  dashboardMain.style.display = "";
+  if (authGate) authGate.remove();
+}
 
 const host = String(window.location.hostname || "").toLowerCase();
 const isLocalHost = host === "localhost"

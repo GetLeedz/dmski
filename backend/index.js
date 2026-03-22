@@ -1,4 +1,5 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const cors = require("cors");
 const express = require("express");
@@ -39,6 +40,15 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/cases", casesRouter);
+
+// Express 5 JSON error handler – prevents default HTML error pages
+app.use((err, _req, res, _next) => {
+  const status = typeof err.status === "number" ? err.status : 500;
+  const message = err.expose ? err.message : (status < 500 ? err.message : "Interner Serverfehler.");
+  if (!res.headersSent) {
+    res.status(status).json({ error: message });
+  }
+});
 
 app.listen(port, host, () => {
   console.log(`Backend running on http://${host}:${port}`);

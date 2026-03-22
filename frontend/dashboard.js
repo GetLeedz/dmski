@@ -1,8 +1,14 @@
 const token = sessionStorage.getItem("token");
 if (!token) {
   window.location.replace("/");
-} else {
-  document.body.style.visibility = "visible";
+}
+
+const authGate = document.getElementById("authGate");
+const dashboardMain = document.getElementById("dashboardMain");
+
+if (token && dashboardMain) {
+  dashboardMain.style.display = "";
+  if (authGate) authGate.remove();
 }
 
 const host = String(window.location.hostname || "").toLowerCase();

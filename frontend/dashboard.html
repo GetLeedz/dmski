@@ -9,8 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dashboard.css" />
 </head>
-<body style="visibility:hidden">
-  <main class="page">
+<body>
+  <div id="authGate" class="auth-gate">
+    <img src="assets/logo-dmski.png" alt="DMSKI" style="height:2.2rem;opacity:.7" />
+    <p style="margin:.8rem 0 0;color:#4a6672;font-size:.92rem">Sitzung wird geprüft…</p>
+  </div>
+  <main class="page" style="display:none" id="dashboardMain">
     <header class="topbar">
       <div class="brand-lockup">
         <a href="/dashboard.html" class="brand-home-link" aria-label="Zur Startseite">
