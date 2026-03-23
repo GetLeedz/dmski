@@ -498,9 +498,6 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
 
   const tableRows = profile.rows.map(r => {
     const cls      = r.present ? "tactic-row-present" : "tactic-row-absent";
-    const badge    = r.present
-      ? `<span class="tactic-badge is-found">Indiz</span>`
-      : `<span class="tactic-badge is-none">Kein Nachweis</span>`;
     const evidenceText = escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""));
     const docCell  = r.present && docRefList.length > 0
       ? `<span class="tactic-doc-ids">${docRefList.join(", ")}</span>`
@@ -508,7 +505,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
     return `<tr class="${cls}">
       <td class="tactic-td-tactic">${escapeHtml(r.tactic)}</td>
       <td class="tactic-td-article">${escapeHtml(r.article)}</td>
-      <td class="tactic-td-ki"><div class="tactic-ki-cell">${badge}<span class="tactic-evidence-text">${evidenceText}</span></div></td>
+      <td class="tactic-td-ki">${evidenceText}</td>
       <td class="tactic-doc-id-cell">${docCell}</td>
     </tr>`;
   }).join("");
@@ -531,7 +528,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
             <tr>
               <th>Tatbestand / Methode</th>
               <th>Rechtsgrundlage (CH)</th>
-              <th>KI-Einschätzung</th>
+              <th>KI-Einschätzung / Indiz</th>
               <th>DOC-ID</th>
             </tr>
           </thead>

@@ -2556,24 +2556,23 @@ td {
   color: #708d99;
 }
 
-/* "Benachteiligte Person" card – teal */
+/* All 3 cards share the same neutral white/cyan style */
 .analysis-report-card.is-protected,
 .analysis-report-grid .analysis-report-card:nth-child(2) {
-  border-color: rgba(17,107,115,0.35);
-  background: linear-gradient(135deg, #f0fafb, #e4f4f5);
+  border-color: #d9e7ec;
+  background: rgba(255, 255, 255, 0.9);
 }
 .analysis-report-grid .analysis-report-card:nth-child(2) .analysis-report-card-value {
-  color: #0d5760;
+  color: #153f4b;
 }
 
-/* "Gegenpartei" card – same teal as Benachteiligte Person */
 .analysis-report-card.is-opposing,
 .analysis-report-grid .analysis-report-card:nth-child(3) {
-  border-color: rgba(17,107,115,0.35);
-  background: linear-gradient(135deg, #f0fafb, #e4f4f5);
+  border-color: #d9e7ec;
+  background: rgba(255, 255, 255, 0.9);
 }
 .analysis-report-grid .analysis-report-card:nth-child(3) .analysis-report-card-value {
-  color: #0d5760;
+  color: #153f4b;
 }
 
 /* Dot bars in analysis-box (files page) also use the bigger dots */
@@ -2651,8 +2650,8 @@ td {
    KI REPORT PARTY CARDS – split Positiv / Negativ with big numbers
    ================================================================ */
 .analysis-report-card.is-party {
-  border-color: #d4e8ef;
-  background: rgba(255,255,255,0.92);
+  border-color: #d9e7ec;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .party-split {
@@ -3442,16 +3441,16 @@ select.case-edit-input {
 
 /* ── Data cells ── */
 .tactic-table td {
-  padding: 0.8rem;
+  padding: 0.35rem 0.8rem;
   border-bottom: 1px solid #eee;
   vertical-align: middle;
-  line-height: 1.48;
+  line-height: 1.35;
   color: #2d1b3d;
   font-size: 0.78rem;
   background: transparent;
   word-break: break-word;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   min-width: 0;
 }
 
@@ -3568,9 +3567,9 @@ select.case-edit-input {
 }
 
 #analysisReportTactics .tactic-table td {
-  padding: 0.22rem 0.34rem;
+  padding: 0.18rem 0.34rem;
   font-size: 0.67rem;
-  line-height: 1.25;
+  line-height: 1.2;
   vertical-align: middle;
   height: auto;
 }
