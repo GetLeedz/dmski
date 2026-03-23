@@ -2895,11 +2895,11 @@ select.case-edit-input {
 .forensic-fazit {
   padding: 0.55rem 0.68rem;
   border-radius: 10px;
-  background: linear-gradient(135deg, #fff9f7, #fdf1ee);
-  border: 1px solid #ecd5cf;
+  background: linear-gradient(135deg, #f0f8fa, #e8f3f6);
+  border: 1px solid #c0d8e0;
   font-size: 0.81rem;
   line-height: 1.52;
-  color: #361b17;
+  color: #1a3540;
   font-family: "Inter", system-ui, sans-serif;
 }
 
@@ -2908,7 +2908,7 @@ select.case-edit-input {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #8a4840;
+  color: #2d6678;
   margin-bottom: 0.22rem;
   display: block;
   font-family: "Inter", system-ui, sans-serif;

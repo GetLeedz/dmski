@@ -1557,12 +1557,8 @@ async function loadRowAnalysis(file, options = {}) {
           <div class="forensic-field"><span class="forensic-field-label">Verfasser</span><span class="forensic-field-value">${escapeHtml(author)}</span></div>
           <div class="forensic-field"><span class="forensic-field-label">Datum</span><span class="forensic-field-value">${escapeHtml(date)}</span></div>
           <div class="forensic-field"><span class="forensic-field-label">Herkunft</span><span class="forensic-field-value">${escapeHtml(senderInstitution)}</span></div>
-          <div class="forensic-field"><span class="forensic-field-label">Textqualität</span><span class="forensic-field-value">${escapeHtml(qualityValue)}</span></div>
-          <div class="forensic-field"><span class="forensic-field-label">Extraktion</span><span class="forensic-field-value">${escapeHtml(textQuality.extractionMethod)}</span></div>
-          ${engineText ? `<div class="forensic-field is-full"><span class="forensic-field-label">Engine</span><span class="forensic-field-value">${escapeHtml(engineText)}</span></div>` : ""}
-          <div class="forensic-field is-full"><span class="forensic-field-label">Methodik</span><span class="forensic-field-value">${escapeHtml(methodology)}</span></div>
         </div>
-        ${people.length > 0 ? `<div class="forensic-persons-row">${people.map((p) => `<span class="forensic-person-chip">${escapeHtml(p)}</span>`).join("")}</div>` : ""}
+        ${people.length > 0 ? `<div class="forensic-persons-row"><span class="forensic-field-label" style="width:100%;margin-bottom:0.25rem">Personen</span>${people.map((p) => `<span class="forensic-person-chip">${escapeHtml(p)}</span>`).join("")}</div>` : ""}
         ${impactAssessment ? `<div class="forensic-fazit"><span class="forensic-fazit-label">Fazit</span>${escapeHtml(impactAssessment)}</div>` : ""}
       </div>
       <div class="qa-mentions">
