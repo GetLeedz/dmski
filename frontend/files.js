@@ -565,7 +565,12 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty)
   if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) {
     return "positive";
   }
-
+  // Hardcoded: Perret = Berufsbeistand (amtliche Funktion, neutral)
+  if (nameNorm.includes("perret")) { return "neutral"; }
+  // Hardcoded: Landi Annalisa = Anwältin der Gegenpartei → roter Punkt
+  if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) { return "negative"; }
+  // Hardcoded: Hofmann Roland = Gerichtspräsident → neutral
+  if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) { return "neutral"; }
   // Role-based logic using affiliation
   // Child → green (always on the protected person's side in custody/family matters)
   if (affil.includes("kind") && !affil.includes("kinderanw")) {
@@ -610,9 +615,12 @@ function getAffiliationLabel(affiliation) {
   if (lc.includes("kinderanw")) return "Kinderanwalt";
   // Legal / official
   if (lc.includes("anwalt") || lc.includes("anwältin") || lc.includes("rechtsvertr")) return "Anwalt / Anwältin";
+  if (lc.includes("berufsbeistand")) return "Berufsbeistand";
   if (lc.includes("beistand") || lc.includes("beiständin")) return "Beistand / Beiständin";
   if (lc.includes("kesb")) return "KESB Behördenmitglied";
-  if (lc.includes("gericht") || lc.includes("richter") || lc.includes("richterin")) return "Gericht";
+  if (lc.includes("gerichtspräsident") || lc.includes("gerichtsprasident")) return "Gerichtspräsident";
+  if (lc.includes("richter") || lc.includes("richterin")) return "Gerichtspräsident";
+  if (lc.includes("gericht")) return "Gericht";
   if (lc.includes("gutacht")) return "Gutachter/in";
   if (lc.includes("mediator") || lc.includes("mediation")) return "Mediator/in";
   // Support / social
@@ -665,6 +673,10 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
   if (nameNorm.includes("schifferli") && nameNorm.includes("alexandra")) return "–";
   // Known children of the Schifferli family
   if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "Kind";
+  // Hardcoded role overrides for known persons
+  if (nameNorm.includes("perret")) return "Berufsbeistand";
+  if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) return "Anwältin Gegenpartei";
+  if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) return "Gerichtspräsident";
 
   // 1. Is this the protected person?
   const protWords = protNorm.split(/[\s,]+/).filter(w => w.length > 2);

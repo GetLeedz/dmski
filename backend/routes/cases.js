@@ -546,6 +546,18 @@ function normalizeAffiliation(value) {
     return "Privatperson";
   }
 
+  if (raw.includes("berufsbeistand") || raw.includes("beistandin") || raw.includes("beiständin") || raw.includes("beistand")) {
+    return "Berufsbeistand";
+  }
+
+  if (raw.includes("anwalt") || raw.includes("anwältin") || raw.includes("anwaeltin") || raw.includes("advokat") || raw.includes("rechtsvertr")) {
+    return "Anwalt";
+  }
+
+  if (raw.includes("gerichtspräsident") || raw.includes("gerichtsprasident") || raw.includes("richter") || raw.includes("richterin")) {
+    return "Gerichtspräsident";
+  }
+
   if (raw.includes("gericht") || raw.includes("court") || raw.includes("tribunal")) {
     return "Gericht";
   }
@@ -585,6 +597,18 @@ function inferAffiliationForPerson(rawText, personName) {
 
     if (/gericht|tribunal|court/.test(line)) {
       return "Gericht";
+    }
+    if (/berufsbeistand|beiständin|beistandin/.test(line)) {
+      return "Berufsbeistand";
+    }
+    if (/\bbeistand\b/.test(line)) {
+      return "Berufsbeistand";
+    }
+    if (/anwältin|anwalt|rechtsanwalt|advokat|rechtsvertr/i.test(line)) {
+      return "Anwalt";
+    }
+    if (/gerichtspräsident|gerichtspr[äa]sident|\brichter\b|\brichterin\b/i.test(line)) {
+      return "Gerichtspräsident";
     }
     if (/beh|amt|kesb|polizei|staatsanw/.test(line)) {
       return "Behörde";
@@ -1749,13 +1773,14 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     Number(opposing?.negativ ?? src.gegenpartei_negativ ?? targetB?.negative ?? 0)
   );
 
-  // People list
+  // People list (support both string[] and {name, rolle}[] formats)
   const peopleSource = Array.isArray(src.personen) ? src.personen : [];
   const mappedPeople = peopleSource
     .map((entry) => {
       const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name || "");
       if (!name) return null;
-      return { name, affiliation: "Privatperson" };
+      const rolle = typeof entry === "object" && entry ? normalizeWhitespace(entry.rolle || "") : "";
+      return { name, affiliation: normalizeAffiliation(rolle) || "Privatperson" };
     })
     .filter(Boolean);
 
@@ -1932,7 +1957,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '  "verfasser": "",',
     '  "datum": "",',
     '  "absender": "",',
-    '  "personen": ["Name1", "Name2"],',
+    '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind"}],',
     '  "benachteiligte_person": {',
     '    "positiv": 0,',
     '    "negativ": 0',
