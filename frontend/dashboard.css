@@ -1332,43 +1332,48 @@ button:disabled {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
-  padding: 0.82rem 0.88rem;
-  border-radius: 14px;
-  border: 1px solid #d4e4ea;
-  background: rgba(255, 255, 255, 0.84);
+  gap: 0.3rem;
+  padding: 1rem 1.05rem;
+  border-radius: 16px;
+  border: 1.5px solid #d4e4ea;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(15,43,54,0.06);
+  transition: box-shadow 140ms ease, transform 140ms ease;
+}
+
+.analysis-report-meta-card:hover {
+  box-shadow: 0 4px 16px rgba(15,43,54,0.1);
+  transform: translateY(-1px);
 }
 
 .analysis-report-meta-card.is-positive {
-  border-color: #cfe4d5;
-  background: linear-gradient(135deg, #fbfefc, #eff8f1);
+  border-color: #b8ddc8;
+  background: linear-gradient(135deg, #f4fdf7, #e8f8ee);
 }
 
 .analysis-report-meta-card.is-negative {
-  border-color: #ecd4cf;
-  background: linear-gradient(135deg, #fffaf9, #fdf1ef);
+  border-color: #eac8c3;
+  background: linear-gradient(135deg, #fff8f7, #fdecea);
 }
 
-.analysis-report-meta-label {
-  font-size: 0.69rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: #6d8894;
-}
+/* label removed – no .analysis-report-meta-label styles needed */
 
 .analysis-report-meta-value {
-  font-family: "IBM Plex Serif", serif;
-  font-size: 1.02rem;
-  line-height: 1.15;
-  color: #153f4b;
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #0f3a48;
+  letter-spacing: -0.01em;
 }
+
+.analysis-report-meta-card.is-positive .analysis-report-meta-value { color: #1a6535; }
+.analysis-report-meta-card.is-negative .analysis-report-meta-value { color: #a83228; }
 
 .analysis-report-meta-text {
   margin: 0;
   font-size: 0.78rem;
-  line-height: 1.45;
-  color: #56727e;
+  line-height: 1.5;
+  color: #4e6e7a;
 }
 
 .analysis-report-card {
