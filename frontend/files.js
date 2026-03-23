@@ -410,12 +410,8 @@ function renderPartyReportCard(label, positiveCount, negativeCount) {
   return `<article class="analysis-report-card is-party"><span class="analysis-report-card-label">${escapeHtml(label)}</span><div class="party-split"><div class="party-split-item is-positive"><span class="party-split-num">${pos}</span><span class="party-split-label">Positiv</span></div><div class="party-split-item is-negative"><span class="party-split-num">${neg}</span><span class="party-split-label">Negativ</span></div></div></article>`;
 }
 
-function renderAnalysisReportMeta(verdict, methodology, note) {
-  return [
-    `<article class="analysis-report-meta-card is-${escapeHtml(verdict.tone || "neutral")}"><strong class="analysis-report-meta-value">${escapeHtml(verdict.label || "Neutral")}</strong></article>`,
-    `<article class="analysis-report-meta-card"><strong class="analysis-report-meta-value">Forensische Kurzprüfung</strong></article>`,
-    `<article class="analysis-report-meta-card"><strong class="analysis-report-meta-value">Transparenz aktiviert</strong></article>`
-  ].join("");
+function renderAnalysisReportMeta(_verdict, _methodology, _note) {
+  return "";
 }
 
 /* ----------------------------------------------------------------

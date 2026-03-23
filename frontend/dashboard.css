@@ -1321,10 +1321,7 @@ button:disabled {
 }
 
 .analysis-report-meta {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 0.82rem;
+  display: none;
 }
 
 .analysis-report-meta-card {
