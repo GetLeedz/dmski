@@ -427,88 +427,106 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
   const oppPos   = Math.max(0, Number(analysis.opposingPositiveMentions || 0));
   const oppNeg   = Math.max(0, Number(analysis.opposingNegativeMentions || 0));
   const pressure = (protNeg + oppPos) - (protPos + oppNeg);
-  const impact   = normalizeTitleText(analysis.impactAssessment || "").toLowerCase();
-  const docType  = normalizeTitleText(analysis.documentType || "").toLowerCase();
-  const title    = normalizeTitleText(analysis.title || "").toLowerCase();
-
-  const tags    = [];
-  const methods = [];
-  let summary   = "";
-  let legalNote = "";
 
   const nameG = escapeHtml(opposingParty || "Gegenpartei");
   const nameP = escapeHtml(protectedPerson || "benachteiligte Person");
 
-  // ─── HIGH PRESSURE: Character assassination pattern ───
+  let profileTitle = "";
+  let summary = "";
+  let legalNote = "";
+  let legalTitle = "";
+
+  // Swiss-law-grounded findings table rows:
+  // present = boolean, evidence = descriptive string
+  const rows = [];
+
   if (pressure >= 4 || (protNeg >= 3 && oppPos >= 2)) {
-    tags.push({ label: "Charakterdiffamierung", cls: "is-critical" });
-    tags.push({ label: "Ad-hominem-Angriff", cls: "is-critical" });
-    methods.push({ label: "Juristische Methode", value: "Reputationsschädigung ohne Sachbezug" });
-    methods.push({ label: "Psycholog. Taktik", value: "Gaslighting · Identitätsangriff" });
-    methods.push({ label: "Anwaltstaktik", value: "Charakterbeweis-Strategie (unzulässig)" });
-    methods.push({ label: "Rechtl. Risiko", value: "Art. 173–174 StGB (üble Nachrede, Verleumdung)" });
-    summary = `Das Dokument zeigt ein klares Muster der <strong>systematischen Negativdarstellung</strong> von ${nameP}. Die Gegenpartei (${nameG}) nutzt eine klassische <strong>Ad-hominem-Strategie</strong>: Anstatt sachlich zum Verfahrensgegenstand zu argumentieren, wird die Persönlichkeit, das Verhalten oder die Lebensumstände der betroffenen Person in den Vordergrund gerückt – eine Methode, die in der Rechtsprechung als unzulässige Beeinflussung gilt.`;
-    legalNote = `Gemäss BGE-Praxis gilt: Persönlichkeitsbezogene Angriffe ohne Relevanz für den Streitgegenstand können als <em>Prozessrechtsmissbrauch</em> gewertet werden. Eine Gegendarstellung oder ein Befangenheitsantrag kann sinnvoll sein.`;
+    profileTitle = "Forensisches Profil: Systematisches Degradierungsmuster festgestellt";
+    summary = `Die KI-Analyse ergibt ein klares Muster der <strong>systematischen Negativdarstellung</strong> von ${nameP}. Anstatt sachlich zum Verfahrensgegenstand zu argumentieren, rückt ${nameG} gezielt Persönlichkeit, Verhalten und Lebensumstände in den Vordergrund – eine klassische <strong>Ad-hominem-Strategie</strong>, die in der forensischen Verhaltensanalyse als Indiz für eine kalkulierte Degradierungskampagne gilt. Die Häufung negativer Aussagen ohne sachlichen Bezug zum Streitgegenstand ist ein Warnzeichen, das rechtlich relevante Konsequenzen haben kann.`;
+    legalTitle = "Juristische Bewertung (KI als neutraler Rechtsbeobachter)";
+    legalNote = `Gemäss BGE-Praxis gilt: Persönlichkeitsbezogene Angriffe ohne Relevanz für den Streitgegenstand können als <em>Prozessrechtsmissbrauch</em> im Sinne von Art. 2 Abs. 2 ZGB gewertet werden. Gemäss BGE 131 III 473 ist eine Gegendarstellung zulässig; ein Befangenheitsantrag gegen beteiligte Amtspersonen kann geprüft werden. Die nachfolgend erkannten Tatbestände sind Indizien, keine rechtskräftigen Feststellungen.`;
+    rows.push({ tactic: "Üble Nachrede", article: "Art. 173 StGB (CH)", present: true,  evidence: "Indiz erkannt – negative Aussagen ohne Sachbezug" });
+    rows.push({ tactic: "Verleumdung", article: "Art. 174 StGB (CH)", present: pressure >= 4, evidence: pressure >= 4 ? "Indiz erkannt – wissentlich falsche Tatsachen" : "Kein ausreichender Nachweis" });
+    rows.push({ tactic: "Beschimpfung / Herabsetzung", article: "Art. 177 StGB (CH)", present: protNeg >= 2, evidence: protNeg >= 2 ? "Indiz erkannt – abwertende Charakterisierung" : "Kein Nachweis" });
+    rows.push({ tactic: "Verletzung der Persönlichkeitsrechte", article: "Art. 28 ZGB (CH)", present: true,  evidence: "Indiz erkannt – sachfremde Persönlichkeitsangriffe" });
+    rows.push({ tactic: "Prozessrechtsmissbrauch", article: "Art. 2 Abs. 2 ZGB (CH)", present: pressure >= 3, evidence: pressure >= 3 ? "Indiz erkannt – Taktik ohne Verfahrensrelevanz" : "Kein ausreichender Nachweis" });
+    rows.push({ tactic: "Ad-hominem-Strategie", article: "Forensisch / Verfahrensrecht", present: true,  evidence: "Erkannt – Angriff auf Person statt auf Sache" });
+    rows.push({ tactic: "Gaslighting / psycholog. Manipulation", article: "Art. 28 ZGB / Art. 181 StGB (CH)", present: protNeg >= 3, evidence: protNeg >= 3 ? "Indiz erkannt – systematische Verunsicherungsmuster" : "Kein Nachweis" });
 
-  // ─── MEDIUM PRESSURE: Deflection / Red Herring ───
-  } else if (pressure >= 2 || (protNeg >= 2)) {
-    tags.push({ label: "Ablenkungsmanöver", cls: "is-warning" });
-    tags.push({ label: "Selektive Darstellung", cls: "is-warning" });
-    methods.push({ label: "Juristische Methode", value: "Red-Herring-Argumentation" });
-    methods.push({ label: "Psycholog. Taktik", value: "Framing · Kontextverschiebung" });
-    methods.push({ label: "Anwaltstaktik", value: "Nebenthemen zur Ablenkung einsetzen" });
-    methods.push({ label: "Rechtl. Risiko", value: "Irreführung des Gerichts (Art. 307 StGB)" });
-    summary = `Das Dokument enthält <strong>gezielte Ablenkungsstrategien</strong>: Sachfremde Informationen über ${nameP} werden eingebracht, um vom eigentlichen Verfahrensgegenstand abzulenken. Dies ist eine bekannte Taktik in Zivilverfahren – juristisch als <strong>Red Herring</strong> bezeichnet – bei der irrelevante Charakterinformationen (Lebensstil, vergangene Fehler, Drittmeinungen) das Gericht oder die KESB beeinflussen sollen.`;
-    legalNote = `Irrelevante persönliche Informationen über die benachteiligte Person können formell gerügt werden. Der Richter kann solche Ausführungen aus dem Recht weisen.`;
+  } else if (pressure >= 2 || protNeg >= 2) {
+    profileTitle = "Forensisches Profil: Selektive Darstellung mit Belastungstendenz";
+    summary = `Die KI-Analyse erkennt <strong>gezielte Ablenkungsstrategien</strong> im vorliegenden Material. Sachfremde Informationen über ${nameP} werden eingebracht, um vom eigentlichen Verfahrensgegenstand abzulenken. Diese als <strong>Red-Herring-Taktik</strong> bekannte Methode setzt irrelevante Charakterinformationen – Lebensstil, vergangene Ereignisse, Drittmeinungen – ein, um Behörden oder Gericht zu beeinflussen, ohne sachliche Argumente vorzubringen.`;
+    legalTitle = "Juristische Bewertung (KI als neutraler Rechtsbeobachter)";
+    legalNote = `Irrelevante Persönlichkeitsinformationen über die benachteiligte Person können gemäss Art. 152 ZPO formell gerügt werden. Das Gericht kann solche Ausführungen aus dem Recht weisen. Selektive Darstellungen können unter Art. 28 ZGB als Persönlichkeitsrechtsverletzung geprüft werden.`;
+    rows.push({ tactic: "Üble Nachrede", article: "Art. 173 StGB (CH)", present: protNeg >= 2, evidence: protNeg >= 2 ? "Indiz erkannt" : "Kein ausreichender Nachweis" });
+    rows.push({ tactic: "Verletzung der Persönlichkeitsrechte", article: "Art. 28 ZGB (CH)", present: true, evidence: "Indiz erkannt – sachfremde Darstellung" });
+    rows.push({ tactic: "Red-Herring-Argumentation", article: "Forensisch / ZPO Art. 152", present: true, evidence: "Erkannt – Ablenkung vom Verfahrensgegenstand" });
+    rows.push({ tactic: "Selektive Darstellung / Framing", article: "Forensisch / Art. 2 ZGB", present: true, evidence: "Erkannt – einseitige Auswahl von Informationen" });
+    rows.push({ tactic: "Verleumdung", article: "Art. 174 StGB (CH)", present: false, evidence: "Kein ausreichender Nachweis" });
+    rows.push({ tactic: "Prozessrechtsmissbrauch", article: "Art. 2 Abs. 2 ZGB (CH)", present: pressure >= 3, evidence: pressure >= 3 ? "Indiz erkannt" : "Kein ausreichender Nachweis" });
 
-  // ─── LOW/NO PRESSURE: Balanced or monitoring ───
   } else if (pressure >= 1) {
-    tags.push({ label: "Leichte Tendenz", cls: "" });
-    methods.push({ label: "Beobachtung", value: "Mild einseitige Darstellung" });
-    methods.push({ label: "Empfehlung", value: "Weitere Dokumente prüfen" });
-    summary = `Das Dokument zeigt eine <strong>leicht einseitige Tendenz</strong> zuungunsten von ${nameP}. Die Darstellung wirkt nicht neutral – einzelne Formulierungen bevorzugen die Position von ${nameG}, ohne dass dies sachlich notwendig wäre. Über das gesamte Dossier hinweg kann sich dies zu einem belastenden Muster verdichten.`;
+    profileTitle = "Forensisches Profil: Leichte Verfahrenstendenz erkannt";
+    summary = `Die KI-Analyse zeigt eine <strong>leicht einseitige Tendenz</strong> zuungunsten von ${nameP}. Einzelne Formulierungen begünstigen die Position von ${nameG} ohne sachliche Notwendigkeit. Dies reicht für eine eindeutige Taktikzuschreibung noch nicht aus, kann sich aber über mehrere Dokumente zu einem belastenden Muster verdichten.`;
+    legalTitle = "Juristische Bewertung (KI als neutraler Rechtsbeobachter)";
+    legalNote = `Bei leichter Tendenz empfiehlt sich die Gesamtbetrachtung weiterer Dokumente. Einzelne Formulierungen können unter Art. 28 ZGB auf Persönlichkeitsrechtsverletzung geprüft werden, wenn die Häufung zunimmt.`;
+    rows.push({ tactic: "Einseitige Darstellung", article: "Forensisch / Beobachtung", present: true, evidence: "Leichte Tendenz erkannt" });
+    rows.push({ tactic: "Verletzung der Persönlichkeitsrechte", article: "Art. 28 ZGB (CH)", present: false, evidence: "Kein ausreichender Nachweis – Verlauf beobachten" });
+    rows.push({ tactic: "Üble Nachrede", article: "Art. 173 StGB (CH)", present: false, evidence: "Kein Nachweis" });
 
-  // ─── NEUTRAL/POSITIVE ───
   } else {
-    tags.push({ label: "Sachliche Darstellung", cls: "" });
-    methods.push({ label: "Bewertung", value: "Keine offensichtliche Taktik erkannt" });
-    summary = `Dieses Dokument zeigt keine auffälligen taktischen Muster gegen ${nameP}. Die Darstellung erscheint im Wesentlichen sachlich. Dennoch empfiehlt sich eine Gesamtbetrachtung aller Dokumente des Dossiers.`;
+    profileTitle = "Forensisches Profil: Keine auffälligen Taktiken identifiziert";
+    summary = `Die KI-Analyse erkennt in diesem Dokument keine offensichtlichen taktischen Muster gegen ${nameP}. Die Darstellung erscheint im Wesentlichen sachlich. Eine Gesamtbetrachtung aller Dokumente des Dossiers wird dennoch empfohlen.`;
+    legalTitle = "Juristische Bewertung (KI als neutraler Rechtsbeobachter)";
+    legalNote = `Keine unmittelbaren Rechtsrisiken identifiziert. Gesamtdossier-Betrachtung weiterhin empfohlen.`;
+    rows.push({ tactic: "Keine Auffälligkeiten erkannt", article: "–", present: false, evidence: "Dokument erscheint sachlich" });
   }
 
-  return { tags, methods, summary, legalNote, pressure };
+  return { profileTitle, summary, legalTitle, legalNote, rows, pressure };
 }
 
-function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty) {
+function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId) {
   const profile = deriveTacticProfile(analysis, protectedPerson, opposingParty);
+  const docRef  = docId ? escapeHtml(String(docId)) : "Gesamt";
 
-  const tagsHtml = profile.tags.map(t =>
-    `<span class="tactic-tag ${escapeHtml(t.cls)}">${escapeHtml(t.label)}</span>`
-  ).join("");
-
-  const methodsHtml = profile.methods.length > 0
-    ? `<div class="tactic-method-grid">${profile.methods.map(m =>
-        `<div class="tactic-method-item"><span class="tactic-method-label">${escapeHtml(m.label)}</span><span class="tactic-method-value">${escapeHtml(m.value)}</span></div>`
-      ).join("")}</div>`
-    : "";
+  const tableRows = profile.rows.map(r => {
+    const cls     = r.present ? "tactic-row-present" : "tactic-row-absent";
+    const badge   = r.present
+      ? `<span class="tactic-badge is-found">Indiz</span>`
+      : `<span class="tactic-badge is-none">Kein Nachweis</span>`;
+    return `<tr class="${cls}">
+      <td>${escapeHtml(r.tactic)}</td>
+      <td>${escapeHtml(r.article)}</td>
+      <td>${badge} ${escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""))}</td>
+      <td>${docRef}</td>
+    </tr>`;
+  }).join("");
 
   const legalHtml = profile.legalNote
-    ? `<div class="tactic-legal-note"><span class="tactic-legal-icon">⚖️</span><span class="tactic-legal-text">${profile.legalNote}</span></div>`
+    ? `<div class="tactic-legal-assessment">
+        <p class="tactic-legal-assessment-title">⚖️ ${escapeHtml(profile.legalTitle)}</p>
+        <p class="tactic-legal-assessment-text">${profile.legalNote}</p>
+       </div>`
     : "";
 
   return `
     <div class="tactic-analysis-box">
-      <div class="tactic-analysis-head">
-        <div class="tactic-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        </div>
-        <div>
-          <p class="tactic-analysis-eyebrow">Einordnung · KI-Analyse</p>
-          <p class="tactic-analysis-title">Taktik der Gegenpartei</p>
-        </div>
-      </div>
-      <div class="tactic-tags-row">${tagsHtml}</div>
+      <p class="tactic-analysis-eyebrow">Einordnung · KI-Analyse</p>
+      <p class="tactic-analysis-profile-title">${escapeHtml(profile.profileTitle)}</p>
       <div class="tactic-analysis-body">${profile.summary}</div>
-      ${methodsHtml}
+      <div class="tactic-table-wrap">
+        <table class="tactic-table">
+          <thead>
+            <tr>
+              <th>Tatbestand / Methode</th>
+              <th>Rechtsgrundlage (CH)</th>
+              <th>KI-Einschätzung</th>
+              <th>Dok-Referenz</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
       ${legalHtml}
     </div>
   `;

@@ -2925,8 +2925,11 @@ select.case-edit-input {
 /* ================================================================
    EINORDNUNG BOX – Opposing Party Tactic Analysis
    ================================================================ */
+/* ═══════════════════════════════════════════════
+   TACTIC ANALYSIS BOX  (redesigned: table layout)
+   ═══════════════════════════════════════════════ */
 .tactic-analysis-box {
-  margin-top: 0.7rem;
+  margin-top: 0.9rem;
   padding: 0.75rem 0.85rem;
   border-radius: 12px;
   border: 1.5px solid #e2c8f0;
@@ -3248,4 +3251,159 @@ select.case-edit-input {
   font-style: italic;
   text-align: center;
   padding: 0.6rem;
+}
+
+/* ================================================================
+   TACTIC BOX — new table-based layout
+   ================================================================ */
+
+/* Eyebrow + profile title replace the old head/title/icon */
+.tactic-analysis-eyebrow {
+  margin: 0 0 0.18rem;
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7c5295;
+}
+
+.tactic-analysis-profile-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #3b1558;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.tactic-analysis-body {
+  font-size: 0.81rem;
+  line-height: 1.62;
+  color: #2d1b3d;
+  font-weight: 400;
+  margin-bottom: 0.55rem;
+}
+
+.tactic-analysis-body strong {
+  font-weight: 700;
+  color: #4a1d6b;
+}
+
+/* ── Tactic table ── */
+.tactic-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(139,63,168,0.18);
+  background: rgba(255,255,255,0.78);
+}
+
+.tactic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  table-layout: fixed;
+}
+
+.tactic-table col:nth-child(1) { width: 26%; }
+.tactic-table col:nth-child(2) { width: 22%; }
+.tactic-table col:nth-child(3) { width: 38%; }
+.tactic-table col:nth-child(4) { width: 14%; }
+
+.tactic-table thead tr {
+  background: linear-gradient(135deg, rgba(139,63,168,0.10), rgba(107,45,136,0.07));
+}
+
+.tactic-table th {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #6b2d88;
+  border-bottom: 1px solid rgba(139,63,168,0.18);
+  text-align: left;
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tactic-table td {
+  padding: 0.44rem 0.65rem;
+  border-bottom: 1px solid rgba(139,63,168,0.08);
+  vertical-align: top;
+  line-height: 1.42;
+  color: #2d1b3d;
+  font-size: 0.77rem;
+  background: transparent;
+  word-break: break-word;
+}
+
+.tactic-table tr:last-child td {
+  border-bottom: none;
+}
+
+.tactic-table .tactic-row-present {
+  background: rgba(192,57,43,0.04);
+}
+
+.tactic-table .tactic-row-absent {
+  opacity: 0.72;
+}
+
+/* ── Badge ── */
+.tactic-badge {
+  display: inline-block;
+  padding: 0.12rem 0.46rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  white-space: nowrap;
+}
+
+.tactic-badge.is-found {
+  background: rgba(192,57,43,0.12);
+  color: #8b1a0f;
+  border: 1px solid rgba(192,57,43,0.28);
+}
+
+.tactic-badge.is-none {
+  background: rgba(90,130,150,0.1);
+  color: #3d6272;
+  border: 1px solid rgba(90,130,150,0.22);
+}
+
+/* ── Legal assessment block ── */
+.tactic-legal-assessment {
+  margin-top: 0.35rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(192,57,43,0.06), rgba(192,57,43,0.02));
+  border: 1px solid rgba(192,57,43,0.22);
+}
+
+.tactic-legal-assessment-title {
+  margin: 0 0 0.28rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7c2416;
+}
+
+.tactic-legal-assessment-text {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.58;
+  color: #4a1a14;
+  font-weight: 400;
+}
+
+.tactic-legal-assessment-text em {
+  font-style: italic;
+  font-weight: 700;
+  color: #6e1e12;
 }
