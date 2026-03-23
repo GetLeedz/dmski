@@ -410,6 +410,10 @@ function renderPartyReportCard(label, positiveCount, negativeCount) {
   return `<article class="analysis-report-card is-party"><span class="analysis-report-card-label">${escapeHtml(label)}</span><div class="party-split"><div class="party-split-item is-positive"><span class="party-split-num">${pos}</span><span class="party-split-label">Positiv</span></div><div class="party-split-item is-negative"><span class="party-split-num">${neg}</span><span class="party-split-label">Negativ</span></div></div></article>`;
 }
 
+function renderFileCountCard(count) {
+  return `<article class="analysis-report-card is-file-count"><span class="analysis-report-card-label">ANZAHL FILES</span><strong class="file-count-number">${escapeHtml(String(count))}</strong></article>`;
+}
+
 function renderAnalysisReportMeta(_verdict, _methodology, _note) {
   return "";
 }
@@ -481,20 +485,30 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
   return { profileTitle, summary, legalTitle, legalNote, rows, pressure };
 }
 
-function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId) {
+function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds) {
   const profile = deriveTacticProfile(analysis, protectedPerson, opposingParty);
-  const docRef  = docId ? escapeHtml(String(docId)) : "Gesamt";
+
+  // Build compact doc ID list for the DOC-ID column
+  let docRefList = [];
+  if (Array.isArray(docIds)) {
+    docRefList = docIds.map(id => escapeHtml(String(id)));
+  } else if (docIds) {
+    docRefList = [escapeHtml(String(docIds))];
+  }
 
   const tableRows = profile.rows.map(r => {
     const cls     = r.present ? "tactic-row-present" : "tactic-row-absent";
     const badge   = r.present
       ? `<span class="tactic-badge is-found">Indiz</span>`
       : `<span class="tactic-badge is-none">Kein Nachweis</span>`;
+    const docCell = r.present && docRefList.length > 0
+      ? `<span class="tactic-doc-ids">${docRefList.join(", ")}</span>`
+      : (r.present ? "–" : "");
     return `<tr class="${cls}">
       <td>${escapeHtml(r.tactic)}</td>
       <td>${escapeHtml(r.article)}</td>
       <td>${badge} ${escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""))}</td>
-      <td>${docRef}</td>
+      <td class="tactic-doc-id-cell">${docCell}</td>
     </tr>`;
   }).join("");
 
@@ -517,7 +531,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
               <th>Tatbestand / Methode</th>
               <th>Rechtsgrundlage (CH)</th>
               <th>KI-Einschätzung</th>
-              <th>Dok-Referenz</th>
+              <th>DOC-ID</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
@@ -537,31 +551,46 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty)
   const protNorm = normalizeTitleText(protectedPerson || "").toLowerCase();
   const oppNorm = normalizeTitleText(opposingParty || "").toLowerCase();
 
-  // Protected person is always neutral (they're the subject, not an actor)
-  if (protNorm && nameNorm.includes(protNorm.split(" ")[0]?.toLowerCase() || "___")) {
-    return "neutral";
+  // Check if this IS the protected person → special teal "protected" dot, NOT red
+  const protFirstWord = (protNorm.split(/[\s,]+/)[0] || "").toLowerCase();
+  if (protFirstWord && nameNorm.includes(protFirstWord) && protFirstWord.length > 2) {
+    return "protected";
   }
 
-  // Check affiliation-based assignment
-  if (affil.includes("anwalt") || affil.includes("rechtsvertr") || affil.includes("jurist")) {
-    // Lawyer for opposing party = negative tendency
-    if (oppNorm && (affil.includes(oppNorm.split(" ")[0]?.toLowerCase() || "___"))) {
-      return "negative";
-    }
+  // Check if this IS the opposing party → red dot
+  const oppFirstWord = (oppNorm.split(/[\s,]+/)[0] || "").toLowerCase();
+  if (oppFirstWord && nameNorm.includes(oppFirstWord) && oppFirstWord.length > 2) {
+    return "negative";
   }
 
+  // Role-based logic using affiliation
+  // Child → green (always on the protected person's side in custody/family matters)
+  if (affil.includes("kind") && !affil.includes("kinderanw")) {
+    return "positive";
+  }
+
+  // Lawyer / legal representative → green (assumed support for protected person unless explicitly opposing)
+  if (affil.includes("anwalt") || affil.includes("anwältin") || affil.includes("rechtsvertr")) {
+    return "positive";
+  }
+
+  // Beistand / Beiständin → calculate based on overall dossier sentiment
+  // If negativeMentions > positiveMentions for protected person → red, else green
+  if (affil.includes("beistand") || affil.includes("beiständin")) {
+    const protNeg = Math.max(0, Number(analysis.negativeMentions || 0));
+    const protPos = Math.max(0, Number(analysis.positiveMentions || 0));
+    return protNeg > protPos ? "negative" : "positive";
+  }
+
+  // KESB, courts, officials → neutral
   if (affil.includes("kesb") || affil.includes("behörd") || affil.includes("gericht") || affil.includes("richter")) {
     return "neutral";
   }
 
-  if (affil.includes("privatperson") || affil === "") {
-    // Unnamed private persons → derive from document tone
-    const pressure = (Number(analysis.negativeMentions || 0) + Number(analysis.opposingPositiveMentions || 0))
-      - (Number(analysis.positiveMentions || 0) + Number(analysis.opposingNegativeMentions || 0));
-    return pressure > 1 ? "negative" : pressure < -1 ? "positive" : "neutral";
-  }
-
-  return "neutral";
+  // Private persons / unknown → derive from document overall tone
+  const pressure = (Number(analysis.negativeMentions || 0) + Number(analysis.opposingPositiveMentions || 0))
+    - (Number(analysis.positiveMentions || 0) + Number(analysis.opposingNegativeMentions || 0));
+  return pressure > 1 ? "negative" : pressure < -1 ? "positive" : "neutral";
 }
 
 function getAffiliationLabel(affiliation) {
@@ -617,6 +646,7 @@ function formatNameLastFirst(raw) {
 function getSentimentLabel(sentiment) {
   if (sentiment === "positive") return "Positiv gegenüber Betroffener";
   if (sentiment === "negative") return "Negativ gegenüber Betroffener";
+  if (sentiment === "protected") return "Benachteiligte Person";
   return "Neutral / Sachlich";
 }
 
@@ -648,7 +678,19 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty) {
     `;
   }
 
-  const rows = unique.map(person => {
+  // Sort: benachteiligte Person (protected) always at top
+  const protFirstWord = (normalizeTitleText(protectedPerson || "").toLowerCase().split(/[\s,]+/)[0] || "");
+  const sorted = [...unique].sort((a, b) => {
+    const aN = normalizeTitleText(a.name || "").toLowerCase();
+    const bN = normalizeTitleText(b.name || "").toLowerCase();
+    const aIsProtected = protFirstWord.length > 2 && aN.includes(protFirstWord);
+    const bIsProtected = protFirstWord.length > 2 && bN.includes(protFirstWord);
+    if (aIsProtected && !bIsProtected) return -1;
+    if (!aIsProtected && bIsProtected) return 1;
+    return 0;
+  });
+
+  const rows = sorted.map(person => {
     const sentiment  = derivePersonSentiment(person, analysis, protectedPerson, opposingParty);
     const roleLabel  = getAffiliationLabel(person.affiliation);
     const displayName = formatNameLastFirst(person.name);
@@ -741,7 +783,7 @@ function setAnalysisReportLoading() {
     "Die Übersicht wird nach jeder Analyse automatisch aktualisiert."
   );
   analysisReportGrid.innerHTML = [
-    renderAnalysisReportCard("Anzahl Files", String(allFiles.length || 0), "Gesamtbestand", "neutral"),
+    renderFileCountCard(allFiles.length || 0),
     renderPartyReportCard("Benachteiligte Person", 0, 0),
     renderPartyReportCard("Gegenpartei", 0, 0)
   ].join("");
@@ -763,7 +805,7 @@ async function refreshAnalysisReport(files = allFiles) {
       "Die Gesamtbeurteilung erscheint, sobald erste Dokumente vorliegen."
     );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Anzahl Files", "0", "Noch keine Inhalte", "neutral"),
+      renderFileCountCard(0),
       renderPartyReportCard("Benachteiligte Person", 0, 0),
       renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
@@ -836,7 +878,7 @@ async function refreshAnalysisReport(files = allFiles) {
         : "Noch keine expliziten Belegstellen aus gespeicherten Analysen vorhanden."
     );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Anzahl Files", String(fileCount), "Gesamtbestand", "neutral"),
+      renderFileCountCard(fileCount),
       renderPartyReportCard("Benachteiligte Person", protectedPositiveTotal, protectedNegativeTotal),
       renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
     ].join("");
@@ -852,10 +894,13 @@ async function refreshAnalysisReport(files = allFiles) {
         documentType: "",
         title: ""
       };
+      // Pass all compact doc IDs so each tactic row shows which docs it applies to
+      const compactDocIds = fileList.map(f => compactDocId(f.id));
       analysisReportTactics.innerHTML = renderTacticAnalysisBox(
         aggregateSynthesis,
         currentCaseProtectedPerson,
-        currentCaseOpposingParty
+        currentCaseOpposingParty,
+        compactDocIds
       );
     }
 
@@ -899,7 +944,7 @@ async function refreshAnalysisReport(files = allFiles) {
       "Bitte Analyse erneut laden oder Backend-Verbindung prüfen."
     );
     analysisReportGrid.innerHTML = [
-      renderAnalysisReportCard("Anzahl Files", String(fileCount), "Bestand erkannt", "neutral"),
+      renderFileCountCard(fileCount),
       renderPartyReportCard("Benachteiligte Person", 0, 0),
       renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");

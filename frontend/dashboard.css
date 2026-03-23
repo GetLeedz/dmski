@@ -3562,3 +3562,64 @@ select.case-edit-input {
   font-size: 0.71rem;
   line-height: 1.42;
 }
+
+/* ================================================================
+   ANZAHL FILES CARD – centred large number
+   ================================================================ */
+.analysis-report-card.is-file-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.3rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 14px;
+  border: 1.5px solid #d9e7ec;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(15,43,54,0.06);
+}
+
+.file-count-number {
+  display: block;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #153f4b;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================================
+   PROTECTED PERSON DOT – teal, not red
+   ================================================================ */
+.akteure-sentiment-dot.is-protected {
+  background: linear-gradient(135deg, #116b73, #0a4d55);
+  box-shadow: 0 1px 4px rgba(17,107,115,0.35);
+}
+
+.akteure-legend-dot.is-protected {
+  background: #116b73;
+}
+
+/* ================================================================
+   TACTIC TABLE – DOC-ID column styling
+   ================================================================ */
+.tactic-doc-id-cell {
+  white-space: normal;
+  word-break: break-all;
+}
+
+.tactic-doc-ids {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: "Inter", monospace, sans-serif;
+  color: #5a3a7a;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+#analysisReportTactics .tactic-doc-ids {
+  font-size: 0.58rem;
+}
