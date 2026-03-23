@@ -118,6 +118,8 @@ const analysisReportBar = document.getElementById("analysisReportBar");
 const analysisReportGrid = document.getElementById("analysisReportGrid");
 const analysisReportHint = document.getElementById("analysisReportHint");
 const analysisReportMeta = document.getElementById("analysisReportMeta");
+const analysisReportTactics = document.getElementById("analysisReportTactics");
+const analysisReportAkteure = document.getElementById("analysisReportAkteure");
 
 let allFiles = [];
 const previewUrlCache = new Map();
@@ -803,6 +805,53 @@ async function refreshAnalysisReport(files = allFiles) {
       renderPartyReportCard("Benachteiligte Person", protectedPositiveTotal, protectedNegativeTotal),
       renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
     ].join("");
+
+    // ── Dossier-level tactic analysis (aggregated totals) ──────────────
+    if (analysisReportTactics instanceof HTMLElement) {
+      const aggregateSynthesis = {
+        positiveMentions: protectedPositiveTotal,
+        negativeMentions: protectedNegativeTotal,
+        opposingPositiveMentions: opposingPositiveTotal,
+        opposingNegativeMentions: opposingNegativeTotal,
+        impactAssessment: "",
+        documentType: "",
+        title: ""
+      };
+      analysisReportTactics.innerHTML = renderTacticAnalysisBox(
+        aggregateSynthesis,
+        currentCaseProtectedPerson,
+        currentCaseOpposingParty
+      );
+    }
+
+    // ── Dossier-level Akteure (merged from all documents, deduped) ─────
+    if (analysisReportAkteure instanceof HTMLElement) {
+      const seenNames = new Set();
+      const mergedPeople = [];
+      for (const a of analyses) {
+        if (!a || a.status === "auth-redirect") continue;
+        const docPeople = Array.isArray(a.people) ? a.people : [];
+        for (const p of docPeople) {
+          const key = normalizeTitleText(p.name || "").toLowerCase();
+          if (!key || seenNames.has(key)) continue;
+          seenNames.add(key);
+          mergedPeople.push(p);
+        }
+      }
+      const aggregateForAkteure = {
+        people: mergedPeople,
+        positiveMentions: protectedPositiveTotal,
+        negativeMentions: protectedNegativeTotal,
+        opposingPositiveMentions: opposingPositiveTotal,
+        opposingNegativeMentions: opposingNegativeTotal
+      };
+      analysisReportAkteure.innerHTML = renderAkteureBox(
+        aggregateForAkteure,
+        currentCaseProtectedPerson,
+        currentCaseOpposingParty
+      );
+    }
+
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
       return;
