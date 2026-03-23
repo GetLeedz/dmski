@@ -624,46 +624,52 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty) {
   if (unique.length === 0) {
     return `
       <div class="akteure-box">
-        <div class="akteure-head">
-          <div><p class="akteure-eyebrow">Dossier · Beteiligte</p><p class="akteure-title">Akteure &amp; Personen</p></div>
+        <div class="akteure-head-simple">
+          <p class="akteure-title-simple">Personen</p>
+          <div class="akteure-legend">
+            <span class="akteure-legend-item"><span class="akteure-legend-dot is-positive"></span>Positiv</span>
+            <span class="akteure-legend-item"><span class="akteure-legend-dot is-negative"></span>Negativ</span>
+            <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
+          </div>
         </div>
-        <p class="akteure-empty">Noch keine Personen aus diesem Dokument extrahiert.</p>
+        <p class="akteure-empty">Noch keine Personen extrahiert. Werden mit jedem weiteren Dokument ergänzt.</p>
       </div>
     `;
   }
 
-  const itemsHtml = unique.map(person => {
+  const rows = unique.map(person => {
     const sentiment  = derivePersonSentiment(person, analysis, protectedPerson, opposingParty);
-    const initials   = makeInitials(person.name);
     const roleLabel  = getAffiliationLabel(person.affiliation);
-    const sentLabel  = getSentimentLabel(sentiment);
     const displayName = formatNameLastFirst(person.name);
     return `
-      <div class="akteure-item is-${sentiment}">
-        <div class="akteure-avatar">${escapeHtml(initials)}</div>
-        <div class="akteure-info">
-          <span class="akteure-name">${escapeHtml(displayName)}</span>
-          <span class="akteure-role">${escapeHtml(roleLabel)}</span>
-          <span class="akteure-sentiment">${escapeHtml(sentLabel)}</span>
-        </div>
-      </div>
+      <tr class="akteure-row">
+        <td class="akteure-col-name">${escapeHtml(displayName)}</td>
+        <td class="akteure-col-role">${escapeHtml(roleLabel)}</td>
+        <td class="akteure-col-dot"><span class="akteure-sentiment-dot is-${sentiment}" title="${escapeHtml(getSentimentLabel(sentiment))}"></span></td>
+      </tr>
     `;
   }).join("");
 
   return `
     <div class="akteure-box">
-      <div class="akteure-head">
-        <div>
-          <p class="akteure-eyebrow">Dossier · Beteiligte</p>
-          <p class="akteure-title">Akteure &amp; Personen</p>
-        </div>
+      <div class="akteure-head-simple">
+        <p class="akteure-title-simple">Personen</p>
         <div class="akteure-legend">
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-positive"></span>Positiv</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-negative"></span>Negativ</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
         </div>
       </div>
-      <div class="akteure-grid">${itemsHtml}</div>
+      <table class="akteure-table">
+        <thead>
+          <tr>
+            <th>Name, Vorname</th>
+            <th>Funktion</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>
   `;
 }
