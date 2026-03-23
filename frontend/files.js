@@ -957,28 +957,33 @@ async function refreshAnalysisReport(files = allFiles) {
 
     // ── Dossier-level Akteure (merged from all documents, deduped) ─────
     if (analysisReportAkteure instanceof HTMLElement) {
-      const seenNames = new Set();
+      // Normalize name for deduplication: strip diacritics so "Jérôme" == "Jerome"
+      const dedupKey = (name) =>
+        normalizeTitleText(name)
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+
+      const seenKeys = new Set();
       const mergedPeople = [];
+
+      const addPerson = (name, affiliation) => {
+        const key = dedupKey(name);
+        if (!key || seenKeys.has(key)) return;
+        seenKeys.add(key);
+        mergedPeople.push({ name: normalizeTitleText(name), affiliation: affiliation || "Privatperson" });
+      };
+
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
         const docPeople = Array.isArray(a.people) ? a.people : [];
         for (const p of docPeople) {
-          const key = normalizeTitleText(p.name || "").toLowerCase();
-          if (!key || seenNames.has(key)) continue;
-          seenNames.add(key);
-          mergedPeople.push(p);
+          addPerson(p.name || "", p.affiliation || "Privatperson");
         }
-        // Also include the document author — they are excluded from a.people by the
-        // backend (to avoid duplicate) but should appear in the Akteure table with
-        // their role (e.g. Berufsbeistand Perret Jérôme).
+        // Also include the document author — excluded from a.people by the backend
+        // to avoid duplicates, but should appear in the Akteure table with their role.
         const authorName = normalizeTitleText(a.author || "");
-        if (authorName) {
-          const authorKey = authorName.toLowerCase();
-          if (!seenNames.has(authorKey)) {
-            seenNames.add(authorKey);
-            mergedPeople.push({ name: authorName, affiliation: "Privatperson" });
-          }
-        }
+        if (authorName) addPerson(authorName, "Privatperson");
       }
       const aggregateForAkteure = {
         people: mergedPeople,
