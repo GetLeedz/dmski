@@ -3435,12 +3435,24 @@ select.case-edit-input {
   padding: 0.24rem 0.34rem;
   font-size: 0.53rem;
   letter-spacing: 0.07em;
+  white-space: nowrap;
 }
 
 #analysisReportTactics .tactic-table td {
-  padding: 0.24rem 0.34rem;
+  padding: 0.22rem 0.34rem;
   font-size: 0.67rem;
-  line-height: 1.3;
+  line-height: 1.25;
+  vertical-align: middle;
+  height: auto;
+}
+
+#analysisReportTactics .tactic-table tr {
+  height: auto;
+  min-height: 0;
+}
+
+#analysisReportTactics .tactic-table {
+  table-layout: auto;
 }
 
 #analysisReportTactics .tactic-legal-assessment {
