@@ -968,6 +968,17 @@ async function refreshAnalysisReport(files = allFiles) {
           seenNames.add(key);
           mergedPeople.push(p);
         }
+        // Also include the document author — they are excluded from a.people by the
+        // backend (to avoid duplicate) but should appear in the Akteure table with
+        // their role (e.g. Berufsbeistand Perret Jérôme).
+        const authorName = normalizeTitleText(a.author || "");
+        if (authorName) {
+          const authorKey = authorName.toLowerCase();
+          if (!seenNames.has(authorKey)) {
+            seenNames.add(authorKey);
+            mergedPeople.push({ name: authorName, affiliation: "Privatperson" });
+          }
+        }
       }
       const aggregateForAkteure = {
         people: mergedPeople,
