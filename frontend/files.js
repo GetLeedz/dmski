@@ -572,13 +572,28 @@ function getAffiliationLabel(affiliation) {
   const raw = normalizeTitleText(affiliation || "");
   const lc = raw.toLowerCase();
   if (!raw || lc === "privatperson") return "Beteiligte Person";
-  if (lc.includes("anwalt") || lc.includes("rechtsvertreter")) return "Rechtsvertretung";
-  if (lc.includes("kesb")) return "KESB";
-  if (lc.includes("gericht") || lc.includes("richter")) return "Gericht";
-  if (lc.includes("kind")) return "Kind";
-  if (lc.includes("beistand")) return "Beistand / Beiständin";
-  if (lc.includes("gutacht")) return "Gutachter";
-  return raw;
+  // Family
+  if (lc.includes("vater") || lc === "vater") return "Vater";
+  if (lc.includes("mutter") || lc === "mutter") return "Mutter";
+  if (lc.includes("ex-partner") || lc.includes("ex partner") || lc.includes("expartner")) return "Ex-Partner/in";
+  if (lc.includes("ex-frau") || lc.includes("exfrau")) return "Ex-Frau";
+  if (lc.includes("ex-mann") || lc.includes("exmann")) return "Ex-Mann";
+  if (lc.includes("kind") && !lc.includes("kinderanw")) return "Kind";
+  if (lc.includes("kinderanw")) return "Kinderanwalt";
+  // Legal / official
+  if (lc.includes("anwalt") || lc.includes("anwältin") || lc.includes("rechtsvertr")) return "Anwalt / Anwältin";
+  if (lc.includes("beistand") || lc.includes("beiständin")) return "Beistand / Beiständin";
+  if (lc.includes("kesb")) return "KESB Behördenmitglied";
+  if (lc.includes("gericht") || lc.includes("richter") || lc.includes("richterin")) return "Gericht";
+  if (lc.includes("gutacht")) return "Gutachter/in";
+  if (lc.includes("mediator") || lc.includes("mediation")) return "Mediator/in";
+  // Support / social
+  if (lc.includes("familienbegleiter") || lc.includes("familienbegleit")) return "Familienbegleiter/in";
+  if (lc.includes("coach")) return "Coach";
+  if (lc.includes("lehrer") || lc.includes("lehrerin") || lc.includes("lehrkraft")) return "Lehrer/in";
+  if (lc.includes("sozial")) return "Sozialarbeiter/in";
+  if (lc.includes("therapeut")) return "Therapeut/in";
+  return raw || "Beteiligte Person";
 }
 
 function makeInitials(name) {
