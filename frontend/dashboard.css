@@ -1973,7 +1973,7 @@ td {
   width: 100%;
   max-width: none;
   margin-left: 0;
-  min-height: clamp(38rem, 52vw, 47rem);
+  min-height: clamp(24rem, 38vw, 32rem);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -3406,4 +3406,54 @@ select.case-edit-input {
   font-style: italic;
   font-weight: 700;
   color: #6e1e12;
+}
+
+/* ── Compact dossier-level tactic table (top report area) ── */
+#analysisReportTactics .tactic-analysis-box {
+  margin-top: 0.55rem;
+  padding: 0.56rem 0.62rem;
+  gap: 0.38rem;
+}
+
+#analysisReportTactics .tactic-analysis-eyebrow {
+  font-size: 0.57rem;
+  margin-bottom: 0.08rem;
+}
+
+#analysisReportTactics .tactic-analysis-profile-title {
+  font-size: 0.8rem;
+  margin: 0 0 0.26rem;
+}
+
+#analysisReportTactics .tactic-analysis-body {
+  font-size: 0.72rem;
+  line-height: 1.42;
+  margin-bottom: 0.32rem;
+}
+
+#analysisReportTactics .tactic-table th {
+  padding: 0.24rem 0.34rem;
+  font-size: 0.53rem;
+  letter-spacing: 0.07em;
+}
+
+#analysisReportTactics .tactic-table td {
+  padding: 0.24rem 0.34rem;
+  font-size: 0.67rem;
+  line-height: 1.3;
+}
+
+#analysisReportTactics .tactic-legal-assessment {
+  margin-top: 0.26rem;
+  padding: 0.42rem 0.52rem;
+}
+
+#analysisReportTactics .tactic-legal-assessment-title {
+  font-size: 0.62rem;
+  margin: 0 0 0.16rem;
+}
+
+#analysisReportTactics .tactic-legal-assessment-text {
+  font-size: 0.71rem;
+  line-height: 1.42;
 }
