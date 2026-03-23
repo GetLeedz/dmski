@@ -1942,6 +1942,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     `- BENACHTEILIGTE_PERSON_KEYWORDS = [${focusKeywords}]`,
     `- GEGENPARTEI_KEYWORDS = [${referenceKeywords}]`,
     "- Extrahiere alle Namen (inkl. Kinder) und den Absender (Behoerde/Amt).",
+    "- WICHTIG: Fuehre auch den VERFASSER/AUTOR des Dokuments in der personen-Liste auf (z.B. Berufsbeistand, Gerichtspräsident, Anwalt), mit seiner Funktion als 'rolle'. Der Verfasser erscheint typischerweise am Briefkopf, in der Unterschrift oder im Absenderfeld.",
     "",
     "### 2. SYMMETRISCHES ZAEHLVERFAHREN (KEYWORD-TRAINING):",
     "- Untersuche jede Zeile bzw. jede klare Sinn-Einheit.",

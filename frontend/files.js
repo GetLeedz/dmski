@@ -945,10 +945,8 @@ async function refreshAnalysisReport(files = allFiles) {
         documentType: "",
         title: ""
       };
-      // Pass only the known relevant doc ID; strip any unrecognised IDs (e.g. 77708271)
-      const compactDocIds = fileList
-        .map(f => compactDocId(f.id))
-        .filter(id => id === "21340493");
+      // Pass all document IDs from the dossier
+      const compactDocIds = fileList.map(f => compactDocId(f.id));
       analysisReportTactics.innerHTML = renderTacticAnalysisBox(
         aggregateSynthesis,
         currentCaseProtectedPerson,
