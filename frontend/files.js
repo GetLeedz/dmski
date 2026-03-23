@@ -657,6 +657,9 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
   const protNorm = normalizeTitleText(protectedPerson || "").toLowerCase();
   const oppNorm  = normalizeTitleText(opposingParty   || "").toLowerCase();
 
+  // 0. Hardcoded overrides for specific persons
+  if (nameNorm.includes("ergen") && nameNorm.includes("ayhan")) return "Vater";
+
   // 1. Is this the protected person?
   const protWords = protNorm.split(/[\s,]+/).filter(w => w.length > 2);
   if (protWords.length > 0 && protWords.every(w => nameNorm.includes(w))) return "Benachteiligte Person";
@@ -676,7 +679,8 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
   const protFamilyName = protNorm.split(/[\s,]+/).find(w => w.length > 2) || "";
   if (protFamilyName && nameNorm.includes(protFamilyName)) return "Kind";
 
-  return "Beteiligte Person";
+  // 6. Fallback: function unknown to the AI
+  return "–";
 }
 
 function renderAkteureBox(analysis, protectedPerson, opposingParty) {

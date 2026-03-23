@@ -191,8 +191,8 @@ body {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 2rem 2.25rem;
-  margin-bottom: 1.4rem;
+  padding: 1.5rem 1.7rem;
+  margin-bottom: 1rem;
   box-shadow: var(--shadow);
 }
 
@@ -1262,8 +1262,8 @@ button:disabled {
 .analysis-report {
   position: relative;
   overflow: hidden;
-  margin-top: 0.95rem;
-  padding: 1rem 1.05rem 1.05rem;
+  margin-top: 0.7rem;
+  padding: 0.75rem 0.8rem 0.8rem;
   border: 1px solid #c7dce4;
   border-radius: 18px;
   background:
@@ -2430,16 +2430,16 @@ td {
   background: rgba(255,255,255,0.72);
 }
 
-/* Protected = teal accent */
+/* Protected = subtle grey */
 .qa-person-col:first-child {
-  border-color: rgba(17, 107, 115, 0.4);
-  background: linear-gradient(135deg, rgba(228,244,245,0.9), rgba(240,250,251,0.85));
+  border-color: #d1dde3;
+  background: #f8f9fa;
 }
 
-/* Opposing = same teal accent */
+/* Opposing = subtle grey */
 .qa-person-col:last-child {
-  border-color: rgba(17, 107, 115, 0.4);
-  background: linear-gradient(135deg, rgba(228,244,245,0.9), rgba(240,250,251,0.85));
+  border-color: #d1dde3;
+  background: #f8f9fa;
 }
 
 .qa-person-col-label {
@@ -2616,13 +2616,13 @@ td {
 }
 
 .qa-stat.is-positive {
-  background: linear-gradient(145deg, #f0fbf4, #d9f3e5);
-  border: 1.5px solid #b4ddc5;
+  background: #f8f9fa;
+  border: 1.5px solid #d1e8d8;
 }
 
 .qa-stat.is-negative {
-  background: linear-gradient(145deg, #fff3f2, #fde3e1);
-  border: 1.5px solid #f5bcb8;
+  background: #f8f9fa;
+  border: 1.5px solid #d1e8d8;
 }
 
 .qa-stat-num {
@@ -2633,8 +2633,8 @@ td {
   font-variant-numeric: tabular-nums;
 }
 
-.qa-stat.is-positive .qa-stat-num { color: #1a6e35; }
-.qa-stat.is-negative .qa-stat-num { color: #b83030; }
+.qa-stat.is-positive .qa-stat-num { color: #16a34a; }
+.qa-stat.is-negative .qa-stat-num { color: #16a34a; }
 
 .qa-stat-label {
   font-size: 0.65rem;
@@ -2644,8 +2644,8 @@ td {
   margin-top: 0.06rem;
 }
 
-.qa-stat.is-positive .qa-stat-label { color: #2e8a4a; }
-.qa-stat.is-negative .qa-stat-label { color: #b83030; }
+.qa-stat.is-positive .qa-stat-label { color: #16a34a; }
+.qa-stat.is-negative .qa-stat-label { color: #16a34a; }
 
 /* ================================================================
    KI REPORT PARTY CARDS – split Positiv / Negativ with big numbers
@@ -2674,13 +2674,13 @@ td {
 }
 
 .party-split-item.is-positive {
-  background: linear-gradient(145deg, #f0fbf4, #d9f3e5);
-  border: 1.5px solid #b4ddc5;
+  background: #f8f9fa;
+  border: 1.5px solid #d1e8d8;
 }
 
 .party-split-item.is-negative {
-  background: linear-gradient(145deg, #fff3f2, #fde3e1);
-  border: 1.5px solid #f5bcb8;
+  background: #f8f9fa;
+  border: 1.5px solid #d1e8d8;
 }
 
 .party-split-num {
@@ -2691,8 +2691,8 @@ td {
   font-variant-numeric: tabular-nums;
 }
 
-.party-split-item.is-positive .party-split-num { color: #1a6e35; }
-.party-split-item.is-negative .party-split-num { color: #b83030; }
+.party-split-item.is-positive .party-split-num { color: #16a34a; }
+.party-split-item.is-negative .party-split-num { color: #16a34a; }
 
 .party-split-label {
   font-size: 0.6rem;
@@ -2702,8 +2702,8 @@ td {
   margin-top: 0.04rem;
 }
 
-.party-split-item.is-positive .party-split-label { color: #2e8a4a; }
-.party-split-item.is-negative .party-split-label { color: #b83030; }
+.party-split-item.is-positive .party-split-label { color: #16a34a; }
+.party-split-item.is-negative .party-split-label { color: #16a34a; }
 
 /* ================================================================
    CASE FIELD EDIT – inline pencil icon + input
@@ -2931,8 +2931,8 @@ select.case-edit-input {
    TACTIC ANALYSIS BOX  (redesigned: table layout)
    ═══════════════════════════════════════════════ */
 .tactic-analysis-box {
-  margin-top: 0.9rem;
-  padding: 0.75rem 0.85rem;
+  margin-top: 0.68rem;
+  padding: 0.56rem 0.64rem;
   border-radius: 12px;
   border: 1.5px solid #e2c8f0;
   background: linear-gradient(135deg, #fdf8ff, #f8f0fd);
@@ -3082,8 +3082,8 @@ select.case-edit-input {
    AKTEURE BOX – All Persons / Actors with Color-Coded Sentiment
    ================================================================ */
 .akteure-box {
-  margin-top: 0.7rem;
-  padding: 0.75rem 0.85rem;
+  margin-top: 0.53rem;
+  padding: 0.56rem 0.64rem;
   border-radius: 12px;
   border: 1.5px solid #d0e8f0;
   background: linear-gradient(135deg, #f5fafd, #edf4fa);
@@ -3625,8 +3625,8 @@ select.case-edit-input {
   gap: 0.1rem;
   padding: 0.65rem 0.4rem 0.55rem;
   border-radius: 10px;
-  background: linear-gradient(145deg, #e4f4f5, #c8e8ec);
-  border: 1.5px solid #9ad0d8;
+  background: #f8f9fa;
+  border: 1.5px solid #d1e8d8;
 }
 
 .file-count-num {
@@ -3635,7 +3635,7 @@ select.case-edit-input {
   line-height: 1;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
-  color: #0d5760;
+  color: #16a34a;
 }
 
 .file-count-label {
@@ -3644,7 +3644,7 @@ select.case-edit-input {
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-top: 0.04rem;
-  color: #116b73;
+  color: #16a34a;
 }
 
 /* ================================================================
