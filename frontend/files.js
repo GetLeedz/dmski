@@ -416,6 +416,238 @@ function renderAnalysisReportMeta(verdict, methodology, note) {
   ].join("");
 }
 
+/* ----------------------------------------------------------------
+   TACTIC ANALYSIS – derives opposing-party strategy from numbers
+   ---------------------------------------------------------------- */
+function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
+  const protNeg  = Math.max(0, Number(analysis.negativeMentions || 0));
+  const protPos  = Math.max(0, Number(analysis.positiveMentions || 0));
+  const oppPos   = Math.max(0, Number(analysis.opposingPositiveMentions || 0));
+  const oppNeg   = Math.max(0, Number(analysis.opposingNegativeMentions || 0));
+  const pressure = (protNeg + oppPos) - (protPos + oppNeg);
+  const impact   = normalizeTitleText(analysis.impactAssessment || "").toLowerCase();
+  const docType  = normalizeTitleText(analysis.documentType || "").toLowerCase();
+  const title    = normalizeTitleText(analysis.title || "").toLowerCase();
+
+  const tags    = [];
+  const methods = [];
+  let summary   = "";
+  let legalNote = "";
+
+  const nameG = escapeHtml(opposingParty || "Gegenpartei");
+  const nameP = escapeHtml(protectedPerson || "benachteiligte Person");
+
+  // ─── HIGH PRESSURE: Character assassination pattern ───
+  if (pressure >= 4 || (protNeg >= 3 && oppPos >= 2)) {
+    tags.push({ label: "Charakterdiffamierung", cls: "is-critical" });
+    tags.push({ label: "Ad-hominem-Angriff", cls: "is-critical" });
+    methods.push({ label: "Juristische Methode", value: "Reputationsschädigung ohne Sachbezug" });
+    methods.push({ label: "Psycholog. Taktik", value: "Gaslighting · Identitätsangriff" });
+    methods.push({ label: "Anwaltstaktik", value: "Charakterbeweis-Strategie (unzulässig)" });
+    methods.push({ label: "Rechtl. Risiko", value: "Art. 173–174 StGB (üble Nachrede, Verleumdung)" });
+    summary = `Das Dokument zeigt ein klares Muster der <strong>systematischen Negativdarstellung</strong> von ${nameP}. Die Gegenpartei (${nameG}) nutzt eine klassische <strong>Ad-hominem-Strategie</strong>: Anstatt sachlich zum Verfahrensgegenstand zu argumentieren, wird die Persönlichkeit, das Verhalten oder die Lebensumstände der betroffenen Person in den Vordergrund gerückt – eine Methode, die in der Rechtsprechung als unzulässige Beeinflussung gilt.`;
+    legalNote = `Gemäss BGE-Praxis gilt: Persönlichkeitsbezogene Angriffe ohne Relevanz für den Streitgegenstand können als <em>Prozessrechtsmissbrauch</em> gewertet werden. Eine Gegendarstellung oder ein Befangenheitsantrag kann sinnvoll sein.`;
+
+  // ─── MEDIUM PRESSURE: Deflection / Red Herring ───
+  } else if (pressure >= 2 || (protNeg >= 2)) {
+    tags.push({ label: "Ablenkungsmanöver", cls: "is-warning" });
+    tags.push({ label: "Selektive Darstellung", cls: "is-warning" });
+    methods.push({ label: "Juristische Methode", value: "Red-Herring-Argumentation" });
+    methods.push({ label: "Psycholog. Taktik", value: "Framing · Kontextverschiebung" });
+    methods.push({ label: "Anwaltstaktik", value: "Nebenthemen zur Ablenkung einsetzen" });
+    methods.push({ label: "Rechtl. Risiko", value: "Irreführung des Gerichts (Art. 307 StGB)" });
+    summary = `Das Dokument enthält <strong>gezielte Ablenkungsstrategien</strong>: Sachfremde Informationen über ${nameP} werden eingebracht, um vom eigentlichen Verfahrensgegenstand abzulenken. Dies ist eine bekannte Taktik in Zivilverfahren – juristisch als <strong>Red Herring</strong> bezeichnet – bei der irrelevante Charakterinformationen (Lebensstil, vergangene Fehler, Drittmeinungen) das Gericht oder die KESB beeinflussen sollen.`;
+    legalNote = `Irrelevante persönliche Informationen über die benachteiligte Person können formell gerügt werden. Der Richter kann solche Ausführungen aus dem Recht weisen.`;
+
+  // ─── LOW/NO PRESSURE: Balanced or monitoring ───
+  } else if (pressure >= 1) {
+    tags.push({ label: "Leichte Tendenz", cls: "" });
+    methods.push({ label: "Beobachtung", value: "Mild einseitige Darstellung" });
+    methods.push({ label: "Empfehlung", value: "Weitere Dokumente prüfen" });
+    summary = `Das Dokument zeigt eine <strong>leicht einseitige Tendenz</strong> zuungunsten von ${nameP}. Die Darstellung wirkt nicht neutral – einzelne Formulierungen bevorzugen die Position von ${nameG}, ohne dass dies sachlich notwendig wäre. Über das gesamte Dossier hinweg kann sich dies zu einem belastenden Muster verdichten.`;
+
+  // ─── NEUTRAL/POSITIVE ───
+  } else {
+    tags.push({ label: "Sachliche Darstellung", cls: "" });
+    methods.push({ label: "Bewertung", value: "Keine offensichtliche Taktik erkannt" });
+    summary = `Dieses Dokument zeigt keine auffälligen taktischen Muster gegen ${nameP}. Die Darstellung erscheint im Wesentlichen sachlich. Dennoch empfiehlt sich eine Gesamtbetrachtung aller Dokumente des Dossiers.`;
+  }
+
+  return { tags, methods, summary, legalNote, pressure };
+}
+
+function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty) {
+  const profile = deriveTacticProfile(analysis, protectedPerson, opposingParty);
+
+  const tagsHtml = profile.tags.map(t =>
+    `<span class="tactic-tag ${escapeHtml(t.cls)}">${escapeHtml(t.label)}</span>`
+  ).join("");
+
+  const methodsHtml = profile.methods.length > 0
+    ? `<div class="tactic-method-grid">${profile.methods.map(m =>
+        `<div class="tactic-method-item"><span class="tactic-method-label">${escapeHtml(m.label)}</span><span class="tactic-method-value">${escapeHtml(m.value)}</span></div>`
+      ).join("")}</div>`
+    : "";
+
+  const legalHtml = profile.legalNote
+    ? `<div class="tactic-legal-note"><span class="tactic-legal-icon">⚖️</span><span class="tactic-legal-text">${profile.legalNote}</span></div>`
+    : "";
+
+  return `
+    <div class="tactic-analysis-box">
+      <div class="tactic-analysis-head">
+        <div class="tactic-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <div>
+          <p class="tactic-analysis-eyebrow">Einordnung · KI-Analyse</p>
+          <p class="tactic-analysis-title">Taktik der Gegenpartei</p>
+        </div>
+      </div>
+      <div class="tactic-tags-row">${tagsHtml}</div>
+      <div class="tactic-analysis-body">${profile.summary}</div>
+      ${methodsHtml}
+      ${legalHtml}
+    </div>
+  `;
+}
+
+/* ----------------------------------------------------------------
+   AKTEURE BOX – All persons from document, colour-coded sentiment
+   ---------------------------------------------------------------- */
+function derivePersonSentiment(person, analysis, protectedPerson, opposingParty) {
+  const nameNorm = normalizeTitleText(person.name || "").toLowerCase();
+  const affil = normalizeTitleText(person.affiliation || "").toLowerCase();
+  const protNorm = normalizeTitleText(protectedPerson || "").toLowerCase();
+  const oppNorm = normalizeTitleText(opposingParty || "").toLowerCase();
+
+  // Protected person is always neutral (they're the subject, not an actor)
+  if (protNorm && nameNorm.includes(protNorm.split(" ")[0]?.toLowerCase() || "___")) {
+    return "neutral";
+  }
+
+  // Check affiliation-based assignment
+  if (affil.includes("anwalt") || affil.includes("rechtsvertr") || affil.includes("jurist")) {
+    // Lawyer for opposing party = negative tendency
+    if (oppNorm && (affil.includes(oppNorm.split(" ")[0]?.toLowerCase() || "___"))) {
+      return "negative";
+    }
+  }
+
+  if (affil.includes("kesb") || affil.includes("behörd") || affil.includes("gericht") || affil.includes("richter")) {
+    return "neutral";
+  }
+
+  if (affil.includes("privatperson") || affil === "") {
+    // Unnamed private persons → derive from document tone
+    const pressure = (Number(analysis.negativeMentions || 0) + Number(analysis.opposingPositiveMentions || 0))
+      - (Number(analysis.positiveMentions || 0) + Number(analysis.opposingNegativeMentions || 0));
+    return pressure > 1 ? "negative" : pressure < -1 ? "positive" : "neutral";
+  }
+
+  return "neutral";
+}
+
+function getAffiliationLabel(affiliation) {
+  const raw = normalizeTitleText(affiliation || "");
+  const lc = raw.toLowerCase();
+  if (!raw || lc === "privatperson") return "Beteiligte Person";
+  if (lc.includes("anwalt") || lc.includes("rechtsvertreter")) return "Rechtsvertretung";
+  if (lc.includes("kesb")) return "KESB";
+  if (lc.includes("gericht") || lc.includes("richter")) return "Gericht";
+  if (lc.includes("kind")) return "Kind";
+  if (lc.includes("beistand")) return "Beistand / Beiständin";
+  if (lc.includes("gutacht")) return "Gutachter";
+  return raw;
+}
+
+function makeInitials(name) {
+  const parts = normalizeTitleText(name || "").split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/**
+ * Converts "Vorname Name" → "Name, Vorname"
+ * Handles single-word names gracefully.
+ */
+function formatNameLastFirst(raw) {
+  const name = normalizeTitleText(raw);
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+  // Last word is treated as family name
+  const lastName = parts[parts.length - 1];
+  const firstNames = parts.slice(0, parts.length - 1).join(" ");
+  return `${lastName}, ${firstNames}`;
+}
+
+function getSentimentLabel(sentiment) {
+  if (sentiment === "positive") return "Positiv gegenüber Betroffener";
+  if (sentiment === "negative") return "Negativ gegenüber Betroffener";
+  return "Neutral / Sachlich";
+}
+
+function renderAkteureBox(analysis, protectedPerson, opposingParty) {
+  const people = Array.isArray(analysis.people) ? analysis.people : [];
+
+  // Deduplicate by normalised name
+  const seen = new Set();
+  const unique = people.filter(p => {
+    const k = normalizeTitleText(p.name || "").toLowerCase();
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+
+  if (unique.length === 0) {
+    return `
+      <div class="akteure-box">
+        <div class="akteure-head">
+          <div><p class="akteure-eyebrow">Dossier · Beteiligte</p><p class="akteure-title">Akteure &amp; Personen</p></div>
+        </div>
+        <p class="akteure-empty">Noch keine Personen aus diesem Dokument extrahiert.</p>
+      </div>
+    `;
+  }
+
+  const itemsHtml = unique.map(person => {
+    const sentiment  = derivePersonSentiment(person, analysis, protectedPerson, opposingParty);
+    const initials   = makeInitials(person.name);
+    const roleLabel  = getAffiliationLabel(person.affiliation);
+    const sentLabel  = getSentimentLabel(sentiment);
+    const displayName = formatNameLastFirst(person.name);
+    return `
+      <div class="akteure-item is-${sentiment}">
+        <div class="akteure-avatar">${escapeHtml(initials)}</div>
+        <div class="akteure-info">
+          <span class="akteure-name">${escapeHtml(displayName)}</span>
+          <span class="akteure-role">${escapeHtml(roleLabel)}</span>
+          <span class="akteure-sentiment">${escapeHtml(sentLabel)}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="akteure-box">
+      <div class="akteure-head">
+        <div>
+          <p class="akteure-eyebrow">Dossier · Beteiligte</p>
+          <p class="akteure-title">Akteure &amp; Personen</p>
+        </div>
+        <div class="akteure-legend">
+          <span class="akteure-legend-item"><span class="akteure-legend-dot is-positive"></span>Positiv</span>
+          <span class="akteure-legend-item"><span class="akteure-legend-dot is-negative"></span>Negativ</span>
+          <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
+        </div>
+      </div>
+      <div class="akteure-grid">${itemsHtml}</div>
+    </div>
+  `;
+}
+
 function renderEvidenceList(items, emptyText) {
   const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
   if (safeItems.length === 0) {
@@ -1248,11 +1480,9 @@ async function loadRowAnalysis(file, options = {}) {
         <div class="forensic-report-head">
           <div class="forensic-head-left">
             <span class="forensic-title">Forensischer Bericht</span>
-            <span class="forensic-subtitle">Dokumentbezogene Einordnung</span>
           </div>
           <div class="qa-chip-row">
             ${resolvedDocType ? `<span class="qa-tag">${escapeHtml(resolvedDocType)}</span>` : ""}
-            <span class="qa-report-chip is-${escapeHtml(verdict.tone)}">${escapeHtml(verdict.label)}</span>
           </div>
         </div>
         <div class="forensic-fields-grid">
@@ -1286,6 +1516,8 @@ async function loadRowAnalysis(file, options = {}) {
           </div>
         </div>
       </div>
+      ${renderTacticAnalysisBox(analysis, currentCaseProtectedPerson, currentCaseOpposingParty)}
+      ${renderAkteureBox(analysis, currentCaseProtectedPerson, currentCaseOpposingParty)}
     </div>
   `;
 }
