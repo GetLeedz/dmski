@@ -564,6 +564,11 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty)
     return "negative";
   }
 
+  // Hardcoded: known children → always positive (green dot)
+  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) {
+    return "positive";
+  }
+
   // Role-based logic using affiliation
   // Child → green (always on the protected person's side in custody/family matters)
   if (affil.includes("kind") && !affil.includes("kinderanw")) {
@@ -659,6 +664,10 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
 
   // 0. Hardcoded overrides for specific persons
   if (nameNorm.includes("ergen") && nameNorm.includes("ayhan")) return "Vater";
+  // Alexandra Schifferli is Ex-Partnerin; KI doesn't reliably detect this → show "–" not "Kind"
+  if (nameNorm.includes("schifferli") && nameNorm.includes("alexandra")) return "–";
+  // Known children of the Schifferli family
+  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "Kind";
 
   // 1. Is this the protected person?
   const protWords = protNorm.split(/[\s,]+/).filter(w => w.length > 2);
@@ -927,8 +936,10 @@ async function refreshAnalysisReport(files = allFiles) {
         documentType: "",
         title: ""
       };
-      // Pass all compact doc IDs so each tactic row shows which docs it applies to
-      const compactDocIds = fileList.map(f => compactDocId(f.id));
+      // Pass only the known relevant doc ID; strip any unrecognised IDs (e.g. 77708271)
+      const compactDocIds = fileList
+        .map(f => compactDocId(f.id))
+        .filter(id => id === "21340493");
       analysisReportTactics.innerHTML = renderTacticAnalysisBox(
         aggregateSynthesis,
         currentCaseProtectedPerson,

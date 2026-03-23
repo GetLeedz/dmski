@@ -2621,8 +2621,8 @@ td {
 }
 
 .qa-stat.is-negative {
-  background: #f8f9fa;
-  border: 1.5px solid #d1e8d8;
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
 }
 
 .qa-stat-num {
@@ -2634,7 +2634,7 @@ td {
 }
 
 .qa-stat.is-positive .qa-stat-num { color: #16a34a; }
-.qa-stat.is-negative .qa-stat-num { color: #16a34a; }
+.qa-stat.is-negative .qa-stat-num { color: #dc2626; }
 
 .qa-stat-label {
   font-size: 0.65rem;
@@ -2645,7 +2645,7 @@ td {
 }
 
 .qa-stat.is-positive .qa-stat-label { color: #16a34a; }
-.qa-stat.is-negative .qa-stat-label { color: #16a34a; }
+.qa-stat.is-negative .qa-stat-label { color: #dc2626; }
 
 /* ================================================================
    KI REPORT PARTY CARDS – split Positiv / Negativ with big numbers
@@ -2679,8 +2679,8 @@ td {
 }
 
 .party-split-item.is-negative {
-  background: #f8f9fa;
-  border: 1.5px solid #d1e8d8;
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
 }
 
 .party-split-num {
@@ -2692,7 +2692,7 @@ td {
 }
 
 .party-split-item.is-positive .party-split-num { color: #16a34a; }
-.party-split-item.is-negative .party-split-num { color: #16a34a; }
+.party-split-item.is-negative .party-split-num { color: #dc2626; }
 
 .party-split-label {
   font-size: 0.6rem;
@@ -2703,7 +2703,7 @@ td {
 }
 
 .party-split-item.is-positive .party-split-label { color: #16a34a; }
-.party-split-item.is-negative .party-split-label { color: #16a34a; }
+.party-split-item.is-negative .party-split-label { color: #dc2626; }
 
 /* ================================================================
    CASE FIELD EDIT – inline pencil icon + input
@@ -2932,6 +2932,7 @@ select.case-edit-input {
    ═══════════════════════════════════════════════ */
 .tactic-analysis-box {
   margin-top: 0.68rem;
+  margin-bottom: 2rem;
   padding: 0.56rem 0.64rem;
   border-radius: 12px;
   border: 1.5px solid #e2c8f0;
