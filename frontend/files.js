@@ -1583,7 +1583,6 @@ async function loadRowAnalysis(file, options = {}) {
           </div>
         </div>
       </div>
-      ${renderTacticAnalysisBox(analysis, currentCaseProtectedPerson, currentCaseOpposingParty)}
       ${renderAkteureBox(analysis, currentCaseProtectedPerson, currentCaseOpposingParty)}
     </div>
   `;
