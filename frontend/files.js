@@ -411,7 +411,7 @@ function renderPartyReportCard(label, positiveCount, negativeCount) {
 }
 
 function renderFileCountCard(count) {
-  return `<article class="analysis-report-card is-file-count"><span class="analysis-report-card-label">ANZAHL FILES</span><strong class="file-count-number">${escapeHtml(String(count))}</strong></article>`;
+  return `<article class="analysis-report-card is-file-count"><span class="analysis-report-card-label">ANZAHL FILES</span><div class="file-count-split"><div class="file-count-box"><span class="file-count-num">${escapeHtml(String(count))}</span><span class="file-count-label">Gesamtbestand</span></div></div></article>`;
 }
 
 function renderAnalysisReportMeta(_verdict, _methodology, _note) {
@@ -497,17 +497,18 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
   }
 
   const tableRows = profile.rows.map(r => {
-    const cls     = r.present ? "tactic-row-present" : "tactic-row-absent";
-    const badge   = r.present
+    const cls      = r.present ? "tactic-row-present" : "tactic-row-absent";
+    const badge    = r.present
       ? `<span class="tactic-badge is-found">Indiz</span>`
       : `<span class="tactic-badge is-none">Kein Nachweis</span>`;
-    const docCell = r.present && docRefList.length > 0
+    const evidenceText = escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""));
+    const docCell  = r.present && docRefList.length > 0
       ? `<span class="tactic-doc-ids">${docRefList.join(", ")}</span>`
       : (r.present ? "–" : "");
     return `<tr class="${cls}">
-      <td>${escapeHtml(r.tactic)}</td>
-      <td>${escapeHtml(r.article)}</td>
-      <td>${badge} ${escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""))}</td>
+      <td class="tactic-td-tactic">${escapeHtml(r.tactic)}</td>
+      <td class="tactic-td-article">${escapeHtml(r.article)}</td>
+      <td class="tactic-td-ki"><div class="tactic-ki-cell">${badge}<span class="tactic-evidence-text">${evidenceText}</span></div></td>
       <td class="tactic-doc-id-cell">${docCell}</td>
     </tr>`;
   }).join("");
@@ -650,6 +651,34 @@ function getSentimentLabel(sentiment) {
   return "Neutral / Sachlich";
 }
 
+function deriveRoleLabel(person, protectedPerson, opposingParty) {
+  const nameNorm = normalizeTitleText(person.name || "").toLowerCase();
+  const affil    = normalizeTitleText(person.affiliation || "").toLowerCase();
+  const protNorm = normalizeTitleText(protectedPerson || "").toLowerCase();
+  const oppNorm  = normalizeTitleText(opposingParty   || "").toLowerCase();
+
+  // 1. Is this the protected person?
+  const protWords = protNorm.split(/[\s,]+/).filter(w => w.length > 2);
+  if (protWords.length > 0 && protWords.every(w => nameNorm.includes(w))) return "Benachteiligte Person";
+
+  // 2. Is this the exact opposing party?
+  const oppWords = oppNorm.split(/[\s,]+/).filter(w => w.length > 2);
+  if (oppWords.length > 0 && oppWords.every(w => nameNorm.includes(w))) return "Gegenpartei";
+
+  // 3. Use affiliation if it's meaningful
+  if (affil && affil !== "privatperson") return getAffiliationLabel(person.affiliation);
+
+  // 4. Shares last name with opposing party but is NOT them → likely child
+  const oppFamilyName = oppNorm.split(/[\s,]+/).find(w => w.length > 2) || "";
+  if (oppFamilyName && nameNorm.includes(oppFamilyName)) return "Kind";
+
+  // 5. Shares last name with protected person but is NOT them → likely child
+  const protFamilyName = protNorm.split(/[\s,]+/).find(w => w.length > 2) || "";
+  if (protFamilyName && nameNorm.includes(protFamilyName)) return "Kind";
+
+  return "Beteiligte Person";
+}
+
 function renderAkteureBox(analysis, protectedPerson, opposingParty) {
   const people = Array.isArray(analysis.people) ? analysis.people : [];
 
@@ -691,8 +720,8 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty) {
   });
 
   const rows = sorted.map(person => {
-    const sentiment  = derivePersonSentiment(person, analysis, protectedPerson, opposingParty);
-    const roleLabel  = getAffiliationLabel(person.affiliation);
+    const sentiment   = derivePersonSentiment(person, analysis, protectedPerson, opposingParty);
+    const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
     const displayName = formatNameLastFirst(person.name);
     return `
       <tr class="akteure-row">

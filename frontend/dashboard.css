@@ -3564,15 +3564,13 @@ select.case-edit-input {
 }
 
 /* ================================================================
-   ANZAHL FILES CARD – centred large number
+   ANZAHL FILES CARD – same design as party cards
    ================================================================ */
 .analysis-report-card.is-file-count {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  min-width: 0;
   padding: 0.85rem 0.9rem;
   border-radius: 14px;
   border: 1.5px solid #d9e7ec;
@@ -3580,14 +3578,40 @@ select.case-edit-input {
   box-shadow: 0 2px 8px rgba(15,43,54,0.06);
 }
 
-.file-count-number {
-  display: block;
-  font-size: 2.6rem;
+.file-count-split {
+  display: flex;
+  margin-top: 0.3rem;
+}
+
+.file-count-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.65rem 0.4rem 0.55rem;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #e4f4f5, #c8e8ec);
+  border: 1.5px solid #9ad0d8;
+}
+
+.file-count-num {
+  font-size: 1.9rem;
   font-weight: 800;
   line-height: 1;
-  color: #153f4b;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+  color: #0d5760;
+}
+
+.file-count-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 0.04rem;
+  color: #116b73;
 }
 
 /* ================================================================
@@ -3600,6 +3624,44 @@ select.case-edit-input {
 
 .akteure-legend-dot.is-protected {
   background: #116b73;
+}
+
+/* ================================================================
+   PROTECTED PERSON DOT – teal, not red
+   ================================================================ */
+.akteure-sentiment-dot.is-protected {
+  background: linear-gradient(135deg, #116b73, #0a4d55);
+  box-shadow: 0 1px 4px rgba(17,107,115,0.35);
+}
+
+.akteure-legend-dot.is-protected {
+  background: #116b73;
+}
+
+/* ================================================================
+   TACTIC TABLE – KI cell: badge on top, text below
+   ================================================================ */
+.tactic-ki-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.22rem;
+}
+
+.tactic-evidence-text {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: #2d1b3d;
+  font-weight: 400;
+}
+
+.tactic-row-present .tactic-evidence-text {
+  color: #2d1b3d;
+}
+
+.tactic-row-absent .tactic-evidence-text {
+  color: #7a6a8a;
+  font-style: italic;
 }
 
 /* ================================================================
@@ -3622,4 +3684,42 @@ select.case-edit-input {
 
 #analysisReportTactics .tactic-doc-ids {
   font-size: 0.58rem;
+}
+
+/* ================================================================
+   TACTIC TABLE – modern table design improvements
+   ================================================================ */
+.tactic-table tbody tr:hover td {
+  background: rgba(139, 63, 168, 0.04);
+}
+
+.tactic-table .tactic-row-present td {
+  background: rgba(192, 57, 43, 0.03);
+}
+
+.tactic-table .tactic-row-absent td {
+  background: transparent;
+  opacity: 0.75;
+}
+
+.tactic-td-tactic {
+  font-weight: 700;
+  color: #2d1b3d;
+  font-size: 0.77rem;
+}
+
+.tactic-td-article {
+  font-size: 0.72rem;
+  color: #5a3a7a;
+  font-style: italic;
+}
+
+/* Compact variant inside report summary */
+#analysisReportTactics .tactic-ki-cell {
+  gap: 0.14rem;
+}
+
+#analysisReportTactics .tactic-evidence-text {
+  font-size: 0.66rem;
+  line-height: 1.3;
 }
