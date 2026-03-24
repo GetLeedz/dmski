@@ -1,6 +1,19 @@
 /* profile.js – DMSKI Profile & User Management */
 
-const API = (window.__ENV_API_URL || "https://dmski-backend-production.up.railway.app").replace(/\/$/, "");
+// Same URL detection as dashboard.js / upload.js / files.js
+const _host = String(window.location.hostname || "").toLowerCase();
+const _isLocal = _host === "localhost"
+  || _host === "127.0.0.1"
+  || _host === "0.0.0.0"
+  || _host === "::1"
+  || _host.endsWith(".local")
+  || /^192\.168\./.test(_host)
+  || /^10\./.test(_host)
+  || /^172\.(1[6-9]|2\d|3[0-1])\./.test(_host);
+
+const API = _isLocal
+  ? "http://localhost:4000"
+  : "https://lively-reverence-production-def3.up.railway.app";
 
 // ── Auth helpers (aligned with the rest of the app: sessionStorage "token") ──
 function getToken()  { return sessionStorage.getItem("token") || ""; }
