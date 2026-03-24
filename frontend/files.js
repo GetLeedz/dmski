@@ -662,7 +662,14 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
     return "neutral";
   }
 
-  // ── 6. Fallback: overall dossier pressure ────────────────────────────────────
+  // ── 6. No meaningful affiliation → "unknown" (teal dot) ──────────────────────
+  // If the person has no known role, no author data, and no meaningful affiliation,
+  // we cannot determine sentiment. Show a teal "Keine Daten" dot instead of
+  // guessing from overall dossier pressure (which would be misleading).
+  const hasMeaningfulAffil = affil && affil !== "privatperson" && affil !== "" && affil !== "–";
+  if (!hasMeaningfulAffil) return "unknown";
+
+  // ── 7. Fallback: overall dossier pressure (only when affiliation is known) ───
   const pressure = (Number(analysis.negativeMentions || 0) + Number(analysis.opposingPositiveMentions || 0))
     - (Number(analysis.positiveMentions || 0) + Number(analysis.opposingNegativeMentions || 0));
   return pressure > 1 ? "negative" : pressure < -1 ? "positive" : "neutral";
@@ -722,9 +729,10 @@ function formatNameLastFirst(raw) {
 }
 
 function getSentimentLabel(sentiment) {
-  if (sentiment === "positive") return "Positiv gegenüber Betroffener";
-  if (sentiment === "negative") return "Negativ gegenüber Betroffener";
+  if (sentiment === "positive")  return "Positiv gegenüber Betroffener";
+  if (sentiment === "negative")  return "Negativ gegenüber Betroffener";
   if (sentiment === "protected") return "Benachteiligte Person";
+  if (sentiment === "unknown")   return "Keine Daten – KI konnte Einordnung nicht bestimmen";
   return "Neutral / Sachlich";
 }
 
@@ -836,6 +844,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-positive"></span>Positiv</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-negative"></span>Negativ</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
+          <span class="akteure-legend-item"><span class="akteure-legend-dot is-unknown"></span>Keine Daten</span>
         </div>
       </div>
       <table class="akteure-table">

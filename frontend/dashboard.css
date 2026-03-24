@@ -4227,7 +4227,7 @@ select.case-edit-input {
 }
 
 /* ================================================================
-   PROTECTED PERSON DOT – teal, not red
+   PROTECTED PERSON DOT – dark teal
    ================================================================ */
 .akteure-sentiment-dot.is-protected {
   background: linear-gradient(135deg, #116b73, #0a4d55);
@@ -4239,15 +4239,18 @@ select.case-edit-input {
 }
 
 /* ================================================================
-   PROTECTED PERSON DOT – teal, not red
+   UNKNOWN / NO-DATA DOT – türkis/cyan
+   Shown when KI has insufficient data to determine sentiment.
+   Visually distinct from both "protected" (dark teal) and "neutral"
+   (grey): uses a bright cyan/türkis gradient.
    ================================================================ */
-.akteure-sentiment-dot.is-protected {
-  background: linear-gradient(135deg, #116b73, #0a4d55);
-  box-shadow: 0 1px 4px rgba(17,107,115,0.35);
+.akteure-sentiment-dot.is-unknown {
+  background: linear-gradient(135deg, #0891b2, #0369a1);
+  box-shadow: 0 1px 4px rgba(8, 145, 178, 0.32);
 }
 
-.akteure-legend-dot.is-protected {
-  background: #116b73;
+.akteure-legend-dot.is-unknown {
+  background: #0891b2;
 }
 
 /* ================================================================
