@@ -106,7 +106,7 @@ async function loadProfile() {
 
   // Role badge
   const badge = document.getElementById("profileBadge");
-  const labels = { admin: "Administrator", customer: "Kunde", collaborator: "Mitarbeiter" };
+  const labels = { admin: "Administrator", customer: "Fallinhaber", collaborator: "Fallreviewer" };
   badge.textContent = labels[user.role] || user.role;
   badge.className   = `badge-role badge-${user.role || "customer"}`;
 
