@@ -1650,45 +1650,53 @@ button:disabled {
   gap: 0.5rem;
 }
 
-/* PDF KI-Report button inside the report header (not in filter-section) */
-.analysis-report-head-actions .filter-btn--report {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.36rem;
-  padding: 0.45rem 0.9rem;
-  border: 1.5px solid #c0d8e4;
-  border-radius: var(--radius-md);
-  background: linear-gradient(145deg, #f7fbfc, #eef4f8);
-  color: #163a47;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+/* PDF KI-Report button inside the report header (not in filter-section)
+   Uses !important to beat the #exportPdfReportBtn ID rule (dark gradient) */
+.analysis-report-head-actions .filter-btn--report,
+.analysis-report-head-actions #exportPdfReportBtn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.36rem !important;
+  padding: 0.45rem 0.9rem !important;
+  border: 1.5px solid #a8ccd8 !important;
+  border-radius: var(--radius-md) !important;
+  background: linear-gradient(145deg, #f0f8fc, #e3eff5) !important;
+  color: #0f2b36 !important;
+  font: inherit !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.01em !important;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease !important;
   min-width: 0 !important;
+  box-shadow: 0 1px 3px rgba(17,107,115,0.10) !important;
+  transform: none !important;
 }
 
-.analysis-report-head-actions .filter-btn--report svg {
+.analysis-report-head-actions .filter-btn--report svg,
+.analysis-report-head-actions #exportPdfReportBtn svg {
   width: 0.85rem;
   height: 0.85rem;
   flex-shrink: 0;
   stroke-width: 2.2;
+  stroke: #116b73;
 }
 
-.analysis-report-head-actions .filter-btn--report:hover:not(:disabled) {
-  background: #e4f0f5;
-  border-color: #8fb8c8;
-  color: #0f2b36;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(17,107,115,0.15);
-  filter: none;
+.analysis-report-head-actions .filter-btn--report:hover:not(:disabled),
+.analysis-report-head-actions #exportPdfReportBtn:hover:not(:disabled) {
+  background: linear-gradient(145deg, #ddf0f7, #cce5ef) !important;
+  border-color: #6fb8ce !important;
+  color: #0a1e28 !important;
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(17,107,115,0.20) !important;
+  filter: none !important;
 }
 
-.analysis-report-head-actions .filter-btn--report:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.analysis-report-head-actions .filter-btn--report:disabled,
+.analysis-report-head-actions #exportPdfReportBtn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
 }
 .analysis-report-head {
   display: flex;

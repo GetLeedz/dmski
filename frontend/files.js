@@ -2330,6 +2330,14 @@ async function exportKiReportAsPdf() {
     document.head.appendChild(s);
   }
 
+  // Hide all interactive elements (buttons, inputs) inside the report section
+  const hideEls = reportEl.querySelectorAll("button, input, select");
+  const hiddenOriginals = [];
+  for (const el of hideEls) {
+    hiddenOriginals.push({ el, display: el.style.display });
+    el.style.display = "none";
+  }
+
   // Temporarily fix width for clean A4 capture
   const origStyle = reportEl.getAttribute("style") || "";
   reportEl.style.cssText = origStyle
@@ -2363,6 +2371,10 @@ async function exportKiReportAsPdf() {
   } catch {
     alert("PDF-Export fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.");
   } finally {
+    // Restore hidden elements
+    for (const { el, display } of hiddenOriginals) {
+      el.style.display = display;
+    }
     reportEl.setAttribute("style", origStyle);
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
   }
