@@ -621,8 +621,45 @@ function normalizeAffiliation(value) {
     return "Firma";
   }
 
+  // Professional / forensic roles
+  if (raw.includes("forensik") || raw.includes("forensisch")) {
+    return "Gutachter/in";
+  }
+  if (raw.includes("gutacht")) {
+    return "Gutachter/in";
+  }
+  if (raw.includes("psychiater") || raw.includes("psychiatrin") || raw.includes("psychiatrie")) {
+    return "Psychiater/in";
+  }
+  if (raw.includes("psycholog")) {
+    return "Psychologe/in";
+  }
+  if (raw.includes("arzt") || raw.includes("ärztin") || raw.includes("aerzt")) {
+    return "Arzt / Ärztin";
+  }
+  if (raw.includes("therapeut")) {
+    return "Therapeut/in";
+  }
+  if (raw.includes("mediator") || raw.includes("mediation")) {
+    return "Mediator/in";
+  }
+  if (raw.includes("sozialarb") || raw.includes("sozialpad") || raw.includes("sozialpäd")) {
+    return "Sozialarbeiter/in";
+  }
+  if (raw.includes("leiter") || raw.includes("leiterin")) {
+    // Keep the full label so "Leiter Jugendforensik" displays meaningfully
+    return normalizeWhitespace(value);
+  }
+
   if (raw.includes("privat")) {
     return "Privatperson";
+  }
+
+  // If the raw value is a non-empty, meaningful string (not a single generic word),
+  // pass it through so the UI can display it instead of "–"
+  const cleaned = normalizeWhitespace(value);
+  if (cleaned && cleaned.length > 2 && !/^privatperson$/i.test(cleaned)) {
+    return cleaned;
   }
 
   return "Privatperson";
@@ -1989,7 +2026,9 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     `- BENACHTEILIGTE_PERSON_KEYWORDS = [${focusKeywords}]`,
     `- GEGENPARTEI_KEYWORDS = [${referenceKeywords}]`,
     "- Extrahiere alle Namen (inkl. Kinder) und den Absender (Behoerde/Amt).",
-    "- WICHTIG: Fuehre auch den VERFASSER/AUTOR des Dokuments in der personen-Liste auf (z.B. Berufsbeistand, Gerichtspräsident, Anwalt), mit seiner Funktion als 'rolle'. Der Verfasser erscheint typischerweise am Briefkopf, in der Unterschrift oder im Absenderfeld.",
+    "- WICHTIG: Fuehre auch den VERFASSER/AUTOR des Dokuments in der personen-Liste auf (z.B. Berufsbeistand, Gerichtspräsident, Anwalt, Gutachter, Psychologe, Leiter Jugendforensik), mit seiner Funktion als 'rolle'.",
+    "- STRIKTE NAMENREGEL: Im 'name'-Feld NUR den echten Personennamen (Vorname Nachname). KEINE Funktion, KEINEN Titel, KEINE Institution in den Namen aufnehmen – diese gehoeren ausschliesslich in das Feld 'rolle'.",
+    "  Falsch: {\"name\": \"Jugendforensik Benedict Weizenegger Leiter\"} | Richtig: {\"name\": \"Benedict Weizenegger\", \"rolle\": \"Leiter Jugendforensik\"}",
     "",
     "### 2. SYMMETRISCHES ZAEHLVERFAHREN (KEYWORD-TRAINING):",
     "- Untersuche jede Zeile bzw. jede klare Sinn-Einheit.",

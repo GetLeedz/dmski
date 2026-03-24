@@ -778,6 +778,92 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
 }
 
 /**
+ * Returns a diacritics-stripped, lower-cased key for fuzzy person dedup.
+ */
+function personDedupKey(name) {
+  return normalizeTitleText(name)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Significant words in a name key (length > 2, used for subset matching).
+ */
+function sigWords(key) {
+  return key.split(/\s+/).filter(w => w.length > 2);
+}
+
+/**
+ * Returns true if ALL words of the shorter name appear in the longer name.
+ * Handles "Ayhan" ⊂ "Ayhan Ergen", "Schifferli" ⊂ "Schifferli Nael Kaan", etc.
+ */
+function isSamePersonSubset(keyA, keyB) {
+  const wa = sigWords(keyA);
+  const wb = sigWords(keyB);
+  if (wa.length === 0 || wb.length === 0) return false;
+  const shorter = wa.length <= wb.length ? wa : wb;
+  const longer  = wa.length <= wb.length ? wb : wa;
+  return shorter.every(w => longer.some(lw => lw === w || lw.startsWith(w) || w.startsWith(lw)));
+}
+
+/**
+ * Smart person deduplication:
+ * – exact key match → same person
+ * – subset word match → same person, keep longer/more informative name
+ * – merge affiliation when one side has "Privatperson" and the other doesn't
+ */
+function deduplicatePeople(people) {
+  // Map<dedupKey, index-in-result>
+  const keyIndex = new Map();
+  const result = [];
+
+  for (const p of people) {
+    const name = normalizeTitleText(p.name || "");
+    const affil = p.affiliation || "Privatperson";
+    const key = personDedupKey(name);
+    if (!key) continue;
+
+    // 1. Exact match
+    if (keyIndex.has(key)) {
+      const idx = keyIndex.get(key);
+      if (affil && affil !== "Privatperson" && result[idx].affiliation === "Privatperson") {
+        result[idx].affiliation = affil;
+      }
+      continue;
+    }
+
+    // 2. Fuzzy subset match against already-stored entries
+    let merged = false;
+    for (const [existKey, idx] of keyIndex.entries()) {
+      if (isSamePersonSubset(key, existKey)) {
+        const nameWords = sigWords(key);
+        const existWords = sigWords(existKey);
+        // Prefer longer (more complete) name
+        if (nameWords.length > existWords.length) {
+          result[idx].name = name;
+          keyIndex.delete(existKey);
+          keyIndex.set(key, idx);
+        }
+        // Merge affiliation
+        if (affil && affil !== "Privatperson" && result[idx].affiliation === "Privatperson") {
+          result[idx].affiliation = affil;
+        }
+        merged = true;
+        break;
+      }
+    }
+    if (merged) continue;
+
+    // 3. New person
+    keyIndex.set(key, result.length);
+    result.push({ name, affiliation: affil });
+  }
+
+  return result;
+}
+
+/**
  * Renders the Personen table.
  * @param {Object} analysis            – aggregate analysis (people array + totals)
  * @param {string} protectedPerson
@@ -787,14 +873,8 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
 function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentimentMap = new Map()) {
   const people = Array.isArray(analysis.people) ? analysis.people : [];
 
-  // Deduplicate by normalised name
-  const seen = new Set();
-  const unique = people.filter(p => {
-    const k = normalizeTitleText(p.name || "").toLowerCase();
-    if (!k || seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
+  // Smart deduplication (handles "Ayhan" == "Ayhan Ergen", name variants, etc.)
+  const unique = deduplicatePeople(people);
 
   if (unique.length === 0) {
     return `
