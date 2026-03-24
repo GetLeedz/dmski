@@ -309,14 +309,7 @@ async function loadCasesList() {
     for (const item of cases) {
       const option = document.createElement("option");
       option.value = item.id;
-      const createdLabel = formatCaseTimestamp(item.created_at);
-      const protectedLabel = String(item.protected_person_name || "").trim();
-      const countryLabel = String(item.country || "").trim();
-      const localityLabel = String(item.locality || item.region || "").trim();
-      const placeLabel = [localityLabel, countryLabel].filter(Boolean).join(", ");
-      const cityLabel = String(item.city || "").trim();
-      const placeDetail = [cityLabel, localityLabel, countryLabel].filter(Boolean).join(", ");
-        option.textContent = `${item.id} – ${item.case_name}`;
+      option.textContent = `${item.id} – ${item.case_name}`;
       existingCasesSelect.appendChild(option);
     }
   } catch (error) {
