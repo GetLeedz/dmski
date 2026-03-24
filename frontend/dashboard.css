@@ -3775,15 +3775,15 @@ select.case-edit-input {
 .tactic-table thead tr,
 .tactic-table tbody tr {
   display: grid;
-  grid-template-columns: 2fr 2.2fr 1.4fr;
+  grid-template-columns: 1.8fr 0.85fr 2fr 1.15fr;
   align-items: stretch;
   width: 100%;
 }
 
 /* ── Header cells ── */
 .tactic-table thead tr {
-  background: linear-gradient(135deg, rgba(139,63,168,0.10), rgba(107,45,136,0.07));
-  border-bottom: 1.5px solid rgba(139,63,168,0.18);
+  background: linear-gradient(135deg, rgba(139,63,168,0.13), rgba(107,45,136,0.09));
+  border-bottom: 2px solid rgba(139,63,168,0.22);
 }
 
 .tactic-table th {
@@ -3792,10 +3792,10 @@ select.case-edit-input {
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8b5faa;
+  color: #7040a0;
   border-bottom: none;
   text-align: left;
-  background: transparent;
+  background: rgba(139,63,168,0.08);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4163,6 +4163,119 @@ select.case-edit-input {
   color: #7a6a8a;
   font-style: italic;
 }
+
+/* Evidenz column cell */
+.tactic-td-ev {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  padding-top: 0.65rem;
+}
+
+/* ── Evidence verdict badges ── */
+.tactic-ev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.tactic-ev-dot {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Belegt – green */
+.tactic-ev-proven {
+  background: rgba(29,122,62,0.11);
+  color: #1a6535;
+  border: 1px solid rgba(29,122,62,0.3);
+}
+.tactic-ev-proven .tactic-ev-dot { background: #1d7a3e; }
+
+/* Indiziert – amber */
+.tactic-ev-indiz {
+  background: rgba(180,80,0,0.10);
+  color: #6b3800;
+  border: 1px solid rgba(180,80,0,0.28);
+}
+.tactic-ev-indiz .tactic-ev-dot { background: #c46000; }
+
+/* Tendenz – orange-brown */
+.tactic-ev-trend {
+  background: rgba(140,80,0,0.10);
+  color: #5a3500;
+  border: 1px solid rgba(140,80,0,0.22);
+}
+.tactic-ev-trend .tactic-ev-dot { background: #a06000; }
+
+/* Nicht belegt – grey */
+.tactic-ev-none {
+  background: rgba(80,80,100,0.07);
+  color: #505068;
+  border: 1px solid rgba(80,80,100,0.16);
+}
+.tactic-ev-none .tactic-ev-dot { background: #909090; }
+
+/* ── Per-document evidence box ── */
+.doc-evidence-box {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1.5px solid #d4e4ea;
+  background: rgba(255,255,255,0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.doc-ev-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6e8a97;
+}
+
+.doc-ev-verdict {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #153f4b;
+}
+
+.doc-ev-text {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.58;
+  color: #2d3a45;
+}
+
+/* Tone variants */
+.doc-evidence-box.doc-ev-negative {
+  border-color: rgba(192,57,43,0.28);
+  background: linear-gradient(135deg, rgba(255,248,247,0.95), rgba(253,240,238,0.9));
+}
+.doc-evidence-box.doc-ev-negative .doc-ev-verdict { color: #b84434; }
+
+.doc-evidence-box.doc-ev-positive {
+  border-color: rgba(29,122,62,0.28);
+  background: linear-gradient(135deg, rgba(244,253,247,0.95), rgba(232,248,238,0.9));
+}
+.doc-evidence-box.doc-ev-positive .doc-ev-verdict { color: #1d7a3e; }
+
+.doc-evidence-box.doc-ev-neutral {
+  border-color: #d4e4ea;
+  background: rgba(255,255,255,0.75);
+}
+.doc-evidence-box.doc-ev-neutral .doc-ev-verdict { color: #2d5a6a; }
 
 /* Compact variant inside report summary */
 #analysisReportTactics .tactic-ki-cell {

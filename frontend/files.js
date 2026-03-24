@@ -500,13 +500,33 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
     const cls      = r.present ? "tactic-row-present" : "tactic-row-absent";
     const evidenceText = escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""));
     const docCell  = r.present && docRefList.length > 0
-      ? `<span class="tactic-doc-ids">${docRefList.join(",\n")}</span>`
+      ? `<span class="tactic-doc-ids">${docRefList.join(", ")}</span>`
       : (r.present ? "–" : "");
     const articlePart = r.article && r.article !== "–"
       ? `<span class="tactic-td-article">${escapeHtml(r.article)}</span>`
       : "";
+
+    // Derive lawyer-style evidence verdict from raw evidence prefix
+    const rawEv = r.evidence || "";
+    let evTone = "none";
+    let evLabel = "Nicht belegt";
+    let evDetail = "Kein ausreichender Nachweis erbracht";
+    if (/^Erkannt/i.test(rawEv)) {
+      evTone = "proven"; evLabel = "Belegt"; evDetail = "Schlüssig belegt – Aktenlage bestätigt";
+    } else if (/^Indiz erkannt/i.test(rawEv)) {
+      evTone = "indiz"; evLabel = "Indiziert"; evDetail = "Indizien vorhanden – nicht abschliessend bewiesen";
+    } else if (/^Leichte Tendenz/i.test(rawEv)) {
+      evTone = "trend"; evLabel = "Tendenz"; evDetail = "Tendenz erkennbar – Beweis ausstehend";
+    } else if (/^Kein ausreichender/i.test(rawEv)) {
+      evTone = "none"; evLabel = "Nicht belegt"; evDetail = "Mangels hinreichender Beweise nicht belegt";
+    } else if (/^Kein Nachweis/i.test(rawEv)) {
+      evTone = "none"; evLabel = "Nicht belegt"; evDetail = "Kein Nachweis erbracht";
+    }
+    const evCell = `<div class="tactic-ev-badge tactic-ev-${evTone}" title="${escapeHtml(evDetail)}"><span class="tactic-ev-dot"></span><span class="tactic-ev-label">${escapeHtml(evLabel)}</span></div>`;
+
     return `<tr class="${cls}">
       <td class="tactic-td-tactic"><span class="tactic-tactic-name">${escapeHtml(r.tactic)}</span>${articlePart}</td>
+      <td class="tactic-td-ev">${evCell}</td>
       <td class="tactic-td-ki">${evidenceText}</td>
       <td class="tactic-doc-id-cell">${docCell}</td>
     </tr>`;
@@ -529,6 +549,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
           <thead>
             <tr>
               <th>Tatbestand / Methode</th>
+              <th>Evidenz</th>
               <th>KI-Einschätzung / Indiz</th>
               <th>DOC-IDs</th>
             </tr>
@@ -1661,6 +1682,16 @@ async function loadRowAnalysis(file, options = {}) {
   const peopleValue = people.length > 0 ? people.join(" · ") : "Keine";
   const verdict = deriveDocumentVerdict(analysis);
   const evidenceCount = countEvidenceSnippets(evidence);
+
+  // Lawyer-style evidence text for per-document box
+  const lawyerEvidenceMap = {
+    "Deutlich belastend": "Das vorliegende Dokument weist im Gesamtbild eine deutlich belastende Wirkung gegenüber der benachteiligten Person aus. Die Häufung negativer Aussagen ohne sachliche Notwendigkeit stellt aus anwaltlicher Sicht ein Indiz für eine gezielte Nachteilszufügung im Sinne von Art. 28 ZGB dar.",
+    "Leicht belastend": "Das Dokument zeigt eine leicht belastende Tendenz. Einzelne Formulierungen erscheinen nicht sachlich neutral und könnten als einseitige Darstellung gewertet werden. Eine Gesamtbetrachtung im Dossierkontext ist angezeigt.",
+    "Deutlich entlastend": "Das vorliegende Dokument enthält überwiegend sachlich konstruktive Aussagen. Aus rechtlicher Sicht erscheint das Dokument neutral bis günstig für die benachteiligte Person.",
+    "Leicht entlastend": "Das Dokument enthält tendenziell ausgewogene bis leicht positive Aussagen. Keine unmittelbaren Hinweise auf taktisch motivierte Negativdarstellungen erkennbar.",
+    "Eher ausgewogen": "Das vorliegende Dokument erscheint im Wesentlichen sachlich ausgewogen. Kein eindeutiges Belastungsmuster erkennbar. Gesamtdossier-Betrachtung empfohlen."
+  };
+  const lawyerEvidenceText = lawyerEvidenceMap[verdict.label] || "Keine abschliessende Einordnung möglich. Analyse des Gesamtdossiers empfohlen.";
   const qualityValue = Number.isFinite(textQuality.score)
     ? `${textQuality.label} · ${textQuality.score.toFixed(2)}`
     : textQuality.label;
@@ -1690,6 +1721,11 @@ async function loadRowAnalysis(file, options = {}) {
         </div>
         ${people.length > 0 ? `<div class="forensic-persons-row"><span class="forensic-field-label" style="width:100%;margin-bottom:0.25rem">Personen</span>${people.map((p) => `<span class="forensic-person-chip">${escapeHtml(p)}</span>`).join("")}</div>` : ""}
         ${impactAssessment ? `<div class="forensic-fazit"><span class="forensic-fazit-label">Fazit</span>${escapeHtml(impactAssessment)}</div>` : ""}
+      </div>
+      <div class="doc-evidence-box doc-ev-${verdict.tone}">
+        <span class="doc-ev-label">KI-Evidenz · Rechtliche Einordnung</span>
+        <span class="doc-ev-verdict">${escapeHtml(verdict.label)}</span>
+        <p class="doc-ev-text">${escapeHtml(lawyerEvidenceText)}</p>
       </div>
       <div class="qa-mentions">
         <div class="qa-persons-grid">
