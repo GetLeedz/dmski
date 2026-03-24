@@ -102,6 +102,7 @@ const zoomResetBtn = document.getElementById("zoomResetBtn");
 const zoomLevel = document.getElementById("zoomLevel");
 const closePreviewBtn = document.getElementById("closePreviewBtn");
 const goToUploadBtn = document.getElementById("goToUploadBtn");
+const goToUploadBtnHero = document.getElementById("goToUploadBtnHero");
 const exportPdfReportBtn = document.getElementById("exportPdfReportBtn");
 const toggleMultiDeleteBtn = document.getElementById("toggleMultiDeleteBtn");
 const backToCasesBtn = document.getElementById("backToCasesBtn");
@@ -2378,6 +2379,9 @@ document.querySelectorAll(".sort-dir-btn[data-sort-field]").forEach(btn => {
 
 downloadAllFilesBtn?.addEventListener("click", () => void downloadAllFilesAsPdf());
 
+goToUploadBtnHero?.addEventListener("click", () => {
+  window.location.href = "/upload.html";
+});
 goToUploadBtn.addEventListener("click", () => {
   window.location.href = "/upload.html";
 });

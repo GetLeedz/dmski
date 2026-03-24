@@ -119,8 +119,13 @@ let currentCaseProtectedLabel = "Benachteiligte Person";
 let currentCaseOpposingLabel = "Gegenpartei";
 let currentCaseProtectedKeywords = "";
 let currentCaseOpposingKeywords = "";
-const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
-const ALLOWED_FILES_LABEL = "PDF, JPG, JPEG, PNG";
+const ALLOWED_EXTENSIONS = new Set([
+  "pdf","doc","docx","xls","xlsx","ppt","pptx","txt","csv",
+  "jpg","jpeg","png","tiff","tif","webp","heic","heif","gif","bmp",
+  "mov","mp4","avi","mkv","webm","3gp",
+  "mp3","m4a","wav","aac","ogg"
+]);
+const ALLOWED_FILES_LABEL = "PDF, DOCX, XLSX, PPTX, TXT, JPG, PNG, TIFF, HEIC, WEBP, MOV, MP4, AVI, MKV, MP3, WAV, M4A";
 
 activeCaseBanner.textContent = `WICHTIG: Du arbeitest im Fall ${currentCaseId}`;
 workspaceHint.textContent = "Dateien werden direkt hochgeladen: Drag&Drop, Klick-Auswahl oder Einfügen mit Ctrl+V.";

@@ -5014,3 +5014,195 @@ select.case-edit-input {
   .sort-groups { gap: 0.4rem; }
   .sort-group { padding: 0.24rem 0.32rem 0.24rem 0.56rem; }
 }
+
+/* ================================================================
+   UPLOAD HERO BUTTON – files.html prominent CTA
+   ================================================================ */
+.upload-hero-wrap {
+  margin: 0.15rem 0 1.4rem;
+}
+.upload-hero-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.1rem 1.5rem;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: opacity .15s, transform .15s, box-shadow .15s;
+  box-shadow: 0 4px 18px rgba(0,122,154,.18);
+}
+.upload-hero-btn:hover {
+  opacity: .93;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,122,154,.28);
+}
+.upload-hero-btn:active { transform: translateY(0); }
+.upload-hero-btn-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  background: rgba(255,255,255,.18);
+  border-radius: 10px;
+}
+.upload-hero-btn-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke: #fff;
+}
+.upload-hero-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+.upload-hero-btn-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: #fff;
+}
+.upload-hero-btn-sub {
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: rgba(255,255,255,.82);
+  letter-spacing: .01em;
+}
+
+/* ================================================================
+   UPLOAD CARD – upload.html card layout
+   ================================================================ */
+.upload-card {
+  padding: 1.6rem 1.8rem 1.8rem;
+}
+.upload-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+}
+.upload-card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.upload-case-banner {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  letter-spacing: .02em;
+  margin: 0 0 0.15rem;
+}
+.upload-workspace-hint {
+  font-size: 0.78rem;
+  color: #4a6672;
+  margin: 0;
+}
+
+/* ================================================================
+   DROPZONE HERO – big redesigned dropzone for upload.html
+   ================================================================ */
+.dropzone-hero {
+  border: 2.5px dashed #b0d0dc;
+  border-radius: 18px;
+  background: #f4fafc;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+  outline: none;
+  margin-bottom: 1.2rem;
+}
+.dropzone-hero:hover,
+.dropzone-hero:focus-visible,
+.dropzone-hero.drag {
+  border-color: var(--accent);
+  background: #eaf5fa;
+  box-shadow: 0 0 0 4px rgba(0,122,154,.09);
+}
+.dropzone-hero.paste-flash {
+  border-color: var(--ok);
+  background: #eafaf4;
+}
+.dropzone-hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.8rem 2rem 2.2rem;
+  text-align: center;
+}
+.dropzone-hero-icon {
+  color: var(--accent);
+  opacity: .55;
+  margin-bottom: 0.3rem;
+}
+.dropzone-hero-icon svg {
+  width: 3.8rem;
+  height: 3.8rem;
+}
+.dropzone-hero-title {
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0;
+}
+.dropzone-hero-sub {
+  font-size: 0.88rem;
+  color: #4a6672;
+  margin: 0;
+}
+.dropzone-hero-hint {
+  font-size: 0.75rem;
+  color: #7fa3b0;
+  letter-spacing: .025em;
+  margin: 0.3rem 0 0.6rem;
+}
+.dropzone-filetypes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem 0.28rem;
+  margin-top: 0.6rem;
+  max-width: 560px;
+}
+.filetype-group-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: #7fa3b0;
+  padding: 0 0.2rem;
+  white-space: nowrap;
+}
+.filetype-group-sep {
+  display: block;
+  width: 100%;
+  height: 0;
+}
+.filetype-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 0.18rem 0.52rem;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.filetype-badge.filetype-doc { background: #e3f0f7; color: var(--accent); }
+.filetype-badge.filetype-img { background: #e8f5ec; color: #1e7b4b; }
+.filetype-badge.filetype-vid { background: #fdf0e3; color: #b05c00; }
+.filetype-badge.filetype-aud { background: #f3ecf9; color: #7b3bbf; }

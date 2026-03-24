@@ -26,24 +26,93 @@
       </div>
     </header>
 
-    <section class="card">
-      <h2>Datei-Upload & Analyse in Realtime</h2>
-      <p id="activeCaseBanner" class="active-case-banner"></p>
-      <p id="workspaceHint" class="hint"></p>
+    <section class="card upload-card">
 
-      <div class="upload-actions">
-        <button id="goToListBtn" type="button" class="filter-btn">Files</button>
+      <!-- Header row: title + "Zur Dateiliste" -->
+      <div class="upload-card-head">
+        <div>
+          <h2 class="upload-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.3em;height:1.3em;vertical-align:-.25em;margin-right:.35em" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Dateien hochladen &amp; KI-Analyse
+          </h2>
+          <p id="activeCaseBanner" class="upload-case-banner"></p>
+          <p id="workspaceHint" class="upload-workspace-hint"></p>
+        </div>
+        <button id="goToListBtn" type="button" class="filter-btn filter-btn--report">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:.95em;height:.95em"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+          Zur Dateiliste / Dossier
+        </button>
       </div>
 
-      <p>Erlaubte Formate: PDF, JPG, JPEG, PNG. Mehrere Dateien gleichzeitig möglich.</p>
+      <!-- Big upload dropzone -->
+      <div id="dropzone" class="dropzone-hero" tabindex="0" role="button" aria-label="Dateien hochladen – klicken oder per Drag & Drop">
+        <input id="fileInput" type="file" multiple
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,
+                  .jpg,.jpeg,.png,.tiff,.tif,.webp,.heic,.heif,.gif,.bmp,
+                  .mov,.mp4,.avi,.mkv,.webm,.3gp,
+                  .mp3,.m4a,.wav,.aac,.ogg,
+                  application/pdf,application/msword,
+                  application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+                  application/vnd.ms-excel,
+                  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
+                  text/plain,image/jpeg,image/png,image/tiff,image/webp,image/heic,image/heif,image/gif,image/bmp,
+                  video/quicktime,video/mp4,video/x-msvideo,video/x-matroska,video/webm,video/3gpp,
+                  audio/mpeg,audio/mp4,audio/wav,audio/aac,audio/ogg"
+          hidden />
 
-      <div id="dropzone" class="dropzone" tabindex="0">
-        Dateien hier hineinziehen oder klicken, um Dateien auszuwählen.
-        <input id="fileInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden />
+        <div class="dropzone-hero-inner">
+          <!-- Upload cloud icon -->
+          <div class="dropzone-hero-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M36 30c2.2-1.1 4-3.3 4-6a7 7 0 0 0-7-7 7.1 7.1 0 0 0-1.2.1A10 10 0 0 0 14 20a8 8 0 0 0 0 16h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M24 28v14M18 32l6-6 6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <p class="dropzone-hero-title">Dateien hier ablegen</p>
+          <p class="dropzone-hero-sub">oder klicken, um Dateien auszuwählen</p>
+          <p class="dropzone-hero-hint">Drag &amp; Drop · Klick · Ctrl+V (Clipboard)</p>
+
+          <!-- File type badges -->
+          <div class="dropzone-filetypes" aria-label="Akzeptierte Dateiformate">
+            <span class="filetype-group-label">Dokumente</span>
+            <span class="filetype-badge filetype-doc">PDF</span>
+            <span class="filetype-badge filetype-doc">DOCX</span>
+            <span class="filetype-badge filetype-doc">DOC</span>
+            <span class="filetype-badge filetype-doc">XLSX</span>
+            <span class="filetype-badge filetype-doc">PPTX</span>
+            <span class="filetype-badge filetype-doc">TXT</span>
+
+            <span class="filetype-group-sep" aria-hidden="true"></span>
+
+            <span class="filetype-group-label">Bilder</span>
+            <span class="filetype-badge filetype-img">JPG</span>
+            <span class="filetype-badge filetype-img">PNG</span>
+            <span class="filetype-badge filetype-img">TIFF</span>
+            <span class="filetype-badge filetype-img">HEIC</span>
+            <span class="filetype-badge filetype-img">WEBP</span>
+            <span class="filetype-badge filetype-img">BMP</span>
+
+            <span class="filetype-group-sep" aria-hidden="true"></span>
+
+            <span class="filetype-group-label">Video</span>
+            <span class="filetype-badge filetype-vid">MOV</span>
+            <span class="filetype-badge filetype-vid">MP4</span>
+            <span class="filetype-badge filetype-vid">AVI</span>
+            <span class="filetype-badge filetype-vid">MKV</span>
+
+            <span class="filetype-group-sep" aria-hidden="true"></span>
+
+            <span class="filetype-group-label">Audio</span>
+            <span class="filetype-badge filetype-aud">MP3</span>
+            <span class="filetype-badge filetype-aud">WAV</span>
+            <span class="filetype-badge filetype-aud">M4A</span>
+            <span class="filetype-badge filetype-aud">AAC</span>
+          </div>
+        </div>
       </div>
 
       <div id="uploadQueue" class="upload-queue"></div>
-
       <p id="uploadMessage" class="message"></p>
     </section>
 
