@@ -14,7 +14,10 @@
     <img src="assets/logo-dmski.png" alt="DMSKI" style="height:2.2rem;opacity:.7" />
     <p style="margin:.8rem 0 0;color:#4a6672;font-size:.92rem">Sitzung wird geprüft…</p>
   </div>
+
   <main class="page" style="display:none" id="dashboardMain">
+
+    <!-- ── TOP BAR ── -->
     <header class="topbar">
       <div class="brand-lockup">
         <a href="/dashboard.html" class="brand-home-link" aria-label="Zur Startseite">
@@ -24,54 +27,188 @@
       <button id="logoutBtn" class="ghost">Logout</button>
     </header>
 
-    <section class="card">
-      <h2>Neuen Fall anlegen</h2>
-      <form id="caseForm" class="grid dashboard-form">
-        <label class="full form-field-inline">
-          <input id="caseName" name="caseName" type="text" placeholder="Fallname" aria-label="Fallname" required />
-        </label>
-        <label class="form-field-inline">
-          <input id="protectedPersonName" name="protectedPersonName" type="text" placeholder="Benachteiligte Person (Name, Alias, Kindsvater)" aria-label="Benachteiligte Person" />
-        </label>
-        <label class="form-field-inline">
-          <input id="opposingPartyName" name="opposingPartyName" type="text" placeholder="Gegenpartei (Name, Behörde, Institution)" aria-label="Gegenpartei" />
-        </label>
-          <label class="form-field-inline">
-          <select id="countrySelect" name="country" aria-label="Land" required>
-            <option value="">Land wählen</option>
-            <option value="Schweiz">🇨🇭 Schweiz</option>
-            <option value="Deutschland">🇩🇪 Deutschland</option>
-            <option value="Österreich">🇦🇹 Österreich</option>
-          </select>
-        </label>
-        <label class="form-field-inline" id="regionFieldWrapper">
-          <select id="regionSelect" name="region" aria-label="Region" required disabled>
-            <option value="">Zuerst Land wählen</option>
-          </select>
-        </label>
-        <label class="full form-field-inline">
-          <select id="citySelect" name="city" aria-label="Ortschaft / Sitz des Gerichts" disabled>
-            <option value="">Zuerst Kanton / Bundesland wählen</option>
-          </select>
-        </label>
-        <button id="createCaseBtn" type="submit" class="full">Fall anlegen</button>
-      </form>
+    <!-- ── WELCOME STRIP ── -->
+    <div class="welcome-strip">
+      <div class="welcome-inner">
+        <span class="welcome-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <p class="welcome-text">Willkommen im DMSKI-Portal. Bitte wählen Sie unten ein Dossier aus oder legen Sie einen neuen Fall an.</p>
+      </div>
+    </div>
 
-      <div class="open-case open-case-highlight">
-        <h3>Bestehenden Fall öffnen</h3>
-        <label class="form-field-inline open-case-select-label">
-          <select id="existingCasesSelect" class="open-case-select">
-            <option value="">Lade Fallliste...</option>
+    <!-- ── MAIN WORK AREA: two columns on wide screens ── -->
+    <div class="dashboard-grid">
+
+      <!-- LEFT: Neuen Fall anlegen -->
+      <section class="card card-new-case">
+        <div class="card-header-row">
+          <span class="card-icon card-icon--teal" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h2 class="card-title">Neuen Fall anlegen</h2>
+            <p class="card-subtitle">Erstellt ein neues Dossier mit automatisch generierter Fallnummer.</p>
+          </div>
+        </div>
+
+        <form id="caseForm" class="dashboard-form">
+          <div class="field-group">
+            <label class="field-label" for="caseName">Fallname <span class="required-dot" aria-hidden="true">*</span></label>
+            <input id="caseName" name="caseName" type="text" class="field-input" placeholder="z. B. Sorgerechtsverfahren Müller" aria-label="Fallname" required />
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="protectedPersonName">Benachteiligte Person</label>
+              <input id="protectedPersonName" name="protectedPersonName" type="text" class="field-input" placeholder="Name, Alias …" aria-label="Benachteiligte Person" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="opposingPartyName">Gegenpartei</label>
+              <input id="opposingPartyName" name="opposingPartyName" type="text" class="field-input" placeholder="Name, Behörde …" aria-label="Gegenpartei" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="countrySelect">Land <span class="required-dot" aria-hidden="true">*</span></label>
+              <select id="countrySelect" name="country" class="field-input" aria-label="Land" required>
+                <option value="">Land wählen</option>
+                <option value="Schweiz">🇨🇭 Schweiz</option>
+                <option value="Deutschland">🇩🇪 Deutschland</option>
+                <option value="Österreich">🇦🇹 Österreich</option>
+              </select>
+            </div>
+            <div class="field-group" id="regionFieldWrapper">
+              <label class="field-label" for="regionSelect">Kanton / Bundesland <span class="required-dot" aria-hidden="true">*</span></label>
+              <select id="regionSelect" name="region" class="field-input" aria-label="Region" required disabled>
+                <option value="">Zuerst Land wählen</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="citySelect">Ortschaft / Sitz des Gerichts</label>
+            <select id="citySelect" name="city" class="field-input" aria-label="Ortschaft / Sitz des Gerichts" disabled>
+              <option value="">Zuerst Kanton / Bundesland wählen</option>
+            </select>
+          </div>
+
+          <button id="createCaseBtn" type="submit" class="btn-primary btn-full">
+            <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;flex-shrink:0">
+              <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+            Fall anlegen
+          </button>
+        </form>
+
+        <p id="caseMessage" class="message" role="alert"></p>
+      </section>
+
+      <!-- RIGHT: Bestehenden Fall öffnen -->
+      <section class="card card-open-case">
+        <div class="card-header-row">
+          <span class="card-icon card-icon--blue" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M7 5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div>
+            <h2 class="card-title">Bestehendes Dossier öffnen</h2>
+            <p class="card-subtitle">Dossier auswählen, um Dokumente hochzuladen oder die Analyse einzusehen.</p>
+          </div>
+        </div>
+
+        <div class="open-case-body">
+          <label class="field-label" for="existingCasesSelect">Dossier wählen</label>
+          <select id="existingCasesSelect" class="field-input open-case-select">
+            <option value="">Lade Fallliste …</option>
           </select>
-        </label>
+          <p class="open-case-hint">
+            <svg viewBox="0 0 16 16" fill="none" style="width:.85em;height:.85em;flex-shrink:0;margin-top:.1em" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M8 7v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="8" cy="5" r=".8" fill="currentColor"/>
+            </svg>
+            Nach der Auswahl werden Sie automatisch zur Dossierübersicht weitergeleitet.
+          </p>
+        </div>
+      </section>
+
+    </div><!-- /.dashboard-grid -->
+
+    <!-- ── NÄCHSTER SCHRITT – Workflow-Guide ── -->
+    <section class="card card-workflow">
+      <div class="card-header-row">
+        <span class="card-icon card-icon--amber" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 2l2.09 4.26L17 7.27l-3.5 3.41.83 4.82L10 13.25l-4.33 2.25.83-4.82L3 7.27l4.91-.71L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <div>
+          <h2 class="card-title">Wie geht es weiter? – Ihr Arbeitsablauf</h2>
+          <p class="card-subtitle">Schritt-für-Schritt-Anleitung für Gutachter, Berater und alle Nutzer nach dem Einloggen.</p>
+        </div>
       </div>
 
-      <p id="caseMessage" class="message"></p>
-    </section>
+      <ol class="workflow-steps">
+        <li class="workflow-step">
+          <span class="step-number">1</span>
+          <div class="step-body">
+            <strong class="step-title">Dossier wählen oder neu anlegen</strong>
+            <p class="step-desc">
+              Falls Ihnen ein bestehendes Dossier zugewiesen wurde: Wählen Sie es im Dropdown <em>«Bestehendes Dossier öffnen»</em> aus.
+              Legen Sie andernfalls links einen neuen Fall an (Fallname, beteiligte Personen, Ort).
+            </p>
+          </div>
+        </li>
+        <li class="workflow-step">
+          <span class="step-number">2</span>
+          <div class="step-body">
+            <strong class="step-title">Dokumente hochladen</strong>
+            <p class="step-desc">
+              Nach der Auswahl öffnet sich die <em>Upload-Seite</em>. Laden Sie alle relevanten Akten,
+              Gutachten, Berichte oder Beweismittel hoch (PDF, JPG, PNG). Sie können mehrere Dateien auf einmal ziehen und ablegen.
+            </p>
+          </div>
+        </li>
+        <li class="workflow-step">
+          <span class="step-number">3</span>
+          <div class="step-body">
+            <strong class="step-title">KI-Analyse starten</strong>
+            <p class="step-desc">
+              Auf der Upload-Seite startet die KI-Analyse automatisch nach jedem Upload.
+              Sie erkennt Beteiligte, bewertet Erwähnungen und erstellt eine forensische Einschätzung je Dokument.
+            </p>
+          </div>
+        </li>
+        <li class="workflow-step">
+          <span class="step-number">4</span>
+          <div class="step-body">
+            <strong class="step-title">Dossierübersicht &amp; Bericht einsehen</strong>
+            <p class="step-desc">
+              Über den Button <em>«Dateiliste / Dossier»</em> gelangen Sie zur vollständigen Übersicht aller Dokumente mit Analysen,
+              dem KI-Gesamtbericht und der Taktikanalyse. Hier können Sie Dokumente herunterladen, löschen oder den PDF-Bericht exportieren.
+            </p>
+          </div>
+        </li>
+      </ol>
 
-    <section class="card">
-      <h2>Nächster Schritt</h2>
-        <p class="hint">Nach dem Eröffnen oder Auswählen eines Falls öffnet sich automatisch die Upload-Seite. Die Dateiliste ist dort über einen separaten Button erreichbar.</p>
+      <div class="workflow-tip">
+        <svg viewBox="0 0 16 16" fill="none" style="width:1rem;height:1rem;flex-shrink:0;margin-top:.05rem" aria-hidden="true">
+          <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M8 7v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="8" cy="5" r=".8" fill="currentColor"/>
+        </svg>
+        <span><strong>Als Gutachter:</strong> Ihr Zugang ist bereits eingerichtet. Wählen Sie einfach das Ihnen zugewiesene Dossier im Dropdown aus – Sie gelangen direkt zur Aktenübersicht.</span>
+      </div>
     </section>
 
     <footer class="dashboard-footer">

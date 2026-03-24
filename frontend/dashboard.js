@@ -316,7 +316,7 @@ async function loadCasesList() {
       const placeLabel = [localityLabel, countryLabel].filter(Boolean).join(", ");
       const cityLabel = String(item.city || "").trim();
       const placeDetail = [cityLabel, localityLabel, countryLabel].filter(Boolean).join(", ");
-        option.textContent = `Fallnummer: ${item.id} – ${item.case_name}`;
+        option.textContent = `${item.id} – ${item.case_name}`;
       existingCasesSelect.appendChild(option);
     }
   } catch (error) {
