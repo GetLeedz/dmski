@@ -1204,6 +1204,20 @@ function resolveFileType(file) {
     return { className: "jpg", label: "JPG" };
   }
 
+  if (
+    mime.startsWith("video/") ||
+    /\.(mov|mp4|avi|mkv|webm|3gp|m4v|wmv|flv|ts|mts|m2ts)$/i.test(name)
+  ) {
+    return { className: "video", label: "VIDEO" };
+  }
+
+  if (
+    mime.startsWith("audio/") ||
+    /\.(mp3|m4a|wav|aac|ogg|flac|wma|opus|m4b)$/i.test(name)
+  ) {
+    return { className: "audio", label: "AUDIO" };
+  }
+
   return { className: "generic", label: "FILE" };
 }
 
@@ -1366,7 +1380,7 @@ function revokeAllPreviewUrls() {
 
 async function getPreviewUrl(file) {
   const fileType = resolveFileType(file);
-  if (!["pdf", "png", "jpg"].includes(fileType.className)) {
+  if (!["pdf", "png", "jpg", "video", "audio"].includes(fileType.className)) {
     return null;
   }
 
@@ -1803,6 +1817,13 @@ async function openPreviewModal(file) {
 
   if (fileType.className === "pdf") {
     previewModalViewport.innerHTML = `<iframe class="preview-modal-frame preview-modal-content" src="${previewUrl}" title="PDF Vorschau ${decodeUtf8Safe(file.original_name)}"></iframe>`;
+  } else if (fileType.className === "video") {
+    // Video gets its own full player – zoom controls don't apply
+    previewModalViewport.innerHTML = `<video class="preview-modal-video" src="${previewUrl}" controls autoplay muted playsinline></video>`;
+    return; // skip updateModalZoom – not meaningful for video
+  } else if (fileType.className === "audio") {
+    previewModalViewport.innerHTML = `<div class="preview-modal-audio-wrap"><audio class="preview-modal-audio" src="${previewUrl}" controls autoplay></audio><p class="preview-modal-audio-name">${escapeHtml(decodeUtf8Safe(file.original_name))}</p></div>`;
+    return;
   } else {
     previewModalViewport.innerHTML = `<img class="preview-modal-image preview-modal-content" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
   }
@@ -1817,6 +1838,52 @@ async function loadRowPreview(file) {
   }
 
   const fileType = resolveFileType(file);
+
+  // ── Video: load binary, create object URL, seek to middle for thumbnail ──
+  if (fileType.className === "video") {
+    box.innerHTML = '<div class="row-preview-loading"><span class="spinner spinner--preview" aria-label="Vorschau wird geladen"></span></div>';
+    const previewUrl = await getPreviewUrl(file);
+    if (!previewUrl) {
+      box.innerHTML = '<span class="row-preview-empty">Keine Vorschau</span>';
+      return;
+    }
+    box.innerHTML = `
+      <div class="row-preview-video-wrap">
+        <video class="row-preview-video" src="${previewUrl}#t=0.001" preload="metadata" muted playsinline></video>
+        <div class="row-preview-video-overlay" aria-hidden="true">
+          <svg class="row-preview-play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>`;
+    const videoEl = box.querySelector("video");
+    if (videoEl) {
+      // Seek to middle once metadata is loaded so we get a mid-frame thumbnail
+      videoEl.addEventListener("loadedmetadata", () => {
+        videoEl.currentTime = videoEl.duration > 1 ? videoEl.duration / 2 : 0.001;
+      });
+      // On click: show native controls and start playing
+      box.querySelector(".row-preview-video-wrap")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const overlay = box.querySelector(".row-preview-video-overlay");
+        if (overlay) overlay.style.display = "none";
+        videoEl.controls = true;
+        videoEl.play().catch(() => {});
+      });
+    }
+    return;
+  }
+
+  // ── Audio: show a minimal inline player ──
+  if (fileType.className === "audio") {
+    box.innerHTML = '<div class="row-preview-loading"><span class="spinner spinner--preview" aria-label="Vorschau wird geladen"></span></div>';
+    const previewUrl = await getPreviewUrl(file);
+    if (!previewUrl) {
+      box.innerHTML = '<span class="row-preview-empty">Keine Vorschau</span>';
+      return;
+    }
+    box.innerHTML = `<audio class="row-preview-audio" src="${previewUrl}" controls preload="none"></audio>`;
+    return;
+  }
+
   if (!["pdf", "png", "jpg"].includes(fileType.className)) {
     box.innerHTML = '<span class="row-preview-empty">Keine Vorschau</span>';
     return;
@@ -1851,6 +1918,29 @@ async function loadRowAnalysis(file, options = {}) {
     }
     return `<span class="qa-dot-wrap"><span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span><span class="qa-dot-count">${safeCount}</span></span>`;
   };
+
+  // ── Video / Audio: no AI analysis – show dashes immediately ──
+  const ft = resolveFileType(file);
+  if (ft.className === "video" || ft.className === "audio") {
+    const mediaLabel = ft.className === "video" ? "Film" : "Audio";
+    box.innerHTML = `
+      <div class="queue-analysis">
+        <div class="forensic-report">
+          <div class="forensic-report-head">
+            <div class="forensic-head-left"><span class="forensic-title">Forensischer Bericht</span></div>
+            <div class="qa-chip-row"><span class="qa-tag">${mediaLabel}</span></div>
+          </div>
+          <div class="forensic-fields-grid">
+            <div class="forensic-field is-full"><span class="forensic-field-label">Titel</span><span class="forensic-field-value">–</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">Verfasser</span><span class="forensic-field-value">–</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">Datum</span><span class="forensic-field-value">–</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">Herkunft</span><span class="forensic-field-value">–</span></div>
+          </div>
+        </div>
+        <p class="analysis-media-note">KI-Textanalyse nicht verfügbar für ${mediaLabel}-Dateien.</p>
+      </div>`;
+    return;
+  }
 
   box.innerHTML = `
     <div class="analysis-loading">

@@ -5206,3 +5206,122 @@ select.case-edit-input {
 .filetype-badge.filetype-img { background: #e8f5ec; color: #1e7b4b; }
 .filetype-badge.filetype-vid { background: #fdf0e3; color: #b05c00; }
 .filetype-badge.filetype-aud { background: #f3ecf9; color: #7b3bbf; }
+
+/* ================================================================
+   VIDEO / AUDIO PREVIEW – row thumbnail + player
+   ================================================================ */
+
+/* FILE TYPE BADGES for video/audio */
+.file-icon.video { background: #fdf0e3; color: #b05c00; }
+.file-icon.audio { background: #f3ecf9; color: #7b3bbf; }
+
+/* ── Row preview: video thumbnail wrap ── */
+.row-preview-video-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 31.5rem;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #0f1c24;
+  cursor: pointer;
+}
+
+/* Video element fills the wrap */
+.row-preview-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  background: #0f1c24;
+  border-radius: var(--radius-sm);
+}
+
+/* Play-button overlay (shown before user clicks) */
+.row-preview-video-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 28, 42, 0.38);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  transition: background 140ms ease;
+}
+
+.row-preview-video-wrap:hover .row-preview-video-overlay {
+  background: rgba(10, 28, 42, 0.52);
+}
+
+.row-preview-play-icon {
+  width: 3.2rem;
+  height: 3.2rem;
+  color: rgba(255, 255, 255, 0.88);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+  transition: transform 140ms ease, color 140ms ease;
+}
+
+.row-preview-video-wrap:hover .row-preview-play-icon {
+  transform: scale(1.1);
+  color: #ffffff;
+}
+
+/* Audio player inline */
+.row-preview-audio {
+  width: 100%;
+  max-width: 31.5rem;
+  display: block;
+  margin: 0.5rem 0;
+  border-radius: var(--radius-sm);
+  accent-color: var(--accent);
+}
+
+/* ── Full-screen modal: video player ── */
+.preview-modal-video {
+  display: block;
+  width: 100%;
+  max-width: calc(95vw - 2.5rem);
+  max-height: calc(93vh - 7rem);
+  object-fit: contain;
+  background: #0a1c2a;
+  border-radius: 4px;
+}
+
+/* ── Full-screen modal: audio player ── */
+.preview-modal-audio-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  padding: 2.5rem 2rem;
+  min-height: 14rem;
+}
+
+.preview-modal-audio {
+  width: 100%;
+  max-width: 32rem;
+  accent-color: var(--accent);
+}
+
+.preview-modal-audio-name {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ── Analysis panel note for video/audio files ── */
+.analysis-media-note {
+  margin: 0.5rem 0 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: #f5f8fa;
+  border: 1px dashed #c8d8e0;
+  font-size: 0.79rem;
+  color: var(--ink-muted);
+  font-style: italic;
+  line-height: 1.45;
+}
