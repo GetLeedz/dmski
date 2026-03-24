@@ -37,6 +37,34 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "8h";
 let jwtSecretWarningLogged = false;
 
+// ── One-time schema migration: add role + profile columns to users ──────────
+let userSchemaDone = false;
+async function ensureUserSchema() {
+  if (userSchemaDone) return;
+  userSchemaDone = true;
+  try {
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer'");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS mobile TEXT");
+    // Promote admin by ADMIN_EMAIL env var
+    const adminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+    if (adminEmail) {
+      await pool.query("UPDATE users SET role = 'admin' WHERE email = $1", [adminEmail]);
+    }
+    // If still no admin, promote the oldest user
+    await pool.query(`
+      UPDATE users SET role = 'admin'
+      WHERE id = (SELECT MIN(id) FROM users)
+        AND NOT EXISTS (SELECT 1 FROM users WHERE role = 'admin')
+    `);
+  } catch (err) {
+    userSchemaDone = false;
+    console.warn("User schema migration warning:", err.message);
+  }
+}
+
 function ensureJwtSecret(res) {
   if (JWT_SECRET) {
     return true;
@@ -66,8 +94,9 @@ router.post("/login", async (req, res) => {
   const emailNorm = String(email).trim().toLowerCase();
 
   try {
+    await ensureUserSchema();
     const result = await pool.query(
-      "SELECT id, email, password_hash FROM users WHERE email = $1 LIMIT 1",
+      "SELECT id, email, password_hash, role FROM users WHERE email = $1 LIMIT 1",
       [emailNorm]
     );
 
@@ -82,13 +111,14 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Ungültige E-Mail oder Passwort." });
     }
 
+    const role = user.role || "customer";
     const token = jwt.sign(
-      { sub: user.id, email: user.email },
+      { sub: user.id, email: user.email, role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    return res.json({ token, email: user.email });
+    return res.json({ token, email: user.email, role });
   } catch (err) {
     console.error("Login error:", err.message);
     return res.status(500).json({ error: "Serverfehler. Bitte erneut versuchen." });

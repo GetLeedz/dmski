@@ -5,6 +5,7 @@ const cors = require("cors");
 const express = require("express");
 const authRouter = require("./routes/auth");
 const casesRouter = require("./routes/cases");
+const usersRouter = require("./routes/users");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -40,6 +41,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/cases", casesRouter);
+app.use("/users", usersRouter);
 
 // 404 catch-all – return JSON instead of HTML
 app.use((_req, res) => {

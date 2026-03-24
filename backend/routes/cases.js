@@ -2518,6 +2518,18 @@ async function ensureCaseOptionalColumns() {
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS locality text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS region text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS city text");
+        await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS owner_id integer");
+        // Ensure customer_collaborators exists for access-control queries
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS customer_collaborators (
+            id SERIAL PRIMARY KEY,
+            customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            collaborator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            function_label TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE(customer_id, collaborator_id)
+          )
+        `);
       } catch (err) {
         // If permissions are restricted, the compat fallbacks below still keep app functional.
         console.warn("Ensure case columns warning:", err.message);
