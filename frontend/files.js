@@ -2314,11 +2314,8 @@ goToUploadBtn.addEventListener("click", () => {
 });
 
 exportPdfReportBtn?.addEventListener("click", () => {
-  const targetUrl = `/report.html?caseId=${encodeURIComponent(currentCaseId)}&autoprint=1`;
-  const opened = window.open(targetUrl, "_blank", "noopener,noreferrer");
-  if (!opened) {
-    window.location.href = targetUrl;
-  }
+  // Same-tab navigation keeps sessionStorage token accessible on report page
+  window.location.href = `/report.html?caseId=${encodeURIComponent(currentCaseId)}&autoprint=1`;
 });
 
 backToCasesBtn?.addEventListener("click", () => {

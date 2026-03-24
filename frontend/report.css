@@ -24,7 +24,7 @@ body {
     radial-gradient(circle at top, rgba(255, 255, 255, 0.92), transparent 26%),
     linear-gradient(180deg, #eef4f6 0%, #e4edf0 100%);
   color: var(--report-ink);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 body {
@@ -65,20 +65,47 @@ body {
 }
 
 .toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   border: 0;
-  border-radius: 999px;
-  padding: 0.8rem 1.2rem;
+  border-radius: 10px;
+  padding: 0.65rem 1.2rem;
   background: linear-gradient(145deg, #0f616d, #0a4d57);
   color: #ffffff;
   font: inherit;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(15, 97, 109, 0.28);
+  filter: saturate(1.07);
+}
+
+.toolbar-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .toolbar-btn.is-ghost {
-  border: 1px solid #c8d9df;
+  border: 1.5px solid #c8d9df;
   background: rgba(255, 255, 255, 0.88);
   color: var(--report-ink);
+}
+
+.toolbar-btn.is-ghost:hover:not(:disabled) {
+  background: #f0f6f8;
+  border-color: #a0bec8;
+  transform: none;
+  box-shadow: none;
+  filter: none;
 }
 
 .report-sheet {

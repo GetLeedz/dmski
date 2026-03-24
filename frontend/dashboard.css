@@ -4380,14 +4380,16 @@ select.case-edit-input {
 .sort-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.28rem 0.75rem;
+  gap: 0.36rem;
+  padding: 0.5rem 0.9rem;
   border: 1.5px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: #ffffff;
   color: var(--ink-soft);
-  font-size: 0.77rem;
-  font-weight: 600;
+  font: inherit;
+  font-size: 0.81rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   cursor: pointer;
   white-space: nowrap;
   transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
@@ -4487,6 +4489,22 @@ select.case-edit-input {
   border-color: var(--error);
   color: var(--error);
   font-weight: 800;
+}
+
+/* Override legacy ID rule (#exportPdfReportBtn) which has higher specificity */
+.filter-section #exportPdfReportBtn {
+  background: linear-gradient(145deg, #f7fbfc, #eef4f8);
+  border-color: #c0d8e4;
+  color: #163a47;
+  background-image: none;
+}
+.filter-section #exportPdfReportBtn:hover:not(:disabled) {
+  background: #e4f0f5;
+  border-color: #8fb8c8;
+  color: #0f2b36;
+  transform: none;
+  box-shadow: none;
+  filter: none;
 }
 
 /* PDF KI-Report */
