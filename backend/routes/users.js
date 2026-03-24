@@ -68,10 +68,15 @@ function generatePassword() {
 
 // ── GET /users/me ──────────────────────────────────────────────────────────
 router.get("/me", requireAuth, async (req, res) => {
+  await ensureCollabSchema();
   try {
     const result = await pool.query(
-      `SELECT id, email, role, first_name, last_name, address, mobile, created_at
-       FROM users WHERE id = $1 LIMIT 1`,
+      `SELECT u.id, u.email, u.role, u.first_name, u.last_name, u.address, u.mobile, u.created_at,
+              cc.function_label
+       FROM users u
+       LEFT JOIN customer_collaborators cc ON cc.collaborator_id = u.id
+       WHERE u.id = $1
+       LIMIT 1`,
       [req.user.sub]
     );
     if (!result.rows[0]) return res.status(404).json({ error: "Benutzer nicht gefunden." });
@@ -84,7 +89,8 @@ router.get("/me", requireAuth, async (req, res) => {
 
 // ── PATCH /users/me ────────────────────────────────────────────────────────
 router.patch("/me", requireAuth, async (req, res) => {
-  const { email, password, currentPassword, first_name, last_name, address, mobile } = req.body;
+  const { email, password, currentPassword, first_name, last_name, address, mobile, function_label } = req.body;
+  await ensureCollabSchema();
   try {
     // Password change requires currentPassword verification
     if (password) {
@@ -117,6 +123,14 @@ router.patch("/me", requireAuth, async (req, res) => {
       await pool.query(
         `UPDATE users SET ${setClauses} WHERE id = $1`,
         [req.user.sub, ...Object.values(updates)]
+      );
+    }
+
+    // Update function_label in customer_collaborators (only affects collaborator rows)
+    if (function_label !== undefined) {
+      await pool.query(
+        `UPDATE customer_collaborators SET function_label = $1 WHERE collaborator_id = $2`,
+        [String(function_label || "").trim() || null, req.user.sub]
       );
     }
 

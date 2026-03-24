@@ -471,7 +471,7 @@
               <label class="field-label" for="fieldEmail">E-Mail-Adresse</label>
               <input id="fieldEmail" type="email" class="field-input" placeholder="name@beispiel.ch" />
             </div>
-            <div class="two-col mb-4">
+            <div class="two-col mb-3">
               <div class="field-group">
                 <label class="field-label" for="fieldAddress">Adresse</label>
                 <input id="fieldAddress" type="text" class="field-input" placeholder="Musterstrasse 1, 8000 Zürich" />
@@ -480,6 +480,31 @@
                 <label class="field-label" for="fieldMobile">Mobile</label>
                 <input id="fieldMobile" type="tel" class="field-input" placeholder="+41 79 000 00 00" />
               </div>
+            </div>
+
+            <!-- Meine Funktion – nur für Fallreviewer sichtbar -->
+            <div class="field-group mb-4" id="fieldFunctionGroup" style="display:none">
+              <label class="field-label" for="fieldFunction">
+                Meine Funktion
+                <span style="font-weight:400;color:#6b8896;font-size:.78rem;margin-left:.3em">(kann nach der Einladung korrigiert werden)</span>
+              </label>
+              <select id="fieldFunction" class="field-input">
+                <option value="">Funktion wählen …</option>
+                <option value="Gutachter/in">Gutachter/in</option>
+                <option value="Therapeut/in">Therapeut/in</option>
+                <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
+                <option value="Berater/in">Berater/in</option>
+                <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
+                <option value="Psychiater/in">Psychiater/in</option>
+                <option value="Arzt / Ärztin">Arzt / Ärztin</option>
+                <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
+                <option value="Familienbegleiter/in">Familienbegleiter/in</option>
+                <option value="Mediator/in">Mediator/in</option>
+                <option value="Beistand / Beiständin">Beistand / Beiständin</option>
+                <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
+                <option value="Vertrauensperson">Vertrauensperson</option>
+                <option value="Andere">Andere</option>
+              </select>
             </div>
 
             <div class="password-box">

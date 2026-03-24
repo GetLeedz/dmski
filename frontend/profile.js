@@ -66,7 +66,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("sectionAdmin").style.display = "";
     loadCustomers();
   }
-  loadCollabs(getUserId());
+  // Collaborators only see their own profile – hide the Fachpersonen management section
+  if (role === "collaborator") {
+    document.getElementById("sectionCollabs").style.display = "none";
+  } else {
+    loadCollabs(getUserId());
+  }
 
   // Forms
   document.getElementById("profileForm").addEventListener("submit", onSaveProfile);
@@ -116,6 +121,14 @@ async function loadProfile() {
   document.getElementById("fieldEmail").value     = user.email      || "";
   document.getElementById("fieldAddress").value   = user.address    || "";
   document.getElementById("fieldMobile").value    = user.mobile     || "";
+
+  // Show "Meine Funktion" field for collaborators and pre-select current value
+  if (user.role === "collaborator") {
+    const fnGroup = document.getElementById("fieldFunctionGroup");
+    const fnSelect = document.getElementById("fieldFunction");
+    if (fnGroup) fnGroup.style.display = "";
+    if (fnSelect && user.function_label) fnSelect.value = user.function_label;
+  }
 }
 
 // ── Save profile ────────────────────────────────────────────────────────────
@@ -141,6 +154,12 @@ async function onSaveProfile(e) {
     mobile:     document.getElementById("fieldMobile").value.trim(),
   };
   if (newPwd) { body.password = newPwd; body.currentPassword = curPwd; }
+
+  // Include function_label for collaborators
+  const fnGroup = document.getElementById("fieldFunctionGroup");
+  if (fnGroup && fnGroup.style.display !== "none") {
+    body.function_label = document.getElementById("fieldFunction").value || "";
+  }
 
   if (btn) { btn.disabled = true; btn.textContent = "Speichert …"; }
 
