@@ -5056,10 +5056,22 @@ select.case-edit-input {
 /* ================================================================
    UPLOAD HERO BUTTON – files.html prominent CTA (pill style)
    ================================================================ */
+/* ── Section heading above upload hero button ── */
+.upload-section-title {
+  margin: 1.8rem 0 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
 .upload-hero-wrap {
   display: flex;
   justify-content: center;
-  margin: 0.5rem 0 1.8rem;
+  margin: 0 0 2.2rem;
+  padding: 0.4rem 0;
 }
 .upload-hero-btn {
   display: inline-flex;
