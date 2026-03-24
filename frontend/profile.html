@@ -6,167 +6,389 @@
   <title>Mein Profil – DMSKI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dashboard.css" />
   <style>
-    /* ── Profile-page extras ── */
-    .profile-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 1rem 2rem;
+    /* ═══════════════════════════════════════════
+       PROFILE PAGE – Premium Design
+    ═══════════════════════════════════════════ */
+    :root {
+      --profile-accent: #116b73;
+      --profile-accent2: #0d5760;
+      --profile-mid: #1a5068;
     }
-    @media (min-width: 700px) {
-      .profile-grid { padding: 0 1.5rem 2.5rem; }
+
+    .profile-layout {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.25rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── Profile hero card ── */
+    .profile-hero {
+      background: linear-gradient(135deg, #0d5760 0%, #116b73 45%, #1a8a94 100%);
+      border-radius: 18px;
+      padding: 2rem 2.2rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      box-shadow: 0 8px 32px rgba(17,107,115,.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-hero::before {
+      content: "";
+      position: absolute;
+      top: -40%;
+      right: -5%;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.06);
+      pointer-events: none;
+    }
+    .profile-hero::after {
+      content: "";
+      position: absolute;
+      bottom: -30%;
+      right: 15%;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+      pointer-events: none;
+    }
+
+    .profile-avatar {
+      width: 4.5rem;
+      height: 4.5rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,.18);
+      border: 2.5px solid rgba(255,255,255,.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+      letter-spacing: -.02em;
+      backdrop-filter: blur(8px);
+    }
+    .profile-hero-info { flex: 1; min-width: 0; }
+    .profile-hero-name {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 .2rem;
+      letter-spacing: -.01em;
+      line-height: 1.2;
+    }
+    .profile-hero-email {
+      font-size: .88rem;
+      color: rgba(255,255,255,.8);
+      margin: 0 0 .55rem;
     }
 
     .badge-role {
       display: inline-flex;
       align-items: center;
-      gap: .35rem;
-      padding: .2rem .7rem;
+      gap: .3rem;
+      padding: .22rem .75rem;
       border-radius: 999px;
-      font-size: .75rem;
-      font-weight: 600;
-      letter-spacing: .03em;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .05em;
       text-transform: uppercase;
     }
-    .badge-admin       { background: #fef3c7; color: #92400e; }
-    .badge-customer    { background: #d1fae5; color: #065f46; }
-    .badge-collaborator{ background: #e0e7ff; color: #3730a3; }
+    .badge-admin        { background: rgba(254,243,199,.9); color: #78350f; }
+    .badge-customer     { background: rgba(209,250,229,.9); color: #065f46; }
+    .badge-collaborator { background: rgba(224,231,255,.9); color: #3730a3; }
 
-    .section-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #1e3a45;
-      margin: 0 0 1rem;
-      padding-bottom: .5rem;
-      border-bottom: 1.5px solid #e5edf0;
+    /* ── Section cards ── */
+    .profile-card {
+      background: #fff;
+      border: 1px solid #dae2e8;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(15,43,54,.07);
+      overflow: hidden;
     }
 
+    .profile-card-head {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: 1.25rem 1.6rem;
+      border-bottom: 1px solid #edf2f5;
+      background: linear-gradient(135deg, #f7fbfc, #eef5f7);
+    }
+    .profile-card-icon {
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .profile-card-icon--teal  { background: linear-gradient(135deg, #116b73, #0d5760); }
+    .profile-card-icon--blue  { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+    .profile-card-icon--amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .profile-card-icon svg { width: 1.05rem; height: 1.05rem; stroke: #fff; fill: none; }
+
+    .profile-card-head-text { flex: 1; min-width: 0; }
+    .profile-card-title {
+      margin: 0 0 .1rem;
+      font-size: .98rem;
+      font-weight: 700;
+      color: #0f2b36;
+    }
+    .profile-card-sub {
+      margin: 0;
+      font-size: .8rem;
+      color: #4a6672;
+    }
+
+    .profile-card-body { padding: 1.4rem 1.6rem; }
+
+    /* ── Form helpers ── */
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
     @media (max-width: 500px) { .two-col { grid-template-columns: 1fr; } }
 
-    .collab-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-    .collab-table th {
-      text-align: left;
-      padding: .45rem .6rem;
-      font-weight: 600;
-      color: #4a6672;
-      border-bottom: 1.5px solid #e5edf0;
-      font-size: .78rem;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-    .collab-table td {
-      padding: .5rem .6rem;
-      border-bottom: 1px solid #f0f5f7;
-      color: #1e3a45;
-    }
-    .collab-table tr:last-child td { border-bottom: none; }
-    .collab-table tr:hover td { background: #f8fbfc; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .65rem; }
+    @media (max-width: 600px) { .three-col { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 400px) { .three-col { grid-template-columns: 1fr; } }
 
-    .btn-remove {
-      display: inline-flex;
-      align-items: center;
-      gap: .25rem;
-      padding: .25rem .55rem;
-      border: 1px solid #fca5a5;
-      background: #fff5f5;
-      color: #b91c1c;
-      border-radius: 6px;
-      font-size: .78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    .btn-remove:hover { background: #fee2e2; }
+    .mb-3 { margin-bottom: .75rem; }
+    .mb-4 { margin-bottom: 1rem; }
 
+    /* ── Password box ── */
     .password-box {
-      background: #f8fbfc;
-      border: 1px solid #d8eaf0;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-top: .5rem;
+      background: linear-gradient(135deg, #f5fafc, #eef4f7);
+      border: 1px solid #d5e5ec;
+      border-radius: 12px;
+      padding: 1.1rem 1.2rem;
+      margin-top: .25rem;
     }
+    .password-box-title {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #0f2b36;
+      margin: 0 0 .85rem;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+    }
+    .password-box-title svg { width: .95rem; height: .95rem; stroke: var(--profile-accent); fill: none; }
 
+    /* ── Generated password box ── */
     .generated-pwd {
       display: flex;
       align-items: center;
-      gap: .5rem;
+      gap: .6rem;
       background: #ecfdf5;
       border: 1.5px solid #6ee7b7;
-      border-radius: 8px;
-      padding: .65rem 1rem;
-      font-family: monospace;
-      font-size: .95rem;
+      border-radius: 10px;
+      padding: .75rem 1rem;
+      font-size: .92rem;
       color: #065f46;
-      font-weight: 600;
-      margin-top: .75rem;
+      font-weight: 700;
       word-break: break-all;
-    }
-    .generated-pwd button {
-      margin-left: auto;
-      flex-shrink: 0;
-      padding: .2rem .5rem;
-      border: 1px solid #6ee7b7;
-      background: #fff;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: .8rem;
-      color: #065f46;
+      margin-top: .75rem;
     }
 
+    /* ── Fachpersonen list ── */
+    .fach-list {
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+      margin-bottom: 1.2rem;
+    }
+    .fach-card {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      padding: .75rem 1rem;
+      background: linear-gradient(135deg, #fafcfd, #f4f8f9);
+      border: 1px solid #daeaf0;
+      border-radius: 12px;
+      transition: box-shadow .15s, border-color .15s;
+    }
+    .fach-card:hover {
+      box-shadow: 0 3px 14px rgba(17,107,115,.1);
+      border-color: #b8d4dc;
+    }
+    .fach-avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .95rem;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #116b73, #0d5760);
+    }
+    .fach-info { flex: 1; min-width: 0; }
+    .fach-name {
+      font-size: .9rem;
+      font-weight: 700;
+      color: #0f2b36;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .fach-email {
+      font-size: .78rem;
+      color: #5a7a8a;
+      margin-top: .06rem;
+    }
+    .fach-role-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .2rem .65rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+      color: #0369a1;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .fach-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 8px;
+      border: 1px solid #fca5a5;
+      background: #fff5f5;
+      color: #b91c1c;
+      cursor: pointer;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .fach-remove:hover { background: #fee2e2; border-color: #f87171; }
+    .fach-remove svg { width: .85rem; height: .85rem; stroke: currentColor; fill: none; }
+
+    /* ── Add Fachperson form panel ── */
+    .add-fach-toggle {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      width: 100%;
+      padding: .7rem 1.1rem;
+      background: linear-gradient(135deg, #116b73, #0d5760);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font: inherit;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s, box-shadow .15s;
+      box-shadow: 0 3px 14px rgba(17,107,115,.22);
+    }
+    .add-fach-toggle:hover { opacity: .9; box-shadow: 0 5px 20px rgba(17,107,115,.32); }
+    .add-fach-toggle svg { width: 1rem; height: 1rem; stroke: #fff; fill: none; flex-shrink: 0; }
+    .add-fach-toggle-label { flex: 1; text-align: left; }
+    .add-fach-toggle-chevron {
+      width: 1rem;
+      height: 1rem;
+      stroke: rgba(255,255,255,.75);
+      fill: none;
+      flex-shrink: 0;
+      transition: transform .2s;
+    }
+    .add-fach-toggle[aria-expanded="true"] .add-fach-toggle-chevron {
+      transform: rotate(180deg);
+    }
+
+    .add-fach-panel {
+      background: linear-gradient(135deg, #f5fafc, #eef4f7);
+      border: 1px solid #cfe2ea;
+      border-radius: 14px;
+      padding: 1.25rem 1.3rem 1.1rem;
+      margin-top: .75rem;
+      display: none;
+    }
+    .add-fach-panel.open { display: block; }
+    .add-fach-panel-title {
+      font-size: .82rem;
+      font-weight: 700;
+      color: #0f2b36;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin: 0 0 .9rem;
+    }
+
+    /* ── Empty state ── */
     .empty-state {
       text-align: center;
-      color: #a0b4bc;
-      padding: 1.5rem 0;
+      color: #8ba4b0;
+      padding: 1.8rem 0;
       font-size: .88rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .5rem;
     }
+    .empty-state svg { width: 2.2rem; height: 2.2rem; opacity: .3; }
 
+    /* ── Admin tabs ── */
     .tab-row {
       display: flex;
-      gap: .5rem;
+      gap: .4rem;
       margin-bottom: 1.25rem;
+      background: #edf2f5;
+      padding: .3rem;
+      border-radius: 10px;
       flex-wrap: wrap;
     }
     .tab-btn {
-      padding: .4rem .85rem;
-      border-radius: 7px;
-      border: 1.5px solid #d0e4ec;
-      background: #fff;
+      flex: 1;
+      min-width: 0;
+      padding: .45rem .9rem;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
       color: #4a6672;
       font-weight: 600;
-      font-size: .84rem;
+      font-size: .85rem;
       cursor: pointer;
       transition: all .15s;
     }
     .tab-btn.active {
-      background: #1a5068;
-      border-color: #1a5068;
-      color: #fff;
+      background: #fff;
+      color: #0f2b36;
+      box-shadow: 0 1px 4px rgba(15,43,54,.1);
     }
 
     .customer-card {
       display: flex;
       align-items: center;
       gap: .75rem;
-      padding: .7rem 1rem;
-      border: 1px solid #e5edf0;
-      border-radius: 10px;
+      padding: .75rem 1rem;
+      border: 1px solid #dae2e8;
+      border-radius: 12px;
       background: #fff;
       margin-bottom: .5rem;
       transition: box-shadow .15s;
     }
-    .customer-card:hover { box-shadow: 0 2px 8px rgba(26,80,104,.08); }
+    .customer-card:hover { box-shadow: 0 2px 10px rgba(26,80,104,.08); }
     .customer-avatar {
-      width: 2.2rem;
-      height: 2.2rem;
+      width: 2.3rem;
+      height: 2.3rem;
       border-radius: 50%;
-      background: #e0f2fe;
-      color: #0369a1;
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1d4ed8;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -176,7 +398,12 @@
     }
     .customer-info { flex: 1; min-width: 0; }
     .customer-name { font-weight: 600; color: #1e3a45; font-size: .9rem; }
-    .customer-email { font-size: .78rem; color: #6b8896; margin-top: .1rem; }
+    .customer-email { font-size: .78rem; color: #6b8896; margin-top: .06rem; }
+
+    @media (max-width: 600px) {
+      .profile-hero { flex-direction: column; text-align: center; gap: 1rem; padding: 1.5rem 1.25rem; }
+      .profile-card-head, .profile-card-body { padding-left: 1.1rem; padding-right: 1.1rem; }
+    }
   </style>
 </head>
 <body>
@@ -197,181 +424,246 @@
         </a>
       </div>
       <nav style="display:flex;gap:.5rem;align-items:center">
-        <a href="/dashboard.html" class="ghost" style="text-decoration:none;font-size:.875rem">Dashboard</a>
+        <a href="/dashboard.html" class="ghost" style="text-decoration:none;font-size:.875rem">
+          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.2em"><path d="M3 10.5L10 4l7 6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h4v-4h2v4h4V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Dashboard
+        </a>
         <button id="logoutBtn" class="ghost">Logout</button>
       </nav>
     </header>
 
-    <div class="profile-grid">
+    <div class="profile-layout">
 
-      <!-- ── Profil-Header ── -->
-      <div style="display:flex;align-items:center;gap:1rem;padding:1.25rem 0 .25rem">
-        <div style="width:3.5rem;height:3.5rem;border-radius:50%;background:#1a5068;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;flex-shrink:0" id="avatarLetter">?</div>
-        <div>
-          <h1 style="margin:0;font-size:1.3rem;color:#1e3a45" id="profileName">Mein Profil</h1>
-          <div style="display:flex;align-items:center;gap:.5rem;margin-top:.25rem">
-            <span id="profileEmail" style="font-size:.875rem;color:#6b8896"></span>
-            <span id="profileBadge" class="badge-role badge-customer"></span>
-          </div>
+      <!-- ── Profil-Hero ── -->
+      <div class="profile-hero">
+        <div class="profile-avatar" id="avatarLetter">?</div>
+        <div class="profile-hero-info">
+          <h1 class="profile-hero-name" id="profileName">Mein Profil</h1>
+          <p class="profile-hero-email" id="profileEmail"></p>
+          <span id="profileBadge" class="badge-role badge-customer"></span>
         </div>
       </div>
 
       <!-- ── 1. Profildaten bearbeiten ── -->
-      <section class="card" id="sectionProfile">
-        <h2 class="section-title">Profildaten &amp; Zugangsdaten</h2>
-
-        <form id="profileForm">
-          <div class="two-col" style="margin-bottom:.75rem">
-            <div class="field-group">
-              <label class="field-label" for="fieldFirstName">Vorname</label>
-              <input id="fieldFirstName" type="text" class="field-input" placeholder="Max" />
-            </div>
-            <div class="field-group">
-              <label class="field-label" for="fieldLastName">Nachname</label>
-              <input id="fieldLastName" type="text" class="field-input" placeholder="Mustermann" />
-            </div>
+      <div class="profile-card" id="sectionProfile">
+        <div class="profile-card-head">
+          <div class="profile-card-icon profile-card-icon--teal">
+            <svg viewBox="0 0 20 20" stroke-width="1.7"><circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke-linecap="round"/></svg>
           </div>
-          <div class="field-group" style="margin-bottom:.75rem">
-            <label class="field-label" for="fieldEmail">E-Mail-Adresse</label>
-            <input id="fieldEmail" type="email" class="field-input" placeholder="name@beispiel.ch" />
+          <div class="profile-card-head-text">
+            <h2 class="profile-card-title">Profildaten &amp; Zugangsdaten</h2>
+            <p class="profile-card-sub">Name, E-Mail, Kontakt und optionale Passwortänderung</p>
           </div>
-          <div class="field-group" style="margin-bottom:.75rem">
-            <label class="field-label" for="fieldAddress">Adresse</label>
-            <input id="fieldAddress" type="text" class="field-input" placeholder="Musterstrasse 1, 8000 Zürich" />
-          </div>
-          <div class="field-group" style="margin-bottom:1rem">
-            <label class="field-label" for="fieldMobile">Mobile</label>
-            <input id="fieldMobile" type="tel" class="field-input" placeholder="+41 79 000 00 00" />
-          </div>
-
-          <div class="password-box">
-            <p style="margin:0 0 .75rem;font-size:.875rem;font-weight:600;color:#1e3a45">Passwort ändern (optional)</p>
-            <div class="field-group" style="margin-bottom:.6rem">
-              <label class="field-label" for="fieldCurrentPwd">Aktuelles Passwort</label>
-              <input id="fieldCurrentPwd" type="password" class="field-input" placeholder="••••••••" autocomplete="current-password" />
-            </div>
-            <div class="two-col">
-              <div class="field-group">
-                <label class="field-label" for="fieldNewPwd">Neues Passwort</label>
-                <input id="fieldNewPwd" type="password" class="field-input" placeholder="••••••••" autocomplete="new-password" />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="fieldNewPwd2">Bestätigung</label>
-                <input id="fieldNewPwd2" type="password" class="field-input" placeholder="••••••••" autocomplete="new-password" />
-              </div>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-primary" style="margin-top:1rem;min-width:160px">
-            Speichern
-          </button>
-          <p id="profileMsg" class="message" role="alert" style="margin-top:.5rem"></p>
-        </form>
-      </section>
-
-      <!-- ── 2. Mitarbeiter / Zugriffe (customer + admin) ── -->
-      <section class="card" id="sectionCollabs">
-        <h2 class="section-title">Mitarbeiter &amp; Zugriffsrechte</h2>
-        <p style="font-size:.875rem;color:#4a6672;margin:0 0 1rem">
-          Personen mit Lesezugriff auf Ihre Dossiers (Gutachter, Anwalt, Therapeut …). Sie sehen alle Ihre Fälle und können Dokumente herunterladen.
-        </p>
-
-        <div id="collabList" style="margin-bottom:1.25rem">
-          <p class="empty-state">Lade Mitarbeiterliste …</p>
         </div>
-
-        <details>
-          <summary style="cursor:pointer;font-weight:600;color:#1a5068;font-size:.9rem;margin-bottom:.75rem">
-            ＋ Mitarbeiter hinzufügen
-          </summary>
-          <form id="addCollabForm" style="margin-top:.75rem">
-            <div class="two-col" style="margin-bottom:.75rem">
+        <div class="profile-card-body">
+          <form id="profileForm">
+            <div class="two-col mb-3">
               <div class="field-group">
-                <label class="field-label" for="collabEmail">E-Mail *</label>
+                <label class="field-label" for="fieldFirstName">Vorname</label>
+                <input id="fieldFirstName" type="text" class="field-input" placeholder="Max" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="fieldLastName">Nachname</label>
+                <input id="fieldLastName" type="text" class="field-input" placeholder="Mustermann" />
+              </div>
+            </div>
+            <div class="field-group mb-3">
+              <label class="field-label" for="fieldEmail">E-Mail-Adresse</label>
+              <input id="fieldEmail" type="email" class="field-input" placeholder="name@beispiel.ch" />
+            </div>
+            <div class="two-col mb-4">
+              <div class="field-group">
+                <label class="field-label" for="fieldAddress">Adresse</label>
+                <input id="fieldAddress" type="text" class="field-input" placeholder="Musterstrasse 1, 8000 Zürich" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="fieldMobile">Mobile</label>
+                <input id="fieldMobile" type="tel" class="field-input" placeholder="+41 79 000 00 00" />
+              </div>
+            </div>
+
+            <div class="password-box">
+              <p class="password-box-title">
+                <svg viewBox="0 0 20 20" stroke-width="1.7"><rect x="5" y="9" width="10" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9" stroke-linecap="round"/></svg>
+                Passwort ändern <span style="font-weight:400;color:#6b8896;font-size:.82rem">(optional)</span>
+              </p>
+              <div class="field-group mb-3">
+                <label class="field-label" for="fieldCurrentPwd">Aktuelles Passwort</label>
+                <input id="fieldCurrentPwd" type="password" class="field-input" placeholder="••••••••" autocomplete="current-password" />
+              </div>
+              <div class="two-col">
+                <div class="field-group">
+                  <label class="field-label" for="fieldNewPwd">Neues Passwort</label>
+                  <input id="fieldNewPwd" type="password" class="field-input" placeholder="••••••••" autocomplete="new-password" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="fieldNewPwd2">Bestätigung</label>
+                  <input id="fieldNewPwd2" type="password" class="field-input" placeholder="••••••••" autocomplete="new-password" />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-top:1.1rem;min-width:160px">
+              <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0"><path d="M4 10.5l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Speichern
+            </button>
+            <p id="profileMsg" class="message" role="alert" style="margin-top:.5rem"></p>
+          </form>
+        </div>
+      </div>
+
+      <!-- ── 2. Fachpersonen & Zugriffsrechte ── -->
+      <div class="profile-card" id="sectionCollabs">
+        <div class="profile-card-head">
+          <div class="profile-card-icon profile-card-icon--blue">
+            <svg viewBox="0 0 20 20" stroke-width="1.6">
+              <circle cx="7" cy="7" r="3"/>
+              <circle cx="14" cy="7" r="2.5"/>
+              <path d="M1 17c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke-linecap="round"/>
+              <path d="M14 12c1.657 0 3 1.343 3 3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="profile-card-head-text">
+            <h2 class="profile-card-title">Fachpersonen &amp; Zugriffsrechte</h2>
+            <p class="profile-card-sub">Gutachter, Anwälte, Therapeuten &amp; weitere Beteiligte mit Lesezugriff auf Ihre Dossiers</p>
+          </div>
+        </div>
+        <div class="profile-card-body">
+
+          <!-- List -->
+          <div id="collabList" class="fach-list">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+                <circle cx="9" cy="7" r="4"/><path d="M1 21c0-4.418 3.582-8 8-8"/>
+                <path d="M19 11v6M22 14h-6" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <span>Lade Liste …</span>
+            </div>
+          </div>
+
+          <!-- Toggle button -->
+          <button class="add-fach-toggle" id="addFachToggle" aria-expanded="false" type="button">
+            <svg viewBox="0 0 20 20" stroke-width="2.2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
+            <span class="add-fach-toggle-label">Fachperson hinzufügen</span>
+            <svg class="add-fach-toggle-chevron" viewBox="0 0 16 16" stroke-width="2"><path d="M3 6l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+
+          <!-- Add form panel -->
+          <div class="add-fach-panel" id="addFachPanel">
+            <p class="add-fach-panel-title">Neue Fachperson einladen</p>
+            <form id="addCollabForm">
+              <div class="three-col mb-3">
+                <div class="field-group">
+                  <label class="field-label" for="collabFirstName">Vorname</label>
+                  <input id="collabFirstName" type="text" class="field-input" placeholder="Anna" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="collabLastName">Nachname</label>
+                  <input id="collabLastName" type="text" class="field-input" placeholder="Meier" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="collabFunction">Funktion <span class="required-dot">*</span></label>
+                  <select id="collabFunction" class="field-input" required>
+                    <option value="">Funktion wählen …</option>
+                    <option value="Gutachter/in">Gutachter/in</option>
+                    <option value="Therapeut/in">Therapeut/in</option>
+                    <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
+                    <option value="Berater/in">Berater/in</option>
+                    <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
+                    <option value="Psychiater/in">Psychiater/in</option>
+                    <option value="Arzt / Ärztin">Arzt / Ärztin</option>
+                    <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
+                    <option value="Familienbegleiter/in">Familienbegleiter/in</option>
+                    <option value="Mediator/in">Mediator/in</option>
+                    <option value="Beistand / Beiständin">Beistand / Beiständin</option>
+                    <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
+                    <option value="Vertrauensperson">Vertrauensperson</option>
+                    <option value="Andere">Andere</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-group mb-4">
+                <label class="field-label" for="collabEmail">E-Mail-Adresse <span class="required-dot">*</span></label>
                 <input id="collabEmail" type="email" class="field-input" placeholder="gutachter@beispiel.ch" required />
               </div>
-              <div class="field-group">
-                <label class="field-label" for="collabFunction">Funktion *</label>
-                <select id="collabFunction" class="field-input" required>
-                  <option value="">Funktion wählen …</option>
-                  <option value="Gutachter/in">Gutachter/in</option>
-                  <option value="Therapeut/in">Therapeut/in</option>
-                  <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
-                  <option value="Berater/in">Berater/in</option>
-                  <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
-                  <option value="Psychiater/in">Psychiater/in</option>
-                  <option value="Arzt / Ärztin">Arzt / Ärztin</option>
-                  <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
-                  <option value="Familienbegleiter/in">Familienbegleiter/in</option>
-                  <option value="Mediator/in">Mediator/in</option>
-                  <option value="Beistand / Beiständin">Beistand / Beiständin</option>
-                  <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
-                  <option value="Vertrauensperson">Vertrauensperson</option>
-                  <option value="Andere">Andere</option>
-                </select>
-              </div>
-            </div>
-            <button type="submit" class="btn-primary" style="min-width:180px">Hinzufügen &amp; Zugang erstellen</button>
-            <p id="collabMsg" class="message" role="alert" style="margin-top:.5rem"></p>
-            <div id="collabPwdBox" style="display:none"></div>
-          </form>
-        </details>
-      </section>
+              <button type="submit" class="btn-primary" style="min-width:200px">
+                <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                Zugang erstellen &amp; Einladen
+              </button>
+              <p id="collabMsg" class="message" role="alert" style="margin-top:.6rem"></p>
+              <div id="collabPwdBox" style="display:none;margin-top:.75rem"></div>
+            </form>
+          </div>
+
+        </div>
+      </div>
 
       <!-- ── 3. Kundenverwaltung (admin only) ── -->
-      <section class="card" id="sectionAdmin" style="display:none">
-        <h2 class="section-title">Kundenverwaltung <span style="font-size:.75rem;font-weight:400;color:#6b8896">(nur Admin)</span></h2>
-
-        <div class="tab-row">
-          <button class="tab-btn active" id="tabListCustomers" onclick="showAdminTab('list')">Alle Kunden</button>
-          <button class="tab-btn" id="tabNewCustomer" onclick="showAdminTab('new')">Neuen Kunden anlegen</button>
-        </div>
-
-        <!-- Customer list -->
-        <div id="adminListView">
-          <div id="customerList">
-            <p class="empty-state">Lade Kundenliste …</p>
+      <div class="profile-card" id="sectionAdmin" style="display:none">
+        <div class="profile-card-head">
+          <div class="profile-card-icon profile-card-icon--amber">
+            <svg viewBox="0 0 20 20" stroke-width="1.7"><path d="M3 4h14M3 8h14M3 12h8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="profile-card-head-text">
+            <h2 class="profile-card-title">Kundenverwaltung</h2>
+            <p class="profile-card-sub">Alle Kunden einsehen und neue Kunden anlegen — nur für Admins</p>
           </div>
         </div>
+        <div class="profile-card-body">
 
-        <!-- New customer form -->
-        <div id="adminNewView" style="display:none">
-          <form id="newCustomerForm">
-            <div class="two-col" style="margin-bottom:.75rem">
-              <div class="field-group">
-                <label class="field-label" for="ncFirstName">Vorname</label>
-                <input id="ncFirstName" type="text" class="field-input" placeholder="Max" />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="ncLastName">Nachname</label>
-                <input id="ncLastName" type="text" class="field-input" placeholder="Mustermann" />
-              </div>
+          <div class="tab-row">
+            <button class="tab-btn active" id="tabListCustomers" onclick="showAdminTab('list')">Alle Kunden</button>
+            <button class="tab-btn" id="tabNewCustomer" onclick="showAdminTab('new')">Neuen Kunden anlegen</button>
+          </div>
+
+          <!-- Customer list -->
+          <div id="adminListView">
+            <div id="customerList">
+              <p class="empty-state">Lade Kundenliste …</p>
             </div>
-            <div class="field-group" style="margin-bottom:.75rem">
-              <label class="field-label" for="ncEmail">E-Mail *</label>
-              <input id="ncEmail" type="email" class="field-input" placeholder="kunde@beispiel.ch" required />
-            </div>
-            <div class="two-col" style="margin-bottom:.75rem">
-              <div class="field-group">
-                <label class="field-label" for="ncAddress">Adresse</label>
-                <input id="ncAddress" type="text" class="field-input" placeholder="Musterstrasse 1, 8000 Zürich" />
+          </div>
+
+          <!-- New customer form -->
+          <div id="adminNewView" style="display:none">
+            <form id="newCustomerForm">
+              <div class="two-col mb-3">
+                <div class="field-group">
+                  <label class="field-label" for="ncFirstName">Vorname</label>
+                  <input id="ncFirstName" type="text" class="field-input" placeholder="Max" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="ncLastName">Nachname</label>
+                  <input id="ncLastName" type="text" class="field-input" placeholder="Mustermann" />
+                </div>
               </div>
-              <div class="field-group">
-                <label class="field-label" for="ncMobile">Mobile</label>
-                <input id="ncMobile" type="tel" class="field-input" placeholder="+41 79 000 00 00" />
+              <div class="field-group mb-3">
+                <label class="field-label" for="ncEmail">E-Mail <span class="required-dot">*</span></label>
+                <input id="ncEmail" type="email" class="field-input" placeholder="kunde@beispiel.ch" required />
               </div>
-            </div>
-            <p style="font-size:.8rem;color:#6b8896;margin:.25rem 0 .75rem">
-              Ein temporäres Passwort wird automatisch generiert und einmalig angezeigt.
-            </p>
-            <button type="submit" class="btn-primary" style="min-width:200px">Kunden erstellen &amp; Passwort generieren</button>
-            <p id="newCustomerMsg" class="message" role="alert" style="margin-top:.5rem"></p>
-            <div id="newCustomerPwdBox" style="display:none;margin-top:.75rem"></div>
-          </form>
+              <div class="two-col mb-3">
+                <div class="field-group">
+                  <label class="field-label" for="ncAddress">Adresse</label>
+                  <input id="ncAddress" type="text" class="field-input" placeholder="Musterstrasse 1, 8000 Zürich" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="ncMobile">Mobile</label>
+                  <input id="ncMobile" type="tel" class="field-input" placeholder="+41 79 000 00 00" />
+                </div>
+              </div>
+              <p style="font-size:.8rem;color:#6b8896;margin:.1rem 0 .85rem">
+                Ein temporäres Passwort wird automatisch generiert und einmalig angezeigt.
+              </p>
+              <button type="submit" class="btn-primary" style="min-width:220px">
+                Kunden erstellen &amp; Passwort generieren
+              </button>
+              <p id="newCustomerMsg" class="message" role="alert" style="margin-top:.5rem"></p>
+              <div id="newCustomerPwdBox" style="display:none;margin-top:.75rem"></div>
+            </form>
+          </div>
         </div>
-      </section>
+      </div>
 
-    </div><!-- /.profile-grid -->
+    </div><!-- /.profile-layout -->
 
     <footer class="dashboard-footer">
       <span>Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</span>
@@ -382,6 +674,14 @@
     </footer>
   </main>
 
+  <script>
+    // Toggle add-fachperson panel
+    document.getElementById("addFachToggle").addEventListener("click", function() {
+      const panel = document.getElementById("addFachPanel");
+      const open  = panel.classList.toggle("open");
+      this.setAttribute("aria-expanded", String(open));
+    });
+  </script>
   <script src="profile.js"></script>
 </body>
 </html>

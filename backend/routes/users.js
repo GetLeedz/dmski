@@ -201,9 +201,11 @@ router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), 
 // Adds a collaborator (creates user if email not yet registered)
 router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const customerId = Number(req.params.userId);
-  const { email, function_label } = req.body;
+  const { email, function_label, first_name, last_name } = req.body;
   if (!email) return res.status(400).json({ error: "E-Mail erforderlich." });
-  const emailNorm = String(email).trim().toLowerCase();
+  const emailNorm   = String(email).trim().toLowerCase();
+  const firstNorm   = String(first_name || "").trim() || null;
+  const lastNorm    = String(last_name  || "").trim() || null;
   await ensureCollabSchema();
 
   try {
@@ -216,14 +218,24 @@ router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"),
     );
     if (existing.rows.length > 0) {
       collaboratorId = existing.rows[0].id;
+      // Update name if provided and not already set
+      if (firstNorm || lastNorm) {
+        await pool.query(
+          `UPDATE users SET
+             first_name = COALESCE(NULLIF(first_name,''), $2),
+             last_name  = COALESCE(NULLIF(last_name, ''), $3)
+           WHERE id = $1`,
+          [collaboratorId, firstNorm, lastNorm]
+        );
+      }
     } else {
       const rawPassword = generatePassword();
       generatedPassword = rawPassword;
       const hash = await bcrypt.hash(rawPassword, 12);
       const created = await pool.query(
-        `INSERT INTO users (email, password_hash, role)
-         VALUES ($1, $2, 'collaborator') RETURNING id`,
-        [emailNorm, hash]
+        `INSERT INTO users (email, password_hash, role, first_name, last_name)
+         VALUES ($1, $2, 'collaborator', $3, $4) RETURNING id`,
+        [emailNorm, hash, firstNorm, lastNorm]
       );
       collaboratorId = created.rows[0].id;
     }

@@ -177,30 +177,34 @@ async function loadCollabs(userId) {
 
 function renderCollabs(list, userId, el) {
   if (list.length === 0) {
-    el.innerHTML = `<p class="empty-state">Noch keine Mitarbeiter hinzugefügt.</p>`; return;
+    el.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="9" cy="7" r="4"/><path d="M1 21c0-4.418 3.582-8 8-8"/>
+          <path d="M19 11v6M22 14h-6" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span>Noch keine Fachpersonen hinzugefügt.</span>
+      </div>`;
+    return;
   }
-  const rows = list.map(c => {
-    const name = [c.first_name, c.last_name].filter(Boolean).join(" ") || "–";
-    return `<tr>
-      <td>${escHtml(c.email)}</td>
-      <td>${escHtml(name)}</td>
-      <td><span style="background:#e0f2fe;color:#0369a1;padding:.15rem .45rem;border-radius:5px;font-size:.78rem;font-weight:600">
-        ${escHtml(c.function_label || c.role || "–")}
-      </span></td>
-      <td>
-        <button class="btn-remove" data-uid="${userId}" data-lid="${c.id}">
-          <svg viewBox="0 0 16 16" width="12" height="12" fill="none"><path d="M3 4h10M6 4V3h4v1M5 4v8h6V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          Entfernen
-        </button>
-      </td>
-    </tr>`;
+  el.innerHTML = list.map(c => {
+    const name    = [c.first_name, c.last_name].filter(Boolean).join(" ") || c.email;
+    const letter  = (c.first_name || c.email || "?")[0].toUpperCase();
+    const fn      = escHtml(c.function_label || c.role || "Fachperson");
+    return `<div class="fach-card">
+      <div class="fach-avatar">${escHtml(letter)}</div>
+      <div class="fach-info">
+        <div class="fach-name">${escHtml(name)}</div>
+        <div class="fach-email">${escHtml(c.email)}</div>
+      </div>
+      <span class="fach-role-badge">${fn}</span>
+      <button class="fach-remove" data-uid="${userId}" data-lid="${c.id}" title="Zugang entfernen">
+        <svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round"><path d="M3 4h10M6 4V3h4v1M5 4v8h6V4"/></svg>
+      </button>
+    </div>`;
   }).join("");
-  el.innerHTML = `<table class="collab-table">
-    <thead><tr><th>E-Mail</th><th>Name</th><th>Funktion</th><th></th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
 
-  el.querySelectorAll(".btn-remove").forEach(btn =>
+  el.querySelectorAll(".fach-remove").forEach(btn =>
     btn.addEventListener("click", () =>
       removeCollab(Number(btn.dataset.uid), Number(btn.dataset.lid))));
 }
@@ -221,9 +225,11 @@ async function onAddCollab(e) {
   const pwdBox = document.getElementById("collabPwdBox");
   setMsg(msg, ""); pwdBox.style.display = "none";
 
-  const email  = document.getElementById("collabEmail").value.trim();
-  const fn     = document.getElementById("collabFunction").value;
-  const userId = getUserId();
+  const email     = document.getElementById("collabEmail").value.trim();
+  const fn        = document.getElementById("collabFunction").value;
+  const firstName = document.getElementById("collabFirstName").value.trim();
+  const lastName  = document.getElementById("collabLastName").value.trim();
+  const userId    = getUserId();
 
   if (!fn) { setMsg(msg, "Bitte Funktion auswählen.", "error"); return; }
 
@@ -233,7 +239,12 @@ async function onAddCollab(e) {
   try {
     const res  = await fetch(`${API}/users/${userId}/collaborators`, {
       method: "POST", headers: authHeaders(),
-      body: JSON.stringify({ email, function_label: fn })
+      body: JSON.stringify({
+        email,
+        function_label: fn,
+        first_name: firstName || undefined,
+        last_name:  lastName  || undefined
+      })
     });
     const data = await res.json();
     if (!res.ok) { setMsg(msg, data.error || "Fehler.", "error"); return; }
