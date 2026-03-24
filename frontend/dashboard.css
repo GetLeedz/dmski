@@ -1643,6 +1643,53 @@ button:disabled {
   pointer-events: none;
 }
 
+.analysis-report-head-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+/* PDF KI-Report button inside the report header (not in filter-section) */
+.analysis-report-head-actions .filter-btn--report {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  padding: 0.45rem 0.9rem;
+  border: 1.5px solid #c0d8e4;
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, #f7fbfc, #eef4f8);
+  color: #163a47;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  min-width: 0 !important;
+}
+
+.analysis-report-head-actions .filter-btn--report svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  stroke-width: 2.2;
+}
+
+.analysis-report-head-actions .filter-btn--report:hover:not(:disabled) {
+  background: #e4f0f5;
+  border-color: #8fb8c8;
+  color: #0f2b36;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(17,107,115,0.15);
+  filter: none;
+}
+
+.analysis-report-head-actions .filter-btn--report:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .analysis-report-head {
   display: flex;
   align-items: flex-start;

@@ -2313,10 +2313,62 @@ goToUploadBtn.addEventListener("click", () => {
   window.location.href = "/upload.html";
 });
 
-exportPdfReportBtn?.addEventListener("click", () => {
-  // Same-tab navigation keeps sessionStorage token accessible on report page
-  window.location.href = `/report.html?caseId=${encodeURIComponent(currentCaseId)}&autoprint=1`;
-});
+async function exportKiReportAsPdf() {
+  const reportEl = document.getElementById("analysisReportBar");
+  if (!reportEl) return;
+
+  const btn = exportPdfReportBtn;
+  const originalHtml = btn?.innerHTML ?? "PDF KI-Report";
+  const spinnerHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:.88rem;height:.88rem;animation:rSpin 700ms linear infinite;vertical-align:middle;margin-right:.3rem"><path d="M12 4a8 8 0 0 1 7.75 6h-2.2A6 6 0 1 0 16.2 16l-2.2-2.2H20v6l-2.35-2.35A8 8 0 1 1 12 4z"/></svg>PDF wird erstellt…`;
+
+  if (btn) { btn.disabled = true; btn.innerHTML = spinnerHtml; }
+
+  if (!document.getElementById("rSpinStyle")) {
+    const s = document.createElement("style");
+    s.id = "rSpinStyle";
+    s.textContent = "@keyframes rSpin{to{transform:rotate(360deg)}}";
+    document.head.appendChild(s);
+  }
+
+  // Temporarily fix width for clean A4 capture
+  const origStyle = reportEl.getAttribute("style") || "";
+  reportEl.style.cssText = origStyle
+    + ";width:794px!important;max-width:none!important;background:#ffffff!important;"
+    + "border-radius:0!important;box-shadow:none!important;margin:0!important;";
+
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+  const caseName = normalizeTitleText(currentCaseName || currentCaseId);
+  const filename = `DMSKI-KI-Report-${currentCaseId}.pdf`;
+
+  const opt = {
+    margin:      [6, 6, 6, 6],
+    filename,
+    image:       { type: "jpeg", quality: 0.97 },
+    html2canvas: {
+      scale:           2,
+      useCORS:         true,
+      allowTaint:      true,
+      letterRendering: true,
+      logging:         false,
+      scrollX:         0,
+      scrollY:         0
+    },
+    jsPDF:  { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+  };
+
+  try {
+    await window.html2pdf().set(opt).from(reportEl).save();
+  } catch {
+    alert("PDF-Export fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.");
+  } finally {
+    reportEl.setAttribute("style", origStyle);
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+  }
+}
+
+exportPdfReportBtn?.addEventListener("click", () => void exportKiReportAsPdf());
 
 backToCasesBtn?.addEventListener("click", () => {
   window.location.href = "/dashboard.html";
