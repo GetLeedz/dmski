@@ -2275,7 +2275,16 @@ td {
   font-weight: 500;
 }
 
-.row-preview-frame,
+.row-preview-frame {
+  width: 100%;
+  max-width: 31.5rem;
+  aspect-ratio: 210 / 297;
+  border: 1px solid #ccd9df;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  /* pointer-events intentionally NOT set – allows scrolling inside the PDF */
+}
+
 .row-preview-image {
   width: 100%;
   max-width: 31.5rem;
@@ -2283,14 +2292,7 @@ td {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: #ffffff;
-  pointer-events: none;
-}
-
-.row-preview-frame {
-  border: 1px solid #ccd9df;
-}
-
-.row-preview-image {
+  pointer-events: none;   /* images don't need interaction */
   object-fit: contain;
   display: block;
 }
