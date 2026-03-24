@@ -753,6 +753,11 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
   if (nameNorm.includes("weizenegger")) return "Leiter Jugendforensik";
   // Hardcoded role overrides for known persons
   if (nameNorm.includes("perret")) return "Berufsbeistand";
+  if (nameNorm.includes("leopold") && nameNorm.includes("evelyne")) return "Beiständin";
+  // Riedo Pascal = Kinderanwalt (advokat für sich und die Kinder)
+  if (nameNorm.includes("riedo") && nameNorm.includes("pascal")) return "Kinderanwalt";
+  // Gabel Lisa Marie = Anwältin von Ayhan Ergen (protected person)
+  if (nameNorm.includes("gabel") && nameNorm.includes("lisa")) return "Anwältin (Ergen)";
   if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) return "Anwältin Gegenpartei";
   if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) return "Gerichtspräsident";
 

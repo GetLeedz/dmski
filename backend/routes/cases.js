@@ -609,6 +609,9 @@ function normalizeAffiliation(value) {
   if (raw === "kind" || raw.startsWith("kind ") || raw === "sohn" || raw === "tochter") {
     return "Kind";
   }
+  if (raw.includes("kinderanwalt") || raw.includes("kinderanwältin") || raw.includes("kindesanwalt") || raw.includes("kindesanwältin") || raw.includes("kinderanwaelt")) {
+    return "Kinderanwalt";
+  }
   if (raw.includes("ex-frau") || raw.includes("exfrau")) return "Ex-Frau";
   if (raw.includes("ex-mann") || raw.includes("exmann")) return "Ex-Mann";
   if (raw.includes("ex-partner") || raw.includes("expartner")) return "Ex-Partner/in";
@@ -743,6 +746,12 @@ function inferAffiliationForPerson(rawText, personName) {
     }
     if (/\bbeistand\b/.test(line)) {
       return "Berufsbeistand";
+    }
+    if (/kinderanwalt|kinderanwältin|kinderanwaelt|kindesanwalt/.test(line)) {
+      return "Kinderanwalt";
+    }
+    if (/für\s+sich\s+und\s+die\s+kinder|für\s+(?:sich\s+und\s+)?die\s+kinder/.test(line)) {
+      return "Kinderanwalt";
     }
     if (/anwältin|anwalt|rechtsanwalt|advokat|rechtsvertr/i.test(line)) {
       return "Anwalt";
@@ -2085,6 +2094,17 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- WICHTIG: Fuehre auch den VERFASSER/AUTOR des Dokuments in der personen-Liste auf (z.B. Berufsbeistand, Gerichtspräsident, Anwalt, Gutachter, Psychologe, Leiter Jugendforensik), mit seiner Funktion als 'rolle'.",
     "- STRIKTE NAMENREGEL: Im 'name'-Feld NUR den echten Personennamen (Vorname Nachname). KEINE Funktion, KEINEN Titel, KEINE Institution in den Namen aufnehmen – diese gehoeren ausschliesslich in das Feld 'rolle'.",
     "  Falsch: {\"name\": \"Jugendforensik Benedict Weizenegger Leiter\"} | Richtig: {\"name\": \"Benedict Weizenegger\", \"rolle\": \"Leiter Jugendforensik\"}",
+    "",
+    "### 1b. MITTEILUNG AN / VERTEILER – ROLLENBESTIMMUNG AUS KONTEXT:",
+    "Wenn im Dokument ein Abschnitt 'Mitteilung an:', 'Verteiler:', 'An:', 'Zustellung:' vorkommt, lese die Personen und deren Kontext GENAU:",
+    "- 'Vorname Nachname, Advokat ... (fuer sich und die Kinder)'  → rolle: 'Kinderanwalt'",
+    "- 'Vorname Nachname, Advokatur ... (fuer sich und Ayhan Ergen)' → rolle: 'Anwalt von Ayhan Ergen'",
+    "- 'Vorname Nachname, Advokatur ... (fuer sich und Alexandra Schifferli)' → rolle: 'Anwalt von Alexandra Schifferli'",
+    "- 'Vorname Nachname, Beistaendin' → rolle: 'Beistaendin'",
+    "- 'Susanne Angst, klin. Heilpaedagogin, Behoerdenmitglied' → rolle: 'Behoerdenmitglied KESB'",
+    "Der Ausdruck 'fuer sich und die Kinder' bedeutet: Diese Person ist Kinderanwalt/Kindesvertreter.",
+    "Der Ausdruck 'fuer sich und [Personenname]' bedeutet: Diese Person vertritt [Personenname] als Anwalt.",
+    "WICHTIG: Diese Rollenzuordnung hat hoechste Prioritaet und darf NICHT ignoriert werden.",
     "",
     "### 2. SYMMETRISCHES ZAEHLVERFAHREN (KEYWORD-TRAINING):",
     "- Untersuche jede Zeile bzw. jede klare Sinn-Einheit.",
