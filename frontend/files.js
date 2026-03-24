@@ -2319,18 +2319,8 @@ async function exportKiReportAsPdf() {
 
   const btn = exportPdfReportBtn;
   const originalHtml = btn?.innerHTML ?? "PDF KI-Report";
-  const spinnerHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:.88rem;height:.88rem;animation:rSpin 700ms linear infinite;vertical-align:middle;margin-right:.3rem"><path d="M12 4a8 8 0 0 1 7.75 6h-2.2A6 6 0 1 0 16.2 16l-2.2-2.2H20v6l-2.35-2.35A8 8 0 1 1 12 4z"/></svg>PDF wird erstellt…`;
 
-  if (btn) { btn.disabled = true; btn.innerHTML = spinnerHtml; }
-
-  if (!document.getElementById("rSpinStyle")) {
-    const s = document.createElement("style");
-    s.id = "rSpinStyle";
-    s.textContent = "@keyframes rSpin{to{transform:rotate(360deg)}}";
-    document.head.appendChild(s);
-  }
-
-  // Hide all interactive elements (buttons, inputs) inside the report section
+  // ── Step 1: Hide all buttons/inputs inside the report BEFORE any visual change ──
   const hideEls = reportEl.querySelectorAll("button, input, select");
   const hiddenOriginals = [];
   for (const el of hideEls) {
@@ -2338,21 +2328,68 @@ async function exportKiReportAsPdf() {
     el.style.display = "none";
   }
 
-  // Temporarily fix width for clean A4 capture
-  const origStyle = reportEl.getAttribute("style") || "";
-  reportEl.style.cssText = origStyle
-    + ";width:794px!important;max-width:none!important;background:#ffffff!important;"
-    + "border-radius:0!important;box-shadow:none!important;margin:0!important;";
+  // ── Step 2: Show loading state on trigger button (it's now hidden inside report) ──
+  if (!document.getElementById("rSpinStyle")) {
+    const s = document.createElement("style");
+    s.id = "rSpinStyle";
+    s.textContent = "@keyframes rSpin{to{transform:rotate(360deg)}}";
+    document.head.appendChild(s);
+  }
+  const spinnerHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:.88rem;height:.88rem;animation:rSpin 700ms linear infinite;vertical-align:middle;margin-right:.3rem"><path d="M12 4a8 8 0 0 1 7.75 6h-2.2A6 6 0 1 0 16.2 16l-2.2-2.2H20v6l-2.35-2.35A8 8 0 1 1 12 4z"/></svg>PDF wird erstellt…`;
+  if (btn) { btn.disabled = true; btn.innerHTML = spinnerHtml; }
 
+  // ── Step 3: Inject a temporary style that constrains the report to A4 width ──
+  const CAPTURE_W = 740; // px – slightly narrower than 794 to allow margins
+  const tempStyle = document.createElement("style");
+  tempStyle.id = "pdf-capture-style";
+  tempStyle.textContent = `
+    #analysisReportBar {
+      width: ${CAPTURE_W}px !important;
+      max-width: ${CAPTURE_W}px !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+      background: #ffffff !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+    }
+    #analysisReportBar * {
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #analysisReportBar .tactic-table thead tr,
+    #analysisReportBar .tactic-table tbody tr {
+      grid-template-columns: 1.55fr 0.7fr 1.75fr 0.95fr !important;
+    }
+    #analysisReportBar .tactic-table th,
+    #analysisReportBar .tactic-table td {
+      padding: 0.38rem 0.55rem !important;
+      font-size: 0.7rem !important;
+    }
+    #analysisReportBar .analysis-report-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    #analysisReportBar .party-split-num,
+    #analysisReportBar .file-count-num {
+      font-size: 1.45rem !important;
+    }
+    #analysisReportBar .akteure-table {
+      font-size: 0.74rem !important;
+    }
+    #analysisReportBar .tactic-analysis-body {
+      font-size: 0.76rem !important;
+    }
+  `;
+  document.head.appendChild(tempStyle);
+
+  // ── Step 4: Wait two animation frames so all styles are painted ──
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-  const caseName = normalizeTitleText(currentCaseName || currentCaseId);
   const filename = `DMSKI-KI-Report-${currentCaseId}.pdf`;
-
   const opt = {
-    margin:      [6, 6, 6, 6],
+    margin:      [8, 8, 8, 8],
     filename,
-    image:       { type: "jpeg", quality: 0.97 },
+    image:       { type: "jpeg", quality: 0.96 },
     html2canvas: {
       scale:           2,
       useCORS:         true,
@@ -2360,7 +2397,8 @@ async function exportKiReportAsPdf() {
       letterRendering: true,
       logging:         false,
       scrollX:         0,
-      scrollY:         0
+      scrollY:         0,
+      width:           CAPTURE_W
     },
     jsPDF:  { unit: "mm", format: "a4", orientation: "portrait" },
     pagebreak: { mode: ["avoid-all", "css", "legacy"] }
@@ -2371,11 +2409,11 @@ async function exportKiReportAsPdf() {
   } catch {
     alert("PDF-Export fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.");
   } finally {
-    // Restore hidden elements
+    // ── Restore everything ──
+    document.getElementById("pdf-capture-style")?.remove();
     for (const { el, display } of hiddenOriginals) {
       el.style.display = display;
     }
-    reportEl.setAttribute("style", origStyle);
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
   }
 }
