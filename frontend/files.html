@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DMSKI Dateien</title>
+  <title>DMSKI Files</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -59,14 +59,14 @@
       </div>
 
       <!-- ── Upload Hero Button ── -->
-      <p class="upload-section-title">Neue Dokumente hinzufügen</p>
+      <p class="upload-section-title">Files hinzufügen</p>
       <div class="upload-hero-wrap">
         <button id="goToUploadBtnHero" type="button" class="upload-hero-btn">
           <span class="upload-hero-btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </span>
           <span class="upload-hero-btn-text">
-            <span class="upload-hero-btn-label">Dateien hochladen</span>
+            <span class="upload-hero-btn-label">Files hochladen</span>
             <span class="upload-hero-btn-sub">PDF · DOCX · XLSX · JPG · PNG · MOV · MP4 · AVI · MP3 · WAV · HEIC · TIFF und mehr</span>
           </span>
         </button>
@@ -80,7 +80,7 @@
           <div class="filter-group">
             <label class="filter-label" for="fileTypeFilter">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Dateityp
+              File-Typ
             </label>
             <select id="fileTypeFilter" class="field-input">
               <option value="all">Alle Typen</option>
@@ -127,16 +127,16 @@
             </div>
 
             <div class="sort-group">
-              <span class="sort-group-label">Dokument-Datum</span>
-              <div class="sort-group-btns" role="group" aria-label="Dokument-Datum sortieren">
+              <span class="sort-group-label">File-Datum</span>
+              <div class="sort-group-btns" role="group" aria-label="File-Datum sortieren">
                 <button id="sortFileAscBtn" type="button" class="sort-dir-btn"
                   data-sort-field="fileDate" data-sort-order="asc"
-                  title="Aufsteigend – älteste zuerst" aria-label="Dokument-Datum aufsteigend">
+                  title="Aufsteigend – älteste zuerst" aria-label="File-Datum aufsteigend">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
                 </button>
                 <button id="sortFileDescBtn" type="button" class="sort-dir-btn"
                   data-sort-field="fileDate" data-sort-order="desc"
-                  title="Absteigend – neueste zuerst" aria-label="Dokument-Datum absteigend">
+                  title="Absteigend – neueste zuerst" aria-label="File-Datum absteigend">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>
                 </button>
               </div>
@@ -157,7 +157,7 @@
           </button>
           <button id="goToUploadBtn" type="button" class="filter-btn filter-btn--upload">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            + Dateien hochladen
+            + Files hochladen
           </button>
         </div>
 
@@ -185,9 +185,9 @@
 
     <div id="previewModal" class="preview-modal hidden" aria-hidden="true">
       <div class="preview-modal-backdrop" data-close-preview="true"></div>
-      <div class="preview-modal-dialog" role="dialog" aria-modal="true" aria-label="Dokument Vorschau">
+      <div class="preview-modal-dialog" role="dialog" aria-modal="true" aria-label="File Preview">
         <div class="preview-modal-top">
-          <p id="previewModalTitle" class="preview-modal-title">Dokument Vorschau</p>
+          <p id="previewModalTitle" class="preview-modal-title">File Preview</p>
           <div class="preview-modal-actions">
             <button id="zoomOutBtn" type="button" class="ghost">-</button>
             <span id="zoomLevel" class="zoom-level">100%</span>

@@ -1,4 +1,4 @@
-const token = sessionStorage.getItem("token");
+﻿const token = sessionStorage.getItem("token");
 if (!token) {
   window.location.replace("/");
 }
@@ -370,7 +370,7 @@ function deriveDossierVerdict(totalPositive, totalNegative, analyzedCount) {
     return {
       label: "Noch keine belastbare Einordnung",
       tone: "neutral",
-      detail: "Es liegen noch keine auswertbaren Dokumentanalysen vor."
+      detail: "Es liegen noch keine auswertbaren File-Analysen vor."
     };
   }
 
@@ -486,7 +486,7 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
     summary = `Die KI-Analyse erkennt in diesem Dokument keine offensichtlichen taktischen Muster gegen ${nameP}. Die Darstellung erscheint im Wesentlichen sachlich. Eine Gesamtbetrachtung aller Dokumente des Dossiers wird dennoch empfohlen.`;
     legalTitle = "Juristische Bewertung (KI als neutraler Rechtsbeobachter)";
     legalNote = `Keine unmittelbaren Rechtsrisiken identifiziert. Gesamtdossier-Betrachtung weiterhin empfohlen.`;
-    rows.push({ tactic: "Keine Auffälligkeiten erkannt", article: "–", present: false, evidence: "Dokument erscheint sachlich" });
+    rows.push({ tactic: "Keine Auffälligkeiten erkannt", article: "–", present: false, evidence: "File erscheint sachlich" });
   }
 
   return { profileTitle, summary, legalTitle, legalNote, rows, pressure };
@@ -993,7 +993,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
             <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
           </div>
         </div>
-        <p class="akteure-empty">Noch keine Personen extrahiert. Werden mit jedem weiteren Dokument ergänzt.</p>
+        <p class="akteure-empty">Noch keine Personen extrahiert. Werden mit jedem weiteren File erg\u00e4nzt.</p>
       </div>
     `;
   }
@@ -1076,7 +1076,7 @@ function renderImpactRanking(items) {
     <section class="qa-focus-strip">
       <div class="qa-focus-head">
         <span class="qa-focus-title">Beteiligte im Fokus</span>
-        <span class="qa-focus-subtitle">Gewichtete Auffälligkeiten aus Personenbezug und Dokumentkontext</span>
+        <span class="qa-focus-subtitle">Gewichtete Auffälligkeiten aus Personenbezug und File-Kontext</span>
       </div>
       <div class="qa-focus-list">
         ${safeItems.map((entry) => {
@@ -1119,11 +1119,11 @@ async function refreshAnalysisReport(files = allFiles) {
   const fileCount = fileList.length;
   if (fileCount === 0) {
     analysisReportBar.classList.remove("is-ready");
-    analysisReportHint.textContent = "Noch keine Dateien im Dossier.";
+    analysisReportHint.textContent = "Noch keine Files im Dossier.";
     analysisReportMeta.innerHTML = renderAnalysisReportMeta(
-      { label: "Leeres Dossier", tone: "neutral", detail: "Noch keine Dokumente hochgeladen." },
+      { label: "Leeres Dossier", tone: "neutral", detail: "Noch keine Files hochgeladen." },
       "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.",
-      "Die Gesamtbeurteilung erscheint, sobald erste Dokumente vorliegen."
+      "Die Gesamtbeurteilung erscheint, sobald erste Files vorliegen."
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(0),
@@ -1184,7 +1184,7 @@ async function refreshAnalysisReport(files = allFiles) {
     const qualityLabel = deriveQualityLabel(averageQuality);
     const verdict = deriveDossierVerdict(totalPositive, totalNegative, analyzedCount);
     const methodology = Array.from(methodologies)[0] || "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.";
-    const hintParts = [`${analyzedCount} von ${fileCount} Datei${fileCount === 1 ? "" : "en"} analysiert`];
+    const hintParts = [`${analyzedCount} von ${fileCount} File${fileCount === 1 ? "" : "s"} analysiert`];
     if (ocrCount > 0) {
       hintParts.push(`${ocrCount} mit OCR-Fallback`);
     }
@@ -1485,7 +1485,7 @@ async function downloadAllFilesAsPdf() {
 
   const visibleFiles = filterFiles(allFiles);
   if (visibleFiles.length === 0) {
-    setMessage(listMessage, "Keine Dateien für den Download vorhanden.", "error");
+    setMessage(listMessage, "Keine Files f\u00fcr den Download vorhanden.", "error");
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     return;
   }
@@ -1534,7 +1534,7 @@ async function downloadAllFilesAsPdf() {
     }
 
     if (addedCount === 0) {
-      setMessage(listMessage, "Keine Datei konnte in das PDF aufgenommen werden.", "error");
+      setMessage(listMessage, "Kein File konnte in das PDF aufgenommen werden.", "error");
       return;
     }
 
@@ -1548,7 +1548,7 @@ async function downloadAllFilesAsPdf() {
     link.click();
     link.remove();
     URL.revokeObjectURL(dlUrl);
-    setMessage(listMessage, `${addedCount} Datei(en) als PDF zusammengeführt und heruntergeladen.`, "success");
+    setMessage(listMessage, `${addedCount} File(s) als PDF zusammengeführt und heruntergeladen.`, "success");
   } catch (error) {
     setMessage(listMessage, `PDF-Erstellung fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`, "error");
   } finally {
@@ -1613,7 +1613,7 @@ async function getPreviewUrl(file) {
     }
 
     if (response.status === 404) {
-      detail = "Datei fehlt im Serverspeicher. Bitte dieses Dokument neu hochladen.";
+      detail = "File fehlt im Serverspeicher. Bitte neu hochladen.";
     }
 
     setMessage(listMessage, `${decodeUtf8Safe(file.original_name)}: ${detail}`, "error");
@@ -2264,8 +2264,8 @@ async function loadRowAnalysis(file, options = {}) {
     const locationLabel = "Herkunft (GPS)";
     const hasRealMeta   = ft.className === "video" && (recordingDate !== "–" || gpsLocation !== "–");
     const mediaNote     = hasRealMeta
-      ? `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Dateien. Datum und GPS aus Datei-Metadaten (MP4/MOV-Atoms) extrahiert.`
-      : `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Dateien.`;
+      ? `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Files. Datum und GPS aus File-Metadaten (MP4/MOV-Atoms) extrahiert.`
+      : `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Files.`;
 
     box.innerHTML = `
       <div class="queue-analysis">
@@ -2289,7 +2289,7 @@ async function loadRowAnalysis(file, options = {}) {
   box.innerHTML = `
     <div class="analysis-loading">
       <span class="spinner spinner--ai" aria-label="KI analysiert"></span>
-      <span class="analysis-loading-text">KI analysiert Dokument&hellip;<br /><small>Das kann bei Bildern l&auml;nger dauern.</small></span>
+      <span class="analysis-loading-text">KI analysiert File&hellip;<br /><small>Das kann bei Bildern l&auml;nger dauern.</small></span>
     </div>`;
   const analysis = await getDocumentAnalysis(file, options);
   if (analysis.status === "auth-redirect") {
@@ -2390,7 +2390,7 @@ function renderFiles(files) {
 
   if (!files || files.length === 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td colspan=\"3\">Keine Dateien für die gewählten Filter gefunden.</td>";
+    tr.innerHTML = "<td colspan=\"3\">Keine Files f\u00fcr die gew\u00e4hlten Filter gefunden.</td>";
     filesTableBody.appendChild(tr);
     return;
   }
@@ -2528,7 +2528,7 @@ async function commitDelete(fileId) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || "Datei konnte nicht gelöscht werden.");
+    throw new Error(payload.error || "File konnte nicht gel\u00f6scht werden.");
   }
 }
 
@@ -2552,7 +2552,7 @@ async function flushPendingDelete() {
     previewPromiseCache.delete(snapshot.file.id);
     analysisCache.delete(snapshot.file.id);
     analysisPromiseCache.delete(snapshot.file.id);
-    setMessage(listMessage, "Datei endgültig gelöscht.", "success");
+    setMessage(listMessage, "File endg\u00fcltig gel\u00f6scht.", "success");
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
       return;
@@ -2561,7 +2561,7 @@ async function flushPendingDelete() {
     allFiles.sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
     renderFiles(filterFiles(allFiles));
     void refreshAnalysisReport(allFiles);
-    setMessage(listMessage, error.message || "Datei konnte nicht gelöscht werden.", "error");
+    setMessage(listMessage, error.message || "File konnte nicht gel\u00f6scht werden.", "error");
   }
 }
 
@@ -2620,7 +2620,7 @@ async function loadCaseContext() {
 
 async function deleteCurrentCase() {
   const descriptor = currentCaseName || `Fall ${currentCaseId}`;
-  const confirmed = window.confirm(`Bist du sicher, dass du "${descriptor}" inklusive aller Dateien löschen willst?`);
+  const confirmed = window.confirm(`Bist du sicher, dass du "${descriptor}" inklusive aller Files l\u00f6schen willst?`);
   if (!confirmed) {
     return;
   }
@@ -2696,12 +2696,12 @@ async function downloadFile(fileId) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
       return;
     }
-    setMessage(listMessage, "Datei konnte nicht heruntergeladen werden.", "error");
+    setMessage(listMessage, "File konnte nicht heruntergeladen werden.", "error");
     return;
   }
 
   if (!response.ok) {
-    setMessage(listMessage, "Datei konnte nicht heruntergeladen werden.", "error");
+    setMessage(listMessage, "File konnte nicht heruntergeladen werden.", "error");
     return;
   }
 
@@ -2938,8 +2938,8 @@ function toggleMultiDeleteMode() {
 function updateMultiDeleteCount() {
   const count = selectedFileIds.size;
   multiDeleteCount.textContent = count > 0 
-    ? `${count} Datei${count === 1 ? "" : "en"} ausgewählt.`
-    : "Keine Dateien ausgewählt.";
+    ? `${count} File${count === 1 ? "" : "s"} ausgew\u00e4hlt.`
+    : "Keine Files ausgew\u00e4hlt.";
     
   executeMultiDeleteBtn.disabled = count === 0;
 }
@@ -2971,7 +2971,7 @@ async function executeMultiDelete() {
         headers: { Authorization: `Bearer ${token}` }
       }).then((res) => {
         if (!res.ok) {
-          throw new Error(`Fehler beim Löschen von Datei ${fileId}`);
+          throw new Error(`Fehler beim L\u00f6schen von File ${fileId}`);
         }
       })
     );
@@ -2992,7 +2992,7 @@ async function executeMultiDelete() {
       analysisPromiseCache.delete(fileId);
     }
 
-    setMessage(listMessage, `${filesToDelete.length} Datei${filesToDelete.length === 1 ? "" : "en"} gelöscht.`, "success");
+    setMessage(listMessage, `${filesToDelete.length} File${filesToDelete.length === 1 ? "" : "s"} gel\u00f6scht.`, "success");
     isMultiDeleteMode = false;
     applyMultiDeleteUiState();
     renderFiles(filterFiles(allFiles));
@@ -3118,3 +3118,4 @@ copyrightYearEl.textContent = String(new Date().getFullYear());
 void loadCaseContext().then(() => {
   loadFiles();
 });
+

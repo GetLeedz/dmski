@@ -1,4 +1,4 @@
-const token = sessionStorage.getItem("token");
+﻿const token = sessionStorage.getItem("token");
 const urlParams = new URLSearchParams(window.location.search);
 const queryCaseId = String(urlParams.get("caseId") || "").trim();
 const currentCaseId = queryCaseId || String(sessionStorage.getItem("currentCaseId") || "").trim();
@@ -99,7 +99,7 @@ function resolveFileType(file) {
   if (mime.includes("jpeg") || mime.includes("jpg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
     return { className: "jpg", label: "JPG" };
   }
-  return { className: "generic", label: "DATEI" };
+  return { className: "generic", label: FILE" };
 }
 
 function resolveDocumentTypeLabel(aiType, file) {
@@ -258,7 +258,7 @@ function deriveDossierVerdict(totalPositive, totalNegative, analyzedCount) {
     return {
       label: "Noch keine belastbare Einordnung",
       tone: "neutral",
-      detail: "Es liegen noch keine auswertbaren Dokumentanalysen vor."
+      detail: "Es liegen noch keine auswertbaren File-Analysen vor."
     };
   }
 
@@ -362,7 +362,7 @@ async function getFiles() {
   });
 
   if (!response.ok) {
-    throw new Error("Dateien konnten nicht geladen werden.");
+    throw new Error("Files konnten nicht geladen werden.");
   }
 
   const payload = await response.json().catch(() => ({}));
@@ -442,7 +442,7 @@ function renderDocumentCard(entry, index, context) {
         <div class="report-document-head">
           <span class="report-document-index">${index}</span>
           <div class="report-document-title-group">
-            <h3 class="report-document-title">${escapeHtml(file.original_name || `Dokument ${index}`)}</h3>
+            <h3 class="report-document-title">${escapeHtml(file.original_name || `File ${index}`)}</h3>
             <div class="report-document-meta">${escapeHtml(formatDate(file.uploaded_at))} · ${escapeHtml(resolveFileType(file).label)}</div>
           </div>
           <div class="report-chip-row">
@@ -451,7 +451,7 @@ function renderDocumentCard(entry, index, context) {
         </div>
         <div class="report-doc-empty-box">
           <span class="report-subgrid-title">Status</span>
-          <p class="report-document-status">${escapeHtml(analysis.message || "Für dieses Dokument liegt noch keine gespeicherte Analyse vor.")}</p>
+          <p class="report-document-status">${escapeHtml(analysis.message || "F\u00fcr dieses File liegt noch keine gespeicherte Analyse vor.")}</p>
         </div>
       </article>
     `;
@@ -462,7 +462,7 @@ function renderDocumentCard(entry, index, context) {
       <div class="report-document-head">
         <span class="report-document-index">${index}</span>
         <div class="report-document-title-group">
-          <h3 class="report-document-title">${escapeHtml(analysis.title || file.original_name || `Dokument ${index}`)}</h3>
+          <h3 class="report-document-title">${escapeHtml(analysis.title || file.original_name || `File ${index}`)}</h3>
           <div class="report-document-meta">${escapeHtml(file.original_name || "")}</div>
           <div class="report-document-meta">${escapeHtml(formatDate(file.uploaded_at))} · ${escapeHtml(docType)}</div>
         </div>
@@ -534,7 +534,7 @@ function renderDocumentCard(entry, index, context) {
           <span class="report-subgrid-title">Methodik</span>
           <p class="report-document-note">${escapeHtml(analysis.methodology || "Parteibezogene Positiv-/Negativzählung mit Belegstellenprüfung.")}</p>
           <p class="report-document-note">Textqualität: ${escapeHtml(qualityValue)} · Vertrauen ${escapeHtml(textQuality.confidence)}</p>
-          <p class="report-document-note">Dokumenturteil: ${escapeHtml(verdict.label)} · ${escapeHtml(verdict.detail)}</p>
+          <p class="report-document-note">File-Urteil: ${escapeHtml(verdict.label)} · ${escapeHtml(verdict.detail)}</p>
         </div>
         <div class="report-doc-focus-box">
           <span class="report-subgrid-title">Beteiligte im Fokus</span>
@@ -585,10 +585,10 @@ function renderReport(caseContext, entries) {
       <section class="report-section">
         <div class="report-section-head">
           <h2 class="report-section-title">Dossierübersicht</h2>
-          <p class="report-section-note">Zusammenfassung über alle gespeicherten Dokumentanalysen</p>
+          <p class="report-section-note">Zusammenfassung über alle gespeicherten File-Analysen</p>
         </div>
         <div class="report-summary-grid">
-          ${renderSummaryCard("Dateien im Dossier", String(entries.length), analyzedEntries.length === entries.length ? "Vollständig erfasst" : `${analyzedEntries.length} analysiert`, "neutral")}
+          ${renderSummaryCard("Files im Dossier", String(entries.length), analyzedEntries.length === entries.length ? "Vollständig erfasst" : `${analyzedEntries.length} analysiert`, "neutral")}
           ${renderSummaryCard("Benachteiligte Person", formatPartySummaryValue(protectedPositiveTotal, protectedNegativeTotal), caseContext.protectedPerson || "Nicht gesetzt", derivePartySummaryTone(protectedPositiveTotal, protectedNegativeTotal))}
           ${renderSummaryCard("Gegenpartei", formatPartySummaryValue(opposingPositiveTotal, opposingNegativeTotal), caseContext.opposingParty || "Nicht gesetzt", derivePartySummaryTone(opposingPositiveTotal, opposingNegativeTotal))}
           ${renderSummaryCard("Gesamtbilanz", totalPositive === totalNegative ? "Neutral" : `${totalPositive - totalNegative > 0 ? "+" : ""}${totalPositive - totalNegative}`, ocrCount > 0 ? `${ocrCount} OCR-Fallback · ${evidenceCount} Belegstellen` : `${evidenceCount} Belegstellen`, totalPositive === totalNegative ? "neutral" : (totalPositive > totalNegative ? "positive" : "negative"))}
@@ -649,7 +649,7 @@ function renderReport(caseContext, entries) {
       <section class="report-section">
         <div class="report-section-head">
           <h2 class="report-section-title">Dokumentberichte</h2>
-          <p class="report-section-note">Jedes Dokument mit Kurzurteil, Parteibilanz und Belegstellen</p>
+          <p class="report-section-note">Jedes File mit Kurzurteil, Parteibilanz und Belegstellen</p>
         </div>
         <div class="report-document-list">
           ${entries.map((entry, index) => renderDocumentCard(entry, index + 1, {
@@ -774,3 +774,4 @@ async function exportReportAsPdf() {
 printBtn?.addEventListener("click", () => void exportReportAsPdf());
 
 void initReport();
+

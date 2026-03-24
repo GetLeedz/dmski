@@ -1,4 +1,4 @@
-const token = sessionStorage.getItem("token");
+﻿const token = sessionStorage.getItem("token");
 if (!token) {
   window.location.replace("/");
 }
@@ -128,7 +128,7 @@ const ALLOWED_EXTENSIONS = new Set([
 const ALLOWED_FILES_LABEL = "PDF, DOCX, XLSX, PPTX, TXT, JPG, PNG, TIFF, HEIC, WEBP, MOV, MP4, AVI, MKV, MP3, WAV, M4A";
 
 activeCaseBanner.textContent = `WICHTIG: Du arbeitest im Fall ${currentCaseId}`;
-workspaceHint.textContent = "Dateien werden direkt hochgeladen: Drag&Drop, Klick-Auswahl oder Einfügen mit Ctrl+V.";
+workspaceHint.textContent = "Files werden direkt hochgeladen: Drag&Drop, Klick-Auswahl oder Einfügen mit Ctrl+V.";
 
 function decodeUtf8Safe(text) {
   const input = String(text || "");
@@ -313,7 +313,7 @@ function addPendingFiles(newFiles) {
   renderPendingFiles();
 
   if (pendingFiles.length > 0) {
-    setMessage(uploadMessage, `${pendingFiles.length} Datei(en) bereit zum Upload.`, "success");
+    setMessage(uploadMessage, `${pendingFiles.length} File(s) bereit zum Upload.`, "success");
     startUpload();
   }
 }
@@ -580,7 +580,7 @@ async function startUpload() {
   }
 
   totalUploadedCount += successCount;
-  setMessage(uploadMessage, `${totalUploadedCount} Datei(en) erfolgreich hochgeladen.`, "success");
+  setMessage(uploadMessage, `${totalUploadedCount} File(s) erfolgreich hochgeladen.`, "success");
   fileInput.value = "";
   isUploading = false;
 
@@ -610,7 +610,7 @@ async function deleteUploadedFile(fileId, fileKey) {
     if (OUTAGE_STATUSES.has(Number(response.status))) {
       showServiceAlert("Lösch-Service derzeit gestört");
     }
-    setMessage(uploadMessage, payload.error || "Datei konnte nicht gelöscht werden.", "error");
+    setMessage(uploadMessage, payload.error || "File konnte nicht gel\u00f6scht werden.", "error");
     return;
   }
 
@@ -620,7 +620,7 @@ async function deleteUploadedFile(fileId, fileKey) {
   }
 
   totalUploadedCount = Math.max(0, totalUploadedCount - 1);
-  setMessage(uploadMessage, `${totalUploadedCount} Datei(en) erfolgreich hochgeladen.`, "success");
+  setMessage(uploadMessage, `${totalUploadedCount} File(s) erfolgreich hochgeladen.`, "success");
 }
 
 dropzone.addEventListener("click", () => fileInput.click());
@@ -693,3 +693,4 @@ logoutBtn.addEventListener("click", () => {
 
 copyrightYearEl.textContent = String(new Date().getFullYear());
 loadCasePartyLabels();
+
