@@ -694,9 +694,7 @@ async function initReport() {
     renderReport(caseContext, entries);
 
     if (autoPrint) {
-      window.setTimeout(() => {
-        window.print();
-      }, 450);
+      window.setTimeout(() => void exportReportAsPdf(), 900);
     }
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REDIRECT") {
@@ -714,8 +712,42 @@ backBtn?.addEventListener("click", () => {
   window.location.href = "/files.html";
 });
 
-printBtn?.addEventListener("click", () => {
-  window.print();
-});
+async function exportReportAsPdf() {
+  const sheet = document.getElementById("reportSheet");
+  if (!sheet) return;
+
+  const btn = printBtn;
+  const originalHtml = btn?.innerHTML ?? "PDF herunterladen";
+  const spinnerHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:.9rem;height:.9rem;animation:rSpin 700ms linear infinite;vertical-align:middle;margin-right:.3rem"><path d="M12 4a8 8 0 0 1 7.75 6h-2.2A6 6 0 1 0 16.2 16l-2.2-2.2H20v6l-2.35-2.35A8 8 0 1 1 12 4z"/></svg>PDF wird erstellt…`;
+
+  if (btn) { btn.disabled = true; btn.innerHTML = spinnerHtml; }
+
+  if (!document.getElementById("rSpinStyle")) {
+    const s = document.createElement("style");
+    s.id = "rSpinStyle";
+    s.textContent = "@keyframes rSpin{to{transform:rotate(360deg)}}";
+    document.head.appendChild(s);
+  }
+
+  const filename = `DMSKI-Report-${currentCaseId}.pdf`;
+  const opt = {
+    margin:      [8, 8, 8, 8],
+    filename,
+    image:       { type: "jpeg", quality: 0.96 },
+    html2canvas: { scale: 2, useCORS: true, allowTaint: true, letterRendering: true, logging: false, windowWidth: 794 },
+    jsPDF:       { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak:   { mode: ["avoid-all", "css", "legacy"] }
+  };
+
+  try {
+    await window.html2pdf().set(opt).from(sheet).save();
+  } catch {
+    window.print();
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+  }
+}
+
+printBtn?.addEventListener("click", () => void exportReportAsPdf());
 
 void initReport();
