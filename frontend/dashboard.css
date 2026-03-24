@@ -2275,6 +2275,54 @@ td {
   font-weight: 500;
 }
 
+/* ── Zoom button overlay on preview ── */
+.row-preview-box-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 31.5rem;
+}
+
+/* Magnify-glass button – bottom-right corner of the preview */
+.preview-zoom-btn {
+  position: absolute;
+  bottom: 0.45rem;
+  right: 0.45rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255,255,255,0.72);
+  background: rgba(15, 43, 54, 0.58);
+  color: #fff;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 130ms ease, transform 120ms ease, box-shadow 120ms ease;
+  z-index: 5;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+  transform: none;
+  filter: none;
+}
+
+.preview-zoom-btn:hover:not(:disabled) {
+  background: rgba(17, 107, 115, 0.82);
+  border-color: rgba(255,255,255,0.9);
+  transform: scale(1.08);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.32);
+  filter: none;
+}
+
+.preview-zoom-btn svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: #fff;
+  fill: none;
+}
+
 .row-preview-frame {
   width: 100%;
   max-width: 31.5rem;
