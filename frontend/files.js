@@ -571,59 +571,98 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
 /* ----------------------------------------------------------------
    AKTEURE BOX – All persons from document, colour-coded sentiment
    ---------------------------------------------------------------- */
-function derivePersonSentiment(person, analysis, protectedPerson, opposingParty) {
+/**
+ * Derives how a person WRITES/SPEAKS about the protected (disadvantaged) person.
+ *
+ * Priority order:
+ *  1. Protected person → teal "protected" dot
+ *  2. Author-based: if this person authored documents, use how THEY wrote about the protected person
+ *  3. Opposing party → always negative
+ *  4. Known-role hardcodes (children → positive, Landi → negative, court → neutral)
+ *  5. Affiliation heuristics (Beistand/Berufsbeistand from dossier pressure, Anwalt → positive)
+ *  6. Fallback from overall dossier pressure
+ *
+ * @param {Object}  person            – person object {name, affiliation}
+ * @param {Object}  analysis          – aggregate analysis totals (full dossier)
+ * @param {string}  protectedPerson   – name of the disadvantaged person
+ * @param {string}  opposingParty     – name of the opposing party
+ * @param {Map}     authorSentimentMap – Map<authorName, {positive, negative}> built from document analyses
+ */
+function derivePersonSentiment(person, analysis, protectedPerson, opposingParty, authorSentimentMap) {
   const nameNorm = normalizeTitleText(person.name || "").toLowerCase();
-  const affil = normalizeTitleText(person.affiliation || "").toLowerCase();
+  const affil    = normalizeTitleText(person.affiliation || "").toLowerCase();
   const protNorm = normalizeTitleText(protectedPerson || "").toLowerCase();
-  const oppNorm = normalizeTitleText(opposingParty || "").toLowerCase();
+  const oppNorm  = normalizeTitleText(opposingParty   || "").toLowerCase();
 
-  // Check if this IS the protected person → special teal "protected" dot, NOT red
+  // Strip diacritics for fuzzy matching
+  const normKey = (n) =>
+    normalizeTitleText(n).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const personKey = normKey(person.name || "");
+
+  // ── 1. Protected person → teal dot ──────────────────────────────────────────
   const protFirstWord = (protNorm.split(/[\s,]+/)[0] || "").toLowerCase();
   if (protFirstWord && nameNorm.includes(protFirstWord) && protFirstWord.length > 2) {
     return "protected";
   }
 
-  // Check if this IS the opposing party → red dot
+  // ── 2. Author-based sentiment ────────────────────────────────────────────────
+  // If this person authored documents in the dossier, we know EXACTLY how they
+  // wrote about the protected person (positiveMentions / negativeMentions per doc).
+  // This is the most reliable signal and overrides role-based guesses.
+  if (authorSentimentMap && authorSentimentMap.size > 0) {
+    for (const [authorName, s] of authorSentimentMap.entries()) {
+      const authorKey = normKey(authorName);
+      // Fuzzy: at least one significant word (>2 chars) in common
+      const personParts = personKey.split(/\s+/).filter(w => w.length > 2);
+      const authorParts = authorKey.split(/\s+/).filter(w => w.length > 2);
+      const matched = personParts.some(p => authorParts.some(a => a === p || a.startsWith(p) || p.startsWith(a)));
+      if (matched && (s.positive + s.negative) > 0) {
+        const score = s.negative - s.positive;
+        if (score >= 1)  return "negative";
+        if (score <= -1) return "positive";
+        return "neutral";
+      }
+    }
+  }
+
+  // ── 3. Opposing party → always negative ─────────────────────────────────────
   const oppFirstWord = (oppNorm.split(/[\s,]+/)[0] || "").toLowerCase();
   if (oppFirstWord && nameNorm.includes(oppFirstWord) && oppFirstWord.length > 2) {
     return "negative";
   }
 
-  // Hardcoded: known children → always positive (green dot)
+  // ── 4. Known-role hardcodes ──────────────────────────────────────────────────
+  // Children → positive (victims, same side as protected person in custody matters)
   if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) {
     return "positive";
   }
-  // Hardcoded: Perret = Berufsbeistand (amtliche Funktion, neutral)
-  if (nameNorm.includes("perret")) { return "neutral"; }
-  // Hardcoded: Landi Annalisa = Anwältin der Gegenpartei → roter Punkt
+  // Opposing party's lawyer → negative
   if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) { return "negative"; }
-  // Hardcoded: Hofmann Roland = Gerichtspräsident → neutral
+  // Judge → neutral (procedural role, doesn't take sides in sentiment)
   if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) { return "neutral"; }
-  // Role-based logic using affiliation
-  // Child → green (always on the protected person's side in custody/family matters)
-  if (affil.includes("kind") && !affil.includes("kinderanw")) {
-    return "positive";
-  }
 
-  // Lawyer / legal representative → green (assumed support for protected person unless explicitly opposing)
-  if (affil.includes("anwalt") || affil.includes("anwältin") || affil.includes("rechtsvertr")) {
-    return "positive";
-  }
-
-  // Beistand / Beiständin → calculate based on overall dossier sentiment
-  // If negativeMentions > positiveMentions for protected person → red, else green
-  if (affil.includes("beistand") || affil.includes("beiständin")) {
+  // ── 5. Affiliation heuristics ────────────────────────────────────────────────
+  // Children
+  if (affil.includes("kind") && !affil.includes("kinderanw")) return "positive";
+  // Lawyers on the protected person's side
+  if (affil.includes("anwalt") || affil.includes("anwältin") || affil.includes("rechtsvertr")) return "positive";
+  // Beistand / Berufsbeistand: derive from whether overall dossier shows more
+  // negative or positive mentions of the protected person across all documents.
+  // A Berufsbeistand who consistently writes negatively about the protected person
+  // gets a red dot; one who writes positively gets green.
+  if (affil.includes("beistand") || affil.includes("beiständin") || affil.includes("berufsbeistand")) {
     const protNeg = Math.max(0, Number(analysis.negativeMentions || 0));
     const protPos = Math.max(0, Number(analysis.positiveMentions || 0));
-    return protNeg > protPos ? "negative" : "positive";
+    if (protNeg > protPos + 1) return "negative";
+    if (protPos > protNeg + 1) return "positive";
+    return "neutral";
   }
-
-  // KESB, courts, officials → neutral
+  // KESB / courts / officials → procedurally neutral by default
   if (affil.includes("kesb") || affil.includes("behörd") || affil.includes("gericht") || affil.includes("richter")) {
     return "neutral";
   }
 
-  // Private persons / unknown → derive from document overall tone
+  // ── 6. Fallback: overall dossier pressure ────────────────────────────────────
   const pressure = (Number(analysis.negativeMentions || 0) + Number(analysis.opposingPositiveMentions || 0))
     - (Number(analysis.positiveMentions || 0) + Number(analysis.opposingNegativeMentions || 0));
   return pressure > 1 ? "negative" : pressure < -1 ? "positive" : "neutral";
@@ -729,7 +768,14 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
   return "–";
 }
 
-function renderAkteureBox(analysis, protectedPerson, opposingParty) {
+/**
+ * Renders the Personen table.
+ * @param {Object} analysis            – aggregate analysis (people array + totals)
+ * @param {string} protectedPerson
+ * @param {string} opposingParty
+ * @param {Map}    authorSentimentMap  – Map<authorName, {positive,negative}> from refreshAnalysisReport
+ */
+function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentimentMap = new Map()) {
   const people = Array.isArray(analysis.people) ? analysis.people : [];
 
   // Deduplicate by normalised name
@@ -770,7 +816,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty) {
   });
 
   const rows = sorted.map(person => {
-    const sentiment   = derivePersonSentiment(person, analysis, protectedPerson, opposingParty);
+    const sentiment   = derivePersonSentiment(person, analysis, protectedPerson, opposingParty, authorSentimentMap);
     const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
     const displayName = formatNameLastFirst(person.name);
     return `
@@ -992,6 +1038,23 @@ async function refreshAnalysisReport(files = allFiles) {
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
 
+      // ── Build per-author sentiment map ─────────────────────────────────
+      // Key = normalized author name (diacritics stripped), Value = {positive, negative}
+      // This tells us HOW each person wrote about the protected person across
+      // all documents they authored. Used by derivePersonSentiment() to give
+      // accurate red/green dots instead of role-based guesses.
+      const authorSentimentMap = new Map();
+      for (const a of analyses) {
+        if (!a || a.status === "auth-redirect") continue;
+        const rawAuthor = normalizeTitleText(a.author || "");
+        if (!rawAuthor || rawAuthor.toLowerCase() === "unbekannt") continue;
+        const authorKey = rawAuthor; // store original name; normKey applied inside derivePersonSentiment
+        const existing = authorSentimentMap.get(authorKey) || { positive: 0, negative: 0 };
+        existing.positive += Math.max(0, Number(a.positiveMentions || 0));
+        existing.negative += Math.max(0, Number(a.negativeMentions || 0));
+        authorSentimentMap.set(authorKey, existing);
+      }
+
       const seenKeys = new Set();
       const mergedPeople = [];
 
@@ -1023,7 +1086,8 @@ async function refreshAnalysisReport(files = allFiles) {
       analysisReportAkteure.innerHTML = renderAkteureBox(
         aggregateForAkteure,
         currentCaseProtectedPerson,
-        currentCaseOpposingParty
+        currentCaseOpposingParty,
+        authorSentimentMap
       );
     }
 
