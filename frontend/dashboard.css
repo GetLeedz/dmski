@@ -3775,24 +3775,25 @@ select.case-edit-input {
 .tactic-table thead tr,
 .tactic-table tbody tr {
   display: grid;
-  grid-template-columns: 2fr 2fr 1.6fr;
-  align-items: start;
+  grid-template-columns: 2fr 2.2fr 1.4fr;
+  align-items: stretch;
   width: 100%;
 }
 
 /* ── Header cells ── */
 .tactic-table thead tr {
   background: linear-gradient(135deg, rgba(139,63,168,0.10), rgba(107,45,136,0.07));
+  border-bottom: 1.5px solid rgba(139,63,168,0.18);
 }
 
 .tactic-table th {
-  padding: 0.6rem 0.8rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #666;
-  border-bottom: 1.5px solid #e0e0e0;
+  color: #8b5faa;
+  border-bottom: none;
   text-align: left;
   background: transparent;
   white-space: nowrap;
@@ -3804,40 +3805,45 @@ select.case-edit-input {
 
 /* ── Data cells ── */
 .tactic-table td {
-  padding: 0.35rem 0.8rem;
-  border-bottom: 1px solid #eee;
-  vertical-align: middle;
-  line-height: 1.35;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid rgba(139,63,168,0.08);
+  line-height: 1.45;
   color: #2d1b3d;
   font-size: 0.78rem;
   background: transparent;
   word-break: break-word;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   min-width: 0;
+  text-align: left;
 }
 
 .tactic-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* DOC-ID column: right-aligned, wrap multiple IDs cleanly */
+/* DOC-ID column: left-aligned like all other columns */
 .tactic-table th:last-child,
 .tactic-table td:last-child {
-  justify-content: flex-end;
-  text-align: right;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .tactic-table .tactic-row-present {
-  background: rgba(192,57,43,0.04);
+  background: rgba(255,255,255,0.55);
+}
+
+.tactic-table .tactic-row-present:hover {
+  background: rgba(255,255,255,0.85);
 }
 
 .tactic-table .tactic-row-absent {
-  opacity: 0.72;
+  opacity: 0.5;
+  background: transparent;
 }
 
 .tactic-table tbody tr:hover td {
-  background: rgba(139, 63, 168, 0.04);
+  background: rgba(255,255,255,0.75);
 }
 
 /* ── Badge – pill shape with colored border ── */
@@ -4066,10 +4072,9 @@ select.case-edit-input {
 .tactic-doc-id-cell {
   white-space: normal;
   min-width: 0;
-  word-break: break-all;
   word-break: break-word;
-  text-align: right;
-  justify-content: flex-end;
+  text-align: left;
+  justify-content: flex-start;
   display: flex;
   align-items: flex-start;
   flex-wrap: wrap;
@@ -4080,13 +4085,16 @@ select.case-edit-input {
   display: block;
   white-space: pre-line;
   word-break: break-word;
-  line-height: 1.6;
-  font-size: 0.65rem;
-  font-weight: 700;
+  line-height: 1.65;
+  font-size: 0.66rem;
+  font-weight: 600;
   font-family: "Inter", monospace, sans-serif;
-  color: #5a3a7a;
-  letter-spacing: 0.02em;
-  text-align: right;
+  color: #6b4a8a;
+  letter-spacing: 0.01em;
+  text-align: left;
+  background: rgba(107,74,138,0.06);
+  border-radius: 5px;
+  padding: 0.25rem 0.45rem;
 }
 
 #analysisReportTactics .tactic-doc-ids {
@@ -4108,18 +4116,51 @@ select.case-edit-input {
 .tactic-td-tactic {
   display: flex !important;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.12rem;
   font-weight: 700;
   color: #2d1b3d;
-  font-size: 0.77rem;
+  font-size: 0.8rem;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
 }
 
 .tactic-tactic-name {
   font-weight: 700;
+  color: #1e0f2d;
+  line-height: 1.35;
 }
+
 .tactic-td-article {
-  font-size: 0.7rem;
-  color: #5a3a7a;
+  font-size: 0.68rem;
+  color: #8b5faa;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Present row: left accent bar */
+.tactic-row-present td:first-child {
+  border-left: 3px solid rgba(139,63,168,0.45);
+  padding-left: calc(0.9rem - 3px);
+}
+
+/* Absent row: lighter left bar */
+.tactic-row-absent td:first-child {
+  border-left: 3px solid rgba(139,63,168,0.12);
+  padding-left: calc(0.9rem - 3px);
+}
+
+/* KI text left-aligned, full height */
+.tactic-td-ki {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  font-size: 0.78rem;
+  color: #3a2550;
+  line-height: 1.5;
+}
+
+.tactic-row-absent .tactic-td-ki {
+  color: #7a6a8a;
   font-style: italic;
 }
 
