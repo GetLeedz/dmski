@@ -593,6 +593,26 @@ function normalizeAffiliation(value) {
     return "Privatperson";
   }
 
+  // Family roles (check before generic "mutter" match)
+  if (raw.includes("kindsmutter") || raw.includes("kindesmutter") || raw.includes("mutter des kindes")) {
+    return "Kindsmutter";
+  }
+  if (raw.includes("kindsvater") || raw.includes("kindesvater") || raw.includes("vater des kindes")) {
+    return "Kindsvater";
+  }
+  if (raw === "mutter" || raw.startsWith("mutter ") || raw.endsWith(" mutter")) {
+    return "Mutter";
+  }
+  if (raw === "vater" || raw.startsWith("vater ") || raw.endsWith(" vater")) {
+    return "Vater";
+  }
+  if (raw === "kind" || raw.startsWith("kind ") || raw === "sohn" || raw === "tochter") {
+    return "Kind";
+  }
+  if (raw.includes("ex-frau") || raw.includes("exfrau")) return "Ex-Frau";
+  if (raw.includes("ex-mann") || raw.includes("exmann")) return "Ex-Mann";
+  if (raw.includes("ex-partner") || raw.includes("expartner")) return "Ex-Partner/in";
+
   if (raw.includes("berufsbeistand") || raw.includes("beistandin") || raw.includes("beiständin") || raw.includes("beistand")) {
     return "Berufsbeistand";
   }
@@ -621,9 +641,13 @@ function normalizeAffiliation(value) {
     return "Firma";
   }
 
-  // Professional / forensic roles
+  // Professional / forensic roles – keep full label for compound roles
+  if (raw.includes("leiter") || raw.includes("leiterin")) {
+    // Keep the full label so "Leiter Jugendforensik" displays meaningfully
+    return normalizeWhitespace(value);
+  }
   if (raw.includes("forensik") || raw.includes("forensisch")) {
-    return "Gutachter/in";
+    return normalizeWhitespace(value) || "Gutachter/in";
   }
   if (raw.includes("gutacht")) {
     return "Gutachter/in";
@@ -645,10 +669,6 @@ function normalizeAffiliation(value) {
   }
   if (raw.includes("sozialarb") || raw.includes("sozialpad") || raw.includes("sozialpäd")) {
     return "Sozialarbeiter/in";
-  }
-  if (raw.includes("leiter") || raw.includes("leiterin")) {
-    // Keep the full label so "Leiter Jugendforensik" displays meaningfully
-    return normalizeWhitespace(value);
   }
 
   if (raw.includes("privat")) {
@@ -679,6 +699,42 @@ function inferAffiliationForPerson(rawText, personName) {
       continue;
     }
 
+    // Family roles
+    if (/kindsmutter|kindesmutter|mutter\s+d[eo][sr]/.test(line)) {
+      return "Kindsmutter";
+    }
+    if (/kindsvater|kindesvater|vater\s+d[eo][sr]/.test(line)) {
+      return "Kindsvater";
+    }
+    if (/\bmutter\b/.test(line)) {
+      return "Mutter";
+    }
+    if (/\bvater\b/.test(line)) {
+      return "Vater";
+    }
+    // Professional forensic/psychiatric roles
+    if (/leiter\s+jugendforensik|leiterin\s+jugendforensik|jugendforensik/.test(line)) {
+      return "Leiter Jugendforensik";
+    }
+    if (/\bleiter\b|\bleiterin\b/.test(line)) {
+      // Try to grab the full context, e.g. "Leiter Jugendforensik"
+      const m = line.match(/\bleiter(?:in)?\s+([a-zäöüß\s]{3,30})/);
+      if (m) return `Leiter ${m[1].trim().replace(/\s+/g, " ")}`;
+      return "Leiter/in";
+    }
+    if (/gutachter|gutachterin|sachverst/.test(line)) {
+      return "Gutachter/in";
+    }
+    if (/psychiater|psychiaterin|psychiatrie/.test(line)) {
+      return "Psychiater/in";
+    }
+    if (/psycholog/.test(line)) {
+      return "Psychologe/in";
+    }
+    if (/therapeut/.test(line)) {
+      return "Therapeut/in";
+    }
+    // Legal/official roles
     if (/gericht|tribunal|court/.test(line)) {
       return "Gericht";
     }

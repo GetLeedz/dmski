@@ -745,10 +745,12 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
 
   // 0. Hardcoded overrides for specific persons
   if (nameNorm.includes("ergen") && nameNorm.includes("ayhan")) return "Vater";
-  // Alexandra Schifferli is Ex-Partnerin; KI doesn't reliably detect this → show "–" not "Kind"
-  if (nameNorm.includes("schifferli") && nameNorm.includes("alexandra")) return "–";
+  // Alexandra Schifferli is the Kindsmutter (opposing party)
+  if (nameNorm.includes("schifferli") && nameNorm.includes("alexandra")) return "Mutter";
   // Known children of the Schifferli family
   if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "Kind";
+  // Weizenegger: Leiter Jugendforensik / Gutachter – NOT a child
+  if (nameNorm.includes("weizenegger")) return "Leiter Jugendforensik";
   // Hardcoded role overrides for known persons
   if (nameNorm.includes("perret")) return "Berufsbeistand";
   if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) return "Anwältin Gegenpartei";
