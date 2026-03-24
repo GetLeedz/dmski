@@ -76,20 +76,67 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 }
 
 const allowedMimeTypes = new Set([
+  // Documents
   "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+  // Images
   "image/jpeg",
-  "image/png"
+  "image/png",
+  "image/tiff",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/gif",
+  "image/bmp",
+  // Videos
+  "video/quicktime",
+  "video/mp4",
+  "video/x-msvideo",
+  "video/x-matroska",
+  "video/webm",
+  "video/avi",
+  "video/3gpp",
+  // Audio
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/aac",
+  "audio/ogg",
+  "audio/webm"
+]);
+
+const allowedExtensions = new Set([
+  "pdf","doc","docx","xls","xlsx","ppt","pptx","txt","csv",
+  "jpg","jpeg","png","tiff","tif","webp","heic","heif","gif","bmp",
+  "mov","mp4","avi","mkv","webm","3gp","m4v","wmv","flv","ts","mts","m2ts",
+  "mp3","m4a","wav","aac","ogg","flac","wma","opus","m4b"
 ]);
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024, files: 20 },
+  limits: { fileSize: 500 * 1024 * 1024, files: 20 },
   fileFilter: (_req, file, cb) => {
-    if (!allowedMimeTypes.has(file.mimetype)) {
-      cb(new Error("Nur PDF, JPG, JPEG, PNG erlaubt."));
-      return;
+    // Accept if MIME type is in the allowed set
+    if (allowedMimeTypes.has(file.mimetype)) {
+      return cb(null, true);
     }
-    cb(null, true);
+    // Fallback: accept if file extension is in the allowed set
+    const ext = String(file.originalname || "").toLowerCase().split(".").pop() || "";
+    if (allowedExtensions.has(ext)) {
+      return cb(null, true);
+    }
+    // Accept generic octet-stream (browser didn't detect MIME – allow and let analysis decide)
+    if (file.mimetype === "application/octet-stream" || !file.mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error("Nicht unterstütztes Dateiformat. Bitte PDF, DOCX, JPG, PNG, MOV, MP4, MP3, WAV u.v.m. hochladen."));
   }
 });
 
