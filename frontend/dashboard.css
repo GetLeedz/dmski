@@ -2739,6 +2739,160 @@ td {
 }
 
 /* ================================================================
+   PRINT STYLES  (@media print + body.printing class)
+   Both rule-sets are intentionally identical so that:
+   – native browser print (Ctrl+P) and
+   – html2pdf capture (body.printing class added via JS)
+   produce the same clean A4 output.
+   ================================================================ */
+
+/* ── Shared helpers ── */
+.print-hide { display: none !important; }
+
+/* ── @media print ── */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body { background: #fff !important; margin: 0 !important; }
+
+  /* Hide all non-report UI */
+  .topbar,
+  .filter-section,
+  .case-persons-row,
+  #deleteCaseBtn,
+  #listMessage,
+  #undoBar,
+  #multiDeleteBar,
+  .preview-modal,
+  .dashboard-footer,
+  .files-card table,
+  .list-header-row > .icon-btn,
+  button { display: none !important; }
+
+  .page  { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+  .card  { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+  .files-card { overflow: visible !important; }
+
+  #analysisReportBar {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  #analysisReportBar * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .analysis-report-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .tactic-table-wrap  { overflow: hidden !important; }
+  .tactic-table thead tr,
+  .tactic-table tbody tr { grid-template-columns: 1.5fr 0.7fr 1.7fr 0.9fr !important; }
+  .tactic-table th,
+  .tactic-table td {
+    font-size: 0.67rem !important;
+    padding: 0.28rem 0.4rem !important;
+    word-break: break-word !important;
+  }
+  .akteure-table       { font-size: 0.72rem !important; }
+  .tactic-analysis-body{ font-size: 0.73rem !important; line-height: 1.45 !important; }
+  .party-split-num,
+  .file-count-num      { font-size: 1.35rem !important; }
+}
+
+/* ── body.printing (applied via JS before html2pdf capture) ── */
+body.printing * {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+body.printing .topbar,
+body.printing .filter-section,
+body.printing .case-persons-row,
+body.printing #deleteCaseBtn,
+body.printing #listMessage,
+body.printing #undoBar,
+body.printing #multiDeleteBar,
+body.printing .preview-modal,
+body.printing .dashboard-footer,
+body.printing .files-card table,
+body.printing .list-header-row > .icon-btn,
+body.printing button { display: none !important; }
+
+body.printing .page {
+  padding: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+body.printing .card {
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body.printing .files-card { overflow: visible !important; }
+
+body.printing #analysisReportBar {
+  width: 740px !important;
+  max-width: 740px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0.5rem !important;
+  margin: 0 !important;
+}
+
+body.printing #analysisReportBar * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.printing .analysis-report-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body.printing .tactic-table-wrap { overflow: hidden !important; }
+
+body.printing .tactic-table thead tr,
+body.printing .tactic-table tbody tr {
+  grid-template-columns: 1.5fr 0.7fr 1.7fr 0.9fr !important;
+}
+
+body.printing .tactic-table th,
+body.printing .tactic-table td {
+  font-size: 0.67rem !important;
+  padding: 0.28rem 0.4rem !important;
+  word-break: break-word !important;
+}
+
+body.printing .akteure-table        { font-size: 0.72rem !important; }
+body.printing .tactic-analysis-body { font-size: 0.73rem !important; line-height: 1.45 !important; }
+
+body.printing .party-split-num,
+body.printing .file-count-num       { font-size: 1.35rem !important; }
+
+body.printing .analysis-report-head-actions { display: none !important; }
+
+/* ================================================================
    RESPONSIVE
    ================================================================ */
 @media (max-width: 860px) {
