@@ -1,103 +1,128 @@
+/* =============================================================
+   DMSKI PDF-Report – Modern Design System (Inter font)
+   Mirrors dashboard.css design language:
+   teal accent · Inter body · IBM Plex Serif display headings
+   ============================================================= */
+
+/* ── Tokens ── */
 :root {
   color-scheme: light;
-  --report-ink: #173843;
-  --report-soft: #5f7984;
-  --report-line: #d6e3e8;
-  --report-accent: #0f616d;
-  --report-accent-soft: #e7f3f5;
-  --report-warm: #f7fafb;
-  --report-positive: #1d7a3e;
-  --report-positive-bg: #edf8f1;
-  --report-negative: #b84434;
-  --report-negative-bg: #fff2f0;
+  --r-ink:        #0f2b36;
+  --r-ink-soft:   #4a6672;
+  --r-ink-muted:  #8ba4b0;
+  --r-accent:     #116b73;
+  --r-accent-2:   #0d5760;
+  --r-accent-bg:  #e4f4f5;
+  --r-line:       #dae2e8;
+  --r-line-soft:  #eaeff3;
+  --r-card:       #ffffff;
+  --r-bg:         #f0f4f7;
+  --r-bg-subtle:  #e8edf2;
+  --r-pos:        #1d7a3e;
+  --r-pos-bg:     #edf8f1;
+  --r-pos-border: #b8ddc8;
+  --r-neg:        #b84434;
+  --r-neg-bg:     #fff2f0;
+  --r-neg-border: #efd1cb;
+  --r-radius:     10px;
+  --r-radius-lg:  14px;
+  --r-shadow:     0 2px 12px rgba(15,43,54,.09), 0 1px 3px rgba(15,43,54,.06);
+  --r-shadow-md:  0 4px 24px rgba(15,43,54,.12), 0 2px 6px rgba(15,43,54,.07);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
 
-html,
-body {
+/* ── Base ── */
+html, body {
   margin: 0;
   min-height: 100%;
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.92), transparent 26%),
-    linear-gradient(180deg, #eef4f6 0%, #e4edf0 100%);
-  color: var(--report-ink);
+    radial-gradient(circle at top, rgba(255,255,255,.94), transparent 28%),
+    linear-gradient(180deg, #eef4f6 0%, #e2ecf0 100%);
+  color: var(--r-ink);
   font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-body {
-  padding: 2rem 1.25rem 3rem;
-}
+body { padding: 2rem 1.25rem 4rem; }
 
-.report-page {
-  max-width: 1240px;
-  margin: 0 auto;
-}
+/* ── Page container ── */
+.report-page { max-width: 1240px; margin: 0 auto; }
 
+/* =============================================================
+   TOOLBAR
+   ============================================================= */
 .report-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .report-toolbar-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  gap: 0.15rem;
 }
 
 .report-toolbar-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--report-soft);
+  color: var(--r-ink-muted);
+}
+
+.report-toolbar-copy strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--r-ink);
 }
 
 .report-toolbar-actions {
   display: flex;
-  gap: 0.65rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
+/* ── Toolbar buttons ── */
 .toolbar-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
   border: 0;
-  border-radius: 10px;
-  padding: 0.65rem 1.2rem;
-  background: linear-gradient(145deg, #0f616d, #0a4d57);
-  color: #ffffff;
+  border-radius: var(--r-radius);
+  padding: 0.65rem 1.25rem;
+  background: linear-gradient(145deg, var(--r-accent), var(--r-accent-2));
+  color: #fff;
   font: inherit;
   font-family: "Inter", system-ui, sans-serif;
   font-size: 0.88rem;
   font-weight: 700;
-  cursor: pointer;
   letter-spacing: 0.01em;
-  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+  cursor: pointer;
   white-space: nowrap;
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
 
 .toolbar-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 5px 16px rgba(15, 97, 109, 0.28);
+  box-shadow: 0 5px 16px rgba(17,107,115,.28);
   filter: saturate(1.07);
 }
 
-.toolbar-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
+.toolbar-btn:active:not(:disabled) { transform: translateY(0); }
+.toolbar-btn:disabled { opacity: .45; cursor: not-allowed; }
 
 .toolbar-btn.is-ghost {
-  border: 1.5px solid #c8d9df;
-  background: rgba(255, 255, 255, 0.88);
-  color: var(--report-ink);
+  background: rgba(255,255,255,.9);
+  border: 1.5px solid var(--r-line);
+  color: var(--r-ink);
 }
 
 .toolbar-btn.is-ghost:hover:not(:disabled) {
@@ -108,228 +133,287 @@ body {
   filter: none;
 }
 
+/* =============================================================
+   REPORT SHEET – A4 white paper
+   ============================================================= */
 .report-sheet {
   width: min(100%, 210mm);
   min-height: 297mm;
   margin: 0 auto;
-  padding: 18mm 16mm 18mm;
-  background: #ffffff;
-  box-shadow: 0 20px 60px rgba(17, 53, 63, 0.14);
-  border: 1px solid rgba(213, 226, 232, 0.7);
+  padding: 14mm 14mm 18mm;
+  background: var(--r-card);
+  border-radius: 4px;
+  border: 1px solid rgba(213,226,232,.7);
+  box-shadow: var(--r-shadow-md);
 }
 
+/* ── Loading / Error states ── */
 .report-loading {
   min-height: 220mm;
   display: grid;
   place-items: center;
   gap: 1rem;
-  color: var(--report-soft);
+  color: var(--r-ink-soft);
   text-align: center;
 }
 
-.report-loading-logo {
-  width: 180px;
-  max-width: 60%;
+.report-loading-logo { width: 180px; max-width: 60%; }
+
+.report-error {
+  display: grid;
+  gap: 0.8rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--r-ink-soft);
 }
 
+.report-error h1 {
+  margin: 0;
+  font-family: "IBM Plex Serif", serif;
+  color: var(--r-ink);
+}
+
+/* =============================================================
+   HEADER
+   ============================================================= */
 .report-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: start;
-  border-bottom: 1px solid var(--report-line);
   padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--r-line);
 }
 
-.report-logo {
-  width: 168px;
-  max-width: 100%;
-}
+.report-logo { width: 156px; max-width: 100%; }
 
-.report-title-block {
-  display: grid;
-  gap: 0.28rem;
-}
+.report-title-block { display: grid; gap: 0.25rem; }
 
 .report-eyebrow {
   margin: 0;
-  font-size: 0.74rem;
-  font-weight: 700;
+  font-size: 0.68rem;
+  font-weight: 800;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--report-soft);
+  color: var(--r-ink-muted);
 }
 
 .report-title {
   margin: 0;
   font-family: "IBM Plex Serif", serif;
-  font-size: 1.9rem;
-  line-height: 1.05;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  color: var(--r-ink);
 }
 
 .report-subtitle {
   margin: 0;
-  font-size: 0.95rem;
-  color: var(--report-soft);
+  font-size: 0.9rem;
+  color: var(--r-ink-soft);
 }
 
+/* ── Stamp box ── */
 .report-stamp {
-  display: grid;
-  gap: 0.32rem;
-  min-width: 170px;
-  padding: 0.85rem 0.9rem;
-  border: 1px solid var(--report-line);
+  min-width: 160px;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius);
   background: linear-gradient(135deg, #fbfdfd, #f2f7f8);
+  display: grid;
+  gap: 0.28rem;
 }
 
 .report-stamp-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--report-soft);
+  color: var(--r-ink-muted);
 }
 
 .report-stamp-value {
-  font-size: 0.85rem;
-  line-height: 1.45;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--r-ink);
+  line-height: 1.4;
 }
 
-.report-grid {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1rem;
-}
+/* =============================================================
+   SECTIONS
+   ============================================================= */
+.report-grid { display: grid; gap: 1.25rem; margin-top: 0; }
 
-.report-section {
-  display: grid;
-  gap: 0.8rem;
-}
+.report-section { display: grid; gap: 0.85rem; }
 
 .report-section-head {
   display: flex;
   justify-content: space-between;
-  gap: 0.75rem;
   align-items: baseline;
+  gap: 0.75rem;
   flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+  border-bottom: 1.5px solid var(--r-line);
 }
 
 .report-section-title {
   margin: 0;
   font-family: "IBM Plex Serif", serif;
-  font-size: 1.14rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--r-ink);
 }
 
 .report-section-note {
   margin: 0;
-  font-size: 0.8rem;
-  color: var(--report-soft);
+  font-size: 0.78rem;
+  color: var(--r-ink-soft);
 }
 
+/* =============================================================
+   SUMMARY CARDS (4-column dossier overview)
+   ============================================================= */
 .report-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.report-summary-card,
-.report-meta-card,
-.report-method-card,
-.report-document {
-  border: 1px solid var(--report-line);
-  background: #ffffff;
+  gap: 0.7rem;
 }
 
 .report-summary-card {
-  display: grid;
-  gap: 0.22rem;
-  padding: 0.9rem;
-  background: linear-gradient(145deg, #fbfdfd, #f2f8f9);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius-lg);
+  background: linear-gradient(145deg, #fbfdfd, #f4f8fa);
+  box-shadow: 0 1px 4px rgba(15,43,54,.05);
 }
 
 .report-summary-card.is-positive {
+  border-color: var(--r-pos-border);
   background: linear-gradient(145deg, #fbfefc, #eff8f1);
 }
 
 .report-summary-card.is-negative {
+  border-color: var(--r-neg-border);
   background: linear-gradient(145deg, #fffaf9, #fdf2f0);
 }
 
 .report-summary-label {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.64rem;
+  font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--report-soft);
+  color: var(--r-ink-muted);
 }
 
 .report-summary-value {
-  font-family: "IBM Plex Serif", serif;
-  font-size: 1.3rem;
-  line-height: 1.05;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--r-ink);
+  letter-spacing: -0.01em;
 }
+
+.report-summary-card.is-positive .report-summary-value { color: var(--r-pos); }
+.report-summary-card.is-negative .report-summary-value { color: var(--r-neg); }
 
 .report-summary-detail {
-  font-size: 0.78rem;
-  color: var(--report-soft);
+  font-size: 0.76rem;
+  color: var(--r-ink-soft);
+  line-height: 1.4;
 }
 
-.report-meta-grid,
-.report-method-grid,
-.report-doc-grid,
-.report-evidence-grid,
-.report-party-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
+/* =============================================================
+   META CARDS (case context)
+   ============================================================= */
 .report-meta-grid {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
 }
 
-.report-meta-card,
+.report-meta-card {
+  padding: 0.8rem 0.9rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius);
+  background: #ffffff;
+}
+
+.report-meta-card strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--r-ink-muted);
+}
+
+.report-meta-card span {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--r-ink);
+  line-height: 1.4;
+}
+
+/* =============================================================
+   METHOD CARDS
+   ============================================================= */
+.report-method-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 0.65rem;
+}
+
 .report-method-card {
-  padding: 0.9rem;
+  padding: 0.85rem 0.9rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius);
+  background: #ffffff;
 }
 
-.report-meta-card strong,
 .report-method-card strong {
   display: block;
-  margin-bottom: 0.25rem;
-  font-size: 0.86rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--r-ink-muted);
 }
 
-.report-meta-card span,
 .report-method-card span,
-.report-method-card p,
-.report-document-note,
-.report-document-meta,
-.report-document-status {
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--report-soft);
+.report-method-card p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--r-ink-soft);
 }
 
-.report-method-grid {
-  grid-template-columns: 1.25fr 1fr;
-}
-
-.report-document-list {
-  display: grid;
-  gap: 0.9rem;
-}
+/* =============================================================
+   DOCUMENT LIST
+   ============================================================= */
+.report-document-list { display: grid; gap: 1rem; }
 
 .report-document {
-  padding: 1rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius-lg);
+  background: #ffffff;
+  box-shadow: 0 1px 6px rgba(15,43,54,.05);
+  overflow: hidden;
   break-inside: avoid;
 }
 
+/* ── Document head ── */
 .report-document-head {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  gap: 0.8rem;
-  margin-bottom: 0.7rem;
+  gap: 0.85rem;
+  padding: 1rem 1rem 0.85rem;
+  border-bottom: 1px solid var(--r-line-soft);
+  background: linear-gradient(135deg, #fafcfd, #f4f8fa);
 }
 
 .report-document-index {
@@ -338,10 +422,13 @@ body {
   justify-content: center;
   min-width: 2rem;
   height: 2rem;
-  border-radius: 999px;
-  background: var(--report-accent-soft);
-  color: var(--report-accent);
-  font-weight: 700;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--r-accent), var(--r-accent-2));
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(17,107,115,.22);
 }
 
 .report-document-title-group {
@@ -353,37 +440,55 @@ body {
 .report-document-title {
   margin: 0;
   font-family: "IBM Plex Serif", serif;
-  font-size: 1.08rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--r-ink);
+  line-height: 1.3;
 }
 
+.report-document-meta {
+  font-size: 0.78rem;
+  color: var(--r-ink-soft);
+  line-height: 1.4;
+}
+
+.report-document-note {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--r-ink-soft);
+}
+
+/* Chip row */
 .report-chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.4rem;
+  align-self: center;
 }
 
 .report-chip {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
-  padding: 0.24rem 0.6rem;
-  border: 1px solid var(--report-line);
+  border-radius: var(--r-radius);
+  padding: 0.22rem 0.65rem;
+  border: 1.5px solid var(--r-line);
   background: #f7fbfc;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--report-ink);
+  color: var(--r-ink);
+  white-space: nowrap;
 }
 
 .report-chip.is-positive {
-  border-color: #badfc5;
-  background: var(--report-positive-bg);
-  color: var(--report-positive);
+  border-color: var(--r-pos-border);
+  background: var(--r-pos-bg);
+  color: var(--r-pos);
 }
 
 .report-chip.is-negative {
-  border-color: #efd1cb;
-  background: var(--report-negative-bg);
-  color: var(--report-negative);
+  border-color: var(--r-neg-border);
+  background: var(--r-neg-bg);
+  color: var(--r-neg);
 }
 
 .report-chip.is-neutral {
@@ -391,252 +496,297 @@ body {
   color: #3e6270;
 }
 
+/* ── Document body grid ── */
 .report-doc-grid {
-  grid-template-columns: 1.25fr 1fr;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 0;
   align-items: start;
 }
 
+/* ── Meta / Party / Evidence / Focus boxes ── */
 .report-doc-meta-box,
 .report-doc-party-box,
 .report-doc-evidence-box,
 .report-doc-focus-box,
 .report-doc-empty-box {
-  border: 1px solid var(--report-line);
-  background: #fbfdfd;
-  padding: 0.85rem;
+  padding: 0.9rem 1rem;
 }
 
+.report-doc-meta-box,
+.report-doc-evidence-box,
+.report-doc-focus-box {
+  border-right: 1px solid var(--r-line-soft);
+}
+
+.report-doc-meta-box + .report-doc-party-box {
+  background: linear-gradient(135deg, #fafcfd, #f5f8fa);
+}
+
+.report-doc-empty-box {
+  padding: 1.25rem 1rem;
+  color: var(--r-ink-soft);
+  font-size: 0.85rem;
+}
+
+/* Subgrid title */
 .report-subgrid-title {
   display: block;
-  margin-bottom: 0.45rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: var(--report-soft);
+  color: var(--r-ink-muted);
 }
 
-.report-facts {
-  display: grid;
-  gap: 0.36rem;
-}
+/* ── Fact table ── */
+.report-facts { display: grid; gap: 0.32rem; }
 
 .report-fact {
   display: grid;
-  grid-template-columns: 6rem 1fr;
-  gap: 0.45rem;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.4rem;
   align-items: start;
   font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .report-fact-label {
   font-weight: 700;
-  color: var(--report-soft);
+  color: var(--r-ink-muted);
+  white-space: nowrap;
 }
 
 .report-fact-value {
   min-width: 0;
+  color: var(--r-ink);
+  word-break: break-word;
 }
 
+.report-document-status {
+  font-size: 0.84rem;
+  color: var(--r-ink-soft);
+  line-height: 1.55;
+  font-style: italic;
+}
+
+/* ── Party balance cards (big Pos/Neg numbers) ── */
 .report-party-grid {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
 }
 
 .report-party-card {
-  padding: 0.8rem;
-  border: 1px solid var(--report-line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.75rem 0.85rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius);
   background: #ffffff;
 }
 
 .report-party-title {
   display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  align-items: baseline;
-  margin-bottom: 0.55rem;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--r-line-soft);
 }
 
 .report-party-title strong {
-  font-size: 0.84rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--r-ink-muted);
 }
 
 .report-party-title span {
-  font-size: 0.76rem;
-  color: var(--report-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--r-ink);
+  line-height: 1.35;
 }
 
+/* Big-number rows */
 .report-party-score-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.32rem 0;
-  border-top: 1px solid rgba(214, 227, 232, 0.7);
-  font-size: 0.8rem;
+  padding: 0.28rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--r-ink-soft);
 }
 
-.report-party-score-row:first-of-type {
-  border-top: 0;
-}
+.report-party-score-row:first-of-type { background: var(--r-pos-bg); border: 1px solid var(--r-pos-border); }
+.report-party-score-row:last-of-type  { background: var(--r-neg-bg); border: 1px solid var(--r-neg-border); }
 
 .report-party-score-row em {
   font-style: normal;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
-.report-party-score-row em.is-positive {
-  color: var(--report-positive);
-}
+.report-party-score-row em.is-positive { color: var(--r-pos); }
+.report-party-score-row em.is-negative { color: var(--r-neg); }
 
-.report-party-score-row em.is-negative {
-  color: var(--report-negative);
-}
-
+/* ── Evidence grid ── */
 .report-evidence-grid {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--r-line-soft);
 }
 
 .report-evidence-card {
-  border: 1px solid var(--report-line);
-  background: #ffffff;
-  padding: 0.8rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius);
+  background: #fafbfc;
+  padding: 0.75rem 0.85rem;
 }
 
 .report-evidence-card.is-positive {
+  border-color: var(--r-pos-border);
   background: linear-gradient(145deg, #fbfefc, #eff8f1);
 }
 
 .report-evidence-card.is-negative {
+  border-color: var(--r-neg-border);
   background: linear-gradient(145deg, #fffaf9, #fdf2f0);
 }
 
 .report-evidence-card strong {
   display: block;
-  margin-bottom: 0.4rem;
-  font-size: 0.82rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--r-ink-soft);
 }
+
+.report-evidence-card.is-positive strong { color: var(--r-pos); }
+.report-evidence-card.is-negative strong { color: var(--r-neg); }
 
 .report-evidence-list {
   margin: 0;
   padding-left: 1rem;
   display: grid;
-  gap: 0.32rem;
+  gap: 0.28rem;
   font-size: 0.8rem;
-  line-height: 1.45;
+  line-height: 1.5;
+  color: var(--r-ink);
 }
 
 .report-evidence-empty {
   margin: 0;
   font-size: 0.8rem;
-  color: var(--report-soft);
+  color: var(--r-ink-muted);
   font-style: italic;
 }
 
+/* ── Focus / Methodology boxes ── */
 .report-focus-list {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .report-focus-item {
   display: grid;
-  gap: 0.18rem;
-  padding: 0.65rem 0.7rem;
-  border: 1px solid var(--report-line);
+  gap: 0.16rem;
+  padding: 0.55rem 0.7rem;
+  border: 1.5px solid var(--r-line);
+  border-radius: var(--r-radius);
   background: #ffffff;
 }
 
 .report-focus-item strong {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--r-ink);
 }
 
-.report-focus-item span,
-.report-focus-item em {
-  font-size: 0.78rem;
-  color: var(--report-soft);
+.report-focus-item span {
+  font-size: 0.76rem;
+  color: var(--r-ink-soft);
+  line-height: 1.4;
 }
 
 .report-focus-item em {
   font-style: normal;
+  font-size: 0.72rem;
   font-weight: 700;
+  color: var(--r-ink-muted);
 }
 
+/* =============================================================
+   FOOTER
+   ============================================================= */
 .report-footer {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-end;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--report-line);
-  color: var(--report-soft);
-  font-size: 0.78rem;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1.5px solid var(--r-line);
+  color: var(--r-ink-muted);
+  font-size: 0.76rem;
 }
 
-.report-footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
+.report-footer-brand { display: flex; align-items: center; gap: 0.6rem; }
+.report-footer-brand img { width: 88px; }
 
-.report-footer-brand img {
-  width: 96px;
-}
-
-.report-error {
-  display: grid;
-  gap: 0.6rem;
-  padding: 2rem 1rem;
-  text-align: center;
-}
-
-.report-error h1 {
-  margin: 0;
-  font-family: "IBM Plex Serif", serif;
-}
-
+/* =============================================================
+   RESPONSIVE
+   ============================================================= */
 @media (max-width: 900px) {
-  .report-header,
+  .report-sheet { padding: 10mm 8mm 12mm; }
+
+  .report-header { grid-template-columns: auto 1fr; }
+  .report-stamp  { grid-column: 1 / -1; }
+
+  .report-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   .report-doc-grid,
   .report-method-grid,
   .report-meta-grid,
-  .report-summary-grid,
   .report-party-grid,
-  .report-evidence-grid {
-    grid-template-columns: 1fr;
-  }
+  .report-evidence-grid { grid-template-columns: 1fr; }
+
+  .report-doc-meta-box,
+  .report-doc-evidence-box,
+  .report-doc-focus-box { border-right: none; border-bottom: 1px solid var(--r-line-soft); }
 
   .report-toolbar,
-  .report-footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .report-footer { flex-direction: column; align-items: flex-start; }
 }
 
-@page {
-  size: A4;
-  margin: 12mm;
-}
+/* =============================================================
+   PRINT
+   ============================================================= */
+@page { size: A4; margin: 12mm; }
 
 @media print {
-  html,
-  body {
-    background: #ffffff;
-  }
+  html, body { background: #fff; }
+  body { padding: 0; }
 
-  body {
-    padding: 0;
-  }
+  .no-print { display: none !important; }
 
-  .no-print {
-    display: none !important;
-  }
-
-  .report-page {
-    max-width: none;
-    margin: 0;
-  }
+  .report-page { max-width: none; margin: 0; }
 
   .report-sheet {
     width: auto;
@@ -645,6 +795,7 @@ body {
     padding: 0;
     border: 0;
     box-shadow: none;
+    border-radius: 0;
   }
 
   .report-document,
@@ -659,7 +810,5 @@ body {
   .report-doc-empty-box,
   .report-party-card,
   .report-evidence-card,
-  .report-focus-item {
-    break-inside: avoid;
-  }
+  .report-focus-item { break-inside: avoid; }
 }
