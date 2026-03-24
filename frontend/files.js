@@ -778,6 +778,98 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
 }
 
 /**
+ * Splits a "polluted" name string that may contain titles, function words or
+ * institution names mixed in with the real person name.
+ *
+ * Examples:
+ *   "Behördenmitglied, Susanne Angst, klinische Psychologin" → { name:"Susanne Angst", role:"Behördenmitglied / klinische Psychologin" }
+ *   "Jugendforensik, Benedict Weizenegger, Leiter"            → { name:"Benedict Weizenegger", role:"Leiter Jugendforensik" }
+ *   "Angst, Susanne"                                          → { name:"Susanne Angst", role:"" }
+ *
+ * Returns { name: string, role: string } – role is "" when nothing extra found.
+ */
+function parsePersonEntry(raw) {
+  const text = normalizeTitleText(raw);
+  if (!text) return { name: "", role: "" };
+
+  // Pattern: exactly 2–4 consecutive Title-Case words (the real person name)
+  const namePattern = /^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ''-]+(?:\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ''-]+){1,3}$/;
+
+  // Already clean?
+  if (namePattern.test(text)) return { name: text, role: "" };
+
+  // --- Split by comma and try to find the person-name segment ---
+  const FUNCTION_WORDS = new Set([
+    "Behördenmitglied", "Behörde", "Berufsbeistand", "Beistand", "Beiständin",
+    "Gerichtspräsident", "Richter", "Richterin", "Jugendforensik", "Forensik",
+    "Leiter", "Leiterin", "Klinische", "Klinischer", "Soziale", "Sozialer",
+    "Anwalt", "Anwältin", "Rechtsanwalt", "Rechtsanwältin", "KESB", "Amt",
+    "Gericht", "Gutachter", "Gutachterin", "Psychiater", "Psychiaterin",
+    "Psychologe", "Psychologin", "Therapeut", "Therapeutin", "Mediator",
+    "Mediaterin", "Coach", "Schule", "Sozialarbeit", "Kanzlei"
+  ]);
+
+  const segments = text.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+
+  // Find the first segment that is purely a person name (all Title-Case, no function words)
+  let personSegment = "";
+  const roleSegments = [];
+
+  for (const seg of segments) {
+    if (!personSegment && namePattern.test(seg)) {
+      const words = seg.split(/\s+/);
+      const hasFunction = words.some(w => FUNCTION_WORDS.has(w));
+      if (!hasFunction) {
+        personSegment = seg;
+        continue;
+      }
+    }
+    roleSegments.push(seg);
+  }
+
+  // If no clean segment found, try to extract the 2+ consecutive Title-Case words
+  // that are NOT function words
+  if (!personSegment) {
+    const allCandidates = [...text.matchAll(/\b([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ''-]{2,}(?:\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ''-]{2,})+)\b/g)];
+    for (const m of allCandidates) {
+      const words = m[1].split(/\s+/);
+      const hasFunction = words.some(w => FUNCTION_WORDS.has(w));
+      if (!hasFunction && words.length >= 2 && words.length <= 4) {
+        personSegment = m[1];
+        // The rest of the text (before and after) goes to role
+        const before = text.slice(0, m.index).replace(/[,;]\s*$/, "").trim();
+        const after = text.slice(m.index + m[0].length).replace(/^[,;\s]+/, "").trim();
+        if (before) roleSegments.push(before);
+        if (after) roleSegments.push(after);
+        break;
+      }
+    }
+  }
+
+  // Handle "Last, First" format (single comma, both segments look like names)
+  if (!personSegment && segments.length === 2) {
+    const [a, b] = segments;
+    const aWords = a.split(/\s+/);
+    const bWords = b.split(/\s+/);
+    // "Angst, Susanne" – first segment is one capitalized word (surname), second is first name(s)
+    if (/^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ''-]+$/.test(a) && bWords.every(w => /^[A-ZÄÖÜ]/.test(w))) {
+      // Reconstruct as "First Last"
+      return { name: `${b} ${a}`.trim(), role: "" };
+    }
+  }
+
+  if (!personSegment) return { name: text, role: "" };
+
+  const roleText = roleSegments
+    .filter(s => s && !namePattern.test(s) || FUNCTION_WORDS.has(s.split(/\s+/)[0]))
+    .join(" / ")
+    .replace(/^[,;\s/]+|[,;\s/]+$/g, "")
+    .trim();
+
+  return { name: personSegment, role: roleText };
+}
+
+/**
  * Returns a diacritics-stripped, lower-cased key for fuzzy person dedup.
  */
 function personDedupKey(name) {
@@ -809,6 +901,7 @@ function isSamePersonSubset(keyA, keyB) {
 
 /**
  * Smart person deduplication:
+ * – runs parsePersonEntry on each person to clean polluted name strings
  * – exact key match → same person
  * – subset word match → same person, keep longer/more informative name
  * – merge affiliation when one side has "Privatperson" and the other doesn't
@@ -818,9 +911,15 @@ function deduplicatePeople(people) {
   const keyIndex = new Map();
   const result = [];
 
-  for (const p of people) {
-    const name = normalizeTitleText(p.name || "");
-    const affil = p.affiliation || "Privatperson";
+  for (const rawP of people) {
+    // ── Clean polluted name strings (e.g. "Behördenmitglied, Susanne Angst, klinische Psychologin") ──
+    const parsed = parsePersonEntry(rawP.name || "");
+    const name = parsed.name || normalizeTitleText(rawP.name || "");
+    // Use extracted role from parsePersonEntry if existing affiliation is generic
+    const rawAffil = rawP.affiliation || "Privatperson";
+    const affil = (rawAffil === "Privatperson" && parsed.role)
+      ? parsed.role
+      : rawAffil;
     const key = personDedupKey(name);
     if (!key) continue;
 
