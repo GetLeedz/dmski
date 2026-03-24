@@ -1918,7 +1918,6 @@ async function loadRowAnalysis(file, options = {}) {
           <div class="forensic-field"><span class="forensic-field-label">Herkunft</span><span class="forensic-field-value">${escapeHtml(senderInstitution)}</span></div>
         </div>
         ${people.length > 0 ? `<div class="forensic-persons-row"><span class="forensic-field-label" style="width:100%;margin-bottom:0.25rem">Personen</span>${people.map((p) => `<span class="forensic-person-chip">${escapeHtml(p)}</span>`).join("")}</div>` : ""}
-        ${impactAssessment ? `<div class="forensic-fazit"><span class="forensic-fazit-label">Fazit</span>${escapeHtml(impactAssessment)}</div>` : ""}
       </div>
       <div class="doc-evidence-box doc-ev-${verdict.tone}">
         <span class="doc-ev-label">KI-Evidenz · Rechtliche Einordnung</span>
