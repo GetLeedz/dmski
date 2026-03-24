@@ -729,14 +729,34 @@ async function exportReportAsPdf() {
     document.head.appendChild(s);
   }
 
+  // --- Temporarily fix element width so html2canvas captures A4-width content ---
+  const pageEl = document.querySelector(".report-page");
+  const sheetOrigStyle = sheet.getAttribute("style") || "";
+  const pageOrigStyle  = pageEl?.getAttribute("style") || "";
+
+  // A4 at 96 dpi = 794px; set exact width, strip margin/shadow so capture is clean
+  sheet.style.cssText = sheetOrigStyle + ";width:794px!important;max-width:none!important;min-height:auto!important;margin:0!important;box-shadow:none!important;border-radius:0!important;";
+  if (pageEl) pageEl.style.cssText = pageOrigStyle + ";padding:0!important;max-width:794px!important;";
+
+  // Let browser re-paint before capture
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
   const filename = `DMSKI-Report-${currentCaseId}.pdf`;
   const opt = {
-    margin:      [8, 8, 8, 8],
+    margin:      [6, 6, 6, 6],   // mm
     filename,
-    image:       { type: "jpeg", quality: 0.96 },
-    html2canvas: { scale: 2, useCORS: true, allowTaint: true, letterRendering: true, logging: false, windowWidth: 794 },
-    jsPDF:       { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak:   { mode: ["avoid-all", "css", "legacy"] }
+    image:       { type: "jpeg", quality: 0.97 },
+    html2canvas: {
+      scale:           2,       // 794*2=1588px → maps cleanly to 210mm A4
+      useCORS:         true,
+      allowTaint:      true,
+      letterRendering: true,
+      logging:         false,
+      scrollX:         0,
+      scrollY:         0
+    },
+    jsPDF:  { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] }
   };
 
   try {
@@ -744,6 +764,9 @@ async function exportReportAsPdf() {
   } catch {
     window.print();
   } finally {
+    // Restore original styles
+    sheet.setAttribute("style", sheetOrigStyle);
+    if (pageEl) pageEl.setAttribute("style", pageOrigStyle);
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
   }
 }
