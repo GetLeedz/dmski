@@ -1904,6 +1904,142 @@ async function loadRowPreview(file) {
   box.innerHTML = `<img class="row-preview-image" src="${previewUrl}" alt="Vorschau ${decodeUtf8Safe(file.original_name)}" />`;
 }
 
+/* ================================================================
+   VIDEO METADATA EXTRACTION
+   Reads MP4 / MOV binary atoms directly from the cached blob URL.
+   Extracts:
+     • mvhd atom  → recording date (seconds since 1904-01-01 epoch)
+     • ©xyz atom  → GPS string e.g. "+47.3769+008.5417+432.000/"
+   No extra network request – the blob is already in memory from the
+   preview download (previewUrlCache).
+   ================================================================ */
+
+/**
+ * Converts a raw ©xyz GPS string into a readable German-locale form.
+ * "+47.3769+008.5417+432.000/" → "47.3769° N, 8.5417° O"
+ */
+function formatGpsString(raw) {
+  if (!raw) return null;
+  const m = raw.match(/^([+-]?\d+\.?\d*)([+-]\d+\.?\d*)/);
+  if (!m) return raw.replace(/[/\0]/g, "").trim() || null;
+  const lat = parseFloat(m[1]);
+  const lon = parseFloat(m[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return raw.replace(/[/\0]/g, "").trim() || null;
+  }
+  const latDir = lat >= 0 ? "N" : "S";
+  const lonDir = lon >= 0 ? "O" : "W"; // German: Ost / West
+  return `${Math.abs(lat).toFixed(4)}° ${latDir}, ${Math.abs(lon).toFixed(4)}° ${lonDir}`;
+}
+
+/**
+ * Scans MP4/MOV atom tree and returns { recordingDate, location }.
+ * @param {ArrayBuffer} buffer
+ */
+function parseMp4Meta(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const view  = new DataView(buffer);
+  const total = bytes.length;
+
+  // MP4 epoch: 1904-01-01 00:00:00 UTC → offset to JS epoch in seconds
+  const MP4_EPOCH_OFFSET = 2082844800;
+
+  let recordingDate = null;
+  let location      = null;
+
+  function u32(offset) {
+    if (offset + 4 > total) return 0;
+    return view.getUint32(offset, false);
+  }
+
+  function tagMatch(offset, b0, b1, b2, b3) {
+    if (offset + 8 > total) return false;
+    return bytes[offset+4] === b0 && bytes[offset+5] === b1
+        && bytes[offset+6] === b2 && bytes[offset+7] === b3;
+  }
+
+  function scan(start, end) {
+    let pos = start;
+    while (pos + 8 <= end && pos < total) {
+      const size = u32(pos);
+      if (size < 8) break;
+      const atomEnd = Math.min(pos + size, end, total);
+
+      if (tagMatch(pos, 0x6D,0x6F,0x6F,0x76)) {        // moov
+        scan(pos + 8, atomEnd);
+      } else if (tagMatch(pos, 0x75,0x64,0x74,0x61)) { // udta
+        scan(pos + 8, atomEnd);
+      } else if (tagMatch(pos, 0x6D,0x76,0x68,0x64) && !recordingDate) { // mvhd
+        const version = bytes[pos + 8];
+        let secs = 0;
+        if (version === 0) {
+          secs = u32(pos + 12);
+        } else if (version === 1) {
+          secs = u32(pos + 12) * 4294967296 + u32(pos + 16);
+        }
+        if (secs > 0) {
+          const ms = (secs - MP4_EPOCH_OFFSET) * 1000;
+          const d  = new Date(ms);
+          const yr = d.getUTCFullYear();
+          if (yr >= 1980 && yr <= 2099) {
+            const dd = String(d.getUTCDate()).padStart(2, "0");
+            const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
+            const hh = String(d.getUTCHours()).padStart(2, "0");
+            const mi = String(d.getUTCMinutes()).padStart(2, "0");
+            recordingDate = `${dd}.${mo}.${yr} ${hh}:${mi}`;
+          }
+        }
+      } else if (bytes[pos+4] === 0xA9 // ©xyz
+              && bytes[pos+5] === 0x78 && bytes[pos+6] === 0x79 && bytes[pos+7] === 0x7A
+              && !location) {
+        // After 8 bytes (size+tag): 2 bytes value-length, 2 bytes language → skip 4
+        let gps = "";
+        for (let i = pos + 12; i < atomEnd && i < total; i++) {
+          const c = bytes[i];
+          if (c === 0) break;
+          gps += String.fromCharCode(c);
+        }
+        location = formatGpsString(gps.trim());
+      }
+
+      pos += size;
+    }
+  }
+
+  scan(0, total);
+  return { recordingDate, location };
+}
+
+/**
+ * Extracts recording date and GPS from an MP4/MOV video file.
+ * Reuses the already-cached blob (no extra network call).
+ * Returns { recordingDate: string|null, location: string|null }
+ */
+async function extractVideoMeta(file) {
+  const mime = String(file.mime_type || "").toLowerCase();
+  const name = String(file.original_name || "").toLowerCase();
+
+  // Only MP4/MOV/3GP containers carry these atoms
+  const isMp4 = /\.(mov|mp4|3gp|m4v|m4a)$/i.test(name)
+    || mime.includes("mp4")
+    || mime.includes("quicktime")
+    || mime.includes("3gpp");
+
+  if (!isMp4) return { recordingDate: null, location: null };
+
+  // getPreviewUrl handles caching and concurrent requests safely
+  const blobUrl = await getPreviewUrl(file);
+  if (!blobUrl) return { recordingDate: null, location: null };
+
+  try {
+    const resp = await fetch(blobUrl);
+    const buf  = await resp.arrayBuffer();
+    return parseMp4Meta(buf);
+  } catch {
+    return { recordingDate: null, location: null };
+  }
+}
+
 async function loadRowAnalysis(file, options = {}) {
   const box = filesTableBody.querySelector(`.analysis-box[data-file-id="${file.id}"]`);
   if (!(box instanceof HTMLElement)) {
@@ -1919,10 +2055,32 @@ async function loadRowAnalysis(file, options = {}) {
     return `<span class="qa-dot-wrap"><span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span><span class="qa-dot-count">${safeCount}</span></span>`;
   };
 
-  // ── Video / Audio: no AI analysis – show dashes immediately ──
+  // ── Video / Audio: no AI text analysis – extract container metadata instead ──
   const ft = resolveFileType(file);
   if (ft.className === "video" || ft.className === "audio") {
     const mediaLabel = ft.className === "video" ? "Film" : "Audio";
+
+    // For video (MP4/MOV): parse binary atoms for recording date + GPS
+    let recordingDate = "–";
+    let gpsLocation   = "–";
+    if (ft.className === "video") {
+      box.innerHTML = `
+        <div class="analysis-loading">
+          <span class="spinner spinner--ai" aria-label="Metadaten werden gelesen"></span>
+          <span class="analysis-loading-text">Aufnahmedatum wird gelesen…</span>
+        </div>`;
+      const meta = await extractVideoMeta(file);
+      if (meta.recordingDate) recordingDate = meta.recordingDate;
+      if (meta.location)      gpsLocation   = meta.location;
+    }
+
+    const dateLabel     = "Datum (Aufnahme)";
+    const locationLabel = "Herkunft (GPS)";
+    const hasRealMeta   = ft.className === "video" && (recordingDate !== "–" || gpsLocation !== "–");
+    const mediaNote     = hasRealMeta
+      ? `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Dateien. Datum und GPS aus Datei-Metadaten (MP4/MOV-Atoms) extrahiert.`
+      : `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Dateien.`;
+
     box.innerHTML = `
       <div class="queue-analysis">
         <div class="forensic-report">
@@ -1933,11 +2091,11 @@ async function loadRowAnalysis(file, options = {}) {
           <div class="forensic-fields-grid">
             <div class="forensic-field is-full"><span class="forensic-field-label">Titel</span><span class="forensic-field-value">–</span></div>
             <div class="forensic-field"><span class="forensic-field-label">Verfasser</span><span class="forensic-field-value">–</span></div>
-            <div class="forensic-field"><span class="forensic-field-label">Datum</span><span class="forensic-field-value">–</span></div>
-            <div class="forensic-field"><span class="forensic-field-label">Herkunft</span><span class="forensic-field-value">–</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">${escapeHtml(dateLabel)}</span><span class="forensic-field-value${recordingDate !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : ''}">${escapeHtml(recordingDate)}</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">${escapeHtml(locationLabel)}</span><span class="forensic-field-value${gpsLocation !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : ''}">${escapeHtml(gpsLocation)}</span></div>
           </div>
         </div>
-        <p class="analysis-media-note">KI-Textanalyse nicht verfügbar für ${mediaLabel}-Dateien.</p>
+        <p class="analysis-media-note">${escapeHtml(mediaNote)}</p>
       </div>`;
     return;
   }
