@@ -5054,30 +5054,33 @@ select.case-edit-input {
 }
 
 /* ================================================================
-   UPLOAD HERO BUTTON – files.html prominent CTA
+   UPLOAD HERO BUTTON – files.html prominent CTA (pill style)
    ================================================================ */
 .upload-hero-wrap {
-  margin: 0.15rem 0 1.4rem;
+  display: flex;
+  justify-content: center;
+  margin: 0.5rem 0 1.8rem;
 }
 .upload-hero-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  width: 100%;
-  padding: 1.1rem 1.5rem;
+  gap: 0.75rem;
+  width: auto;
+  max-width: 34rem;
+  padding: 0.75rem 2rem 0.75rem 1.3rem;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   border: none;
-  border-radius: 14px;
+  border-radius: 999px;       /* pill shape */
   color: #fff;
   cursor: pointer;
   text-align: left;
   transition: opacity .15s, transform .15s, box-shadow .15s;
-  box-shadow: 0 4px 18px rgba(0,122,154,.18);
+  box-shadow: 0 3px 14px rgba(17,107,115,.22);
 }
 .upload-hero-btn:hover {
-  opacity: .93;
+  opacity: .94;
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0,122,154,.28);
+  box-shadow: 0 7px 22px rgba(17,107,115,.30);
 }
 .upload-hero-btn:active { transform: translateY(0); }
 .upload-hero-btn-icon {
@@ -5085,31 +5088,31 @@ select.case-edit-input {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.8rem;
-  height: 2.8rem;
-  background: rgba(255,255,255,.18);
-  border-radius: 10px;
+  width: 2.2rem;
+  height: 2.2rem;
+  background: rgba(255,255,255,.20);
+  border-radius: 50%;
 }
 .upload-hero-btn-icon svg {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.15rem;
+  height: 1.15rem;
   stroke: #fff;
 }
 .upload-hero-btn-text {
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  gap: 0.08rem;
 }
 .upload-hero-btn-label {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: .01em;
   color: #fff;
 }
 .upload-hero-btn-sub {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   font-weight: 400;
-  color: rgba(255,255,255,.82);
+  color: rgba(255,255,255,.80);
   letter-spacing: .01em;
 }
 
@@ -5362,4 +5365,99 @@ select.case-edit-input {
   color: var(--ink-muted);
   font-style: italic;
   line-height: 1.45;
+}
+
+/* ================================================================
+   FILTER SECTION + TABLE – seamless visual module
+   The filter-section loses its bottom radius / border so the table
+   directly below reads as one unified block.
+   ================================================================ */
+.files-card .filter-section {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+/* Thin connector line between filter-section and table header */
+.files-card table {
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-top: none;
+  margin-top: 0;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.files-card table thead th {
+  border-top: 2px solid var(--accent);
+  background: var(--bg-subtle);
+}
+
+/* ================================================================
+   STAT CARDS GRID – strict equal-width 3-column layout
+   All 3 cards (Files, Benachteiligte Person, Gegenpartei) must
+   have identical width, height, border and colour.
+   ================================================================ */
+.analysis-report-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;     /* ← equal height */
+}
+
+/* Force all 3 stat cards to the same neutral base style */
+.analysis-report-grid > .analysis-report-card {
+  border: 1.5px solid #d9e7ec !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 14px !important;
+  padding: 0.85rem 0.9rem !important;
+  box-shadow: 0 2px 8px rgba(15,43,54,0.06) !important;
+}
+
+/* ================================================================
+   NEGATIVE NUMBERS – unified modern red everywhere
+   ================================================================ */
+.party-split-item.is-negative .party-split-num,
+.qa-stat.is-negative .qa-stat-num,
+.analysis-report-card.is-negative .analysis-report-card-value,
+.analysis-report-meta-card.is-negative .analysis-report-meta-value {
+  color: #dc2626 !important;
+}
+
+/* ================================================================
+   PDF EXPORT – hide per-row action buttons inside #analysisReportBar
+   Extends existing @media print and body.printing rules.
+   ================================================================ */
+@media print {
+  .btn-inline,
+  .row-actions,
+  .analysis-cell-top,
+  .upload-hero-wrap { display: none !important; }
+
+  /* Prevent stat cards from overflowing in PDF */
+  .analysis-report-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100% !important;
+  }
+}
+
+body.printing .btn-inline,
+body.printing .row-actions,
+body.printing .analysis-cell-top,
+body.printing .upload-hero-wrap { display: none !important; }
+
+/* ================================================================
+   DOC-ID COLUMN – hidden from dossier-level tactic table
+   The DOC-ID column shows ALL file IDs at dossier level which is
+   meaningless (and shows "wrong" IDs). Hide it there.
+   ================================================================ */
+#analysisReportTactics .tactic-table thead tr,
+#analysisReportTactics .tactic-table tbody tr {
+  grid-template-columns: 1.9fr 0.85fr 2.2fr !important;
+}
+
+#analysisReportTactics .tactic-table th:last-child,
+#analysisReportTactics .tactic-table td:last-child {
+  display: none !important;
 }
