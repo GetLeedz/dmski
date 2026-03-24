@@ -36,7 +36,10 @@
             <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
           </svg>
         </span>
-        <p class="welcome-text">Willkommen im DMSKI-Portal. Bitte wählen Sie unten ein Dossier aus oder legen Sie einen neuen Fall an.</p>
+        <p class="welcome-text">
+          Sie sind eingeloggt. <strong>Als Gutachter oder Berater</strong>: Wählen Sie rechts das Ihnen zugewiesene Dossier aus — Sie werden sofort weitergeleitet.
+          Neu anlegen? Füllen Sie links das Formular aus.
+        </p>
       </div>
     </div>
 
@@ -149,14 +152,43 @@
       <div class="card-header-row">
         <span class="card-icon card-icon--amber" aria-hidden="true">
           <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 2l2.09 4.26L17 7.27l-3.5 3.41.83 4.82L10 13.25l-4.33 2.25.83-4.82L3 7.27l4.91-.71L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M3 5h14M3 10h14M3 15h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
           </svg>
         </span>
         <div>
-          <h2 class="card-title">Wie geht es weiter? – Ihr Arbeitsablauf</h2>
-          <p class="card-subtitle">Schritt-für-Schritt-Anleitung für Gutachter, Berater und alle Nutzer nach dem Einloggen.</p>
+          <h2 class="card-title">Was muss ich nach dem Einloggen tun?</h2>
+          <p class="card-subtitle">Anleitung für Gutachter, Berater und alle Nutzer — je nach Ihrer Aufgabe.</p>
         </div>
       </div>
+
+      <!-- ── Gutachter-Quickstart (prominent box) ── -->
+      <div class="workflow-gutachter-box">
+        <div class="workflow-gutachter-head">
+          <span class="workflow-gutachter-badge">Als Gutachter / Berater</span>
+          <strong class="workflow-gutachter-title">Direkt zum Dossier — in einem Schritt</strong>
+        </div>
+        <p class="workflow-gutachter-desc">
+          Ihr Zugang ist bereits eingerichtet. Sie müssen keinen neuen Fall anlegen.
+          Gehen Sie einfach so vor:
+        </p>
+        <ol class="workflow-gutachter-steps">
+          <li>
+            <span class="workflow-gutachter-num">①</span>
+            Wählen Sie oben rechts unter <strong>«Bestehendes Dossier öffnen»</strong> das Ihnen zugewiesene Dossier aus der Liste aus.
+          </li>
+          <li>
+            <span class="workflow-gutachter-num">②</span>
+            Sie werden <strong>sofort und automatisch</strong> zur vollständigen Aktenübersicht weitergeleitet — mit allen Dokumenten, KI-Analysen und dem forensischen Bericht.
+          </li>
+          <li>
+            <span class="workflow-gutachter-num">③</span>
+            Dort können Sie Dokumente <strong>einzeln herunterladen</strong> oder den <strong>gesamten KI-Report als PDF exportieren</strong>.
+          </li>
+        </ol>
+      </div>
+
+      <!-- ── Vollständiger Arbeitsablauf ── -->
+      <h3 class="workflow-all-title">Vollständiger Arbeitsablauf (für alle Rollen)</h3>
 
       <ol class="workflow-steps">
         <li class="workflow-step">
@@ -164,8 +196,8 @@
           <div class="step-body">
             <strong class="step-title">Dossier wählen oder neu anlegen</strong>
             <p class="step-desc">
-              Falls Ihnen ein bestehendes Dossier zugewiesen wurde: Wählen Sie es im Dropdown <em>«Bestehendes Dossier öffnen»</em> aus.
-              Legen Sie andernfalls links einen neuen Fall an (Fallname, beteiligte Personen, Ort).
+              Bestehendes Dossier? → Dropdown <em>«Bestehendes Dossier öffnen»</em> rechts oben.
+              Neues Dossier? → Formular links ausfüllen (Fallname, Personen, Ort) und auf <em>«Fall anlegen»</em> klicken.
             </p>
           </div>
         </li>
@@ -174,18 +206,20 @@
           <div class="step-body">
             <strong class="step-title">Dokumente hochladen</strong>
             <p class="step-desc">
-              Nach der Auswahl öffnet sich die <em>Upload-Seite</em>. Laden Sie alle relevanten Akten,
-              Gutachten, Berichte oder Beweismittel hoch (PDF, JPG, PNG). Sie können mehrere Dateien auf einmal ziehen und ablegen.
+              Nach dem Öffnen eines Dossiers erscheint die <em>Upload-Seite</em>. Laden Sie Akten, Gutachten,
+              Berichte oder Beweismittel hoch (PDF, JPG, PNG). Mehrere Dateien lassen sich gleichzeitig per
+              Drag &amp; Drop ablegen.
             </p>
           </div>
         </li>
         <li class="workflow-step">
           <span class="step-number">3</span>
           <div class="step-body">
-            <strong class="step-title">KI-Analyse starten</strong>
+            <strong class="step-title">KI-Analyse läuft automatisch</strong>
             <p class="step-desc">
-              Auf der Upload-Seite startet die KI-Analyse automatisch nach jedem Upload.
-              Sie erkennt Beteiligte, bewertet Erwähnungen und erstellt eine forensische Einschätzung je Dokument.
+              Nach jedem Upload startet die KI-Analyse ohne weiteres Zutun.
+              Sie erkennt Beteiligte, bewertet Erwähnungen (positiv / negativ) und erstellt
+              eine forensische Einschätzung je Dokument sowie eine Gesamtbewertung des Dossiers.
             </p>
           </div>
         </li>
@@ -194,8 +228,9 @@
           <div class="step-body">
             <strong class="step-title">Dossierübersicht &amp; Bericht einsehen</strong>
             <p class="step-desc">
-              Über den Button <em>«Dateiliste / Dossier»</em> gelangen Sie zur vollständigen Übersicht aller Dokumente mit Analysen,
-              dem KI-Gesamtbericht und der Taktikanalyse. Hier können Sie Dokumente herunterladen, löschen oder den PDF-Bericht exportieren.
+              Klicken Sie auf der Upload-Seite auf <em>«Dateiliste / Dossier»</em>, um alle Dokumente,
+              Einzelanalysen, den KI-Gesamtbericht und die Taktikanalyse einzusehen.
+              Von dort aus können Sie Dokumente herunterladen oder den <em>PDF-KI-Report</em> exportieren.
             </p>
           </div>
         </li>
@@ -203,11 +238,12 @@
 
       <div class="workflow-tip">
         <svg viewBox="0 0 16 16" fill="none" style="width:1rem;height:1rem;flex-shrink:0;margin-top:.05rem" aria-hidden="true">
-          <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
-          <path d="M8 7v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          <circle cx="8" cy="5" r=".8" fill="currentColor"/>
+          <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM7.25 5a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0zm.75 2v4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
-        <span><strong>Als Gutachter:</strong> Ihr Zugang ist bereits eingerichtet. Wählen Sie einfach das Ihnen zugewiesene Dossier im Dropdown aus – Sie gelangen direkt zur Aktenübersicht.</span>
+        <span>
+          <strong>Fragen?</strong> Alle Felder sind optional ausser Fallname und Land/Kanton beim Anlegen.
+          Fallnummer und Zugangsdaten erhalten Gutachter vorab per E-Mail vom Fallverantwortlichen.
+        </span>
       </div>
     </section>
 

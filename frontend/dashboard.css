@@ -319,6 +319,87 @@ select.field-input:disabled {
   color: var(--accent-2);
 }
 
+/* ── Gutachter quickstart box ── */
+.workflow-gutachter-box {
+  margin-bottom: 1.4rem;
+  padding: 1rem 1.15rem 1.1rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #f0f8f1, #e6f4e8);
+  border: 1.5px solid #b2d9b8;
+}
+
+.workflow-gutachter-head {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: .55rem;
+  flex-wrap: wrap;
+}
+
+.workflow-gutachter-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .22rem .72rem;
+  border-radius: 999px;
+  background: #1d7a3e;
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.workflow-gutachter-title {
+  font-size: .95rem;
+  font-weight: 800;
+  color: #0f2b36;
+  line-height: 1.25;
+}
+
+.workflow-gutachter-desc {
+  margin: 0 0 .7rem;
+  font-size: .88rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.workflow-gutachter-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .52rem;
+}
+
+.workflow-gutachter-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  font-size: .88rem;
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+.workflow-gutachter-num {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: #1d7a3e;
+  font-weight: 800;
+}
+
+/* ── Section divider title ── */
+.workflow-all-title {
+  margin: 0 0 .9rem;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--ink-muted);
+}
+
 /* ── Workflow tip box ── */
 .workflow-tip {
   display: flex;
