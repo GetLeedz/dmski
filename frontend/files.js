@@ -120,6 +120,10 @@ const analysisReportHint = document.getElementById("analysisReportHint");
 const analysisReportMeta = document.getElementById("analysisReportMeta");
 const analysisReportTactics = document.getElementById("analysisReportTactics");
 const analysisReportAkteure = document.getElementById("analysisReportAkteure");
+const dateToFilter = document.getElementById("dateToFilter");
+const sortUploadDateBtn = document.getElementById("sortUploadDateBtn");
+const sortFileDateBtn = document.getElementById("sortFileDateBtn");
+const downloadAllFilesBtn = document.getElementById("downloadAllFilesBtn");
 
 let allFiles = [];
 const previewUrlCache = new Map();
@@ -141,6 +145,8 @@ let currentCaseCountry = "";
 let currentCaseLocality = "";
 let currentCaseRegion = "";
 let currentCaseCity = "";
+let currentSortField = "uploadDate"; // "uploadDate" | "fileDate"
+let currentSortOrder = "desc";      // "asc" | "desc"
 
 listTitle.textContent = "Fall";
 
@@ -1133,24 +1139,143 @@ function compactDocId(id) {
   return String(Number.isFinite(numeric) ? numeric : 0).padStart(8, "0");
 }
 
+function parseSwissDate(str) {
+  if (!str) return null;
+  const swiss = String(str).match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (swiss) return new Date(`${swiss[3]}-${swiss[2]}-${swiss[1]}T12:00:00`);
+  const d = new Date(str);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function updateSortUI() {
+  const uploadArrow = document.getElementById("sortUploadArrow");
+  const fileArrow = document.getElementById("sortFileArrow");
+  if (sortUploadDateBtn) {
+    sortUploadDateBtn.classList.toggle("sort-pill--active", currentSortField === "uploadDate");
+    if (uploadArrow) uploadArrow.textContent = currentSortField === "uploadDate" ? (currentSortOrder === "desc" ? "↓" : "↑") : "";
+  }
+  if (sortFileDateBtn) {
+    sortFileDateBtn.classList.toggle("sort-pill--active", currentSortField === "fileDate");
+    if (fileArrow) fileArrow.textContent = currentSortField === "fileDate" ? (currentSortOrder === "desc" ? "↓" : "↑") : "";
+  }
+}
+
 function filterFiles(files) {
   const type = String(fileTypeFilter.value || "all").toLowerCase();
   const fromDate = dateFromFilter.value ? new Date(`${dateFromFilter.value}T00:00:00`) : null;
+  const toDate = dateToFilter?.value ? new Date(`${dateToFilter.value}T23:59:59`) : null;
 
-  return files.filter((file) => {
+  let result = files.filter((file) => {
     const fileType = resolveFileType(file).className;
     const uploadedAt = new Date(file.uploaded_at);
-
-    if (type !== "all" && fileType !== type) {
-      return false;
-    }
-
-    if (fromDate && uploadedAt < fromDate) {
-      return false;
-    }
-
+    if (type !== "all" && fileType !== type) return false;
+    if (fromDate && uploadedAt < fromDate) return false;
+    if (toDate && uploadedAt > toDate) return false;
     return true;
   });
+
+  // Sort by selected field and order
+  result = [...result].sort((a, b) => {
+    let aVal, bVal;
+    if (currentSortField === "fileDate") {
+      const aAnalysis = analysisCache.get(a.id);
+      const bAnalysis = analysisCache.get(b.id);
+      aVal = parseSwissDate(aAnalysis?.authoredDate) || new Date(0);
+      bVal = parseSwissDate(bAnalysis?.authoredDate) || new Date(0);
+    } else {
+      aVal = new Date(a.uploaded_at);
+      bVal = new Date(b.uploaded_at);
+    }
+    const diff = aVal.getTime() - bVal.getTime();
+    return currentSortOrder === "asc" ? diff : -diff;
+  });
+
+  return result;
+}
+
+async function downloadAllFilesAsPdf() {
+  const PDFLib = window.PDFLib;
+  if (!PDFLib) {
+    setMessage(listMessage, "PDF-Bibliothek nicht verfügbar. Bitte Seite neu laden.", "error");
+    return;
+  }
+
+  const btn = downloadAllFilesBtn;
+  const spinnerSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:.88rem;height:.88rem;animation:spin 700ms linear infinite"><path d="M12 4a8 8 0 0 1 7.75 6h-2.2A6 6 0 1 0 16.2 16l-2.2-2.2H20v6l-2.35-2.35A8 8 0 1 1 12 4z"/></svg>`;
+  const originalHtml = btn?.innerHTML ?? "PDF Files Download";
+  if (btn) { btn.disabled = true; btn.innerHTML = `${spinnerSvg} Wird erstellt…`; }
+
+  const visibleFiles = filterFiles(allFiles);
+  if (visibleFiles.length === 0) {
+    setMessage(listMessage, "Keine Dateien für den Download vorhanden.", "error");
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    return;
+  }
+
+  try {
+    const { PDFDocument } = PDFLib;
+    const mergedPdf = await PDFDocument.create();
+    let addedCount = 0;
+
+    for (const file of visibleFiles) {
+      const url = await getPreviewUrl(file);
+      if (!url) continue;
+      let arrayBuffer;
+      try {
+        const resp = await fetch(url);
+        arrayBuffer = await resp.arrayBuffer();
+      } catch { continue; }
+
+      const fileType = resolveFileType(file);
+      if (fileType.className === "pdf") {
+        try {
+          const srcPdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+          const pages = await mergedPdf.copyPages(srcPdf, srcPdf.getPageIndices());
+          pages.forEach(p => mergedPdf.addPage(p));
+          addedCount++;
+        } catch { /* skip corrupt PDF */ }
+      } else if (fileType.className === "png" || fileType.className === "jpg") {
+        try {
+          const bytes = new Uint8Array(arrayBuffer);
+          const img = fileType.className === "png"
+            ? await mergedPdf.embedPng(bytes)
+            : await mergedPdf.embedJpg(bytes);
+          const { width, height } = img.scale(1);
+          const maxW = 595.28, maxH = 841.89; // A4 points
+          const scale = Math.min(maxW / width, maxH / height, 1);
+          const page = mergedPdf.addPage([maxW, maxH]);
+          page.drawImage(img, {
+            x: (maxW - width * scale) / 2,
+            y: (maxH - height * scale) / 2,
+            width: width * scale,
+            height: height * scale,
+          });
+          addedCount++;
+        } catch { /* skip corrupt image */ }
+      }
+    }
+
+    if (addedCount === 0) {
+      setMessage(listMessage, "Keine Datei konnte in das PDF aufgenommen werden.", "error");
+      return;
+    }
+
+    const pdfBytes = await mergedPdf.save();
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const dlUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = dlUrl;
+    link.download = `dossier-${currentCaseId}-files.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(dlUrl);
+    setMessage(listMessage, `${addedCount} Datei(en) als PDF zusammengeführt und heruntergeladen.`, "success");
+  } catch (error) {
+    setMessage(listMessage, `PDF-Erstellung fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`, "error");
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+  }
 }
 
 function revokeAllPreviewUrls() {
@@ -2154,11 +2279,35 @@ filesTableBody.addEventListener("click", async (event) => {
   }
 });
 
-for (const element of [fileTypeFilter, dateFromFilter]) {
+for (const element of [fileTypeFilter, dateFromFilter, dateToFilter].filter(Boolean)) {
   element.addEventListener("change", () => {
     renderFiles(filterFiles(allFiles));
   });
 }
+
+sortUploadDateBtn?.addEventListener("click", () => {
+  if (currentSortField === "uploadDate") {
+    currentSortOrder = currentSortOrder === "desc" ? "asc" : "desc";
+  } else {
+    currentSortField = "uploadDate";
+    currentSortOrder = "desc";
+  }
+  updateSortUI();
+  renderFiles(filterFiles(allFiles));
+});
+
+sortFileDateBtn?.addEventListener("click", () => {
+  if (currentSortField === "fileDate") {
+    currentSortOrder = currentSortOrder === "desc" ? "asc" : "desc";
+  } else {
+    currentSortField = "fileDate";
+    currentSortOrder = "desc";
+  }
+  updateSortUI();
+  renderFiles(filterFiles(allFiles));
+});
+
+downloadAllFilesBtn?.addEventListener("click", () => void downloadAllFilesAsPdf());
 
 goToUploadBtn.addEventListener("click", () => {
   window.location.href = "/upload.html";
