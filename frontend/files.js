@@ -500,11 +500,13 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
     const cls      = r.present ? "tactic-row-present" : "tactic-row-absent";
     const evidenceText = escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""));
     const docCell  = r.present && docRefList.length > 0
-      ? `<span class="tactic-doc-ids">${docRefList.join(", ")}</span>`
+      ? `<span class="tactic-doc-ids">${docRefList.join(",\n")}</span>`
       : (r.present ? "–" : "");
+    const articlePart = r.article && r.article !== "–"
+      ? `<span class="tactic-td-article">${escapeHtml(r.article)}</span>`
+      : "";
     return `<tr class="${cls}">
-      <td class="tactic-td-tactic">${escapeHtml(r.tactic)}</td>
-      <td class="tactic-td-article">${escapeHtml(r.article)}</td>
+      <td class="tactic-td-tactic"><span class="tactic-tactic-name">${escapeHtml(r.tactic)}</span>${articlePart}</td>
       <td class="tactic-td-ki">${evidenceText}</td>
       <td class="tactic-doc-id-cell">${docCell}</td>
     </tr>`;
@@ -527,9 +529,8 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
           <thead>
             <tr>
               <th>Tatbestand / Methode</th>
-              <th>Rechtsgrundlage (CH)</th>
               <th>KI-Einschätzung / Indiz</th>
-              <th>DOC-ID</th>
+              <th>DOC-IDs</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
