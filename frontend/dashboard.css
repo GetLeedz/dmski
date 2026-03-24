@@ -121,6 +121,10 @@
 }
 
 .field-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .22em;
   font-size: .8rem;
   font-weight: 600;
   color: var(--ink-soft);
@@ -129,8 +133,10 @@
 
 .required-dot {
   color: var(--accent);
-  font-size: .88em;
-  margin-left: .1em;
+  font-size: .82em;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .field-input {
@@ -786,6 +792,29 @@ button:disabled {
   transform: none;
 }
 
+/* ── Ghost on <a> links (e.g. Profil nav button) ── */
+a.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .55rem 1.1rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: .88rem;
+  text-decoration: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background .13s, border-color .13s, color .13s;
+  white-space: nowrap;
+}
+a.ghost:hover {
+  background: var(--bg-subtle);
+  border-color: #b0c8d4;
+  color: var(--ink);
+}
+
 #createCaseBtn {
   width: auto;
   margin-top: 0.2rem;
@@ -830,8 +859,10 @@ button:disabled {
   margin-top: 0.75rem;
   font-size: 0.9rem;
 }
-.message.error   { color: var(--error); }
-.message.success { color: var(--ok);    }
+.message.error,
+.message--error   { color: var(--error); }
+.message.success,
+.message--success { color: var(--ok);    }
 
 .hint {
   margin: 0;
