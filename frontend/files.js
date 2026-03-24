@@ -550,8 +550,8 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
             <tr>
               <th>Tatbestand / Methode</th>
               <th>Evidenz</th>
-              <th>KI-Einschätzung / Indiz</th>
-              <th>DOC-IDs</th>
+              <th>KI-Einschätzung</th>
+              <th>File-IDs</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
@@ -1777,7 +1777,7 @@ function renderFiles(files) {
       <td class="${checkboxClass}"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
         <div class="preview-topline">
-          <div class="preview-doc-id">Dok-ID: ${compactDocId(file.id)}</div>
+          <div class="preview-doc-id">File-ID: ${compactDocId(file.id)}</div>
           <div class="row-actions">
             <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">DOWNLOAD</button>
             <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>

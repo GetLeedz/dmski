@@ -2228,6 +2228,7 @@ td {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: #ffffff;
+  pointer-events: none;
 }
 
 .row-preview-frame {
@@ -3298,7 +3299,7 @@ select.case-edit-input {
   padding: 0.56rem 0.64rem;
   border-radius: 12px;
   border: 1.5px solid #e2c8f0;
-  background: linear-gradient(135deg, #fdf8ff, #f8f0fd);
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -3782,7 +3783,7 @@ select.case-edit-input {
 
 /* ── Header cells ── */
 .tactic-table thead tr {
-  background: linear-gradient(135deg, rgba(139,63,168,0.13), rgba(107,45,136,0.09));
+  background: rgba(139,63,168,0.11);
   border-bottom: 2px solid rgba(139,63,168,0.22);
 }
 
@@ -3792,10 +3793,10 @@ select.case-edit-input {
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #7040a0;
+  color: #6030a0;
   border-bottom: none;
   text-align: left;
-  background: rgba(139,63,168,0.08);
+  background: transparent;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
