@@ -94,13 +94,40 @@
         <!-- Row 2: Sort Bar -->
         <div class="sort-bar">
           <span class="sort-bar-label">Sortierung</span>
-          <div class="sort-pills">
-            <button id="sortUploadDateBtn" type="button" class="sort-pill sort-pill--active">
-              Upload-Datum <span id="sortUploadArrow" class="sort-dir">↓</span>
-            </button>
-            <button id="sortFileDateBtn" type="button" class="sort-pill">
-              Dokument-Datum <span id="sortFileArrow" class="sort-dir"></span>
-            </button>
+          <div class="sort-groups">
+
+            <div class="sort-group">
+              <span class="sort-group-label">Upload-Datum</span>
+              <div class="sort-group-btns" role="group" aria-label="Upload-Datum sortieren">
+                <button id="sortUploadAscBtn" type="button" class="sort-dir-btn"
+                  data-sort-field="uploadDate" data-sort-order="asc"
+                  title="Aufsteigend – älteste zuerst" aria-label="Upload-Datum aufsteigend">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+                </button>
+                <button id="sortUploadDescBtn" type="button" class="sort-dir-btn sort-dir-btn--active"
+                  data-sort-field="uploadDate" data-sort-order="desc"
+                  title="Absteigend – neueste zuerst" aria-label="Upload-Datum absteigend">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="sort-group">
+              <span class="sort-group-label">Dokument-Datum</span>
+              <div class="sort-group-btns" role="group" aria-label="Dokument-Datum sortieren">
+                <button id="sortFileAscBtn" type="button" class="sort-dir-btn"
+                  data-sort-field="fileDate" data-sort-order="asc"
+                  title="Aufsteigend – älteste zuerst" aria-label="Dokument-Datum aufsteigend">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+                </button>
+                <button id="sortFileDescBtn" type="button" class="sort-dir-btn"
+                  data-sort-field="fileDate" data-sort-order="desc"
+                  title="Absteigend – neueste zuerst" aria-label="Dokument-Datum absteigend">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
 

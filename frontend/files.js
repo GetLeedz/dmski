@@ -1221,15 +1221,19 @@ function parseSwissDate(str) {
 }
 
 function updateSortUI() {
-  const uploadArrow = document.getElementById("sortUploadArrow");
-  const fileArrow = document.getElementById("sortFileArrow");
-  if (sortUploadDateBtn) {
-    sortUploadDateBtn.classList.toggle("sort-pill--active", currentSortField === "uploadDate");
-    if (uploadArrow) uploadArrow.textContent = currentSortField === "uploadDate" ? (currentSortOrder === "desc" ? "↓" : "↑") : "";
-  }
-  if (sortFileDateBtn) {
-    sortFileDateBtn.classList.toggle("sort-pill--active", currentSortField === "fileDate");
-    if (fileArrow) fileArrow.textContent = currentSortField === "fileDate" ? (currentSortOrder === "desc" ? "↓" : "↑") : "";
+  const sortUploadAscBtn  = document.getElementById("sortUploadAscBtn");
+  const sortUploadDescBtn = document.getElementById("sortUploadDescBtn");
+  const sortFileAscBtn    = document.getElementById("sortFileAscBtn");
+  const sortFileDescBtn   = document.getElementById("sortFileDescBtn");
+
+  [sortUploadAscBtn, sortUploadDescBtn, sortFileAscBtn, sortFileDescBtn].forEach(btn => {
+    btn?.classList.remove("sort-dir-btn--active");
+  });
+
+  if (currentSortField === "uploadDate") {
+    (currentSortOrder === "asc" ? sortUploadAscBtn : sortUploadDescBtn)?.classList.add("sort-dir-btn--active");
+  } else {
+    (currentSortOrder === "asc" ? sortFileAscBtn : sortFileDescBtn)?.classList.add("sort-dir-btn--active");
   }
 }
 
@@ -2362,26 +2366,14 @@ for (const element of [fileTypeFilter, dateFromFilter, dateToFilter].filter(Bool
   });
 }
 
-sortUploadDateBtn?.addEventListener("click", () => {
-  if (currentSortField === "uploadDate") {
-    currentSortOrder = currentSortOrder === "desc" ? "asc" : "desc";
-  } else {
-    currentSortField = "uploadDate";
-    currentSortOrder = "desc";
-  }
-  updateSortUI();
-  renderFiles(filterFiles(allFiles));
-});
-
-sortFileDateBtn?.addEventListener("click", () => {
-  if (currentSortField === "fileDate") {
-    currentSortOrder = currentSortOrder === "desc" ? "asc" : "desc";
-  } else {
-    currentSortField = "fileDate";
-    currentSortOrder = "desc";
-  }
-  updateSortUI();
-  renderFiles(filterFiles(allFiles));
+// Sort dir buttons – delegated handler covers all 4 ASC/DESC buttons
+document.querySelectorAll(".sort-dir-btn[data-sort-field]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    currentSortField = btn.dataset.sortField;
+    currentSortOrder = btn.dataset.sortOrder;
+    updateSortUI();
+    renderFiles(filterFiles(allFiles));
+  });
 });
 
 downloadAllFilesBtn?.addEventListener("click", () => void downloadAllFilesAsPdf());

@@ -4581,6 +4581,7 @@ select.case-edit-input {
 
 .filter-label {
   display: flex;
+  flex-direction: row;        /* override global label { flex-direction: column } */
   align-items: center;
   gap: 0.26rem;
   font-size: 0.77rem;
@@ -4820,6 +4821,102 @@ select.case-edit-input {
   border: 0;
 }
 
+/* ── Sort groups: label + ASC/DESC icon-button pair ── */
+.sort-groups {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.sort-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.28rem 0.38rem 0.28rem 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  transition: border-color 120ms ease;
+}
+
+.sort-group:focus-within {
+  border-color: #a8c4cc;
+}
+
+.sort-group-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Paired icon-button strip */
+.sort-group-btns {
+  display: inline-flex;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+/* Individual ASC / DESC icon button */
+.sort-dir-btn {
+  width: 1.95rem;
+  height: 1.95rem;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: var(--ink-muted);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+.sort-dir-btn:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.sort-dir-btn svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.sort-dir-btn:hover:not(:disabled):not(.sort-dir-btn--active) {
+  background: var(--bg-subtle);
+  color: var(--ink);
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+/* Active state – teal fill */
+.sort-dir-btn--active {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.sort-dir-btn--active svg {
+  stroke: var(--accent);
+}
+
+.sort-dir-btn--active:hover:not(:disabled) {
+  background: var(--accent-light);
+  color: var(--accent);
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
 /* Responsive */
 @media (max-width: 860px) {
   .filter-controls { grid-template-columns: 1fr 1fr; }
@@ -4833,4 +4930,6 @@ select.case-edit-input {
   }
   .filter-section .filter-btn--upload { margin-left: 0; }
   .sort-bar { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+  .sort-groups { gap: 0.4rem; }
+  .sort-group { padding: 0.24rem 0.32rem 0.24rem 0.56rem; }
 }
