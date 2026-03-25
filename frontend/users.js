@@ -198,7 +198,8 @@ function openAddModal() {
   document.getElementById("modalSaveBtn").textContent = "Anlegen";
   hideModalMsg(); hideModalPwd();
   document.getElementById("mEmail").removeAttribute("disabled");
-  if (!isAdmin) loadCasesForModal();
+  document.getElementById("mFachSection").style.display = "";
+  loadCasesForModal();
   document.getElementById("userModal").classList.add("open");
   setTimeout(() => document.getElementById("mFirstName").focus(), 60);
 }
@@ -221,6 +222,7 @@ function openEditModal(userId) {
   const isCollab = u.role === "collaborator";
   document.getElementById("mRoleGroup").style.display = isAdmin ? "" : "none";
   document.getElementById("mFnGroup").style.display   = isCollab ? "" : "none";
+  document.getElementById("mFachSection").style.display = isCollab ? "" : "none";
   document.getElementById("mCaseGroup").style.display = isCollab ? "" : "none";
   if (isAdmin) document.getElementById("mRole").value = u.role;
 
@@ -344,11 +346,13 @@ async function loadCasesForModal() {
   const sel = document.getElementById("mCase");
   const cur = sel.value;
   try {
-    const res  = await fetch(`${API}/cases`, { headers: authHdr() });
+    const ep = isAdmin ? `${API}/cases` : `${API}/users/${myUserId}/cases`;
+    let res = await fetch(ep, { headers: authHdr() });
+    if (res.status === 404) res = await fetch(`${API}/cases`, { headers: authHdr() });
     if (!res.ok) return;
     const data = await res.json();
     const cases = data.cases || data || [];
-    sel.innerHTML = `<option value="">Kein Fall</option>` +
+    sel.innerHTML = `<option value="">Keinen Fall zuweisen</option>` +
       cases.map(c => `<option value="${esc(String(c.id))}" ${String(c.id)===cur?"selected":""}>${esc(c.case_name||c.title||"Fall #"+c.id)}</option>`).join("");
   } catch { /* no cases available */ }
 }
@@ -447,8 +451,9 @@ function toast(text, type = "info") {
 // ── Role change in modal ─────────────────────────────────────────────────────
 function onRoleChange() {
   const isCollab = document.getElementById("mRole").value === "collaborator";
-  document.getElementById("mFnGroup").style.display   = isCollab ? "" : "none";
-  document.getElementById("mCaseGroup").style.display = isCollab ? "" : "none";
+  document.getElementById("mFachSection").style.display = isCollab ? "" : "none";
+  document.getElementById("mFnGroup").style.display     = isCollab ? "" : "none";
+  document.getElementById("mCaseGroup").style.display   = isCollab ? "" : "none";
 }
 
 // Expose to onclick handlers
