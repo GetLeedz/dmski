@@ -511,8 +511,9 @@ router.patch("/:userId", requireAuth, async (req, res) => {
   }
 
   const { email, first_name, last_name, role, address, mobile, function_label, case_id } = req.body;
-  // Ensure collaborator table exists before any UPDATE that may touch it
-  try { await ensureCollabSchema(); } catch (e) { console.warn("ensureCollabSchema in PATCH /:userId:", e.message); }
+  // Ensure both schemas exist before any UPDATE
+  try { await ensureUserProfileColumns(); } catch (e) { console.warn("ensureUserProfileColumns in PATCH /:userId:", e.message); }
+  try { await ensureCollabSchema(); }        catch (e) { console.warn("ensureCollabSchema in PATCH /:userId:", e.message); }
   try {
     // Update user record
     const updates = {};

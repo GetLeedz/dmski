@@ -213,8 +213,9 @@ function openAddModal() {
 
 // ── Open EDIT modal ─────────────────────────────────────────────────────────
 function openEditModal(userId) {
-  const u = allUsers.find(x => x.userId === userId);
-  if (!u) return;
+  // Use loose equality to handle any integer/string type mismatch from onclick attrs
+  const u = allUsers.find(x => Number(x.userId) === Number(userId));
+  if (!u) { console.warn("openEditModal: user not found", userId, allUsers); return; }
   modalMode  = "edit";
   editTarget = { userId: u.userId, linkId: u.linkId };
 
