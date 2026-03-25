@@ -470,6 +470,42 @@ function toast(text, type = "info") {
   setTimeout(() => el.remove(), 3500);
 }
 
+// ── handleSave: called directly from onclick on the save button ──────────────
+async function handleSave() {
+  // Basic email validation before hitting the API
+  const emailVal = (document.getElementById("mEmail")?.value || "").trim();
+  if (!emailVal) {
+    showModalMsg("E-Mail-Adresse ist erforderlich.", "error");
+    document.getElementById("mEmail")?.focus();
+    return;
+  }
+
+  const btn = document.getElementById("modalSaveBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Speichert …"; }
+  hideModalMsg(); hideModalPwd();
+
+  try {
+    if (modalMode === "add") {
+      await doAddUser();
+    } else {
+      await doEditUser();
+    }
+  } catch (err) {
+    console.error("handleSave error:", err);
+    showModalMsg(
+      (err instanceof TypeError && String(err.message).includes("fetch"))
+        ? "Netzwerkfehler — bitte Verbindung prüfen und erneut versuchen."
+        : (err.message ? `Fehler: ${err.message}` : "Fehler beim Speichern. Bitte erneut versuchen."),
+      "error"
+    );
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = modalMode === "add" ? "Anlegen" : "Speichern";
+    }
+  }
+}
+
 // ── Expose to onclick handlers ───────────────────────────────────────────────
 window.filterList    = filterList;
 window.openAddModal  = openAddModal;
@@ -478,3 +514,4 @@ window.closeModal    = closeModal;
 window.deleteUser    = deleteUser;
 window.copyText      = copyText;
 window.switchTab     = switchTab;
+window.handleSave    = handleSave;

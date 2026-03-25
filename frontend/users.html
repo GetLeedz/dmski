@@ -227,16 +227,24 @@
     }
     .modal-hd-icon svg { width:1rem;height:1rem;stroke:#fff;fill:none; }
     .modal-hd h2 { margin:0;font-size:1.05rem;font-weight:800;color:#0a2330;letter-spacing:-.01em; }
-    .modal-x {
-      position:absolute;top:1.1rem;right:1.1rem;
-      width:1.85rem;height:1.85rem;border-radius:8px;
-      border:1.5px solid rgba(0,0,0,.1);
-      background:rgba(255,255,255,.6);backdrop-filter:blur(8px);
-      cursor:pointer;display:flex;align-items:center;justify-content:center;
-      color:#4a6672;transition:background .15s,border-color .15s;
+    /* Override global button{color:#fff;background:gradient} fully */
+    button.modal-x, .modal-x {
+      position:absolute !important;top:1.1rem !important;right:1.1rem !important;
+      width:1.85rem !important;height:1.85rem !important;min-width:0 !important;
+      padding:0 !important;border-radius:8px !important;
+      border:1.5px solid rgba(0,0,0,.13) !important;
+      background:#fff !important;
+      cursor:pointer !important;
+      display:inline-flex !important;align-items:center !important;justify-content:center !important;
+      color:#374e5c !important;font-size:1.15rem !important;font-weight:500 !important;
+      line-height:1 !important;letter-spacing:0 !important;
+      box-shadow:none !important;transform:none !important;filter:none !important;
+      transition:background .15s,border-color .15s,color .15s;
     }
-    .modal-x:hover { background:rgba(255,255,255,.95);border-color:#b0c8d4; }
-    .modal-x svg { width:.82rem;height:.82rem;stroke:currentColor;fill:none;stroke-linecap:round;stroke-width:2.2; }
+    button.modal-x:hover, .modal-x:hover {
+      background:#f4f8fa !important;border-color:#a8c8d4 !important;
+      color:#0f2b36 !important;transform:none !important;box-shadow:none !important;
+    }
 
     .modal-ft {
       display:flex;gap:.6rem;justify-content:flex-end;
@@ -265,15 +273,17 @@
 
     /* Form fields */
     .fg { display:flex;flex-direction:column;gap:.3rem; }
-    .fl {
-      font-size:.78rem;font-weight:700;color:#1e3a46;
-      display:inline-flex;align-items:center;gap:.25rem;
-      text-transform:uppercase;letter-spacing:.04em;
-      text-align:left;align-self:flex-start;width:100%;
+    /* dashboard.css global label{display:flex;flex-direction:column} overridden here */
+    label.fl, .fl {
+      display:block !important;
+      text-align:left !important;
+      font-size:.78rem !important;font-weight:700 !important;color:#1e3a46 !important;
+      text-transform:uppercase !important;letter-spacing:.04em !important;
+      flex-direction:unset !important;width:100%;
     }
     .fl .req {
-      color:#e53e3e;font-size:.82em;line-height:1;
-      vertical-align:middle;display:inline;
+      color:#e53e3e !important;font-size:.85em;
+      vertical-align:middle;display:inline !important;margin-left:.18rem;
     }
     .fi {
       padding:.6rem .8rem;
@@ -463,11 +473,7 @@
   <!-- ── Add / Edit Modal ── -->
   <div class="modal-bg" id="userModal">
     <div class="modal">
-      <button class="modal-x" onclick="closeModal()" aria-label="Schliessen" type="button">
-        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
+      <button class="modal-x" onclick="closeModal()" aria-label="Schliessen" type="button">&#x2715;</button>
       <div class="modal-hd">
         <div class="modal-hd-icon" id="modalIcon">
           <svg viewBox="0 0 24 24" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -546,7 +552,7 @@
 
         <div class="modal-ft">
           <button type="button" class="btn-cancel" onclick="closeModal()">Abbrechen</button>
-          <button type="submit" class="btn-save" id="modalSaveBtn">Anlegen</button>
+          <button type="button" class="btn-save" id="modalSaveBtn" onclick="handleSave()">Anlegen</button>
         </div>
       </form>
     </div>
