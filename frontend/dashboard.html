@@ -24,12 +24,47 @@
           <img src="assets/logo-dmski.png" alt="DMSKI" class="header-logo" />
         </a>
       </div>
-      <nav style="display:flex;gap:.5rem;align-items:center">
-        <a href="/profile.html" class="ghost" style="text-decoration:none;font-size:.875rem" title="Mein Profil">
-          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.2em"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <nav style="display:flex;gap:.25rem;align-items:center">
+        <!-- Benutzerverwaltung link (all roles) -->
+        <a id="usersNavLink" href="/users.html" style="
+          display:inline-flex;align-items:center;gap:.35rem;
+          padding:.42rem .85rem;border-radius:8px;text-decoration:none;
+          font-size:.84rem;font-weight:600;color:#2d5f6e;
+          transition:background .15s,color .15s;
+        " onmouseover="this.style.background='rgba(17,107,115,.1)';this.style.color='#116b73'"
+           onmouseout="this.style.background='';this.style.color='#2d5f6e'" title="Benutzerverwaltung">
+          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+            <path d="M2 17c0-3.314 3.582-5 8-5s8 1.686 8 5"/>
+            <path d="M16 7v4M18 9h-4"/>
+          </svg>
+          Benutzer
+        </a>
+        <a href="/profile.html" style="
+          display:inline-flex;align-items:center;gap:.35rem;
+          padding:.42rem .85rem;border-radius:8px;text-decoration:none;
+          font-size:.84rem;font-weight:600;color:#2d5f6e;
+          transition:background .15s,color .15s;
+        " onmouseover="this.style.background='rgba(17,107,115,.1)';this.style.color='#116b73'"
+           onmouseout="this.style.background='';this.style.color='#2d5f6e'" title="Mein Profil">
+          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke-linecap="round"/>
+          </svg>
           Profil
         </a>
-        <button id="logoutBtn" class="ghost">Logout</button>
+        <div style="width:1px;height:1.2rem;background:#ccdde4;margin:0 .15rem"></div>
+        <button id="logoutBtn" style="
+          display:inline-flex;align-items:center;gap:.35rem;
+          padding:.42rem .85rem;border-radius:8px;border:1.5px solid #ccdde4;
+          font:inherit;font-size:.84rem;font-weight:600;color:#4a6672;
+          background:#fff;cursor:pointer;transition:all .15s;
+        " onmouseover="this.style.borderColor='#f87171';this.style.color='#b91c1c';this.style.background='#fff5f5'"
+           onmouseout="this.style.borderColor='#ccdde4';this.style.color='#4a6672';this.style.background='#fff'">
+          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 3h4v14h-4M8 13l4-3-4-3M3 10h9"/>
+          </svg>
+          Logout
+        </button>
       </nav>
     </header>
 
