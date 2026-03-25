@@ -284,22 +284,50 @@
 
   <main class="page" id="usersMain" style="display:none">
 
-    <header class="topbar">
+    <header class="topbar" style="border-bottom:1.5px solid rgba(255,255,255,.12);backdrop-filter:blur(12px)">
       <div class="brand-lockup">
         <a href="/dashboard.html" class="brand-home-link" aria-label="Dashboard">
           <img src="assets/logo-dmski.png" alt="DMSKI" class="header-logo"/>
         </a>
       </div>
-      <nav style="display:flex;gap:.5rem;align-items:center">
-        <a href="/dashboard.html" class="ghost" style="text-decoration:none;font-size:.875rem">
-          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.2em">
-            <path d="M3 10.5L10 4l7 6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M5 9v7h4v-4h2v4h4V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <nav style="display:flex;gap:.25rem;align-items:center">
+        <a href="/dashboard.html" style="
+          display:inline-flex;align-items:center;gap:.35rem;
+          padding:.42rem .85rem;border-radius:8px;text-decoration:none;
+          font-size:.84rem;font-weight:600;color:#2d5f6e;
+          transition:background .15s,color .15s;
+        " onmouseover="this.style.background='rgba(17,107,115,.1)';this.style.color='#116b73'"
+           onmouseout="this.style.background='';this.style.color='#2d5f6e'">
+          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 10.5L10 4l7 6.5"/><path d="M5 9v7h4v-4h2v4h4V9"/>
           </svg>
           Dashboard
         </a>
-        <a href="/profile.html" class="ghost" style="text-decoration:none;font-size:.875rem">Profil</a>
-        <button id="logoutBtn" class="ghost">Logout</button>
+        <a href="/profile.html" style="
+          display:inline-flex;align-items:center;gap:.35rem;
+          padding:.42rem .85rem;border-radius:8px;text-decoration:none;
+          font-size:.84rem;font-weight:600;color:#2d5f6e;
+          transition:background .15s,color .15s;
+        " onmouseover="this.style.background='rgba(17,107,115,.1)';this.style.color='#116b73'"
+           onmouseout="this.style.background='';this.style.color='#2d5f6e'">
+          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke-linecap="round"/>
+          </svg>
+          Profil
+        </a>
+        <div style="width:1px;height:1.2rem;background:#ccdde4;margin:0 .2rem"></div>
+        <button id="logoutBtn" style="
+          display:inline-flex;align-items:center;gap:.35rem;
+          padding:.42rem .85rem;border-radius:8px;border:1.5px solid #ccdde4;
+          font:inherit;font-size:.84rem;font-weight:600;color:#4a6672;
+          background:#fff;cursor:pointer;transition:all .15s;
+        " onmouseover="this.style.borderColor='#f87171';this.style.color='#b91c1c';this.style.background='#fff5f5'"
+           onmouseout="this.style.borderColor='#ccdde4';this.style.color='#4a6672';this.style.background='#fff'">
+          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 3h4v14h-4M8 13l4-3-4-3M3 10h9"/>
+          </svg>
+          Logout
+        </button>
       </nav>
     </header>
 
@@ -314,10 +342,28 @@
             <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </div>
-        <div class="users-hero-text">
+        <div class="users-hero-text" style="flex:1">
           <h1>Benutzerverwaltung</h1>
           <p id="heroSub">Alle Benutzer verwalten — Kunden &amp; Fachpersonen</p>
         </div>
+        <!-- Hero CTA -->
+        <button id="heroAddBtn" onclick="openAddModal()" style="
+          display:inline-flex;align-items:center;gap:.5rem;
+          padding:.6rem 1.25rem;
+          background:rgba(255,255,255,.18);
+          border:1.5px solid rgba(255,255,255,.35);
+          border-radius:10px;color:#fff;
+          font:inherit;font-size:.87rem;font-weight:700;
+          cursor:pointer;white-space:nowrap;flex-shrink:0;
+          backdrop-filter:blur(8px);
+          transition:background .15s,border-color .15s;
+        " onmouseover="this.style.background='rgba(255,255,255,.28)';this.style.borderColor='rgba(255,255,255,.55)'"
+           onmouseout="this.style.background='rgba(255,255,255,.18)';this.style.borderColor='rgba(255,255,255,.35)'">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:.95rem;height:.95rem;flex-shrink:0">
+            <path d="M10 4v12M4 10h12"/>
+          </svg>
+          <span id="heroAddLabel">Fachperson hinzufügen</span>
+        </button>
       </div>
 
       <!-- Admin tabs -->
@@ -382,10 +428,6 @@
             <option value="Vertrauensperson">Vertrauensperson</option>
             <option value="Andere">Andere</option>
           </select>
-          <button class="btn-add" id="btnAddUser" onclick="openAddModal()">
-            <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            <span id="btnAddLabel">Fachperson hinzufügen</span>
-          </button>
         </div>
 
         <!-- User cards -->

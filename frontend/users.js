@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (isAdmin) {
     document.getElementById("adminTabs").style.display = "";
     document.getElementById("roleFilter").style.display = "";
-    document.getElementById("btnAddLabel").textContent = "Benutzer hinzufügen";
+    document.getElementById("heroAddLabel").textContent = "Benutzer hinzufügen";
     document.getElementById("heroSub").textContent = "Alle Benutzer verwalten — Kunden & Fachpersonen";
   } else {
     document.getElementById("heroSub").textContent = "Meine Fachpersonen — hinzufügen, bearbeiten und löschen";
