@@ -178,25 +178,10 @@ function switchTab(tab) {
   document.getElementById("tabNew").classList.toggle("active",  tab === "new");
 }
 
-// ── Funktion chip selector ────────────────────────────────────────────────────
-function selectFnChip(chip) {
-  const chips = document.querySelectorAll("#mFnChips .fn-chip");
-  const alreadySelected = chip.classList.contains("selected");
-  chips.forEach(c => c.classList.remove("selected"));
-  if (!alreadySelected) {
-    chip.classList.add("selected");
-    document.getElementById("mFunction").value = chip.dataset.fn;
-  } else {
-    // toggle off
-    document.getElementById("mFunction").value = "";
-  }
-}
-
+// ── Funktion select helper ────────────────────────────────────────────────────
 function setFnChip(val) {
-  document.querySelectorAll("#mFnChips .fn-chip").forEach(c => {
-    c.classList.toggle("selected", c.dataset.fn === val && !!val);
-  });
-  document.getElementById("mFunction").value = val || "";
+  const sel = document.getElementById("mFunction");
+  if (sel) sel.value = val || "";
 }
 
 // ── Open ADD modal ──────────────────────────────────────────────────────────
@@ -484,5 +469,4 @@ window.openEditModal = openEditModal;
 window.closeModal    = closeModal;
 window.deleteUser    = deleteUser;
 window.copyText      = copyText;
-window.selectFnChip  = selectFnChip;
 window.switchTab     = switchTab;

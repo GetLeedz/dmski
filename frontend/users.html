@@ -326,41 +326,13 @@
     }
     .btn-copy:hover { background:#fff; }
 
-    /* ── Funktion chip selector ── */
-    .fn-chips {
-      display: flex; flex-wrap: wrap; gap: .38rem; margin-top: .35rem;
-    }
-    .fn-chip {
-      padding: .28rem .82rem;
-      border-radius: 999px;
-      border: 1.5px solid #b8d0da;
-      background: rgba(255,255,255,.75);
-      backdrop-filter: blur(4px);
-      font: inherit; font-size: .79rem; font-weight: 600;
-      color: #2d4a56; cursor: pointer; line-height: 1.45;
-      transition: border-color .14s, background .14s, color .14s, box-shadow .14s;
-      white-space: nowrap;
-    }
-    .fn-chip:hover {
-      border-color: var(--teal); color: var(--teal);
-      background: rgba(17,107,115,.06);
-    }
-    .fn-chip.selected {
-      border-color: var(--teal); background: var(--teal); color: #fff;
-      box-shadow: 0 2px 8px rgba(17,107,115,.28);
-    }
+    /* ── Label always left-aligned ── */
+    .fl { text-align: left; align-self: flex-start; }
 
-    /* ── Case select – full width styling ── */
-    .case-sel-wrap {
-      position: relative;
+    /* ── Funktion hint ── */
+    .fn-hint {
+      font-size: .73rem; color: #8ba4b0; margin: .2rem 0 0; font-style: italic;
     }
-    .case-sel-wrap::before {
-      content: "";
-      position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
-      width: .85rem; height: .85rem; pointer-events: none;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23116b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='3' width='20' height='14' rx='2'/%3E%3Cpath d='M8 21h8M12 17v4'/%3E%3C/svg%3E") center/contain no-repeat;
-    }
-    .case-sel-wrap .fi { padding-left: 2.2rem; }
 
     @media(max-width:640px){
       .u-hero{ flex-direction:column;text-align:center;gap:.75rem; }
@@ -534,38 +506,35 @@
         <div class="modal-section" id="mFachSection">
           <p class="modal-section-title">Funktion &amp; Fall</p>
 
-          <!-- Funktion: chip/tag selector -->
+          <!-- Funktion: dropdown -->
           <div class="fg mb" id="mFnGroup">
-            <label class="fl">Funktion
-              <span style="font-weight:400;color:#8ba4b0;font-size:.76rem;text-transform:none;letter-spacing:0;margin-left:.3em">(optional – leer lassen für Kunde)</span>
-            </label>
-            <input type="hidden" id="mFunction"/>
-            <div class="fn-chips" id="mFnChips">
-              <button type="button" class="fn-chip" data-fn="Gutachter/in"               onclick="selectFnChip(this)">Gutachter/in</button>
-              <button type="button" class="fn-chip" data-fn="Therapeut/in"               onclick="selectFnChip(this)">Therapeut/in</button>
-              <button type="button" class="fn-chip" data-fn="Anwalt / Anwältin"          onclick="selectFnChip(this)">Anwalt / Anwältin</button>
-              <button type="button" class="fn-chip" data-fn="Berater/in"                 onclick="selectFnChip(this)">Berater/in</button>
-              <button type="button" class="fn-chip" data-fn="Psychologe / Psychologin"   onclick="selectFnChip(this)">Psychologe/in</button>
-              <button type="button" class="fn-chip" data-fn="Psychiater/in"              onclick="selectFnChip(this)">Psychiater/in</button>
-              <button type="button" class="fn-chip" data-fn="Arzt / Ärztin"              onclick="selectFnChip(this)">Arzt / Ärztin</button>
-              <button type="button" class="fn-chip" data-fn="Sozialarbeiter/in"          onclick="selectFnChip(this)">Sozialarbeiter/in</button>
-              <button type="button" class="fn-chip" data-fn="Familienbegleiter/in"       onclick="selectFnChip(this)">Familienbegleiter/in</button>
-              <button type="button" class="fn-chip" data-fn="Mediator/in"                onclick="selectFnChip(this)">Mediator/in</button>
-              <button type="button" class="fn-chip" data-fn="Beistand / Beiständin"      onclick="selectFnChip(this)">Beistand/in</button>
-              <button type="button" class="fn-chip" data-fn="Kinderanwalt / Kinderanwältin" onclick="selectFnChip(this)">Kinderanwalt/in</button>
-              <button type="button" class="fn-chip" data-fn="Vertrauensperson"           onclick="selectFnChip(this)">Vertrauensperson</button>
-              <button type="button" class="fn-chip" data-fn="Andere"                     onclick="selectFnChip(this)">Andere</button>
-            </div>
+            <label class="fl" for="mFunction">Funktion</label>
+            <select id="mFunction" class="fi fi-sel">
+              <option value="">Bitte Funktion wählen …</option>
+              <option value="Gutachter/in">Gutachter/in</option>
+              <option value="Therapeut/in">Therapeut/in</option>
+              <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
+              <option value="Berater/in">Berater/in</option>
+              <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
+              <option value="Psychiater/in">Psychiater/in</option>
+              <option value="Arzt / Ärztin">Arzt / Ärztin</option>
+              <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
+              <option value="Familienbegleiter/in">Familienbegleiter/in</option>
+              <option value="Mediator/in">Mediator/in</option>
+              <option value="Beistand / Beiständin">Beistand / Beiständin</option>
+              <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
+              <option value="Vertrauensperson">Vertrauensperson</option>
+              <option value="Andere">Andere</option>
+            </select>
+            <p class="fn-hint">Leer lassen → Benutzer wird als Kunde angelegt</p>
           </div>
 
           <!-- Fall zuweisen: full-width -->
           <div class="fg" id="mCaseGroup">
             <label class="fl" for="mCase">Fall zuweisen</label>
-            <div class="case-sel-wrap">
-              <select id="mCase" class="fi fi-sel">
-                <option value="">Keinen Fall zuweisen</option>
-              </select>
-            </div>
+            <select id="mCase" class="fi fi-sel">
+              <option value="">Keinen Fall zuweisen</option>
+            </select>
           </div>
         </div>
 
