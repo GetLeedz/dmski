@@ -578,70 +578,6 @@
         </div>
       </div>
 
-      <!-- ── 2. Benutzerverwaltung (admin only) ── -->
-      <div class="profile-card" id="sectionAdmin" style="display:none">
-        <div class="profile-card-head">
-          <div class="profile-card-icon profile-card-icon--amber">
-            <svg viewBox="0 0 20 20" stroke-width="1.7"><path d="M3 4h14M3 8h14M3 12h8" stroke-linecap="round"/></svg>
-          </div>
-          <div class="profile-card-head-text">
-            <h2 class="profile-card-title">Benutzerverwaltung</h2>
-            <p class="profile-card-sub">Alle Benutzer verwalten — Kunden &amp; Fachpersonen — nur für Admins</p>
-          </div>
-        </div>
-        <div class="profile-card-body">
-
-          <div style="display:flex;gap:.6rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap">
-            <button class="action-btn" id="tabListCustomers" onclick="showAdminTab('list')" style="opacity:.7">Alle Kunden</button>
-            <button class="action-btn" id="tabNewCustomer" onclick="showAdminTab('new')">+ Neuen Kunden anlegen</button>
-          </div>
-
-          <!-- Customer list -->
-          <div id="adminListView">
-            <div id="customerList">
-              <p class="empty-state">Lade Kundenliste …</p>
-            </div>
-          </div>
-
-          <!-- New customer form -->
-          <div id="adminNewView" style="display:none">
-            <form id="newCustomerForm">
-              <div class="two-col mb-3">
-                <div class="field-group">
-                  <label class="field-label" for="ncFirstName">Vorname</label>
-                  <input id="ncFirstName" type="text" class="field-input" placeholder="Max" />
-                </div>
-                <div class="field-group">
-                  <label class="field-label" for="ncLastName">Nachname</label>
-                  <input id="ncLastName" type="text" class="field-input" placeholder="Mustermann" />
-                </div>
-              </div>
-              <div class="field-group mb-3">
-                <label class="field-label" for="ncEmail">E-Mail <span class="required-dot">*</span></label>
-                <input id="ncEmail" type="email" class="field-input" placeholder="kunde@beispiel.ch" required />
-              </div>
-              <div class="two-col mb-3">
-                <div class="field-group">
-                  <label class="field-label" for="ncAddress">Adresse</label>
-                  <input id="ncAddress" type="text" class="field-input" placeholder="Musterstrasse 1, 8000 Zürich" />
-                </div>
-                <div class="field-group">
-                  <label class="field-label" for="ncMobile">Mobile</label>
-                  <input id="ncMobile" type="tel" class="field-input" placeholder="+41 79 000 00 00" />
-                </div>
-              </div>
-              <p style="font-size:.8rem;color:#6b8896;margin:.1rem 0 .85rem">
-                Ein temporäres Passwort wird automatisch generiert und einmalig angezeigt.
-              </p>
-              <button type="submit" class="btn-primary" style="min-width:220px">
-                Kunden erstellen &amp; Passwort generieren
-              </button>
-              <p id="newCustomerMsg" class="message" role="alert" style="margin-top:.5rem"></p>
-              <div id="newCustomerPwdBox" style="display:none;margin-top:.75rem"></div>
-            </form>
-          </div>
-        </div>
-      </div>
 
     </div><!-- /.profile-layout -->
 
@@ -653,48 +589,6 @@
       <a href="/datenschutz.html">Datenschutz</a>
     </footer>
   </main>
-
-  <!-- Edit-User Modal -->
-  <div id="editUserModal" style="display:none;position:fixed;inset:0;background:rgba(15,43,54,.45);z-index:9990;align-items:center;justify-content:center">
-    <div style="background:#fff;border-radius:16px;padding:1.75rem 2rem;width:min(520px,92vw);box-shadow:0 12px 48px rgba(0,0,0,.2);position:relative">
-      <h3 style="margin:0 0 1.25rem;font-size:1.05rem;color:#0f2b36">Benutzer bearbeiten</h3>
-      <form id="editUserForm">
-        <input type="hidden" id="editUserId" />
-        <div class="two-col mb-3">
-          <div class="field-group">
-            <label class="field-label" for="editFirstName">Vorname</label>
-            <input id="editFirstName" type="text" class="field-input" placeholder="Vorname" />
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="editLastName">Nachname</label>
-            <input id="editLastName" type="text" class="field-input" placeholder="Nachname" />
-          </div>
-        </div>
-        <div class="field-group mb-3">
-          <label class="field-label" for="editEmail">E-Mail</label>
-          <input id="editEmail" type="email" class="field-input" required />
-        </div>
-        <div class="two-col mb-3">
-          <div class="field-group">
-            <label class="field-label" for="editMobile">Mobile</label>
-            <input id="editMobile" type="tel" class="field-input" placeholder="+41 79 …" />
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="editRole">Rolle</label>
-            <select id="editRole" class="field-input">
-              <option value="customer">Kunde</option>
-              <option value="collaborator">Fachperson</option>
-            </select>
-          </div>
-        </div>
-        <p id="editUserMsg" class="message" role="alert" style="margin-bottom:.6rem"></p>
-        <div style="display:flex;gap:.6rem;justify-content:flex-end">
-          <button type="button" onclick="closeEditModal()" style="padding:.55rem 1.1rem;border:1px solid #dae2e8;background:#fff;border-radius:8px;cursor:pointer;font-weight:600;color:#4a6672">Abbrechen</button>
-          <button type="submit" class="action-btn" style="padding:.55rem 1.1rem">Speichern</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <script src="profile.js"></script>
 </body>

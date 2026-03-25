@@ -470,29 +470,69 @@ router.post("/:userId/collaborators/:linkId/send-invite", requireAuth, requireAd
   }
 });
 
-// ── PATCH /users/:userId  (admin – edit any user) ─────────────────────────
-router.patch("/:userId", requireAuth, requireAdmin, async (req, res) => {
-  const userId = Number(req.params.userId);
+// ── PATCH /users/:userId  (admin OR customer who has this as collaborator) ─
+router.patch("/:userId", requireAuth, async (req, res) => {
+  const userId      = Number(req.params.userId);
+  const requesterId = Number(req.user.sub);
+  const requesterRole = req.user.role;
   if (!userId) return res.status(400).json({ error: "Ungültige ID." });
-  const { email, first_name, last_name, role, address, mobile } = req.body;
+
+  // Authorization check
+  if (requesterRole !== "admin") {
+    if (requesterRole !== "customer") return res.status(403).json({ error: "Nicht autorisiert." });
+    try {
+      await ensureCollabSchema();
+      const link = await pool.query(
+        "SELECT id FROM customer_collaborators WHERE customer_id=$1 AND collaborator_id=$2 LIMIT 1",
+        [requesterId, userId]
+      );
+      if (link.rows.length === 0) return res.status(403).json({ error: "Nicht autorisiert." });
+    } catch (err) {
+      return res.status(500).json({ error: "Berechtigungsprüfung fehlgeschlagen." });
+    }
+  }
+
+  const { email, first_name, last_name, role, address, mobile, function_label, case_id } = req.body;
   try {
+    // Update user record
     const updates = {};
     if (email      !== undefined) updates.email      = String(email      || "").trim().toLowerCase();
     if (first_name !== undefined) updates.first_name = String(first_name || "").trim() || null;
     if (last_name  !== undefined) updates.last_name  = String(last_name  || "").trim() || null;
     if (address    !== undefined) updates.address    = String(address    || "").trim() || null;
     if (mobile     !== undefined) updates.mobile     = String(mobile     || "").trim() || null;
-    // Only allow changing to customer/collaborator – never admin
     if (role !== undefined && ["customer","collaborator"].includes(role)) updates.role = role;
 
-    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Keine Felder angegeben." });
-    const setClauses = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(", ");
-    await pool.query(`UPDATE users SET ${setClauses} WHERE id = $1 AND role != 'admin'`,
-      [userId, ...Object.values(updates)]);
+    if (Object.keys(updates).length > 0) {
+      const setClauses = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(", ");
+      await pool.query(`UPDATE users SET ${setClauses} WHERE id = $1 AND role != 'admin'`,
+        [userId, ...Object.values(updates)]);
+    }
+
+    // Also update collaborator link fields (function_label, case_id) if provided
+    if ((function_label !== undefined || case_id !== undefined) && requesterRole !== "admin") {
+      const linkUpd = {};
+      if (function_label !== undefined) linkUpd.function_label = String(function_label || "").trim() || null;
+      if (case_id        !== undefined) linkUpd.case_id        = String(case_id        || "").trim() || null;
+      if (Object.keys(linkUpd).length > 0) {
+        const sc = Object.keys(linkUpd).map((k, i) => `${k}=$${i+3}`).join(", ");
+        await pool.query(`UPDATE customer_collaborators SET ${sc} WHERE customer_id=$1 AND collaborator_id=$2`,
+          [requesterId, userId, ...Object.values(linkUpd)]);
+      }
+    } else if ((function_label !== undefined || case_id !== undefined) && requesterRole === "admin") {
+      const linkUpd = {};
+      if (function_label !== undefined) linkUpd.function_label = String(function_label || "").trim() || null;
+      if (case_id        !== undefined) linkUpd.case_id        = String(case_id        || "").trim() || null;
+      if (Object.keys(linkUpd).length > 0) {
+        const sc = Object.keys(linkUpd).map((k, i) => `${k}=$${i+2}`).join(", ");
+        await pool.query(`UPDATE customer_collaborators SET ${sc} WHERE collaborator_id=$1`, [userId, ...Object.values(linkUpd)]);
+      }
+    }
+
     return res.json({ ok: true });
   } catch (err) {
     if (err.code === "23505") return res.status(409).json({ error: "E-Mail bereits vergeben." });
-    console.error("Admin patch user error:", err.message);
+    console.error("Patch user error:", err.message);
     return res.status(500).json({ error: "Benutzer konnte nicht aktualisiert werden." });
   }
 });
