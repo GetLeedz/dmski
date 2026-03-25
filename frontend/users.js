@@ -80,8 +80,8 @@ async function loadUsers() {
         lastName:  u.last_name  || "",
         mobile:    u.mobile     || "",
         role:      u.role,
-        fn:        null,
-        caseId:    null,
+        fn:        u.function_label || null,
+        caseId:    u.case_id        || null,
         caseName:  null,
       }));
     } else {
@@ -262,7 +262,12 @@ async function onModalSubmit(e) {
     }
   } catch (err) {
     console.error("Modal save error:", err);
-    showModalMsg("Fehler beim Speichern. Bitte erneut versuchen.", "error");
+    showModalMsg(
+      (err instanceof TypeError && err.message.includes("fetch"))
+        ? "Netzwerkfehler — bitte Verbindung prüfen und erneut versuchen."
+        : (err.message ? `Fehler: ${err.message}` : "Fehler beim Speichern. Bitte erneut versuchen."),
+      "error"
+    );
   } finally {
     btn.disabled = false;
     btn.textContent = modalMode === "add" ? "Anlegen" : "Speichern";
