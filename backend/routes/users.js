@@ -143,17 +143,24 @@ function escHtmlEmail(str) {
 let collabSchemaDone = false;
 async function ensureCollabSchema() {
   if (collabSchemaDone) return;
-  // No try/catch here – let errors propagate to the caller
+  // Create table if it doesn't exist yet
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customer_collaborators (
       id              SERIAL PRIMARY KEY,
       customer_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       collaborator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       function_label  TEXT,
+      case_id         TEXT,
       created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
       UNIQUE (customer_id, collaborator_id)
     )
   `);
+  // Add case_id column to existing tables that were created before this migration
+  try {
+    await pool.query(`ALTER TABLE customer_collaborators ADD COLUMN IF NOT EXISTS case_id TEXT`);
+  } catch (colErr) {
+    console.warn("case_id column migration:", colErr.message);
+  }
   collabSchemaDone = true;
 }
 
@@ -322,10 +329,12 @@ router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), 
   try {
     await ensureCollabSchema();
     const result = await pool.query(
-      `SELECT cc.id, cc.function_label, cc.created_at,
-              u.id AS user_id, u.email, u.first_name, u.last_name, u.role
+      `SELECT cc.id, cc.function_label, cc.case_id, cc.created_at,
+              u.id AS user_id, u.email, u.first_name, u.last_name, u.role,
+              c.case_name
        FROM customer_collaborators cc
        JOIN users u ON u.id = cc.collaborator_id
+       LEFT JOIN cases c ON c.id = cc.case_id
        WHERE cc.customer_id = $1
        ORDER BY cc.created_at ASC`,
       [customerId]
@@ -340,7 +349,7 @@ router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), 
 // ── POST /users/:userId/collaborators ─────────────────────────────────────
 router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const customerId = Number(req.params.userId);
-  const { email, function_label, first_name, last_name } = req.body;
+  const { email, function_label, first_name, last_name, case_id } = req.body;
   if (!email) return res.status(400).json({ error: "E-Mail erforderlich." });
   const emailNorm = String(email).trim().toLowerCase();
   const firstNorm = String(first_name || "").trim() || null;
@@ -379,12 +388,12 @@ router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"),
     }
 
     const linkResult = await pool.query(
-      `INSERT INTO customer_collaborators (customer_id, collaborator_id, function_label)
-       VALUES ($1, $2, $3)
+      `INSERT INTO customer_collaborators (customer_id, collaborator_id, function_label, case_id)
+       VALUES ($1, $2, $3, $4)
        ON CONFLICT (customer_id, collaborator_id)
-       DO UPDATE SET function_label = EXCLUDED.function_label
+       DO UPDATE SET function_label = EXCLUDED.function_label, case_id = EXCLUDED.case_id
        RETURNING id`,
-      [customerId, collaboratorId, function_label || null]
+      [customerId, collaboratorId, function_label || null, case_id || null]
     );
 
     const userRow = await pool.query(
@@ -393,7 +402,7 @@ router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"),
     );
 
     return res.status(201).json({
-      collaborator: { ...userRow.rows[0], function_label: function_label || null },
+      collaborator: { ...userRow.rows[0], function_label: function_label || null, case_id: case_id || null },
       linkId: linkResult.rows[0].id,
       generatedPassword,
       isNewUser: generatedPassword !== null

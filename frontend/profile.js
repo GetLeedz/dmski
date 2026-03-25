@@ -1,31 +1,23 @@
 /* profile.js – DMSKI Profile & User Management */
 
-// Same URL detection as dashboard.js / upload.js / files.js
 const _host = String(window.location.hostname || "").toLowerCase();
-const _isLocal = _host === "localhost"
-  || _host === "127.0.0.1"
-  || _host === "0.0.0.0"
-  || _host === "::1"
-  || _host.endsWith(".local")
-  || /^192\.168\./.test(_host)
-  || /^10\./.test(_host)
+const _isLocal = _host === "localhost" || _host === "127.0.0.1" || _host === "0.0.0.0"
+  || _host === "::1" || _host.endsWith(".local")
+  || /^192\.168\./.test(_host) || /^10\./.test(_host)
   || /^172\.(1[6-9]|2\d|3[0-1])\./.test(_host);
 
 const API = _isLocal
   ? "http://localhost:4000"
   : "https://lively-reverence-production-def3.up.railway.app";
 
-// ── Auth helpers (aligned with the rest of the app: sessionStorage "token") ──
 function getToken()  { return sessionStorage.getItem("token") || ""; }
 function getRole()   { return sessionStorage.getItem("dmski_role") || "customer"; }
 function getUserId() { return Number(sessionStorage.getItem("dmski_user_id") || 0); }
-
 function authHeaders() {
   return { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` };
 }
-
 function redirectToLogin(reason) {
-  console.warn("Profile redirect to login:", reason);
+  console.warn("Profile redirect:", reason);
   sessionStorage.removeItem("token");
   window.location.replace("/");
 }
@@ -43,19 +35,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "/";
   });
 
-  // Show main content eagerly; hide loading gate
-  document.getElementById("authGate").style.display  = "none";
+  document.getElementById("authGate").style.display   = "none";
   document.getElementById("profileMain").style.display = "";
 
   try {
     await loadProfile();
   } catch (err) {
-    // Only redirect to login on actual auth errors (401/403)
-    if (err.status === 401 || err.status === 403) {
-      redirectToLogin("auth error");
-      return;
-    }
-    // Other errors: show message but stay on page
+    if (err.status === 401 || err.status === 403) { redirectToLogin("auth error"); return; }
     console.error("Profile load error:", err);
     showToast("Profil konnte nicht geladen werden. Bitte Seite neu laden.", "error");
     return;
@@ -66,67 +52,60 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("sectionAdmin").style.display = "";
     loadCustomers();
   }
-  // Collaborators only see their own profile – hide the Fachpersonen management section
   if (role === "collaborator") {
     document.getElementById("sectionCollabs").style.display = "none";
   } else {
     loadCollabs(getUserId());
   }
 
-  // Forms
   document.getElementById("profileForm").addEventListener("submit", onSaveProfile);
   document.getElementById("addCollabForm").addEventListener("submit", onAddCollab);
   document.getElementById("newCustomerForm").addEventListener("submit", onCreateCustomer);
+
+  // Load cases into dropdown when the add panel opens
+  document.getElementById("addFachToggle").addEventListener("click", function () {
+    const panel = document.getElementById("addFachPanel");
+    const open  = panel.classList.toggle("open");
+    this.setAttribute("aria-expanded", String(open));
+    if (open) loadCasesForSelect();
+  });
 });
 
 // ── Load current user profile ───────────────────────────────────────────────
 async function loadProfile() {
   const res = await fetch(`${API}/users/me`, { headers: authHeaders() });
-
   if (res.status === 401 || res.status === 403) {
-    const err = new Error("Nicht autorisiert");
-    err.status = res.status;
-    throw err;
+    const err = new Error("Nicht autorisiert"); err.status = res.status; throw err;
   }
-
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    const err = new Error(data.error || "Fehler beim Laden des Profils");
-    err.status = res.status;
-    throw err;
+    const err = new Error(data.error || "Fehler"); err.status = res.status; throw err;
   }
-
   const { user } = await res.json();
-
-  // Store role & id for later use (session-scoped)
   sessionStorage.setItem("dmski_role",    user.role || "customer");
   sessionStorage.setItem("dmski_user_id", String(user.id));
 
-  // Avatar letter
   const letter = (user.first_name || user.email || "?")[0].toUpperCase();
   document.getElementById("avatarLetter").textContent = letter;
   document.getElementById("profileName").textContent  =
     [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
   document.getElementById("profileEmail").textContent = user.email;
 
-  // Role badge
   const badge = document.getElementById("profileBadge");
   const labels = { admin: "Administrator", customer: "Fallinhaber", collaborator: "Fallreviewer" };
   badge.textContent = labels[user.role] || user.role;
   badge.className   = `badge-role badge-${user.role || "customer"}`;
 
-  // Fill form
   document.getElementById("fieldFirstName").value = user.first_name || "";
   document.getElementById("fieldLastName").value  = user.last_name  || "";
   document.getElementById("fieldEmail").value     = user.email      || "";
   document.getElementById("fieldAddress").value   = user.address    || "";
   document.getElementById("fieldMobile").value    = user.mobile     || "";
 
-  // Show "Meine Funktion" field for collaborators and pre-select current value
   if (user.role === "collaborator") {
-    const fnGroup = document.getElementById("fieldFunctionGroup");
+    const fnGroup  = document.getElementById("fieldFunctionGroup");
     const fnSelect = document.getElementById("fieldFunction");
-    if (fnGroup) fnGroup.style.display = "";
+    if (fnGroup)  fnGroup.style.display = "";
     if (fnSelect && user.function_label) fnSelect.value = user.function_label;
   }
 }
@@ -155,14 +134,12 @@ async function onSaveProfile(e) {
   };
   if (newPwd) { body.password = newPwd; body.currentPassword = curPwd; }
 
-  // Include function_label for collaborators
   const fnGroup = document.getElementById("fieldFunctionGroup");
   if (fnGroup && fnGroup.style.display !== "none") {
     body.function_label = document.getElementById("fieldFunction").value || "";
   }
 
   if (btn) { btn.disabled = true; btn.textContent = "Speichert …"; }
-
   try {
     const res  = await fetch(`${API}/users/me`, {
       method: "PATCH", headers: authHeaders(), body: JSON.stringify(body)
@@ -173,11 +150,27 @@ async function onSaveProfile(e) {
     ["fieldCurrentPwd","fieldNewPwd","fieldNewPwd2"].forEach(id =>
       (document.getElementById(id).value = ""));
     await loadProfile();
-  } catch {
-    setMsg(msg, "Netzwerkfehler. Bitte erneut versuchen.", "error");
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Speichern"; }
-  }
+  } catch { setMsg(msg, "Netzwerkfehler. Bitte erneut versuchen.", "error"); }
+  finally   { if (btn) { btn.disabled = false; btn.textContent = "Speichern"; } }
+}
+
+// ── Load cases into select ──────────────────────────────────────────────────
+async function loadCasesForSelect() {
+  const sel = document.getElementById("collabCase");
+  if (!sel) return;
+  // Don't reload if already populated
+  if (sel.options.length > 1) return;
+  try {
+    const res  = await fetch(`${API}/cases`, { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok || !Array.isArray(data.cases)) return;
+    data.cases.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value       = String(c.id);
+      opt.textContent = `#${c.id} · ${c.case_name || "–"}`;
+      sel.appendChild(opt);
+    });
+  } catch { /* non-fatal */ }
 }
 
 // ── Load collaborators ──────────────────────────────────────────────────────
@@ -214,20 +207,21 @@ function renderCollabs(list, userId, el) {
     return;
   }
 
-  // Table header
   const rows = list.map(c => {
-    const firstName = escHtml(c.first_name || "–");
-    const lastName  = escHtml(c.last_name  || "–");
-    const fn        = escHtml(c.function_label || c.role || "Fachperson");
-    const dateStr   = escHtml(formatDate(c.created_at));
-    const letter    = (c.first_name || c.email || "?")[0].toUpperCase();
+    const fn      = escHtml(c.function_label || c.role || "Fachperson");
+    const dateStr = escHtml(formatDate(c.created_at));
+    const letter  = (c.first_name || c.email || "?")[0].toUpperCase();
+    const caseLbl = c.case_id
+      ? `<span class="fach-case" title="Zugewiesener Fall">#${escHtml(c.case_id)}${c.case_name ? " · " + escHtml(c.case_name) : ""}</span>`
+      : "";
     return `<div class="fach-card">
       <div class="fach-avatar">${escHtml(letter)}</div>
       <div class="fach-info">
-        <div class="fach-name">${lastName} ${firstName}</div>
+        <div class="fach-name">${escHtml(c.last_name || "–")} ${escHtml(c.first_name || "")}</div>
         <div class="fach-email">${escHtml(c.email)}</div>
       </div>
       <span class="fach-role-badge">${fn}</span>
+      ${caseLbl}
       <span class="fach-date" title="Hinzugefügt am">${dateStr}</span>
       <button class="fach-invite" data-uid="${userId}" data-lid="${c.id}" data-email="${escHtml(c.email)}" title="Einladungs-E-Mail senden">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -265,24 +259,18 @@ async function sendInvite(userId, linkId, email, btn) {
   const orig = btn.innerHTML;
   btn.disabled = true;
   btn.title = "Wird gesendet …";
-
   try {
     const res  = await fetch(`${API}/users/${userId}/collaborators/${linkId}/send-invite`, {
       method: "POST", headers: authHeaders()
     });
     const data = await res.json();
-    if (!res.ok) {
-      showToast(data.error || "Einladung konnte nicht gesendet werden.", "error");
-      return;
-    }
+    if (!res.ok) { showToast(data.error || "Einladung konnte nicht gesendet werden.", "error"); return; }
     showToast(`✓ Einladung gesendet an ${email}`, "success");
-    // Brief visual feedback on the button
     btn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem"><path d="M4 10l4 4 8-8"/></svg>`;
     setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; btn.title = "Einladungs-E-Mail senden"; }, 2500);
   } catch {
     showToast("Netzwerkfehler beim Senden.", "error");
-    btn.innerHTML = orig;
-    btn.disabled = false;
+    btn.innerHTML = orig; btn.disabled = false;
   }
 }
 
@@ -297,6 +285,7 @@ async function onAddCollab(e) {
   const fn        = document.getElementById("collabFunction").value;
   const firstName = document.getElementById("collabFirstName").value.trim();
   const lastName  = document.getElementById("collabLastName").value.trim();
+  const caseId    = document.getElementById("collabCase")?.value || "";
   const userId    = getUserId();
 
   if (!fn) { setMsg(msg, "Bitte Funktion auswählen.", "error"); return; }
@@ -305,14 +294,16 @@ async function onAddCollab(e) {
   if (btn) { btn.disabled = true; btn.textContent = "Wird hinzugefügt …"; }
 
   try {
+    const body = {
+      email,
+      function_label: fn,
+      first_name: firstName || undefined,
+      last_name:  lastName  || undefined,
+    };
+    if (caseId) body.case_id = caseId;
+
     const res  = await fetch(`${API}/users/${userId}/collaborators`, {
-      method: "POST", headers: authHeaders(),
-      body: JSON.stringify({
-        email,
-        function_label: fn,
-        first_name: firstName || undefined,
-        last_name:  lastName  || undefined
-      })
+      method: "POST", headers: authHeaders(), body: JSON.stringify(body)
     });
     const data = await res.json();
     if (!res.ok) { setMsg(msg, data.error || "Fehler.", "error"); return; }
@@ -332,12 +323,11 @@ async function onAddCollab(e) {
 
     document.getElementById("collabEmail").value    = "";
     document.getElementById("collabFunction").value = "";
+    const caseEl = document.getElementById("collabCase");
+    if (caseEl) caseEl.value = "";
     loadCollabs(userId);
-  } catch {
-    setMsg(msg, "Netzwerkfehler.", "error");
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Hinzufügen & Zugang erstellen"; }
-  }
+  } catch { setMsg(msg, "Netzwerkfehler.", "error"); }
+  finally   { if (btn) { btn.disabled = false; btn.textContent = "Fachperson hinzufügen"; } }
 }
 
 // ── Admin: load customers ───────────────────────────────────────────────────
@@ -354,17 +344,18 @@ async function loadCustomers() {
     }
 
     el.innerHTML = customers.map(u => {
-      const name  = [u.first_name, u.last_name].filter(Boolean).join(" ") || "–";
+      const name     = [u.first_name, u.last_name].filter(Boolean).join(" ") || "–";
       const isCollab = u.role === "collaborator";
       return `<div class="customer-card">
-        <div class="customer-avatar">${(u.first_name || u.email || "?")[0].toUpperCase()}</div>
+        <div class="customer-avatar" style="background:${isCollab ? "linear-gradient(135deg,#4f46e5,#3730a3)" : "linear-gradient(135deg,#dbeafe,#bfdbfe)"};color:${isCollab ? "#fff" : "#1d4ed8"}">
+          ${(u.first_name || u.email || "?")[0].toUpperCase()}
+        </div>
         <div class="customer-info">
           <div class="customer-name">${escHtml(name)}</div>
           <div class="customer-email">${escHtml(u.email)}</div>
         </div>
-        <span style="background:${isCollab ? "#e0e7ff" : "#d1fae5"};color:${isCollab ? "#3730a3" : "#065f46"};
-          padding:.15rem .55rem;border-radius:6px;font-size:.75rem;font-weight:600">
-          ${isCollab ? "Mitarbeiter" : "Kunde"}
+        <span style="background:${isCollab ? "#e0e7ff" : "#d1fae5"};color:${isCollab ? "#3730a3" : "#065f46"};padding:.15rem .55rem;border-radius:6px;font-size:.75rem;font-weight:600">
+          ${isCollab ? "Fachperson" : "Kunde"}
         </span>
       </div>`;
     }).join("");
@@ -412,19 +403,19 @@ async function onCreateCustomer(e) {
 
     e.target.reset();
     loadCustomers();
-  } catch {
-    setMsg(msg, "Netzwerkfehler.", "error");
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Kunden erstellen & Passwort generieren"; }
-  }
+  } catch { setMsg(msg, "Netzwerkfehler.", "error"); }
+  finally   { if (btn) { btn.disabled = false; btn.textContent = "Neuen Kunden anlegen"; } }
 }
 
 // ── Admin tabs ──────────────────────────────────────────────────────────────
 function showAdminTab(tab) {
   document.getElementById("adminListView").style.display = tab === "list" ? "" : "none";
   document.getElementById("adminNewView").style.display  = tab === "new"  ? "" : "none";
-  document.getElementById("tabListCustomers").classList.toggle("active", tab === "list");
-  document.getElementById("tabNewCustomer").classList.toggle("active",   tab === "new");
+  // Highlight active button with full opacity; inactive = dimmed
+  const btnList = document.getElementById("tabListCustomers");
+  const btnNew  = document.getElementById("tabNewCustomer");
+  if (btnList) btnList.style.opacity = tab === "list" ? "1" : ".55";
+  if (btnNew)  btnNew.style.opacity  = tab === "new"  ? "1" : ".55";
 }
 
 // ── Utilities ───────────────────────────────────────────────────────────────
@@ -471,5 +462,4 @@ function copyPwd(pwd, btn) {
   });
 }
 
-// Expose to inline onclick
 window.showAdminTab = showAdminTab;

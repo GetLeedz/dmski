@@ -261,6 +261,21 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
+    .fach-case {
+      font-size: .72rem;
+      color: #0369a1;
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding: .18rem .55rem;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      font-weight: 600;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .fach-date {
       font-size: .73rem;
       color: #8ba4b0;
@@ -307,37 +322,35 @@
     .fach-remove svg { width: .85rem; height: .85rem; stroke: currentColor; fill: none; }
 
     /* ── Add Fachperson form panel ── */
-    .add-fach-toggle {
-      display: flex;
+    /* ── Shared action-button style (same look for +Fachperson and +Neuen Kunden) ── */
+    .action-btn {
+      display: inline-flex;
       align-items: center;
-      gap: .55rem;
-      width: 100%;
-      padding: .7rem 1.1rem;
+      gap: .5rem;
+      padding: .6rem 1.15rem;
       background: linear-gradient(135deg, #116b73, #0d5760);
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       color: #fff;
       font: inherit;
-      font-size: .9rem;
+      font-size: .87rem;
       font-weight: 700;
       cursor: pointer;
       transition: opacity .15s, box-shadow .15s;
-      box-shadow: 0 3px 14px rgba(17,107,115,.22);
+      box-shadow: 0 2px 10px rgba(17,107,115,.22);
+      text-decoration: none;
     }
-    .add-fach-toggle:hover { opacity: .9; box-shadow: 0 5px 20px rgba(17,107,115,.32); }
-    .add-fach-toggle svg { width: 1rem; height: 1rem; stroke: #fff; fill: none; flex-shrink: 0; }
-    .add-fach-toggle-label { flex: 1; text-align: left; }
-    .add-fach-toggle-chevron {
-      width: 1rem;
-      height: 1rem;
-      stroke: rgba(255,255,255,.75);
-      fill: none;
-      flex-shrink: 0;
+    .action-btn:hover { opacity: .9; box-shadow: 0 4px 16px rgba(17,107,115,.32); }
+    .action-btn svg { width: .9rem; height: .9rem; stroke: #fff; fill: none; flex-shrink: 0; }
+    .action-btn .chevron {
+      width: .85rem; height: .85rem;
+      stroke: rgba(255,255,255,.75); fill: none; flex-shrink: 0;
       transition: transform .2s;
     }
-    .add-fach-toggle[aria-expanded="true"] .add-fach-toggle-chevron {
-      transform: rotate(180deg);
-    }
+    .action-btn[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+
+    /* keep the old selector as alias so nothing breaks */
+    .add-fach-toggle { display: none; }
 
     .add-fach-panel {
       background: linear-gradient(135deg, #f5fafc, #eef4f7);
@@ -583,7 +596,71 @@
         </div>
         <div class="profile-card-body">
 
-          <!-- List -->
+          <!-- + Fachperson button (above list) -->
+          <div style="margin-bottom:1rem">
+            <button class="action-btn" id="addFachToggle" aria-expanded="false" type="button">
+              <svg viewBox="0 0 20 20" stroke-width="2.2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
+              + Fachperson hinzufügen
+              <svg class="chevron" viewBox="0 0 16 16" stroke-width="2"><path d="M3 6l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+
+            <!-- Add form panel (opens below button) -->
+            <div class="add-fach-panel" id="addFachPanel">
+              <p class="add-fach-panel-title">Neue Fachperson einladen</p>
+              <form id="addCollabForm">
+                <div class="three-col mb-3">
+                  <div class="field-group">
+                    <label class="field-label" for="collabFirstName">Vorname</label>
+                    <input id="collabFirstName" type="text" class="field-input" placeholder="Anna" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="collabLastName">Nachname</label>
+                    <input id="collabLastName" type="text" class="field-input" placeholder="Meier" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="collabFunction">Funktion <span class="required-dot">*</span></label>
+                    <select id="collabFunction" class="field-input" required>
+                      <option value="">Funktion wählen …</option>
+                      <option value="Gutachter/in">Gutachter/in</option>
+                      <option value="Therapeut/in">Therapeut/in</option>
+                      <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
+                      <option value="Berater/in">Berater/in</option>
+                      <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
+                      <option value="Psychiater/in">Psychiater/in</option>
+                      <option value="Arzt / Ärztin">Arzt / Ärztin</option>
+                      <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
+                      <option value="Familienbegleiter/in">Familienbegleiter/in</option>
+                      <option value="Mediator/in">Mediator/in</option>
+                      <option value="Beistand / Beiständin">Beistand / Beiständin</option>
+                      <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
+                      <option value="Vertrauensperson">Vertrauensperson</option>
+                      <option value="Andere">Andere</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="two-col mb-3">
+                  <div class="field-group">
+                    <label class="field-label" for="collabEmail">E-Mail-Adresse <span class="required-dot">*</span></label>
+                    <input id="collabEmail" type="email" class="field-input" placeholder="gutachter@beispiel.ch" required />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="collabCase">Zugewiesener Fall</label>
+                    <select id="collabCase" class="field-input">
+                      <option value="">Kein Fall zuweisen</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="action-btn" style="margin-top:.25rem">
+                  <svg viewBox="0 0 20 20" fill="none" style="width:.9rem;height:.9rem;flex-shrink:0"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                  Fachperson hinzufügen
+                </button>
+                <p id="collabMsg" class="message" role="alert" style="margin-top:.6rem"></p>
+                <div id="collabPwdBox" style="display:none;margin-top:.75rem"></div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Fachpersonen list (below button) -->
           <div id="collabList" class="fach-list">
             <div class="empty-state">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -592,60 +669,6 @@
               </svg>
               <span>Lade Liste …</span>
             </div>
-          </div>
-
-          <!-- Toggle button -->
-          <button class="add-fach-toggle" id="addFachToggle" aria-expanded="false" type="button">
-            <svg viewBox="0 0 20 20" stroke-width="2.2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
-            <span class="add-fach-toggle-label">Fachperson hinzufügen</span>
-            <svg class="add-fach-toggle-chevron" viewBox="0 0 16 16" stroke-width="2"><path d="M3 6l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-
-          <!-- Add form panel -->
-          <div class="add-fach-panel" id="addFachPanel">
-            <p class="add-fach-panel-title">Neue Fachperson einladen</p>
-            <form id="addCollabForm">
-              <div class="three-col mb-3">
-                <div class="field-group">
-                  <label class="field-label" for="collabFirstName">Vorname</label>
-                  <input id="collabFirstName" type="text" class="field-input" placeholder="Anna" />
-                </div>
-                <div class="field-group">
-                  <label class="field-label" for="collabLastName">Nachname</label>
-                  <input id="collabLastName" type="text" class="field-input" placeholder="Meier" />
-                </div>
-                <div class="field-group">
-                  <label class="field-label" for="collabFunction">Funktion <span class="required-dot">*</span></label>
-                  <select id="collabFunction" class="field-input" required>
-                    <option value="">Funktion wählen …</option>
-                    <option value="Gutachter/in">Gutachter/in</option>
-                    <option value="Therapeut/in">Therapeut/in</option>
-                    <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
-                    <option value="Berater/in">Berater/in</option>
-                    <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
-                    <option value="Psychiater/in">Psychiater/in</option>
-                    <option value="Arzt / Ärztin">Arzt / Ärztin</option>
-                    <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
-                    <option value="Familienbegleiter/in">Familienbegleiter/in</option>
-                    <option value="Mediator/in">Mediator/in</option>
-                    <option value="Beistand / Beiständin">Beistand / Beiständin</option>
-                    <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
-                    <option value="Vertrauensperson">Vertrauensperson</option>
-                    <option value="Andere">Andere</option>
-                  </select>
-                </div>
-              </div>
-              <div class="field-group mb-4">
-                <label class="field-label" for="collabEmail">E-Mail-Adresse <span class="required-dot">*</span></label>
-                <input id="collabEmail" type="email" class="field-input" placeholder="gutachter@beispiel.ch" required />
-              </div>
-              <button type="submit" class="btn-primary" style="min-width:200px">
-                <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                Zugang erstellen &amp; Einladen
-              </button>
-              <p id="collabMsg" class="message" role="alert" style="margin-top:.6rem"></p>
-              <div id="collabPwdBox" style="display:none;margin-top:.75rem"></div>
-            </form>
           </div>
 
         </div>
@@ -664,9 +687,9 @@
         </div>
         <div class="profile-card-body">
 
-          <div class="tab-row">
-            <button class="tab-btn active" id="tabListCustomers" onclick="showAdminTab('list')">Alle Kunden</button>
-            <button class="tab-btn" id="tabNewCustomer" onclick="showAdminTab('new')">Neuen Kunden anlegen</button>
+          <div style="display:flex;gap:.6rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap">
+            <button class="action-btn" id="tabListCustomers" onclick="showAdminTab('list')" style="opacity:.7">Alle Kunden</button>
+            <button class="action-btn" id="tabNewCustomer" onclick="showAdminTab('new')">+ Neuen Kunden anlegen</button>
           </div>
 
           <!-- Customer list -->
@@ -727,14 +750,6 @@
     </footer>
   </main>
 
-  <script>
-    // Toggle add-fachperson panel
-    document.getElementById("addFachToggle").addEventListener("click", function() {
-      const panel = document.getElementById("addFachPanel");
-      const open  = panel.classList.toggle("open");
-      this.setAttribute("aria-expanded", String(open));
-    });
-  </script>
   <script src="profile.js"></script>
 </body>
 </html>
