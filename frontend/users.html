@@ -10,18 +10,24 @@
   <link rel="stylesheet" href="dashboard.css"/>
   <style>
     /* ═══════════════════════════ USERS PAGE ═══════════════════════════ */
-    .users-wrap {
-      max-width: 900px;
+    :root {
+      --teal:      #116b73;
+      --teal-dark: #0d5760;
+      --teal-mid:  #1a8a94;
+    }
+
+    .u-wrap {
+      max-width: 940px;
       margin: 0 auto;
       padding: 0 1.25rem 4rem;
     }
 
-    /* Hero */
-    .users-hero {
-      background: linear-gradient(135deg,#0d5760 0%,#116b73 50%,#1a8a94 100%);
+    /* ── Hero (clean — no button) ── */
+    .u-hero {
+      background: linear-gradient(135deg, var(--teal-dark) 0%, var(--teal) 50%, var(--teal-mid) 100%);
       border-radius: 18px;
-      padding: 1.75rem 2rem;
-      margin-bottom: 1.75rem;
+      padding: 1.8rem 2rem;
+      margin-bottom: 1.5rem;
       display: flex;
       align-items: center;
       gap: 1rem;
@@ -29,91 +35,97 @@
       position: relative;
       overflow: hidden;
     }
-    .users-hero::before {
-      content:"";position:absolute;top:-40%;right:-5%;width:220px;height:220px;
+    .u-hero::before {
+      content:"";position:absolute;top:-40%;right:-4%;width:230px;height:230px;
       border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none;
     }
-    .users-hero-icon {
-      width:3rem;height:3rem;border-radius:14px;
-      background:rgba(255,255,255,.15);backdrop-filter:blur(8px);
-      border:1.5px solid rgba(255,255,255,.25);
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    .u-hero::after {
+      content:"";position:absolute;bottom:-50%;right:20%;width:140px;height:140px;
+      border-radius:50%;background:rgba(255,255,255,.04);pointer-events:none;
     }
-    .users-hero-icon svg { width:1.4rem;height:1.4rem;stroke:#fff;fill:none; }
-    .users-hero-text h1 {
-      margin:0 0 .15rem;font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:-.01em;
+    .u-hero-icon {
+      width:2.9rem;height:2.9rem;border-radius:13px;flex-shrink:0;
+      background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.25);
+      display:flex;align-items:center;justify-content:center;
     }
-    .users-hero-text p { margin:0;font-size:.85rem;color:rgba(255,255,255,.8); }
+    .u-hero-icon svg { width:1.3rem;height:1.3rem;stroke:#fff;fill:none; }
+    .u-hero-text h1 {
+      margin:0 0 .18rem;font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:-.01em;
+    }
+    .u-hero-text p { margin:0;font-size:.84rem;color:rgba(255,255,255,.8); }
 
-    /* Toolbar */
-    .users-toolbar {
+    /* ── Action toolbar (below hero) ── */
+    .u-toolbar {
+      background:#fff;
+      border:1.5px solid #d5e5ec;
+      border-radius:14px;
+      padding:1rem 1.2rem;
+      margin-bottom:1.25rem;
       display:flex;
-      gap:.75rem;
+      gap:.65rem;
       align-items:center;
       flex-wrap:wrap;
-      margin-bottom:1.25rem;
+      box-shadow:0 2px 12px rgba(17,107,115,.06);
     }
-    .search-wrap {
-      position:relative;
-      flex:1;
-      min-width:180px;
-    }
-    .search-wrap svg {
-      position:absolute;left:.75rem;top:50%;transform:translateY(-50%);
-      width:1rem;height:1rem;stroke:#8ba4b0;fill:none;pointer-events:none;
-    }
-    .search-input {
-      width:100%;
-      padding:.6rem .75rem .6rem 2.3rem;
-      border:1.5px solid #d5e2e8;
-      border-radius:10px;
-      font:inherit;
-      font-size:.88rem;
-      color:#0f2b36;
-      background:#fff;
-      transition:border-color .15s,box-shadow .15s;
-      box-sizing:border-box;
-    }
-    .search-input:focus {
-      outline:none;
-      border-color:#116b73;
-      box-shadow:0 0 0 3px rgba(17,107,115,.12);
-    }
-    .filter-select {
-      padding:.6rem .85rem;
-      border:1.5px solid #d5e2e8;
-      border-radius:10px;
-      font:inherit;
-      font-size:.85rem;
-      color:#0f2b36;
-      background:#fff;
-      cursor:pointer;
-      transition:border-color .15s;
-      min-width:130px;
-    }
-    .filter-select:focus { outline:none;border-color:#116b73; }
 
-    /* Add button */
-    .btn-add {
+    /* Primary add button */
+    .btn-primary-add {
       display:inline-flex;align-items:center;gap:.45rem;
-      padding:.6rem 1.1rem;
-      background:linear-gradient(135deg,#116b73,#0d5760);
+      padding:.58rem 1.2rem;
+      background:linear-gradient(135deg, var(--teal), var(--teal-dark));
       border:none;border-radius:10px;
       color:#fff;font:inherit;font-size:.87rem;font-weight:700;
       cursor:pointer;white-space:nowrap;
-      box-shadow:0 2px 10px rgba(17,107,115,.22);
-      transition:opacity .15s,box-shadow .15s;
+      box-shadow:0 2px 10px rgba(17,107,115,.25);
+      transition:opacity .15s,box-shadow .15s,transform .1s;
+      flex-shrink:0;
     }
-    .btn-add:hover { opacity:.9;box-shadow:0 4px 16px rgba(17,107,115,.32); }
-    .btn-add svg { width:.9rem;height:.9rem;stroke:#fff;fill:none;flex-shrink:0; }
+    .btn-primary-add:hover { opacity:.9;box-shadow:0 4px 18px rgba(17,107,115,.35);transform:translateY(-1px); }
+    .btn-primary-add svg { width:.9rem;height:.9rem;stroke:#fff;fill:none;flex-shrink:0; }
 
-    /* Card list */
-    .users-list {
-      display:flex;flex-direction:column;gap:.6rem;
+    /* Divider in toolbar */
+    .toolbar-sep { width:1px;height:1.5rem;background:#d5e5ec;flex-shrink:0; }
+
+    /* Search input */
+    .search-box {
+      position:relative;
+      flex:1;min-width:160px;
     }
+    .search-box svg {
+      position:absolute;left:.72rem;top:50%;transform:translateY(-50%);
+      width:1rem;height:1rem;stroke:#8ba4b0;fill:none;pointer-events:none;
+    }
+    .search-box input {
+      width:100%;box-sizing:border-box;
+      padding:.56rem .75rem .56rem 2.25rem;
+      border:1.5px solid #d5e5ec;border-radius:9px;
+      font:inherit;font-size:.87rem;color:#0f2b36;background:#fafcfd;
+      transition:border-color .15s,box-shadow .15s;
+    }
+    .search-box input:focus {
+      outline:none;border-color:var(--teal);background:#fff;
+      box-shadow:0 0 0 3px rgba(17,107,115,.1);
+    }
+    .search-box input::placeholder { color:#9db5c0; }
+
+    /* Custom select (filter) */
+    .sel {
+      appearance:none;-webkit-appearance:none;
+      padding:.56rem 2rem .56rem .8rem;
+      border:1.5px solid #d5e5ec;border-radius:9px;
+      font:inherit;font-size:.85rem;font-weight:500;color:#0f2b36;
+      background:#fafcfd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238ba4b0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right .65rem center / .75rem;
+      cursor:pointer;white-space:nowrap;
+      transition:border-color .15s,box-shadow .15s;
+      min-width:120px;
+    }
+    .sel:focus { outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(17,107,115,.1); }
+
+    /* ── User list ── */
+    .u-list { display:flex;flex-direction:column;gap:.55rem; }
 
     /* User card */
-    .user-card {
+    .u-card {
       display:flex;align-items:center;gap:.85rem;
       padding:.85rem 1.1rem;
       background:#fff;
@@ -121,103 +133,107 @@
       border-radius:14px;
       transition:box-shadow .15s,border-color .15s;
     }
-    .user-card:hover { box-shadow:0 3px 16px rgba(17,107,115,.1);border-color:#b8d4dc; }
+    .u-card:hover { box-shadow:0 4px 18px rgba(17,107,115,.1);border-color:#aed0da; }
 
-    .ua { /* user avatar */
-      width:2.6rem;height:2.6rem;border-radius:50%;
+    /* Avatar */
+    .u-av {
+      width:2.55rem;height:2.55rem;border-radius:50%;
       display:flex;align-items:center;justify-content:center;
-      font-size:.95rem;font-weight:800;flex-shrink:0;color:#fff;
+      font-size:.92rem;font-weight:800;flex-shrink:0;color:#fff;
+      letter-spacing:0;
     }
-    .ua--customer  { background:linear-gradient(135deg,#2563eb,#1d4ed8); }
-    .ua--collab    { background:linear-gradient(135deg,#7c3aed,#6d28d9); }
-    .ua--admin     { background:linear-gradient(135deg,#d97706,#b45309); }
+    .u-av--k { background:linear-gradient(135deg,#2563eb,#1d4ed8); }
+    .u-av--f { background:linear-gradient(135deg,#7c3aed,#6d28d9); }
 
-    .user-info { flex:1;min-width:0; }
-    .user-name {
-      font-weight:700;color:#0f2b36;font-size:.92rem;
+    /* Info */
+    .u-info { flex:1;min-width:0; }
+    .u-name {
+      font-weight:700;color:#0f2b36;font-size:.91rem;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
-    .user-email { font-size:.78rem;color:#5a7a8a;margin-top:.05rem; }
+    .u-email { font-size:.77rem;color:#5e7d8a;margin-top:.04rem; }
 
-    .role-pill {
-      display:inline-flex;align-items:center;
-      padding:.22rem .7rem;border-radius:999px;
-      font-size:.72rem;font-weight:700;white-space:nowrap;flex-shrink:0;
-    }
-    .role-pill--customer  { background:#d1fae5;color:#065f46; }
-    .role-pill--collab    { background:#ede9fe;color:#5b21b6; }
-    .role-pill--admin     { background:#fef3c7;color:#78350f; }
-
-    .fn-pill {
+    /* Badges */
+    .badge {
       display:inline-flex;align-items:center;
       padding:.2rem .65rem;border-radius:999px;
-      background:#e0f2fe;color:#0369a1;
-      font-size:.71rem;font-weight:600;white-space:nowrap;flex-shrink:0;
-      max-width:140px;overflow:hidden;text-overflow:ellipsis;
+      font-size:.7rem;font-weight:700;white-space:nowrap;flex-shrink:0;
+      letter-spacing:.03em;
     }
+    .badge--k  { background:#d1fae5;color:#065f46; }
+    .badge--f  { background:#ede9fe;color:#5b21b6; }
+    .badge--fn { background:#e0f2fe;color:#0369a1; }
+    .badge--ca { background:#fef3c7;color:#92400e; }
 
-    /* Action icon buttons */
-    .icon-btn {
+    /* Icon action buttons */
+    .ib {
       display:inline-flex;align-items:center;justify-content:center;
-      width:2.1rem;height:2.1rem;
-      border-radius:9px;border:1.5px solid;
+      width:2.05rem;height:2.05rem;border-radius:9px;
+      border:1.5px solid;background:#fff;
       cursor:pointer;flex-shrink:0;
-      transition:background .15s,transform .1s;
-      background:#fff;
+      transition:background .15s,transform .12s,box-shadow .12s;
     }
-    .icon-btn:hover { transform:scale(1.07); }
-    .icon-btn--edit  { border-color:#93c5fd;color:#1d4ed8; }
-    .icon-btn--edit:hover  { background:#eff6ff; }
-    .icon-btn--del   { border-color:#fca5a5;color:#b91c1c; }
-    .icon-btn--del:hover   { background:#fff1f2; }
-    .icon-btn svg { width:1rem;height:1rem;flex-shrink:0; }
+    .ib:hover { transform:scale(1.08);box-shadow:0 2px 8px rgba(0,0,0,.12); }
+    .ib--edit { border-color:#93c5fd;color:#1d4ed8; }
+    .ib--edit:hover { background:#eff6ff; }
+    .ib--del  { border-color:#fca5a5;color:#b91c1c; }
+    .ib--del:hover  { background:#fff1f2; }
+    .ib svg { width:1rem;height:1rem;flex-shrink:0;stroke:currentColor;fill:none;
+              stroke-linecap:round;stroke-linejoin:round; }
 
-    /* Empty / loading state */
-    .empty-state {
-      text-align:center;padding:3rem 1rem;color:#8ba4b0;
-      display:flex;flex-direction:column;align-items:center;gap:.65rem;
+    /* Empty / loading */
+    .u-empty {
+      text-align:center;padding:3.5rem 1rem;color:#8ba4b0;
+      display:flex;flex-direction:column;align-items:center;gap:.7rem;
     }
-    .empty-state svg { width:2.5rem;height:2.5rem;opacity:.3; }
-    .empty-state p { margin:0;font-size:.9rem; }
+    .u-empty svg { width:2.6rem;height:2.6rem;opacity:.28; }
+    .u-empty p { margin:0;font-size:.9rem; }
 
-    /* ── Modal overlay ── */
-    .modal-overlay {
+    /* ── Modal ── */
+    .modal-bg {
       display:none;position:fixed;inset:0;
-      background:rgba(15,43,54,.5);
-      z-index:9990;align-items:center;justify-content:center;
-      padding:1rem;
+      background:rgba(10,35,48,.48);
+      z-index:9990;align-items:center;justify-content:center;padding:1rem;
     }
-    .modal-overlay.open { display:flex; }
-    .modal-box {
-      background:#fff;border-radius:18px;
-      padding:1.75rem 2rem 1.6rem;
+    .modal-bg.open { display:flex; }
+    .modal {
+      background:#fff;border-radius:20px;
+      padding:2rem 2rem 1.75rem;
       width:min(560px,100%);
-      box-shadow:0 20px 60px rgba(0,0,0,.22);
-      position:relative;max-height:92vh;overflow-y:auto;
+      box-shadow:0 24px 64px rgba(0,0,0,.2);
+      position:relative;max-height:94vh;overflow-y:auto;
     }
-    .modal-title {
-      font-size:1.05rem;font-weight:800;color:#0f2b36;
-      margin:0 0 1.35rem;display:flex;align-items:center;gap:.55rem;
+    .modal-hd {
+      display:flex;align-items:center;gap:.6rem;
+      margin:0 0 1.4rem;
     }
-    .modal-title svg { width:1.1rem;height:1.1rem;stroke:#116b73;fill:none; }
-    .modal-close {
+    .modal-hd-icon {
+      width:2.1rem;height:2.1rem;border-radius:10px;
+      background:linear-gradient(135deg,var(--teal),var(--teal-dark));
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .modal-hd-icon svg { width:1rem;height:1rem;stroke:#fff;fill:none; }
+    .modal-hd h2 { margin:0;font-size:1.05rem;font-weight:800;color:#0f2b36; }
+    .modal-x {
       position:absolute;top:1rem;right:1rem;
       width:1.9rem;height:1.9rem;border-radius:8px;
-      border:1px solid #e2eaee;background:#f5f9fa;
-      cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4a6672;
+      border:1.5px solid #e0eaee;background:#f5f9fa;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      color:#4a6672;transition:background .15s;
     }
-    .modal-close svg { width:.9rem;height:.9rem;stroke:currentColor;fill:none; }
-    .modal-footer { display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.1rem; }
+    .modal-x:hover { background:#edf2f5; }
+    .modal-x svg { width:.85rem;height:.85rem;stroke:currentColor;fill:none;stroke-linecap:round; }
+
+    .modal-ft { display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.1rem; }
     .btn-cancel {
-      padding:.55rem 1.1rem;border:1.5px solid #d5e2e8;
-      background:#fff;border-radius:9px;cursor:pointer;
-      font:inherit;font-size:.87rem;font-weight:600;color:#4a6672;
-      transition:background .15s;
+      padding:.55rem 1.1rem;border:1.5px solid #d5e2e8;background:#fff;
+      border-radius:9px;cursor:pointer;font:inherit;font-size:.87rem;font-weight:600;
+      color:#4a6672;transition:background .15s;
     }
     .btn-cancel:hover { background:#f5f9fa; }
     .btn-save {
       padding:.55rem 1.3rem;
-      background:linear-gradient(135deg,#116b73,#0d5760);
+      background:linear-gradient(135deg,var(--teal),var(--teal-dark));
       border:none;border-radius:9px;color:#fff;
       font:inherit;font-size:.87rem;font-weight:700;
       cursor:pointer;transition:opacity .15s;
@@ -225,53 +241,46 @@
     .btn-save:hover { opacity:.9; }
     .btn-save:disabled { opacity:.5;cursor:default; }
 
-    /* Form helpers */
-    .field-group { display:flex;flex-direction:column;gap:.3rem; }
-    .field-label { font-size:.8rem;font-weight:600;color:#2d4a56; }
-    .field-input {
-      padding:.6rem .75rem;border:1.5px solid #d5e2e8;border-radius:9px;
-      font:inherit;font-size:.87rem;color:#0f2b36;
+    /* Form fields */
+    .fg { display:flex;flex-direction:column;gap:.28rem; }
+    .fl { font-size:.79rem;font-weight:600;color:#2d4a56; }
+    .fi {
+      padding:.58rem .75rem;border:1.5px solid #d5e5ec;border-radius:9px;
+      font:inherit;font-size:.87rem;color:#0f2b36;background:#fafcfd;
       transition:border-color .15s,box-shadow .15s;
     }
-    .field-input:focus { outline:none;border-color:#116b73;box-shadow:0 0 0 3px rgba(17,107,115,.1); }
+    .fi:focus { outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px rgba(17,107,115,.1); }
+    .fi-sel {
+      appearance:none;-webkit-appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238ba4b0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right .7rem center;background-size:.75rem;
+      padding-right:2.1rem;cursor:pointer;
+    }
     .two-col { display:grid;grid-template-columns:1fr 1fr;gap:.75rem; }
     @media(max-width:480px){ .two-col{grid-template-columns:1fr;} }
-    .mb-3 { margin-bottom:.75rem; }
+    .mb { margin-bottom:.7rem; }
 
-    .msg { font-size:.82rem;padding:.4rem .6rem;border-radius:6px;margin-top:.4rem; }
-    .msg--success { background:#ecfdf5;color:#047857;border:1px solid #6ee7b7; }
-    .msg--error   { background:#fff5f5;color:#b91c1c;border:1px solid #fca5a5; }
+    .msg { font-size:.81rem;padding:.4rem .65rem;border-radius:7px;margin-top:.35rem; }
+    .msg--ok  { background:#ecfdf5;color:#047857;border:1px solid #6ee7b7; }
+    .msg--err { background:#fff5f5;color:#b91c1c;border:1px solid #fca5a5; }
 
-    /* Password reveal box */
-    .pwd-reveal {
+    .pwd-box {
       background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:10px;
-      padding:.8rem 1rem;margin-top:.75rem;
+      padding:.8rem 1rem;margin-top:.7rem;
       display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
     }
-    .pwd-reveal strong { font-size:.95rem;color:#065f46;word-break:break-all;flex:1; }
+    .pwd-box strong { font-size:.92rem;color:#065f46;word-break:break-all;flex:1; }
     .btn-copy {
-      padding:.25rem .6rem;border:1px solid #34d399;background:#fff;
+      padding:.22rem .6rem;border:1px solid #34d399;background:#fff;
       border-radius:6px;cursor:pointer;font:inherit;font-size:.78rem;
       color:#065f46;font-weight:600;white-space:nowrap;
     }
 
-    /* Tabs (admin) */
-    .tabs { display:flex;gap:.4rem;margin-bottom:1.25rem; }
-    .tab {
-      padding:.45rem 1rem;border-radius:9px;border:1.5px solid #d5e2e8;
-      background:#fff;font:inherit;font-size:.85rem;font-weight:600;
-      color:#4a6672;cursor:pointer;transition:all .15s;
-    }
-    .tab.active {
-      background:linear-gradient(135deg,#116b73,#0d5760);
-      border-color:transparent;color:#fff;
-      box-shadow:0 2px 8px rgba(17,107,115,.22);
-    }
-
-    @media(max-width:600px){
-      .users-hero{ flex-direction:column;text-align:center;gap:.75rem; }
-      .users-toolbar{ flex-direction:column;align-items:stretch; }
-      .filter-select,.btn-add{ width:100%; }
+    @media(max-width:640px){
+      .u-hero{ flex-direction:column;text-align:center;gap:.75rem; }
+      .u-toolbar{ flex-direction:column;align-items:stretch; }
+      .toolbar-sep{ display:none; }
+      .sel,.btn-primary-add{ width:100%; }
     }
   </style>
 </head>
@@ -284,166 +293,104 @@
 
   <main class="page" id="usersMain" style="display:none">
 
-    <header class="topbar" style="border-bottom:1.5px solid rgba(255,255,255,.12);backdrop-filter:blur(12px)">
+    <!-- Topbar -->
+    <header class="topbar">
       <div class="brand-lockup">
         <a href="/dashboard.html" class="brand-home-link" aria-label="Dashboard">
           <img src="assets/logo-dmski.png" alt="DMSKI" class="header-logo"/>
         </a>
       </div>
-      <nav style="display:flex;gap:.25rem;align-items:center">
-        <a href="/dashboard.html" style="
-          display:inline-flex;align-items:center;gap:.35rem;
-          padding:.42rem .85rem;border-radius:8px;text-decoration:none;
-          font-size:.84rem;font-weight:600;color:#2d5f6e;
-          transition:background .15s,color .15s;
-        " onmouseover="this.style.background='rgba(17,107,115,.1)';this.style.color='#116b73'"
-           onmouseout="this.style.background='';this.style.color='#2d5f6e'">
-          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <nav style="display:flex;gap:.5rem;align-items:center">
+        <a href="/dashboard.html" class="ghost" style="text-decoration:none;font-size:.875rem">
+          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.25em" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 10.5L10 4l7 6.5"/><path d="M5 9v7h4v-4h2v4h4V9"/>
-          </svg>
-          Dashboard
+          </svg>Dashboard
         </a>
-        <a href="/profile.html" style="
-          display:inline-flex;align-items:center;gap:.35rem;
-          padding:.42rem .85rem;border-radius:8px;text-decoration:none;
-          font-size:.84rem;font-weight:600;color:#2d5f6e;
-          transition:background .15s,color .15s;
-        " onmouseover="this.style.background='rgba(17,107,115,.1)';this.style.color='#116b73'"
-           onmouseout="this.style.background='';this.style.color='#2d5f6e'">
-          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <a href="/profile.html" class="ghost" style="text-decoration:none;font-size:.875rem">
+          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.25em" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
             <circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke-linecap="round"/>
-          </svg>
-          Profil
+          </svg>Profil
         </a>
-        <div style="width:1px;height:1.2rem;background:#ccdde4;margin:0 .2rem"></div>
-        <button id="logoutBtn" style="
-          display:inline-flex;align-items:center;gap:.35rem;
-          padding:.42rem .85rem;border-radius:8px;border:1.5px solid #ccdde4;
-          font:inherit;font-size:.84rem;font-weight:600;color:#4a6672;
-          background:#fff;cursor:pointer;transition:all .15s;
-        " onmouseover="this.style.borderColor='#f87171';this.style.color='#b91c1c';this.style.background='#fff5f5'"
-           onmouseout="this.style.borderColor='#ccdde4';this.style.color='#4a6672';this.style.background='#fff'">
-          <svg viewBox="0 0 20 20" fill="none" style="width:.95em;height:.95em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M13 3h4v14h-4M8 13l4-3-4-3M3 10h9"/>
-          </svg>
-          Logout
-        </button>
+        <button id="logoutBtn" class="ghost">Logout</button>
       </nav>
     </header>
 
-    <div class="users-wrap">
+    <div class="u-wrap">
 
-      <!-- Hero -->
-      <div class="users-hero">
-        <div class="users-hero-icon">
+      <!-- Hero – clean, no button -->
+      <div class="u-hero">
+        <div class="u-hero-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </div>
-        <div class="users-hero-text" style="flex:1">
+        <div class="u-hero-text">
           <h1>Benutzerverwaltung</h1>
           <p id="heroSub">Alle Benutzer verwalten — Kunden &amp; Fachpersonen</p>
         </div>
-        <!-- Hero CTA -->
-        <button id="heroAddBtn" onclick="openAddModal()" style="
-          display:inline-flex;align-items:center;gap:.5rem;
-          padding:.6rem 1.25rem;
-          background:rgba(255,255,255,.18);
-          border:1.5px solid rgba(255,255,255,.35);
-          border-radius:10px;color:#fff;
-          font:inherit;font-size:.87rem;font-weight:700;
-          cursor:pointer;white-space:nowrap;flex-shrink:0;
-          backdrop-filter:blur(8px);
-          transition:background .15s,border-color .15s;
-        " onmouseover="this.style.background='rgba(255,255,255,.28)';this.style.borderColor='rgba(255,255,255,.55)'"
-           onmouseout="this.style.background='rgba(255,255,255,.18)';this.style.borderColor='rgba(255,255,255,.35)'">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:.95rem;height:.95rem;flex-shrink:0">
-            <path d="M10 4v12M4 10h12"/>
+      </div>
+
+      <!-- Action toolbar: button + search + filters -->
+      <div class="u-toolbar">
+        <button class="btn-primary-add" onclick="openAddModal()" type="button">
+          <svg viewBox="0 0 24 24" stroke-width="2.3" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14"/>
           </svg>
-          <span id="heroAddLabel">Fachperson hinzufügen</span>
+          <span id="addBtnLabel">Benutzer anlegen</span>
         </button>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Search -->
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input id="searchInput" type="search" placeholder="Name oder E-Mail …" oninput="filterList()"/>
+        </div>
+
+        <!-- Role filter (admin only) -->
+        <select id="roleFilter" class="sel" onchange="filterList()" style="display:none">
+          <option value="">Alle Rollen</option>
+          <option value="customer">Kunde</option>
+          <option value="collaborator">Fachperson</option>
+        </select>
+
+        <!-- Funktion filter -->
+        <select id="fnFilter" class="sel" onchange="filterList()">
+          <option value="">Alle Funktionen</option>
+          <option value="Gutachter/in">Gutachter/in</option>
+          <option value="Therapeut/in">Therapeut/in</option>
+          <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
+          <option value="Berater/in">Berater/in</option>
+          <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
+          <option value="Psychiater/in">Psychiater/in</option>
+          <option value="Arzt / Ärztin">Arzt / Ärztin</option>
+          <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
+          <option value="Familienbegleiter/in">Familienbegleiter/in</option>
+          <option value="Mediator/in">Mediator/in</option>
+          <option value="Beistand / Beiständin">Beistand / Beiständin</option>
+          <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
+          <option value="Vertrauensperson">Vertrauensperson</option>
+          <option value="Andere">Andere</option>
+        </select>
       </div>
 
-      <!-- Admin tabs -->
-      <div class="tabs" id="adminTabs" style="display:none">
-        <button class="tab active" id="tabList" onclick="switchTab('list')">Alle Benutzer</button>
-        <button class="tab" id="tabNew" onclick="switchTab('new')">+ Neuen Kunden anlegen</button>
-      </div>
-
-      <!-- New customer form (admin) -->
-      <div id="newCustomerPanel" style="display:none">
-        <div style="background:#fff;border:1.5px solid #dae6ec;border-radius:14px;padding:1.4rem 1.6rem;margin-bottom:1.25rem">
-          <p style="margin:0 0 1rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4a6672">Neuen Kunden anlegen</p>
-          <form id="newCustomerForm">
-            <div class="two-col mb-3">
-              <div class="field-group"><label class="field-label">Vorname</label><input id="ncFirstName" type="text" class="field-input" placeholder="Max"/></div>
-              <div class="field-group"><label class="field-label">Nachname</label><input id="ncLastName" type="text" class="field-input" placeholder="Mustermann"/></div>
-            </div>
-            <div class="field-group mb-3"><label class="field-label">E-Mail <span style="color:#e53e3e">*</span></label><input id="ncEmail" type="email" class="field-input" placeholder="kunde@beispiel.ch" required/></div>
-            <div class="two-col mb-3">
-              <div class="field-group"><label class="field-label">Mobile</label><input id="ncMobile" type="tel" class="field-input" placeholder="+41 79 …"/></div>
-              <div class="field-group"><label class="field-label">Adresse</label><input id="ncAddress" type="text" class="field-input" placeholder="Musterstrasse 1, Zürich"/></div>
-            </div>
-            <button type="submit" class="btn-add">
-              <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-              Kunden erstellen &amp; Passwort generieren
-            </button>
-            <p id="ncMsg" class="msg" style="display:none"></p>
-            <div id="ncPwdBox" style="display:none"></div>
-          </form>
+      <!-- User list -->
+      <div id="userList" class="u-list">
+        <div class="u-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <p>Lade Benutzerliste …</p>
         </div>
       </div>
 
-      <!-- List view -->
-      <div id="listPanel">
-        <!-- Toolbar -->
-        <div class="users-toolbar">
-          <div class="search-wrap">
-            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input id="searchInput" type="search" class="search-input" placeholder="Name oder E-Mail suchen …" oninput="filterList()"/>
-          </div>
-          <select id="roleFilter" class="filter-select" onchange="filterList()" style="display:none">
-            <option value="">Alle Rollen</option>
-            <option value="customer">Kunde</option>
-            <option value="collaborator">Fachperson</option>
-          </select>
-          <select id="fnFilter" class="filter-select" onchange="filterList()">
-            <option value="">Alle Funktionen</option>
-            <option value="Gutachter/in">Gutachter/in</option>
-            <option value="Therapeut/in">Therapeut/in</option>
-            <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
-            <option value="Berater/in">Berater/in</option>
-            <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
-            <option value="Psychiater/in">Psychiater/in</option>
-            <option value="Arzt / Ärztin">Arzt / Ärztin</option>
-            <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
-            <option value="Familienbegleiter/in">Familienbegleiter/in</option>
-            <option value="Mediator/in">Mediator/in</option>
-            <option value="Beistand / Beiständin">Beistand / Beiständin</option>
-            <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
-            <option value="Vertrauensperson">Vertrauensperson</option>
-            <option value="Andere">Andere</option>
-          </select>
-        </div>
-
-        <!-- User cards -->
-        <div id="userList" class="users-list">
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <p>Lade Benutzerliste …</p>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /.users-wrap -->
+    </div><!-- /.u-wrap -->
 
     <footer class="dashboard-footer">
       <span>Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</span>
@@ -455,63 +402,81 @@
   </main>
 
   <!-- ── Add / Edit Modal ── -->
-  <div class="modal-overlay" id="userModal">
-    <div class="modal-box">
-      <button class="modal-close" onclick="closeModal()" aria-label="Schliessen">
-        <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  <div class="modal-bg" id="userModal">
+    <div class="modal">
+      <button class="modal-x" onclick="closeModal()" aria-label="Schliessen" type="button">
+        <svg viewBox="0 0 24 24" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
-      <h2 class="modal-title" id="modalTitle">
-        <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-        Fachperson hinzufügen
-      </h2>
+      <div class="modal-hd">
+        <div class="modal-hd-icon" id="modalIcon">
+          <svg viewBox="0 0 24 24" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M19 8v6M22 11h-6"/>
+          </svg>
+        </div>
+        <h2 id="modalTitle">Benutzer anlegen</h2>
+      </div>
+
       <form id="userModalForm">
         <input type="hidden" id="mUserId"/>
-        <div class="two-col mb-3">
-          <div class="field-group"><label class="field-label">Vorname</label><input id="mFirstName" type="text" class="field-input" placeholder="Anna"/></div>
-          <div class="field-group"><label class="field-label">Nachname</label><input id="mLastName" type="text" class="field-input" placeholder="Meier"/></div>
+
+        <!-- Role selector (admin, add mode) -->
+        <div class="fg mb" id="mRoleGroup" style="display:none">
+          <label class="fl" for="mRole">Rolle</label>
+          <select id="mRole" class="fi fi-sel" onchange="onRoleChange()">
+            <option value="collaborator">Fachperson (Gutachter, Anwalt, Therapeut …)</option>
+            <option value="customer">Kunde (Fallinhaber)</option>
+          </select>
         </div>
-        <div class="field-group mb-3">
-          <label class="field-label">E-Mail <span style="color:#e53e3e">*</span></label>
-          <input id="mEmail" type="email" class="field-input" placeholder="gutachter@beispiel.ch" required/>
+
+        <div class="two-col mb">
+          <div class="fg">
+            <label class="fl" for="mFirstName">Vorname</label>
+            <input id="mFirstName" type="text" class="fi" placeholder="Anna"/>
+          </div>
+          <div class="fg">
+            <label class="fl" for="mLastName">Nachname</label>
+            <input id="mLastName" type="text" class="fi" placeholder="Meier"/>
+          </div>
         </div>
-        <div class="two-col mb-3">
-          <div class="field-group"><label class="field-label">Mobile</label><input id="mMobile" type="tel" class="field-input" placeholder="+41 79 …"/></div>
-          <div class="field-group" id="mRoleGroup" style="display:none">
-            <label class="field-label">Rolle</label>
-            <select id="mRole" class="field-input">
-              <option value="customer">Kunde</option>
-              <option value="collaborator">Fachperson</option>
+        <div class="fg mb">
+          <label class="fl" for="mEmail">E-Mail <span style="color:#e53e3e">*</span></label>
+          <input id="mEmail" type="email" class="fi" placeholder="person@beispiel.ch" required/>
+        </div>
+        <div class="two-col mb">
+          <div class="fg">
+            <label class="fl" for="mMobile">Mobile</label>
+            <input id="mMobile" type="tel" class="fi" placeholder="+41 79 …"/>
+          </div>
+          <div class="fg" id="mFnGroup">
+            <label class="fl" for="mFunction">Funktion</label>
+            <select id="mFunction" class="fi fi-sel">
+              <option value="">Funktion wählen …</option>
+              <option>Gutachter/in</option><option>Therapeut/in</option>
+              <option>Anwalt / Anwältin</option><option>Berater/in</option>
+              <option>Psychologe / Psychologin</option><option>Psychiater/in</option>
+              <option>Arzt / Ärztin</option><option>Sozialarbeiter/in</option>
+              <option>Familienbegleiter/in</option><option>Mediator/in</option>
+              <option>Beistand / Beiständin</option>
+              <option>Kinderanwalt / Kinderanwältin</option>
+              <option>Vertrauensperson</option><option>Andere</option>
             </select>
           </div>
         </div>
-        <div class="field-group mb-3" id="mFnGroup">
-          <label class="field-label">Funktion</label>
-          <select id="mFunction" class="field-input">
-            <option value="">Funktion wählen …</option>
-            <option>Gutachter/in</option><option>Therapeut/in</option>
-            <option>Anwalt / Anwältin</option><option>Berater/in</option>
-            <option>Psychologe / Psychologin</option><option>Psychiater/in</option>
-            <option>Arzt / Ärztin</option><option>Sozialarbeiter/in</option>
-            <option>Familienbegleiter/in</option><option>Mediator/in</option>
-            <option>Beistand / Beiständin</option><option>Kinderanwalt / Kinderanwältin</option>
-            <option>Vertrauensperson</option><option>Andere</option>
+        <div class="fg mb" id="mCaseGroup">
+          <label class="fl" for="mCase">Fall zuweisen</label>
+          <select id="mCase" class="fi fi-sel">
+            <option value="">Keinen Fall zuweisen</option>
           </select>
         </div>
-        <div class="field-group mb-3" id="mCaseGroup">
-          <label class="field-label">Fall zuweisen</label>
-          <select id="mCase" class="field-input">
-            <option value="">Kein Fall</option>
-          </select>
-        </div>
+
         <p id="modalMsg" class="msg" style="display:none"></p>
         <div id="modalPwdBox" style="display:none"></div>
-        <div class="modal-footer">
+
+        <div class="modal-ft">
           <button type="button" class="btn-cancel" onclick="closeModal()">Abbrechen</button>
-          <button type="submit" class="btn-save" id="modalSaveBtn">Speichern</button>
+          <button type="submit" class="btn-save" id="modalSaveBtn">Anlegen</button>
         </div>
       </form>
     </div>

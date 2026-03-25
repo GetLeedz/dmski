@@ -52,22 +52,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("usersMain").style.display = "";
 
   if (isAdmin) {
-    document.getElementById("adminTabs").style.display = "";
     document.getElementById("roleFilter").style.display = "";
-    document.getElementById("heroAddLabel").textContent = "Benutzer hinzufügen";
-    document.getElementById("heroSub").textContent = "Alle Benutzer verwalten — Kunden & Fachpersonen";
   } else {
-    document.getElementById("heroSub").textContent = "Meine Fachpersonen — hinzufügen, bearbeiten und löschen";
+    document.getElementById("heroSub").textContent = "Meine Fachpersonen — anlegen, bearbeiten und löschen";
+    document.getElementById("addBtnLabel").textContent = "Fachperson anlegen";
   }
 
   await loadUsers();
-  if (isAdmin) await loadCasesForModal();
+  await loadCasesForModal();
 });
 
 // ── Load users ──────────────────────────────────────────────────────────────
 async function loadUsers() {
   const el = document.getElementById("userList");
-  el.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>Lade Liste …</p></div>`;
+  el.innerHTML = `<div class="u-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>Lade Liste …</p></div>`;
 
   try {
     let rows = [];
@@ -111,14 +109,14 @@ async function loadUsers() {
 
 function showListError(msg) {
   document.getElementById("userList").innerHTML =
-    `<div class="empty-state"><p>⚠ ${esc(msg)}</p></div>`;
+    `<div class="u-empty"><p>⚠ ${esc(msg)}</p></div>`;
 }
 
 // ── Render ──────────────────────────────────────────────────────────────────
 function renderList(rows) {
   const el = document.getElementById("userList");
   if (!rows.length) {
-    el.innerHTML = `<div class="empty-state">
+    el.innerHTML = `<div class="u-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
         <circle cx="9" cy="7" r="4"/>
@@ -130,38 +128,28 @@ function renderList(rows) {
   }
 
   el.innerHTML = rows.map(u => {
-    const name    = [u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
-    const initial = (u.firstName || u.email || "?")[0].toUpperCase();
+    const name     = [u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
+    const initial  = (u.firstName || u.email || "?")[0].toUpperCase();
     const isCollab = u.role === "collaborator";
-    const avatarClass = isCollab ? "ua ua--collab" : "ua ua--customer";
+    const avCls    = isCollab ? "u-av u-av--f" : "u-av u-av--k";
     const roleLbl  = isCollab ? "Fachperson" : "Kunde";
-    const roleCls  = isCollab ? "role-pill role-pill--collab" : "role-pill role-pill--customer";
-    const fnBadge  = u.fn ? `<span class="fn-pill" title="${esc(u.fn)}">${esc(u.fn)}</span>` : "";
-    const caseBadge = u.caseName
-      ? `<span class="fn-pill" style="background:#fef3c7;color:#92400e;border:none" title="${esc(u.caseName)}">${esc(u.caseName)}</span>`
-      : "";
+    const roleCls  = isCollab ? "badge badge--f" : "badge badge--k";
+    const fnBadge  = u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : "";
+    const caBadge  = u.caseName ? `<span class="badge badge--ca">${esc(u.caseName)}</span>` : "";
 
-    return `<div class="user-card" id="uc-${u.userId}">
-      <div class="${avatarClass}">${esc(initial)}</div>
-      <div class="user-info">
-        <div class="user-name">${esc(name)}</div>
-        <div class="user-email">${esc(u.email)}</div>
+    return `<div class="u-card" id="uc-${u.userId}">
+      <div class="${avCls}">${esc(initial)}</div>
+      <div class="u-info">
+        <div class="u-name">${esc(name)}</div>
+        <div class="u-email">${esc(u.email)}</div>
       </div>
-      ${fnBadge}${caseBadge}
+      ${fnBadge}${caBadge}
       <span class="${roleCls}">${roleLbl}</span>
-      <button class="icon-btn icon-btn--edit" onclick="openEditModal(${u.userId})" title="Bearbeiten" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/>
-        </svg>
+      <button class="ib ib--edit" onclick="openEditModal(${u.userId})" title="Bearbeiten" type="button">
+        <svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
       </button>
-      <button class="icon-btn icon-btn--del" onclick="deleteUser(${u.userId})" title="Löschen" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
+      <button class="ib ib--del" onclick="deleteUser(${u.userId})" title="Löschen" type="button">
+        <svg viewBox="0 0 24 24" stroke-width="1.9"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       </button>
     </div>`;
   }).join("");
@@ -206,9 +194,8 @@ function openAddModal() {
   document.getElementById("mFnGroup").style.display   = "";
   document.getElementById("mCaseGroup").style.display = "";
   if (isAdmin) document.getElementById("mRole").value = "collaborator";
-  document.getElementById("modalTitle").childNodes[1].textContent = isAdmin
-    ? " Benutzer hinzufügen" : " Fachperson hinzufügen";
-  document.getElementById("modalSaveBtn").textContent = "Hinzufügen";
+  document.getElementById("modalTitle").textContent = isAdmin ? "Benutzer anlegen" : "Fachperson anlegen";
+  document.getElementById("modalSaveBtn").textContent = "Anlegen";
   hideModalMsg(); hideModalPwd();
   document.getElementById("mEmail").removeAttribute("disabled");
   if (!isAdmin) loadCasesForModal();
@@ -238,7 +225,7 @@ function openEditModal(userId) {
   if (isAdmin) document.getElementById("mRole").value = u.role;
 
   const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email;
-  document.getElementById("modalTitle").childNodes[1].textContent = ` ${name} bearbeiten`;
+  document.getElementById("modalTitle").textContent = `${name} bearbeiten`;
   document.getElementById("modalSaveBtn").textContent = "Speichern";
   document.getElementById("mEmail").removeAttribute("disabled");
   hideModalMsg(); hideModalPwd();
@@ -264,7 +251,7 @@ async function onModalSubmit(e) {
     await doEditUser();
   }
   btn.disabled = false;
-  btn.textContent = modalMode === "add" ? "Hinzufügen" : "Speichern";
+  btn.textContent = modalMode === "add" ? "Anlegen" : "Speichern";
 }
 
 async function doAddUser() {
@@ -284,7 +271,7 @@ async function doAddUser() {
     const data = await res.json();
     if (!res.ok) { showModalMsg(data.error || "Fehler.", "error"); return; }
     const nm = [data.user.first_name, data.user.last_name].filter(Boolean).join(" ") || data.user.email;
-    showModalMsg(`✓ Kunde «${esc(nm)}» erstellt.`, "success");
+    showModalMsg(`✓ Benutzer «${esc(nm)}» angelegt.`, "ok");
     if (data.generatedPassword) showModalPwd(data.user.email, data.generatedPassword);
     await loadUsers();
     return;
@@ -301,7 +288,7 @@ async function doAddUser() {
   const data = await res.json();
   if (!res.ok) { showModalMsg(data.error || "Fehler.", "error"); return; }
   const nm = [data.collaborator.first_name, data.collaborator.last_name].filter(Boolean).join(" ") || data.collaborator.email;
-  showModalMsg(`✓ Fachperson «${esc(nm)}» hinzugefügt.`, "success");
+  showModalMsg(`✓ Fachperson «${esc(nm)}» angelegt.`, "ok");
   if (data.isNewUser && data.generatedPassword) showModalPwd(data.collaborator.email, data.generatedPassword);
   await loadUsers();
 }
@@ -323,7 +310,7 @@ async function doEditUser() {
   });
   const data = await res.json();
   if (!res.ok) { showModalMsg(data.error || "Fehler.", "error"); return; }
-  showModalMsg("✓ Gespeichert.", "success");
+  showModalMsg("✓ Gespeichert.", "ok");
   setTimeout(closeModal, 900);
   await loadUsers();
 }
@@ -413,7 +400,7 @@ function esc(s) {
 function showModalMsg(text, type) {
   const el = document.getElementById("modalMsg");
   el.textContent = text;
-  el.className   = `msg msg--${type}`;
+  el.className   = `msg msg--${type==="success"?"ok":type}`;
   el.style.display = "";
 }
 function hideModalMsg() { const el = document.getElementById("modalMsg"); el.style.display = "none"; el.textContent = ""; }
@@ -421,12 +408,12 @@ function hideModalMsg() { const el = document.getElementById("modalMsg"); el.sty
 function showModalPwd(email, pwd) {
   const el = document.getElementById("modalPwdBox");
   el.style.display = "";
-  el.innerHTML = `<div class="pwd-reveal">
-    <span style="font-size:.8rem;color:#047857;font-weight:600">${esc(email)} – Temp. Passwort:</span>
+  el.innerHTML = `<div class="pwd-box">
+    <span style="font-size:.78rem;font-weight:600;color:#065f46;white-space:nowrap">${esc(email)} — Temp. Passwort:</span>
     <strong>${esc(pwd)}</strong>
-    <button class="btn-copy" onclick="copyText('${esc(pwd)}',this)">Kopieren</button>
+    <button class="btn-copy" type="button" onclick="copyText('${esc(pwd)}',this)">Kopieren</button>
   </div>
-  <p style="font-size:.75rem;color:#8ba4b0;margin:.4rem 0 0">⚠ Wird nur einmal angezeigt.</p>`;
+  <p style="font-size:.73rem;color:#8ba4b0;margin:.35rem 0 0">⚠ Wird nur einmal angezeigt — bitte sichern.</p>`;
 }
 function hideModalPwd() { const el = document.getElementById("modalPwdBox"); el.style.display = "none"; el.innerHTML = ""; }
 
@@ -457,11 +444,18 @@ function toast(text, type = "info") {
   setTimeout(() => el.remove(), 3500);
 }
 
+// ── Role change in modal ─────────────────────────────────────────────────────
+function onRoleChange() {
+  const isCollab = document.getElementById("mRole").value === "collaborator";
+  document.getElementById("mFnGroup").style.display   = isCollab ? "" : "none";
+  document.getElementById("mCaseGroup").style.display = isCollab ? "" : "none";
+}
+
 // Expose to onclick handlers
-window.filterList      = filterList;
-window.switchTab       = switchTab;
-window.openAddModal    = openAddModal;
-window.openEditModal   = openEditModal;
-window.closeModal      = closeModal;
-window.deleteUser      = deleteUser;
-window.copyText        = copyText;
+window.filterList    = filterList;
+window.openAddModal  = openAddModal;
+window.openEditModal = openEditModal;
+window.closeModal    = closeModal;
+window.deleteUser    = deleteUser;
+window.copyText      = copyText;
+window.onRoleChange  = onRoleChange;
