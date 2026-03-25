@@ -68,19 +68,34 @@ function generatePassword() {
 
 // ── GET /users/me ──────────────────────────────────────────────────────────
 router.get("/me", requireAuth, async (req, res) => {
-  await ensureCollabSchema();
   try {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.role, u.first_name, u.last_name, u.address, u.mobile, u.created_at,
-              cc.function_label
-       FROM users u
-       LEFT JOIN customer_collaborators cc ON cc.collaborator_id = u.id
-       WHERE u.id = $1
+      `SELECT id, email, role, first_name, last_name, address, mobile, created_at
+       FROM users
+       WHERE id = $1
        LIMIT 1`,
       [req.user.sub]
     );
     if (!result.rows[0]) return res.status(404).json({ error: "Benutzer nicht gefunden." });
-    return res.json({ user: result.rows[0] });
+
+    const user = { ...result.rows[0], function_label: null };
+
+    // Try to fetch function_label from collaborator link (table may not exist yet)
+    try {
+      await ensureCollabSchema();
+      const ccResult = await pool.query(
+        `SELECT function_label FROM customer_collaborators WHERE collaborator_id = $1 LIMIT 1`,
+        [req.user.sub]
+      );
+      if (ccResult.rows[0]) {
+        user.function_label = ccResult.rows[0].function_label;
+      }
+    } catch (ccErr) {
+      // Non-fatal: collaborator table may not exist yet; proceed without function_label
+      console.warn("function_label lookup skipped:", ccErr.message);
+    }
+
+    return res.json({ user });
   } catch (err) {
     console.error("Get me error:", err.message);
     return res.status(500).json({ error: "Profil konnte nicht geladen werden." });
