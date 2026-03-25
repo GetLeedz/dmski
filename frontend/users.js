@@ -70,8 +70,9 @@ async function loadUsers() {
     let rows = [];
     if (isAdmin) {
       const res  = await fetch(`${API}/users`, { headers: authHdr() });
-      const data = await res.json();
-      if (!res.ok) { showListError(data.error); return; }
+      let data;
+      try { data = await res.json(); } catch { showListError("Serverfehler. Bitte Seite neu laden."); return; }
+      if (!res.ok) { showListError(data.error || "Serverfehler."); return; }
       rows = (data.users || []).filter(u => u.role !== "admin").map(u => ({
         userId:    u.id,
         linkId:    null,
@@ -86,8 +87,9 @@ async function loadUsers() {
       }));
     } else {
       const res  = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr() });
-      const data = await res.json();
-      if (!res.ok) { showListError(data.error); return; }
+      let data;
+      try { data = await res.json(); } catch { showListError("Serverfehler. Bitte Seite neu laden."); return; }
+      if (!res.ok) { showListError(data.error || "Serverfehler."); return; }
       rows = (data.collaborators || []).map(c => ({
         userId:    c.user_id,
         linkId:    c.id,

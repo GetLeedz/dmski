@@ -297,15 +297,34 @@ router.patch("/me", requireAuth, async (req, res) => {
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     await ensureUserProfileColumns();
-    await ensureCollabSchema().catch(() => {}); // ignore if table absent
+
+    // Base user query — always safe, no dependency on optional tables
     const result = await pool.query(
-      `SELECT u.id, u.email, u.role, u.first_name, u.last_name, u.address, u.mobile, u.created_at,
-              (SELECT cc.function_label FROM customer_collaborators cc WHERE cc.collaborator_id = u.id LIMIT 1) AS function_label,
-              (SELECT cc.case_id        FROM customer_collaborators cc WHERE cc.collaborator_id = u.id LIMIT 1) AS case_id
-       FROM users u
-       ORDER BY u.created_at ASC`
+      `SELECT id, email, role, first_name, last_name, address, mobile, created_at
+       FROM users ORDER BY created_at ASC`
     );
-    return res.json({ users: result.rows });
+    let rows = result.rows.map(u => ({ ...u, function_label: null, case_id: null }));
+
+    // Optionally augment with collaborator function_label / case_id
+    try {
+      await ensureCollabSchema();
+      const cc = await pool.query(
+        `SELECT DISTINCT ON (collaborator_id) collaborator_id, function_label, case_id
+         FROM customer_collaborators ORDER BY collaborator_id, id DESC`
+      );
+      const ccMap = {};
+      cc.rows.forEach(r => { ccMap[r.collaborator_id] = r; });
+      rows = rows.map(u => ({
+        ...u,
+        function_label: ccMap[u.id]?.function_label || null,
+        case_id:        ccMap[u.id]?.case_id        || null,
+      }));
+    } catch (ccErr) {
+      console.warn("Collaborator augment skipped:", ccErr.message);
+      // rows already have null fn/case — graceful degradation
+    }
+
+    return res.json({ users: rows });
   } catch (err) {
     console.error("List users error:", err.message);
     return res.status(500).json({ error: "Benutzerliste konnte nicht geladen werden." });
