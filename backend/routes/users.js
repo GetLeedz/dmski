@@ -139,6 +139,22 @@ function escHtmlEmail(str) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// ── Schema migration: ensure profile columns exist ─────────────────────────
+let userProfileSchemaDone = false;
+async function ensureUserProfileColumns() {
+  if (userProfileSchemaDone) return;
+  try {
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer'");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS mobile TEXT");
+    userProfileSchemaDone = true;
+  } catch (err) {
+    console.warn("ensureUserProfileColumns warning:", err.message);
+  }
+}
+
 // ── Schema migration for customer_collaborators table ──────────────────────
 let collabSchemaDone = false;
 async function ensureCollabSchema() {
@@ -189,6 +205,7 @@ function generatePassword() {
 // ── GET /users/me ──────────────────────────────────────────────────────────
 router.get("/me", requireAuth, async (req, res) => {
   try {
+    await ensureUserProfileColumns();
     const result = await pool.query(
       `SELECT id, email, role, first_name, last_name, address, mobile, created_at
        FROM users
@@ -222,6 +239,7 @@ router.get("/me", requireAuth, async (req, res) => {
 // ── PATCH /users/me ────────────────────────────────────────────────────────
 router.patch("/me", requireAuth, async (req, res) => {
   const { email, password, currentPassword, first_name, last_name, address, mobile, function_label } = req.body;
+  await ensureUserProfileColumns();
   try {
     await ensureCollabSchema();
   } catch (err) {
