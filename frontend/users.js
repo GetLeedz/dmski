@@ -37,6 +37,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userModalForm").addEventListener("submit", onModalSubmit);
   document.getElementById("newCustomerForm")?.addEventListener("submit", onCreateCustomer);
 
+  // ── Event delegation for edit/delete buttons (most reliable approach) ──
+  document.getElementById("userList").addEventListener("click", e => {
+    const editBtn = e.target.closest(".ib--edit");
+    const delBtn  = e.target.closest(".ib--del");
+    if (editBtn) {
+      const card = editBtn.closest(".u-card");
+      if (card) openEditModalFromCard(card);
+    }
+    if (delBtn) {
+      const card = delBtn.closest(".u-card");
+      if (card) deleteUser(Number(card.dataset.uid));
+    }
+  });
+
   try {
     const res = await fetch(`${API}/users/me`, { headers: authHdr() });
     if (res.status === 401 || res.status === 403) { window.location.replace("/"); return; }
@@ -138,7 +152,16 @@ function renderList(rows) {
     const fnBadge = u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : "";
     const caBadge = u.caseName ? `<span class="badge badge--ca">${esc(u.caseName)}</span>` : "";
 
-    return `<div class="u-card" id="uc-${u.userId}">
+    return `<div class="u-card" id="uc-${u.userId}"
+      data-uid="${u.userId}"
+      data-link-id="${u.linkId || ""}"
+      data-email="${esc(u.email)}"
+      data-fname="${esc(u.firstName)}"
+      data-lname="${esc(u.lastName)}"
+      data-mobile="${esc(u.mobile)}"
+      data-role="${esc(u.role)}"
+      data-fn="${esc(u.fn || "")}"
+      data-case-id="${esc(u.caseId || "")}">
       <div class="${avCls}">${esc(initial)}</div>
       <div class="u-info">
         <div class="u-name">${esc(name)}</div>
@@ -213,11 +236,44 @@ function openAddModal() {
   setTimeout(() => document.getElementById("mFirstName").focus(), 60);
 }
 
-// ── Open EDIT modal ─────────────────────────────────────────────────────────
+// ── Open EDIT modal (from event delegation via card element) ─────────────────
+function openEditModalFromCard(card) {
+  const uid = Number(card.dataset.uid);
+  // Try allUsers first; fall back to reading data attributes directly from DOM
+  let u = allUsers.find(x => Number(x.userId) === uid);
+  if (!u) {
+    // Rebuild from data attributes so edit works even if allUsers was cleared
+    u = {
+      userId:    uid,
+      linkId:    card.dataset.linkId ? Number(card.dataset.linkId) : null,
+      email:     card.dataset.email     || "",
+      firstName: card.dataset.fname     || "",
+      lastName:  card.dataset.lname     || "",
+      mobile:    card.dataset.mobile    || "",
+      role:      card.dataset.role      || "customer",
+      fn:        card.dataset.fn        || null,
+      caseId:    card.dataset.caseId    || null,
+      caseName:  null,
+    };
+  }
+  _fillEditModal(u);
+}
+
+// ── Open EDIT modal (from onclick fallback with userId) ───────────────────────
 function openEditModal(userId) {
-  // Use loose equality to handle any integer/string type mismatch from onclick attrs
   const u = allUsers.find(x => Number(x.userId) === Number(userId));
-  if (!u) { console.warn("openEditModal: user not found", userId, allUsers); return; }
+  if (!u) {
+    // Try DOM fallback
+    const card = document.getElementById(`uc-${userId}`);
+    if (card) { openEditModalFromCard(card); return; }
+    console.warn("openEditModal: user not found", userId);
+    return;
+  }
+  _fillEditModal(u);
+}
+
+// ── Fill and open the edit modal with a user object ──────────────────────────
+function _fillEditModal(u) {
   modalMode  = "edit";
   editTarget = { userId: u.userId, linkId: u.linkId };
 
