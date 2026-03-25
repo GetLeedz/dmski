@@ -50,24 +50,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const role = getRole();
   if (role === "admin") {
     document.getElementById("sectionAdmin").style.display = "";
-    loadCustomers();
-  }
-  if (role === "collaborator") {
-    document.getElementById("sectionCollabs").style.display = "none";
-  } else {
-    loadCollabs(getUserId());
+    loadUsers();
   }
 
   document.getElementById("profileForm").addEventListener("submit", onSaveProfile);
-  document.getElementById("addCollabForm").addEventListener("submit", onAddCollab);
   document.getElementById("newCustomerForm").addEventListener("submit", onCreateCustomer);
+  document.getElementById("editUserForm").addEventListener("submit", onSaveEditUser);
 
-  // Load cases into dropdown when the add panel opens
-  document.getElementById("addFachToggle").addEventListener("click", function () {
-    const panel = document.getElementById("addFachPanel");
-    const open  = panel.classList.toggle("open");
-    this.setAttribute("aria-expanded", String(open));
-    if (open) loadCasesForSelect();
+  // Close modal on backdrop click
+  document.getElementById("editUserModal").addEventListener("click", function(e) {
+    if (e.target === this) closeEditModal();
   });
 });
 
@@ -154,217 +146,129 @@ async function onSaveProfile(e) {
   finally   { if (btn) { btn.disabled = false; btn.textContent = "Speichern"; } }
 }
 
-// ── Load cases into select ──────────────────────────────────────────────────
-async function loadCasesForSelect() {
-  const sel = document.getElementById("collabCase");
-  if (!sel) return;
-  // Don't reload if already populated
-  if (sel.options.length > 1) return;
-  try {
-    const res  = await fetch(`${API}/cases`, { headers: authHeaders() });
-    const data = await res.json();
-    if (!res.ok || !Array.isArray(data.cases)) return;
-    data.cases.forEach(c => {
-      const opt = document.createElement("option");
-      opt.value       = String(c.id);
-      opt.textContent = `#${c.id} · ${c.case_name || "–"}`;
-      sel.appendChild(opt);
-    });
-  } catch { /* non-fatal */ }
-}
-
-// ── Load collaborators ──────────────────────────────────────────────────────
-async function loadCollabs(userId) {
-  if (!userId) return;
-  const el = document.getElementById("collabList");
-  try {
-    const res  = await fetch(`${API}/users/${userId}/collaborators`, { headers: authHeaders() });
-    const data = await res.json();
-    if (!res.ok) { el.innerHTML = `<p class="empty-state">${escHtml(data.error || "Fehler")}</p>`; return; }
-    renderCollabs(data.collaborators || [], userId, el);
-  } catch {
-    el.innerHTML = `<p class="empty-state">Fachpersonenliste konnte nicht geladen werden.</p>`;
-  }
-}
-
-function formatDate(val) {
-  if (!val) return "–";
-  const d = new Date(val);
-  if (isNaN(d.getTime())) return "–";
-  return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
-}
-
-function renderCollabs(list, userId, el) {
-  if (list.length === 0) {
-    el.innerHTML = `
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-          <circle cx="9" cy="7" r="4"/><path d="M1 21c0-4.418 3.582-8 8-8"/>
-          <path d="M19 11v6M22 14h-6" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        <span>Noch keine Fachpersonen hinzugefügt.</span>
-      </div>`;
-    return;
-  }
-
-  const rows = list.map(c => {
-    const fn      = escHtml(c.function_label || c.role || "Fachperson");
-    const dateStr = escHtml(formatDate(c.created_at));
-    const letter  = (c.first_name || c.email || "?")[0].toUpperCase();
-    const caseLbl = c.case_id
-      ? `<span class="fach-case" title="Zugewiesener Fall">#${escHtml(c.case_id)}${c.case_name ? " · " + escHtml(c.case_name) : ""}</span>`
-      : "";
-    return `<div class="fach-card">
-      <div class="fach-avatar">${escHtml(letter)}</div>
-      <div class="fach-info">
-        <div class="fach-name">${escHtml(c.last_name || "–")} ${escHtml(c.first_name || "")}</div>
-        <div class="fach-email">${escHtml(c.email)}</div>
-      </div>
-      <span class="fach-role-badge">${fn}</span>
-      ${caseLbl}
-      <span class="fach-date" title="Hinzugefügt am">${dateStr}</span>
-      <button class="fach-invite" data-uid="${userId}" data-lid="${c.id}" data-email="${escHtml(c.email)}" title="Einladungs-E-Mail senden">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 5l8 6 8-6"/><rect x="2" y="4" width="16" height="12" rx="2"/>
-        </svg>
-      </button>
-      <button class="fach-remove" data-uid="${userId}" data-lid="${c.id}" title="Zugang entfernen">
-        <svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round"><path d="M3 4h10M6 4V3h4v1M5 4v8h6V4"/></svg>
-      </button>
-    </div>`;
-  }).join("");
-
-  el.innerHTML = rows;
-
-  el.querySelectorAll(".fach-remove").forEach(btn =>
-    btn.addEventListener("click", () =>
-      removeCollab(Number(btn.dataset.uid), Number(btn.dataset.lid))));
-
-  el.querySelectorAll(".fach-invite").forEach(btn =>
-    btn.addEventListener("click", () =>
-      sendInvite(Number(btn.dataset.uid), Number(btn.dataset.lid), btn.dataset.email, btn)));
-}
-
-async function removeCollab(userId, linkId) {
-  if (!confirm("Fachperson wirklich entfernen?")) return;
-  try {
-    await fetch(`${API}/users/${userId}/collaborators/${linkId}`,
-      { method: "DELETE", headers: authHeaders() });
-    loadCollabs(userId);
-  } catch { showToast("Fehler beim Entfernen.", "error"); }
-}
-
-// ── Send invite email ────────────────────────────────────────────────────────
-async function sendInvite(userId, linkId, email, btn) {
-  const orig = btn.innerHTML;
-  btn.disabled = true;
-  btn.title = "Wird gesendet …";
-  try {
-    const res  = await fetch(`${API}/users/${userId}/collaborators/${linkId}/send-invite`, {
-      method: "POST", headers: authHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) { showToast(data.error || "Einladung konnte nicht gesendet werden.", "error"); return; }
-    showToast(`✓ Einladung gesendet an ${email}`, "success");
-    btn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem"><path d="M4 10l4 4 8-8"/></svg>`;
-    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; btn.title = "Einladungs-E-Mail senden"; }, 2500);
-  } catch {
-    showToast("Netzwerkfehler beim Senden.", "error");
-    btn.innerHTML = orig; btn.disabled = false;
-  }
-}
-
-// ── Add collaborator ────────────────────────────────────────────────────────
-async function onAddCollab(e) {
-  e.preventDefault();
-  const msg    = document.getElementById("collabMsg");
-  const pwdBox = document.getElementById("collabPwdBox");
-  setMsg(msg, ""); pwdBox.style.display = "none";
-
-  const email     = document.getElementById("collabEmail").value.trim();
-  const fn        = document.getElementById("collabFunction").value;
-  const firstName = document.getElementById("collabFirstName").value.trim();
-  const lastName  = document.getElementById("collabLastName").value.trim();
-  const caseId    = document.getElementById("collabCase")?.value || "";
-  const userId    = getUserId();
-
-  if (!fn) { setMsg(msg, "Bitte Funktion auswählen.", "error"); return; }
-
-  const btn = e.target.querySelector("button[type=submit]");
-  if (btn) { btn.disabled = true; btn.textContent = "Wird hinzugefügt …"; }
-
-  try {
-    const body = {
-      email,
-      function_label: fn,
-      first_name: firstName || undefined,
-      last_name:  lastName  || undefined,
-    };
-    if (caseId) body.case_id = caseId;
-
-    const res  = await fetch(`${API}/users/${userId}/collaborators`, {
-      method: "POST", headers: authHeaders(), body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if (!res.ok) { setMsg(msg, data.error || "Fehler.", "error"); return; }
-
-    setMsg(msg, data.isNewUser
-      ? `✓ Konto erstellt & Zugang eingerichtet für ${email}.`
-      : `✓ Zugang für ${email} eingerichtet.`, "success");
-
-    if (data.generatedPassword) {
-      pwdBox.style.display = "";
-      pwdBox.innerHTML = buildPwdBox("Temporäres Passwort", data.generatedPassword,
-        "⚠️ Dieses Passwort wird nur einmal angezeigt. Bitte sicher weitergeben.");
-      pwdBox.querySelector(".copy-btn")?.addEventListener("click", function() {
-        copyPwd(data.generatedPassword, this);
-      });
-    }
-
-    document.getElementById("collabEmail").value    = "";
-    document.getElementById("collabFunction").value = "";
-    const caseEl = document.getElementById("collabCase");
-    if (caseEl) caseEl.value = "";
-    loadCollabs(userId);
-  } catch { setMsg(msg, "Netzwerkfehler.", "error"); }
-  finally   { if (btn) { btn.disabled = false; btn.textContent = "Fachperson hinzufügen"; } }
-}
-
-// ── Admin: load customers ───────────────────────────────────────────────────
-async function loadCustomers() {
+// ── Admin: load all users (Benutzerverwaltung) ──────────────────────────────
+async function loadUsers() {
   const el = document.getElementById("customerList");
   try {
     const res  = await fetch(`${API}/users`, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) { el.innerHTML = `<p class="empty-state">${escHtml(data.error)}</p>`; return; }
 
-    const customers = (data.users || []).filter(u => u.role !== "admin");
-    if (customers.length === 0) {
-      el.innerHTML = `<p class="empty-state">Noch keine Kunden vorhanden.</p>`; return;
+    const users = (data.users || []).filter(u => u.role !== "admin");
+    if (users.length === 0) {
+      el.innerHTML = `<p class="empty-state">Noch keine Benutzer vorhanden.</p>`; return;
     }
 
-    el.innerHTML = customers.map(u => {
+    el.innerHTML = users.map(u => {
       const name     = [u.first_name, u.last_name].filter(Boolean).join(" ") || "–";
       const isCollab = u.role === "collaborator";
-      return `<div class="customer-card">
-        <div class="customer-avatar" style="background:${isCollab ? "linear-gradient(135deg,#4f46e5,#3730a3)" : "linear-gradient(135deg,#dbeafe,#bfdbfe)"};color:${isCollab ? "#fff" : "#1d4ed8"}">
+      const roleLbl  = isCollab ? "Fachperson" : "Kunde";
+      const roleColor = isCollab
+        ? "background:#e0e7ff;color:#3730a3"
+        : "background:#d1fae5;color:#065f46";
+      const avatarBg = isCollab
+        ? "background:linear-gradient(135deg,#4f46e5,#3730a3);color:#fff"
+        : "background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1d4ed8";
+
+      return `<div class="customer-card" id="ucard-${u.id}">
+        <div class="customer-avatar" style="${avatarBg}">
           ${(u.first_name || u.email || "?")[0].toUpperCase()}
         </div>
         <div class="customer-info">
           <div class="customer-name">${escHtml(name)}</div>
           <div class="customer-email">${escHtml(u.email)}</div>
         </div>
-        <span style="background:${isCollab ? "#e0e7ff" : "#d1fae5"};color:${isCollab ? "#3730a3" : "#065f46"};padding:.15rem .55rem;border-radius:6px;font-size:.75rem;font-weight:600">
-          ${isCollab ? "Fachperson" : "Kunde"}
-        </span>
+        <span style="${roleColor};padding:.15rem .55rem;border-radius:6px;font-size:.75rem;font-weight:600;white-space:nowrap">${roleLbl}</span>
+
+        <!-- Edit button -->
+        <button onclick="openEditModal(${u.id},'${escAttr(u.first_name||'')}','${escAttr(u.last_name||'')}','${escAttr(u.email)}','${escAttr(u.mobile||'')}','${u.role}')"
+          style="display:inline-flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:8px;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;transition:background .15s;flex-shrink:0"
+          title="Benutzer bearbeiten">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem">
+            <path d="M11 2l3 3-8 8H3v-3l8-8z"/>
+          </svg>
+        </button>
+
+        <!-- Delete button -->
+        <button onclick="deleteUser(${u.id},'${escAttr(name)}')"
+          style="display:inline-flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:8px;border:1px solid #fca5a5;background:#fff5f5;color:#b91c1c;cursor:pointer;transition:background .15s;flex-shrink:0"
+          title="Benutzer löschen">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:.85rem;height:.85rem">
+            <path d="M3 4h10M6 4V3h4v1M5 4v8h6V4"/>
+          </svg>
+        </button>
       </div>`;
     }).join("");
   } catch {
-    el.innerHTML = `<p class="empty-state">Kundenliste konnte nicht geladen werden.</p>`;
+    el.innerHTML = `<p class="empty-state">Benutzerliste konnte nicht geladen werden.</p>`;
   }
 }
 
-// ── Admin: create customer ──────────────────────────────────────────────────
+// alias for tab "Alle Kunden" button
+function loadCustomers() { loadUsers(); }
+
+// ── Delete user ─────────────────────────────────────────────────────────────
+async function deleteUser(userId, name) {
+  if (!confirm(`Benutzer «${name}» wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+  try {
+    const res  = await fetch(`${API}/users/${userId}`, { method: "DELETE", headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || "Fehler beim Löschen.", "error"); return; }
+    // Remove card from DOM
+    document.getElementById(`ucard-${userId}`)?.remove();
+    showToast(`✓ Benutzer «${name}» gelöscht.`, "success");
+  } catch { showToast("Netzwerkfehler beim Löschen.", "error"); }
+}
+
+// ── Edit user modal ─────────────────────────────────────────────────────────
+function openEditModal(id, firstName, lastName, email, mobile, role) {
+  document.getElementById("editUserId").value    = id;
+  document.getElementById("editFirstName").value = firstName;
+  document.getElementById("editLastName").value  = lastName;
+  document.getElementById("editEmail").value     = email;
+  document.getElementById("editMobile").value    = mobile;
+  document.getElementById("editRole").value      = role;
+  setMsg(document.getElementById("editUserMsg"), "");
+  const modal = document.getElementById("editUserModal");
+  modal.style.display = "flex";
+  // Focus first input
+  setTimeout(() => document.getElementById("editFirstName").focus(), 50);
+}
+
+function closeEditModal() {
+  document.getElementById("editUserModal").style.display = "none";
+}
+
+async function onSaveEditUser(e) {
+  e.preventDefault();
+  const userId = Number(document.getElementById("editUserId").value);
+  const msg    = document.getElementById("editUserMsg");
+  const btn    = e.target.querySelector("button[type=submit]");
+  setMsg(msg, "");
+  if (btn) { btn.disabled = true; btn.textContent = "Speichert …"; }
+
+  const body = {
+    first_name: document.getElementById("editFirstName").value.trim(),
+    last_name:  document.getElementById("editLastName").value.trim(),
+    email:      document.getElementById("editEmail").value.trim(),
+    mobile:     document.getElementById("editMobile").value.trim(),
+    role:       document.getElementById("editRole").value,
+  };
+
+  try {
+    const res  = await fetch(`${API}/users/${userId}`, {
+      method: "PATCH", headers: authHeaders(), body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { setMsg(msg, data.error || "Fehler.", "error"); return; }
+    showToast("✓ Benutzer erfolgreich aktualisiert.", "success");
+    closeEditModal();
+    loadUsers();
+  } catch { setMsg(msg, "Netzwerkfehler.", "error"); }
+  finally   { if (btn) { btn.disabled = false; btn.textContent = "Speichern"; } }
+}
+
+// ── Admin: create new customer ──────────────────────────────────────────────
 async function onCreateCustomer(e) {
   e.preventDefault();
   const msg    = document.getElementById("newCustomerMsg");
@@ -390,7 +294,7 @@ async function onCreateCustomer(e) {
     if (!res.ok) { setMsg(msg, data.error || "Fehler.", "error"); return; }
 
     const name = [data.user.first_name, data.user.last_name].filter(Boolean).join(" ") || data.user.email;
-    setMsg(msg, `✓ Kunde «${escHtml(name)}» erfolgreich erstellt.`, "success");
+    setMsg(msg, `✓ Benutzer «${escHtml(name)}» erfolgreich erstellt.`, "success");
 
     pwdBox.style.display = "";
     pwdBox.innerHTML = buildPwdBox(
@@ -402,16 +306,16 @@ async function onCreateCustomer(e) {
     });
 
     e.target.reset();
-    loadCustomers();
+    loadUsers();
+    showAdminTab("list");
   } catch { setMsg(msg, "Netzwerkfehler.", "error"); }
-  finally   { if (btn) { btn.disabled = false; btn.textContent = "Neuen Kunden anlegen"; } }
+  finally   { if (btn) { btn.disabled = false; btn.textContent = "Kunden erstellen & Passwort generieren"; } }
 }
 
 // ── Admin tabs ──────────────────────────────────────────────────────────────
 function showAdminTab(tab) {
   document.getElementById("adminListView").style.display = tab === "list" ? "" : "none";
   document.getElementById("adminNewView").style.display  = tab === "new"  ? "" : "none";
-  // Highlight active button with full opacity; inactive = dimmed
   const btnList = document.getElementById("tabListCustomers");
   const btnNew  = document.getElementById("tabNewCustomer");
   if (btnList) btnList.style.opacity = tab === "list" ? "1" : ".55";
@@ -454,6 +358,10 @@ function escHtml(str) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function escAttr(str) {
+  return String(str || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+}
+
 function copyPwd(pwd, btn) {
   navigator.clipboard.writeText(pwd).then(() => {
     const orig = btn.textContent;
@@ -462,4 +370,7 @@ function copyPwd(pwd, btn) {
   });
 }
 
-window.showAdminTab = showAdminTab;
+window.showAdminTab    = showAdminTab;
+window.deleteUser      = deleteUser;
+window.openEditModal   = openEditModal;
+window.closeEditModal  = closeEditModal;

@@ -470,6 +470,49 @@ router.post("/:userId/collaborators/:linkId/send-invite", requireAuth, requireAd
   }
 });
 
+// ── PATCH /users/:userId  (admin – edit any user) ─────────────────────────
+router.patch("/:userId", requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!userId) return res.status(400).json({ error: "Ungültige ID." });
+  const { email, first_name, last_name, role, address, mobile } = req.body;
+  try {
+    const updates = {};
+    if (email      !== undefined) updates.email      = String(email      || "").trim().toLowerCase();
+    if (first_name !== undefined) updates.first_name = String(first_name || "").trim() || null;
+    if (last_name  !== undefined) updates.last_name  = String(last_name  || "").trim() || null;
+    if (address    !== undefined) updates.address    = String(address    || "").trim() || null;
+    if (mobile     !== undefined) updates.mobile     = String(mobile     || "").trim() || null;
+    // Only allow changing to customer/collaborator – never admin
+    if (role !== undefined && ["customer","collaborator"].includes(role)) updates.role = role;
+
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Keine Felder angegeben." });
+    const setClauses = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(", ");
+    await pool.query(`UPDATE users SET ${setClauses} WHERE id = $1 AND role != 'admin'`,
+      [userId, ...Object.values(updates)]);
+    return res.json({ ok: true });
+  } catch (err) {
+    if (err.code === "23505") return res.status(409).json({ error: "E-Mail bereits vergeben." });
+    console.error("Admin patch user error:", err.message);
+    return res.status(500).json({ error: "Benutzer konnte nicht aktualisiert werden." });
+  }
+});
+
+// ── DELETE /users/:userId  (admin – delete any non-admin user) ─────────────
+router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!userId) return res.status(400).json({ error: "Ungültige ID." });
+  try {
+    const result = await pool.query(
+      "DELETE FROM users WHERE id = $1 AND role != 'admin' RETURNING id", [userId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Benutzer nicht gefunden oder kann nicht gelöscht werden." });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Delete user error:", err.message);
+    return res.status(500).json({ error: "Benutzer konnte nicht gelöscht werden." });
+  }
+});
+
 // ── DELETE /users/:userId/collaborators/:linkId ────────────────────────────
 router.delete("/:userId/collaborators/:linkId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const customerId = Number(req.params.userId);

@@ -578,111 +578,15 @@
         </div>
       </div>
 
-      <!-- ── 2. Fachpersonen & Zugriffsrechte ── -->
-      <div class="profile-card" id="sectionCollabs">
-        <div class="profile-card-head">
-          <div class="profile-card-icon profile-card-icon--blue">
-            <svg viewBox="0 0 20 20" stroke-width="1.6">
-              <circle cx="7" cy="7" r="3"/>
-              <circle cx="14" cy="7" r="2.5"/>
-              <path d="M1 17c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke-linecap="round"/>
-              <path d="M14 12c1.657 0 3 1.343 3 3" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="profile-card-head-text">
-            <h2 class="profile-card-title">Fachpersonen &amp; Zugriffsrechte</h2>
-            <p class="profile-card-sub">Fallreviewer mit Lesezugriff: Gutachter, Anwälte, Therapeuten &amp; weitere Beteiligte — nur Lesezugriff, kein Upload</p>
-          </div>
-        </div>
-        <div class="profile-card-body">
-
-          <!-- + Fachperson button (above list) -->
-          <div style="margin-bottom:1rem">
-            <button class="action-btn" id="addFachToggle" aria-expanded="false" type="button">
-              <svg viewBox="0 0 20 20" stroke-width="2.2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
-              + Fachperson hinzufügen
-              <svg class="chevron" viewBox="0 0 16 16" stroke-width="2"><path d="M3 6l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-
-            <!-- Add form panel (opens below button) -->
-            <div class="add-fach-panel" id="addFachPanel">
-              <p class="add-fach-panel-title">Neue Fachperson einladen</p>
-              <form id="addCollabForm">
-                <div class="three-col mb-3">
-                  <div class="field-group">
-                    <label class="field-label" for="collabFirstName">Vorname</label>
-                    <input id="collabFirstName" type="text" class="field-input" placeholder="Anna" />
-                  </div>
-                  <div class="field-group">
-                    <label class="field-label" for="collabLastName">Nachname</label>
-                    <input id="collabLastName" type="text" class="field-input" placeholder="Meier" />
-                  </div>
-                  <div class="field-group">
-                    <label class="field-label" for="collabFunction">Funktion <span class="required-dot">*</span></label>
-                    <select id="collabFunction" class="field-input" required>
-                      <option value="">Funktion wählen …</option>
-                      <option value="Gutachter/in">Gutachter/in</option>
-                      <option value="Therapeut/in">Therapeut/in</option>
-                      <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
-                      <option value="Berater/in">Berater/in</option>
-                      <option value="Psychologe / Psychologin">Psychologe / Psychologin</option>
-                      <option value="Psychiater/in">Psychiater/in</option>
-                      <option value="Arzt / Ärztin">Arzt / Ärztin</option>
-                      <option value="Sozialarbeiter/in">Sozialarbeiter/in</option>
-                      <option value="Familienbegleiter/in">Familienbegleiter/in</option>
-                      <option value="Mediator/in">Mediator/in</option>
-                      <option value="Beistand / Beiständin">Beistand / Beiständin</option>
-                      <option value="Kinderanwalt / Kinderanwältin">Kinderanwalt / Kinderanwältin</option>
-                      <option value="Vertrauensperson">Vertrauensperson</option>
-                      <option value="Andere">Andere</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="two-col mb-3">
-                  <div class="field-group">
-                    <label class="field-label" for="collabEmail">E-Mail-Adresse <span class="required-dot">*</span></label>
-                    <input id="collabEmail" type="email" class="field-input" placeholder="gutachter@beispiel.ch" required />
-                  </div>
-                  <div class="field-group">
-                    <label class="field-label" for="collabCase">Zugewiesener Fall</label>
-                    <select id="collabCase" class="field-input">
-                      <option value="">Kein Fall zuweisen</option>
-                    </select>
-                  </div>
-                </div>
-                <button type="submit" class="action-btn" style="margin-top:.25rem">
-                  <svg viewBox="0 0 20 20" fill="none" style="width:.9rem;height:.9rem;flex-shrink:0"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                  Fachperson hinzufügen
-                </button>
-                <p id="collabMsg" class="message" role="alert" style="margin-top:.6rem"></p>
-                <div id="collabPwdBox" style="display:none;margin-top:.75rem"></div>
-              </form>
-            </div>
-          </div>
-
-          <!-- Fachpersonen list (below button) -->
-          <div id="collabList" class="fach-list">
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-                <circle cx="9" cy="7" r="4"/><path d="M1 21c0-4.418 3.582-8 8-8"/>
-                <path d="M19 11v6M22 14h-6" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
-              <span>Lade Liste …</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- ── 3. Kundenverwaltung (admin only) ── -->
+      <!-- ── 2. Benutzerverwaltung (admin only) ── -->
       <div class="profile-card" id="sectionAdmin" style="display:none">
         <div class="profile-card-head">
           <div class="profile-card-icon profile-card-icon--amber">
             <svg viewBox="0 0 20 20" stroke-width="1.7"><path d="M3 4h14M3 8h14M3 12h8" stroke-linecap="round"/></svg>
           </div>
           <div class="profile-card-head-text">
-            <h2 class="profile-card-title">Kundenverwaltung</h2>
-            <p class="profile-card-sub">Alle Kunden einsehen und neue Kunden anlegen — nur für Admins</p>
+            <h2 class="profile-card-title">Benutzerverwaltung</h2>
+            <p class="profile-card-sub">Alle Benutzer verwalten — Kunden &amp; Fachpersonen — nur für Admins</p>
           </div>
         </div>
         <div class="profile-card-body">
@@ -749,6 +653,48 @@
       <a href="/datenschutz.html">Datenschutz</a>
     </footer>
   </main>
+
+  <!-- Edit-User Modal -->
+  <div id="editUserModal" style="display:none;position:fixed;inset:0;background:rgba(15,43,54,.45);z-index:9990;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:16px;padding:1.75rem 2rem;width:min(520px,92vw);box-shadow:0 12px 48px rgba(0,0,0,.2);position:relative">
+      <h3 style="margin:0 0 1.25rem;font-size:1.05rem;color:#0f2b36">Benutzer bearbeiten</h3>
+      <form id="editUserForm">
+        <input type="hidden" id="editUserId" />
+        <div class="two-col mb-3">
+          <div class="field-group">
+            <label class="field-label" for="editFirstName">Vorname</label>
+            <input id="editFirstName" type="text" class="field-input" placeholder="Vorname" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="editLastName">Nachname</label>
+            <input id="editLastName" type="text" class="field-input" placeholder="Nachname" />
+          </div>
+        </div>
+        <div class="field-group mb-3">
+          <label class="field-label" for="editEmail">E-Mail</label>
+          <input id="editEmail" type="email" class="field-input" required />
+        </div>
+        <div class="two-col mb-3">
+          <div class="field-group">
+            <label class="field-label" for="editMobile">Mobile</label>
+            <input id="editMobile" type="tel" class="field-input" placeholder="+41 79 …" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="editRole">Rolle</label>
+            <select id="editRole" class="field-input">
+              <option value="customer">Kunde</option>
+              <option value="collaborator">Fachperson</option>
+            </select>
+          </div>
+        </div>
+        <p id="editUserMsg" class="message" role="alert" style="margin-bottom:.6rem"></p>
+        <div style="display:flex;gap:.6rem;justify-content:flex-end">
+          <button type="button" onclick="closeEditModal()" style="padding:.55rem 1.1rem;border:1px solid #dae2e8;background:#fff;border-radius:8px;cursor:pointer;font-weight:600;color:#4a6672">Abbrechen</button>
+          <button type="submit" class="action-btn" style="padding:.55rem 1.1rem">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="profile.js"></script>
 </body>
