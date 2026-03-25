@@ -261,6 +261,34 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
+    .fach-date {
+      font-size: .73rem;
+      color: #8ba4b0;
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding: .18rem .5rem;
+      background: #f0f4f6;
+      border-radius: 6px;
+    }
+
+    .fach-invite {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 8px;
+      border: 1px solid #6ee7b7;
+      background: #f0fdf4;
+      color: #047857;
+      cursor: pointer;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .fach-invite:hover { background: #dcfce7; border-color: #34d399; }
+    .fach-invite:disabled { opacity: .5; cursor: default; }
+    .fach-invite svg { width: .85rem; height: .85rem; }
+
     .fach-remove {
       display: inline-flex;
       align-items: center;

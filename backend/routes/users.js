@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
 const { Pool } = require("pg");
 const { requireAuth, requireAdmin, requireAdminOrSelf } = require("../middleware/auth");
 
@@ -21,26 +22,139 @@ function normalizeDatabaseUrl(rawUrl) {
 
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
 
+// ── SMTP mail transport ────────────────────────────────────────────────────
+function createMailTransport() {
+  return nodemailer.createTransport({
+    host:   process.env.SMTP_HOST || "asmtp.mail.hostpoint.ch",
+    port:   Number(process.env.SMTP_PORT || 465),
+    secure: true, // SSL on port 465
+    auth: {
+      user: process.env.SMTP_USER || "dmski@aikmu.ch",
+      pass: process.env.SMTP_PASS || "j+TqF5qsEqCS2d*&",
+    },
+  });
+}
+
+// ── HTML invite email template ─────────────────────────────────────────────
+function buildInviteEmail({ inviteeName, inviteeEmail, customerName, functionLabel, platformUrl }) {
+  const displayName = inviteeName || inviteeEmail;
+  const fn = functionLabel || "Fachperson";
+  const url = platformUrl || "https://dmski.aikmu.ch";
+  return {
+    subject: `Einladung zur DMSKI-Plattform – ${customerName || "Fallteam"}`,
+    html: `<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Einladung DMSKI</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f4f6;font-family:'Segoe UI',Helvetica,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f6;padding:40px 16px">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10)">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#0d5760 0%,#116b73 50%,#1a8a94 100%);padding:36px 40px 30px;text-align:center">
+            <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;letter-spacing:-0.5px">DMSKI</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;letter-spacing:0.5px">Dokument-Management &amp; Sachverständigen-Koordination</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px 28px">
+            <p style="margin:0 0 10px;font-size:17px;font-weight:700;color:#0f2b36">Guten Tag, ${escHtmlEmail(displayName)}</p>
+            <p style="margin:0 0 22px;font-size:15px;color:#2d4a56;line-height:1.65">
+              Sie wurden als <strong>${escHtmlEmail(fn)}</strong> zum Fallteam von
+              <strong>${escHtmlEmail(customerName || "DMSKI")}</strong> eingeladen
+              und erhalten damit Lesezugriff auf die relevanten Falldokumente.
+            </p>
+
+            <!-- Info box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+              <tr>
+                <td style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:18px 22px">
+                  <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.06em">Ihre Zugangsdaten</p>
+                  <table cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="font-size:13px;color:#64748b;padding-right:10px;padding-bottom:4px">Plattform:</td>
+                      <td style="font-size:13px;color:#0f2b36;font-weight:600;padding-bottom:4px">
+                        <a href="${url}" style="color:#116b73;text-decoration:none">${url}</a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#64748b;padding-right:10px;padding-bottom:4px">Login (E-Mail):</td>
+                      <td style="font-size:13px;color:#0f2b36;font-weight:600;padding-bottom:4px">${escHtmlEmail(inviteeEmail)}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#64748b;padding-right:10px">Passwort:</td>
+                      <td style="font-size:13px;color:#64748b">Wurde Ihnen separat mitgeteilt</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA button -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+              <tr>
+                <td align="center">
+                  <a href="${url}" style="display:inline-block;background:linear-gradient(135deg,#116b73,#0d5760);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:13px 36px;border-radius:10px;box-shadow:0 4px 14px rgba(17,107,115,0.30)">
+                    Zur Plattform →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;font-size:13px;color:#8ba4b0;line-height:1.6">
+              Bei Fragen stehen wir Ihnen gerne zur Verfügung.<br/>
+              Diese E-Mail wurde automatisch von der DMSKI-Plattform versandt.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f7fbfc;border-top:1px solid #dae2e8;padding:18px 40px;text-align:center">
+            <p style="margin:0;font-size:12px;color:#8ba4b0">
+              © ${new Date().getFullYear()} DMSKI · <a href="${url}/impressum.html" style="color:#116b73;text-decoration:none">Impressum</a> · <a href="${url}/datenschutz.html" style="color:#116b73;text-decoration:none">Datenschutz</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+    text: `Guten Tag ${displayName},\n\nSie wurden als ${fn} zum Fallteam von ${customerName || "DMSKI"} eingeladen.\n\nPlattform: ${url}\nLogin: ${inviteeEmail}\nPasswort: Wurde Ihnen separat mitgeteilt\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nDMSKI-Team`
+  };
+}
+
+function escHtmlEmail(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // ── Schema migration for customer_collaborators table ──────────────────────
 let collabSchemaDone = false;
 async function ensureCollabSchema() {
   if (collabSchemaDone) return;
+  // No try/catch here – let errors propagate to the caller
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customer_collaborators (
+      id              SERIAL PRIMARY KEY,
+      customer_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      collaborator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      function_label  TEXT,
+      created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE (customer_id, collaborator_id)
+    )
+  `);
   collabSchemaDone = true;
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS customer_collaborators (
-        id         SERIAL PRIMARY KEY,
-        customer_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        collaborator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        function_label TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        UNIQUE (customer_id, collaborator_id)
-      )
-    `);
-  } catch (err) {
-    collabSchemaDone = false;
-    console.warn("Collab schema warning:", err.message);
-  }
 }
 
 // ── Password generator ─────────────────────────────────────────────────────
@@ -57,7 +171,6 @@ function generatePassword() {
   for (let i = 4; i < 14; i++) {
     pwd += all[Math.floor(Math.random() * all.length)];
   }
-  // Fisher-Yates shuffle
   const arr = pwd.split("");
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -87,11 +200,8 @@ router.get("/me", requireAuth, async (req, res) => {
         `SELECT function_label FROM customer_collaborators WHERE collaborator_id = $1 LIMIT 1`,
         [req.user.sub]
       );
-      if (ccResult.rows[0]) {
-        user.function_label = ccResult.rows[0].function_label;
-      }
+      if (ccResult.rows[0]) user.function_label = ccResult.rows[0].function_label;
     } catch (ccErr) {
-      // Non-fatal: collaborator table may not exist yet; proceed without function_label
       console.warn("function_label lookup skipped:", ccErr.message);
     }
 
@@ -105,9 +215,12 @@ router.get("/me", requireAuth, async (req, res) => {
 // ── PATCH /users/me ────────────────────────────────────────────────────────
 router.patch("/me", requireAuth, async (req, res) => {
   const { email, password, currentPassword, first_name, last_name, address, mobile, function_label } = req.body;
-  await ensureCollabSchema();
   try {
-    // Password change requires currentPassword verification
+    await ensureCollabSchema();
+  } catch (err) {
+    console.warn("ensureCollabSchema on PATCH /me:", err.message);
+  }
+  try {
     if (password) {
       if (!currentPassword) {
         return res.status(400).json({ error: "Aktuelles Passwort erforderlich zum Ändern." });
@@ -125,7 +238,6 @@ router.patch("/me", requireAuth, async (req, res) => {
       await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [newHash, req.user.sub]);
     }
 
-    // Build profile field updates
     const updates = {};
     if (email) updates.email = String(email).trim().toLowerCase();
     if (first_name !== undefined) updates.first_name = String(first_name || "").trim() || null;
@@ -141,7 +253,6 @@ router.patch("/me", requireAuth, async (req, res) => {
       );
     }
 
-    // Update function_label in customer_collaborators (only affects collaborator rows)
     if (function_label !== undefined) {
       await pool.query(
         `UPDATE customer_collaborators SET function_label = $1 WHERE collaborator_id = $2`,
@@ -208,8 +319,8 @@ router.post("/customers", requireAuth, requireAdmin, async (req, res) => {
 // ── GET /users/:userId/collaborators ──────────────────────────────────────
 router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const customerId = Number(req.params.userId);
-  await ensureCollabSchema();
   try {
+    await ensureCollabSchema();
     const result = await pool.query(
       `SELECT cc.id, cc.function_label, cc.created_at,
               u.id AS user_id, u.email, u.first_name, u.last_name, u.role
@@ -222,32 +333,30 @@ router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), 
     return res.json({ collaborators: result.rows });
   } catch (err) {
     console.error("List collabs error:", err.message);
-    return res.status(500).json({ error: "Mitarbeiterliste konnte nicht geladen werden." });
+    return res.status(500).json({ error: "Fachpersonenliste konnte nicht geladen werden." });
   }
 });
 
 // ── POST /users/:userId/collaborators ─────────────────────────────────────
-// Adds a collaborator (creates user if email not yet registered)
 router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const customerId = Number(req.params.userId);
   const { email, function_label, first_name, last_name } = req.body;
   if (!email) return res.status(400).json({ error: "E-Mail erforderlich." });
-  const emailNorm   = String(email).trim().toLowerCase();
-  const firstNorm   = String(first_name || "").trim() || null;
-  const lastNorm    = String(last_name  || "").trim() || null;
-  await ensureCollabSchema();
+  const emailNorm = String(email).trim().toLowerCase();
+  const firstNorm = String(first_name || "").trim() || null;
+  const lastNorm  = String(last_name  || "").trim() || null;
 
   try {
+    await ensureCollabSchema();
+
     let collaboratorId;
     let generatedPassword = null;
 
-    // Find or create the collaborator user
     const existing = await pool.query(
       "SELECT id FROM users WHERE email = $1 LIMIT 1", [emailNorm]
     );
     if (existing.rows.length > 0) {
       collaboratorId = existing.rows[0].id;
-      // Update name if provided and not already set
       if (firstNorm || lastNorm) {
         await pool.query(
           `UPDATE users SET
@@ -269,7 +378,6 @@ router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"),
       collaboratorId = created.rows[0].id;
     }
 
-    // Link to customer
     const linkResult = await pool.query(
       `INSERT INTO customer_collaborators (customer_id, collaborator_id, function_label)
        VALUES ($1, $2, $3)
@@ -291,9 +399,65 @@ router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"),
       isNewUser: generatedPassword !== null
     });
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ error: "Mitarbeiter bereits verknüpft." });
+    if (err.code === "23505") return res.status(409).json({ error: "Fachperson bereits verknüpft." });
     console.error("Add collab error:", err.message);
-    return res.status(500).json({ error: "Mitarbeiter konnte nicht hinzugefügt werden." });
+    return res.status(500).json({ error: "Fachperson konnte nicht hinzugefügt werden." });
+  }
+});
+
+// ── POST /users/:userId/collaborators/:linkId/send-invite ──────────────────
+router.post("/:userId/collaborators/:linkId/send-invite", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+  const customerId = Number(req.params.userId);
+  const linkId     = Number(req.params.linkId);
+
+  try {
+    await ensureCollabSchema();
+
+    // Fetch link + collaborator details
+    const linkRow = await pool.query(
+      `SELECT cc.id, cc.function_label,
+              u.email, u.first_name, u.last_name
+       FROM customer_collaborators cc
+       JOIN users u ON u.id = cc.collaborator_id
+       WHERE cc.id = $1 AND cc.customer_id = $2
+       LIMIT 1`,
+      [linkId, customerId]
+    );
+    if (!linkRow.rows[0]) {
+      return res.status(404).json({ error: "Fachperson nicht gefunden." });
+    }
+    const collab = linkRow.rows[0];
+
+    // Fetch customer name
+    const custRow = await pool.query(
+      "SELECT first_name, last_name, email FROM users WHERE id = $1 LIMIT 1",
+      [customerId]
+    );
+    const cust = custRow.rows[0] || {};
+    const customerName = [cust.first_name, cust.last_name].filter(Boolean).join(" ") || cust.email || "DMSKI";
+    const inviteeName  = [collab.first_name, collab.last_name].filter(Boolean).join(" ") || "";
+
+    const { subject, html, text } = buildInviteEmail({
+      inviteeName,
+      inviteeEmail:   collab.email,
+      customerName,
+      functionLabel:  collab.function_label,
+      platformUrl:    process.env.PLATFORM_URL || "https://dmski.aikmu.ch",
+    });
+
+    const transport = createMailTransport();
+    await transport.sendMail({
+      from:    `"DMSKI Plattform" <${process.env.SMTP_USER || "dmski@aikmu.ch"}>`,
+      to:      collab.email,
+      subject,
+      html,
+      text,
+    });
+
+    return res.json({ ok: true, sentTo: collab.email });
+  } catch (err) {
+    console.error("Send invite error:", err.message);
+    return res.status(500).json({ error: `Einladung konnte nicht gesendet werden: ${err.message}` });
   }
 });
 
@@ -301,8 +465,8 @@ router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"),
 router.delete("/:userId/collaborators/:linkId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const customerId = Number(req.params.userId);
   const linkId     = Number(req.params.linkId);
-  await ensureCollabSchema();
   try {
+    await ensureCollabSchema();
     await pool.query(
       "DELETE FROM customer_collaborators WHERE id = $1 AND customer_id = $2",
       [linkId, customerId]
@@ -310,7 +474,7 @@ router.delete("/:userId/collaborators/:linkId", requireAuth, requireAdminOrSelf(
     return res.json({ ok: true });
   } catch (err) {
     console.error("Remove collab error:", err.message);
-    return res.status(500).json({ error: "Mitarbeiter konnte nicht entfernt werden." });
+    return res.status(500).json({ error: "Fachperson konnte nicht entfernt werden." });
   }
 });
 

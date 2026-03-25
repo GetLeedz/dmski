@@ -190,8 +190,15 @@ async function loadCollabs(userId) {
     if (!res.ok) { el.innerHTML = `<p class="empty-state">${escHtml(data.error || "Fehler")}</p>`; return; }
     renderCollabs(data.collaborators || [], userId, el);
   } catch {
-    el.innerHTML = `<p class="empty-state">Mitarbeiterliste konnte nicht geladen werden.</p>`;
+    el.innerHTML = `<p class="empty-state">Fachpersonenliste konnte nicht geladen werden.</p>`;
   }
+}
+
+function formatDate(val) {
+  if (!val) return "–";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "–";
+  return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
 }
 
 function renderCollabs(list, userId, el) {
@@ -206,35 +213,77 @@ function renderCollabs(list, userId, el) {
       </div>`;
     return;
   }
-  el.innerHTML = list.map(c => {
-    const name    = [c.first_name, c.last_name].filter(Boolean).join(" ") || c.email;
-    const letter  = (c.first_name || c.email || "?")[0].toUpperCase();
-    const fn      = escHtml(c.function_label || c.role || "Fachperson");
+
+  // Table header
+  const rows = list.map(c => {
+    const firstName = escHtml(c.first_name || "–");
+    const lastName  = escHtml(c.last_name  || "–");
+    const fn        = escHtml(c.function_label || c.role || "Fachperson");
+    const dateStr   = escHtml(formatDate(c.created_at));
+    const letter    = (c.first_name || c.email || "?")[0].toUpperCase();
     return `<div class="fach-card">
       <div class="fach-avatar">${escHtml(letter)}</div>
       <div class="fach-info">
-        <div class="fach-name">${escHtml(name)}</div>
+        <div class="fach-name">${lastName} ${firstName}</div>
         <div class="fach-email">${escHtml(c.email)}</div>
       </div>
       <span class="fach-role-badge">${fn}</span>
+      <span class="fach-date" title="Hinzugefügt am">${dateStr}</span>
+      <button class="fach-invite" data-uid="${userId}" data-lid="${c.id}" data-email="${escHtml(c.email)}" title="Einladungs-E-Mail senden">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 5l8 6 8-6"/><rect x="2" y="4" width="16" height="12" rx="2"/>
+        </svg>
+      </button>
       <button class="fach-remove" data-uid="${userId}" data-lid="${c.id}" title="Zugang entfernen">
         <svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round"><path d="M3 4h10M6 4V3h4v1M5 4v8h6V4"/></svg>
       </button>
     </div>`;
   }).join("");
 
+  el.innerHTML = rows;
+
   el.querySelectorAll(".fach-remove").forEach(btn =>
     btn.addEventListener("click", () =>
       removeCollab(Number(btn.dataset.uid), Number(btn.dataset.lid))));
+
+  el.querySelectorAll(".fach-invite").forEach(btn =>
+    btn.addEventListener("click", () =>
+      sendInvite(Number(btn.dataset.uid), Number(btn.dataset.lid), btn.dataset.email, btn)));
 }
 
 async function removeCollab(userId, linkId) {
-  if (!confirm("Mitarbeiter wirklich entfernen?")) return;
+  if (!confirm("Fachperson wirklich entfernen?")) return;
   try {
     await fetch(`${API}/users/${userId}/collaborators/${linkId}`,
       { method: "DELETE", headers: authHeaders() });
     loadCollabs(userId);
   } catch { showToast("Fehler beim Entfernen.", "error"); }
+}
+
+// ── Send invite email ────────────────────────────────────────────────────────
+async function sendInvite(userId, linkId, email, btn) {
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.title = "Wird gesendet …";
+
+  try {
+    const res  = await fetch(`${API}/users/${userId}/collaborators/${linkId}/send-invite`, {
+      method: "POST", headers: authHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "Einladung konnte nicht gesendet werden.", "error");
+      return;
+    }
+    showToast(`✓ Einladung gesendet an ${email}`, "success");
+    // Brief visual feedback on the button
+    btn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem"><path d="M4 10l4 4 8-8"/></svg>`;
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; btn.title = "Einladungs-E-Mail senden"; }, 2500);
+  } catch {
+    showToast("Netzwerkfehler beim Senden.", "error");
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
 }
 
 // ── Add collaborator ────────────────────────────────────────────────────────
