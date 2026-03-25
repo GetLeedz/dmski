@@ -14,11 +14,11 @@ const getUserId = () => Number(sessionStorage.getItem("dmski_user_id") || 0);
 const authHdr   = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
 // ── State ───────────────────────────────────────────────────────────────────
-let allUsers   = [];   // raw list from server
+let allUsers   = [];
 let isAdmin    = false;
 let myUserId   = 0;
-let modalMode  = "add"; // "add" | "edit"
-let editTarget = null;  // { userId, linkId (for collab) }
+let modalMode  = "add";   // "add" | "edit"
+let editTarget = null;    // { userId, linkId }
 
 // ── Boot ────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
@@ -37,24 +37,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userModalForm").addEventListener("submit", onModalSubmit);
   document.getElementById("newCustomerForm")?.addEventListener("submit", onCreateCustomer);
 
-  // Verify session + get role
   try {
-    const res  = await fetch(`${API}/users/me`, { headers: authHdr() });
+    const res = await fetch(`${API}/users/me`, { headers: authHdr() });
     if (res.status === 401 || res.status === 403) { window.location.replace("/"); return; }
     const { user } = await res.json();
     sessionStorage.setItem("dmski_role",    user.role || "customer");
     sessionStorage.setItem("dmski_user_id", String(user.id));
-    isAdmin   = user.role === "admin";
-    myUserId  = user.id;
+    isAdmin  = user.role === "admin";
+    myUserId = user.id;
   } catch { window.location.replace("/"); return; }
 
-  document.getElementById("authGate").style.display = "none";
+  document.getElementById("authGate").style.display  = "none";
   document.getElementById("usersMain").style.display = "";
 
   if (isAdmin) {
     document.getElementById("roleFilter").style.display = "";
   } else {
-    document.getElementById("heroSub").textContent = "Meine Fachpersonen — anlegen, bearbeiten und löschen";
+    document.getElementById("heroSub").textContent    = "Meine Fachpersonen — anlegen, bearbeiten und löschen";
     document.getElementById("addBtnLabel").textContent = "Fachperson anlegen";
   }
 
@@ -128,14 +127,14 @@ function renderList(rows) {
   }
 
   el.innerHTML = rows.map(u => {
-    const name     = [u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
-    const initial  = (u.firstName || u.email || "?")[0].toUpperCase();
+    const name    = [u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
+    const initial = (u.firstName || u.email || "?")[0].toUpperCase();
     const isCollab = u.role === "collaborator";
-    const avCls    = isCollab ? "u-av u-av--f" : "u-av u-av--k";
-    const roleLbl  = isCollab ? "Fachperson" : "Kunde";
-    const roleCls  = isCollab ? "badge badge--f" : "badge badge--k";
-    const fnBadge  = u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : "";
-    const caBadge  = u.caseName ? `<span class="badge badge--ca">${esc(u.caseName)}</span>` : "";
+    const avCls   = isCollab ? "u-av u-av--f" : "u-av u-av--k";
+    const roleLbl = isCollab ? "Fachperson" : "Kunde";
+    const roleCls = isCollab ? "badge badge--f" : "badge badge--k";
+    const fnBadge = u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : "";
+    const caBadge = u.caseName ? `<span class="badge badge--ca">${esc(u.caseName)}</span>` : "";
 
     return `<div class="u-card" id="uc-${u.userId}">
       <div class="${avCls}">${esc(initial)}</div>
@@ -157,9 +156,9 @@ function renderList(rows) {
 
 // ── Filter ───────────────────────────────────────────────────────────────────
 function filterList() {
-  const q      = (document.getElementById("searchInput").value  || "").toLowerCase().trim();
-  const role   = (document.getElementById("roleFilter").value   || "").toLowerCase();
-  const fnVal  = (document.getElementById("fnFilter").value     || "").toLowerCase();
+  const q     = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+  const role  = (document.getElementById("roleFilter").value  || "").toLowerCase();
+  const fnVal = (document.getElementById("fnFilter").value    || "").toLowerCase();
 
   const filtered = allUsers.filter(u => {
     const name  = [u.firstName, u.lastName, u.email].join(" ").toLowerCase();
@@ -179,26 +178,49 @@ function switchTab(tab) {
   document.getElementById("tabNew").classList.toggle("active",  tab === "new");
 }
 
+// ── Funktion chip selector ────────────────────────────────────────────────────
+function selectFnChip(chip) {
+  const chips = document.querySelectorAll("#mFnChips .fn-chip");
+  const alreadySelected = chip.classList.contains("selected");
+  chips.forEach(c => c.classList.remove("selected"));
+  if (!alreadySelected) {
+    chip.classList.add("selected");
+    document.getElementById("mFunction").value = chip.dataset.fn;
+  } else {
+    // toggle off
+    document.getElementById("mFunction").value = "";
+  }
+}
+
+function setFnChip(val) {
+  document.querySelectorAll("#mFnChips .fn-chip").forEach(c => {
+    c.classList.toggle("selected", c.dataset.fn === val && !!val);
+  });
+  document.getElementById("mFunction").value = val || "";
+}
+
 // ── Open ADD modal ──────────────────────────────────────────────────────────
 function openAddModal() {
   modalMode  = "add";
   editTarget = null;
+
   document.getElementById("mUserId").value    = "";
   document.getElementById("mFirstName").value = "";
   document.getElementById("mLastName").value  = "";
   document.getElementById("mEmail").value     = "";
   document.getElementById("mMobile").value    = "";
-  document.getElementById("mFunction").value  = "";
-  document.getElementById("mCase").value      = "";
-  document.getElementById("mRoleGroup").style.display = isAdmin ? "" : "none";
-  document.getElementById("mFnGroup").style.display   = "";
-  document.getElementById("mCaseGroup").style.display = "";
-  if (isAdmin) document.getElementById("mRole").value = "collaborator";
-  document.getElementById("modalTitle").textContent = isAdmin ? "Benutzer anlegen" : "Fachperson anlegen";
-  document.getElementById("modalSaveBtn").textContent = "Anlegen";
-  hideModalMsg(); hideModalPwd();
-  document.getElementById("mEmail").removeAttribute("disabled");
+  setFnChip("");
+  document.getElementById("mCase").value = "";
+
   document.getElementById("mFachSection").style.display = "";
+  document.getElementById("mFnGroup").style.display     = "";
+  document.getElementById("mCaseGroup").style.display   = "";
+
+  document.getElementById("modalTitle").textContent       = isAdmin ? "Benutzer anlegen" : "Fachperson anlegen";
+  document.getElementById("modalSaveBtn").textContent     = "Anlegen";
+  document.getElementById("mEmail").removeAttribute("disabled");
+
+  hideModalMsg(); hideModalPwd();
   loadCasesForModal();
   document.getElementById("userModal").classList.add("open");
   setTimeout(() => document.getElementById("mFirstName").focus(), 60);
@@ -216,20 +238,19 @@ function openEditModal(userId) {
   document.getElementById("mLastName").value  = u.lastName;
   document.getElementById("mEmail").value     = u.email;
   document.getElementById("mMobile").value    = u.mobile;
-  document.getElementById("mFunction").value  = u.fn || "";
-  document.getElementById("mCase").value      = u.caseId || "";
+  setFnChip(u.fn || "");
+  document.getElementById("mCase").value = u.caseId || "";
 
   const isCollab = u.role === "collaborator";
-  document.getElementById("mRoleGroup").style.display = isAdmin ? "" : "none";
-  document.getElementById("mFnGroup").style.display   = isCollab ? "" : "none";
   document.getElementById("mFachSection").style.display = isCollab ? "" : "none";
-  document.getElementById("mCaseGroup").style.display = isCollab ? "" : "none";
-  if (isAdmin) document.getElementById("mRole").value = u.role;
+  document.getElementById("mFnGroup").style.display     = isCollab ? "" : "none";
+  document.getElementById("mCaseGroup").style.display   = isCollab ? "" : "none";
 
   const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email;
-  document.getElementById("modalTitle").textContent = `${name} bearbeiten`;
-  document.getElementById("modalSaveBtn").textContent = "Speichern";
+  document.getElementById("modalTitle").textContent      = `${name} bearbeiten`;
+  document.getElementById("modalSaveBtn").textContent    = "Speichern";
   document.getElementById("mEmail").removeAttribute("disabled");
+
   hideModalMsg(); hideModalPwd();
   loadCasesForModal();
   document.getElementById("userModal").classList.add("open");
@@ -244,68 +265,71 @@ function closeModal() {
 async function onModalSubmit(e) {
   e.preventDefault();
   const btn = document.getElementById("modalSaveBtn");
-  btn.disabled = true; btn.textContent = "Speichert …";
+  btn.disabled = true;
+  btn.textContent = "Speichert …";
   hideModalMsg(); hideModalPwd();
-
-  if (modalMode === "add") {
-    await doAddUser();
-  } else {
-    await doEditUser();
+  try {
+    if (modalMode === "add") {
+      await doAddUser();
+    } else {
+      await doEditUser();
+    }
+  } catch (err) {
+    console.error("Modal save error:", err);
+    showModalMsg("Fehler beim Speichern. Bitte erneut versuchen.", "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = modalMode === "add" ? "Anlegen" : "Speichern";
   }
-  btn.disabled = false;
-  btn.textContent = modalMode === "add" ? "Anlegen" : "Speichern";
 }
 
 async function doAddUser() {
-  const body = {
-    email:          document.getElementById("mEmail").value.trim(),
-    first_name:     document.getElementById("mFirstName").value.trim() || undefined,
-    last_name:      document.getElementById("mLastName").value.trim()  || undefined,
-    function_label: document.getElementById("mFunction").value         || undefined,
-    case_id:        document.getElementById("mCase").value             || undefined,
-  };
+  const email     = document.getElementById("mEmail").value.trim();
+  const firstName = document.getElementById("mFirstName").value.trim() || undefined;
+  const lastName  = document.getElementById("mLastName").value.trim()  || undefined;
+  const mobile    = document.getElementById("mMobile").value.trim()    || undefined;
+  const fnVal     = document.getElementById("mFunction").value         || "";
+  const caseId    = document.getElementById("mCase").value             || undefined;
 
-  if (isAdmin && document.getElementById("mRole").value === "customer") {
-    // Create a customer account
-    body.mobile  = document.getElementById("mMobile").value.trim() || undefined;
-    body.address = undefined;
-    const res  = await fetch(`${API}/users/customers`, { method:"POST", headers:authHdr(), body:JSON.stringify(body) });
+  if (!fnVal) {
+    // No function → create as customer
+    const body = { email, first_name: firstName, last_name: lastName, mobile };
+    const res  = await fetch(`${API}/users/customers`, { method: "POST", headers: authHdr(), body: JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { showModalMsg(data.error || "Fehler.", "error"); return; }
-    const nm = [data.user.first_name, data.user.last_name].filter(Boolean).join(" ") || data.user.email;
-    showModalMsg(`✓ Benutzer «${esc(nm)}» angelegt.`, "ok");
-    if (data.generatedPassword) showModalPwd(data.user.email, data.generatedPassword);
+    const nm = [data.user?.first_name, data.user?.last_name].filter(Boolean).join(" ") || data.user?.email || email;
+    showModalMsg(`✓ Kunde «${esc(nm)}» angelegt.`, "ok");
+    if (data.generatedPassword) showModalPwd(data.user?.email || email, data.generatedPassword);
     await loadUsers();
     return;
   }
 
-  // Add as collaborator (customer or admin adding a Fachperson)
-  const customerId = isAdmin ? myUserId : myUserId; // for admin, we add to the system
-  // For admin adding a Fachperson globally, we still use the collaborator endpoint
-  // but need to pick a customer – for now, just add as a system-level user then link
-  // Simpler: admin adds via POST /users/:adminId/collaborators to track them
+  // Has function → create as collaborator (Fachperson)
+  const body = { email, first_name: firstName, last_name: lastName, function_label: fnVal, case_id: caseId };
   const res  = await fetch(`${API}/users/${myUserId}/collaborators`, {
     method: "POST", headers: authHdr(), body: JSON.stringify(body)
   });
   const data = await res.json();
   if (!res.ok) { showModalMsg(data.error || "Fehler.", "error"); return; }
-  const nm = [data.collaborator.first_name, data.collaborator.last_name].filter(Boolean).join(" ") || data.collaborator.email;
+  const collab = data.collaborator || {};
+  const nm = [collab.first_name, collab.last_name].filter(Boolean).join(" ") || collab.email || email;
   showModalMsg(`✓ Fachperson «${esc(nm)}» angelegt.`, "ok");
-  if (data.isNewUser && data.generatedPassword) showModalPwd(data.collaborator.email, data.generatedPassword);
+  if (data.isNewUser && data.generatedPassword) showModalPwd(collab.email || email, data.generatedPassword);
   await loadUsers();
 }
 
 async function doEditUser() {
   const userId = editTarget.userId;
+  const fnVal  = document.getElementById("mFunction").value || undefined;
+
   const body = {
     first_name:     document.getElementById("mFirstName").value.trim() || undefined,
     last_name:      document.getElementById("mLastName").value.trim()  || undefined,
     email:          document.getElementById("mEmail").value.trim(),
     mobile:         document.getElementById("mMobile").value.trim()    || undefined,
-    function_label: document.getElementById("mFunction").value         || undefined,
+    function_label: fnVal,
     case_id:        document.getElementById("mCase").value             || undefined,
   };
-  if (isAdmin) body.role = document.getElementById("mRole").value;
 
   const res  = await fetch(`${API}/users/${userId}`, {
     method: "PATCH", headers: authHdr(), body: JSON.stringify(body)
@@ -319,19 +343,17 @@ async function doEditUser() {
 
 // ── Delete ───────────────────────────────────────────────────────────────────
 async function deleteUser(userId) {
-  const u = allUsers.find(x => x.userId === userId);
+  const u    = allUsers.find(x => x.userId === userId);
   const name = u ? ([u.firstName, u.lastName].filter(Boolean).join(" ") || u.email) : String(userId);
   if (!confirm(`«${name}» wirklich entfernen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
 
   try {
     if (!isAdmin && u?.linkId) {
-      // Customer removes their own Fachperson link
-      const res  = await fetch(`${API}/users/${myUserId}/collaborators/${u.linkId}`, { method:"DELETE", headers:authHdr() });
+      const res  = await fetch(`${API}/users/${myUserId}/collaborators/${u.linkId}`, { method: "DELETE", headers: authHdr() });
       const data = await res.json();
       if (!res.ok) { toast(data.error || "Fehler.", "error"); return; }
     } else {
-      // Admin deletes user entirely
-      const res  = await fetch(`${API}/users/${userId}`, { method:"DELETE", headers:authHdr() });
+      const res  = await fetch(`${API}/users/${userId}`, { method: "DELETE", headers: authHdr() });
       const data = await res.json();
       if (!res.ok) { toast(data.error || "Fehler.", "error"); return; }
     }
@@ -344,24 +366,25 @@ async function deleteUser(userId) {
 // ── Load cases for modal dropdown ────────────────────────────────────────────
 async function loadCasesForModal() {
   const sel = document.getElementById("mCase");
+  if (!sel) return;
   const cur = sel.value;
   try {
-    const ep = isAdmin ? `${API}/cases` : `${API}/users/${myUserId}/cases`;
-    let res = await fetch(ep, { headers: authHdr() });
+    const ep  = isAdmin ? `${API}/cases` : `${API}/users/${myUserId}/cases`;
+    let res   = await fetch(ep, { headers: authHdr() });
     if (res.status === 404) res = await fetch(`${API}/cases`, { headers: authHdr() });
     if (!res.ok) return;
     const data = await res.json();
     const cases = data.cases || data || [];
     sel.innerHTML = `<option value="">Keinen Fall zuweisen</option>` +
-      cases.map(c => `<option value="${esc(String(c.id))}" ${String(c.id)===cur?"selected":""}>${esc(c.case_name||c.title||"Fall #"+c.id)}</option>`).join("");
+      cases.map(c => `<option value="${esc(String(c.id))}" ${String(c.id) === cur ? "selected" : ""}>${esc(c.case_name || c.title || "Fall #" + c.id)}</option>`).join("");
   } catch { /* no cases available */ }
 }
 
 // ── Admin: create customer from panel ───────────────────────────────────────
 async function onCreateCustomer(e) {
   e.preventDefault();
-  const btn = e.target.querySelector("button[type=submit]");
-  const msg = document.getElementById("ncMsg");
+  const btn    = e.target.querySelector("button[type=submit]");
+  const msg    = document.getElementById("ncMsg");
   const pwdBox = document.getElementById("ncPwdBox");
   msg.style.display = "none"; pwdBox.style.display = "none";
 
@@ -375,10 +398,10 @@ async function onCreateCustomer(e) {
 
   btn.disabled = true; btn.textContent = "Erstellt …";
   try {
-    const res  = await fetch(`${API}/users/customers`, { method:"POST", headers:authHdr(), body:JSON.stringify(body) });
+    const res  = await fetch(`${API}/users/customers`, { method: "POST", headers: authHdr(), body: JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { showPanelMsg(msg, data.error || "Fehler.", "error"); return; }
-    const nm = [data.user.first_name, data.user.last_name].filter(Boolean).join(" ") || data.user.email;
+    const nm = [data.user?.first_name, data.user?.last_name].filter(Boolean).join(" ") || data.user?.email || body.email;
     showPanelMsg(msg, `✓ Kunde «${esc(nm)}» erstellt.`, "success");
     if (data.generatedPassword) {
       pwdBox.style.display = "";
@@ -393,21 +416,24 @@ async function onCreateCustomer(e) {
     await loadUsers();
     switchTab("list");
   } catch { showPanelMsg(msg, "Netzwerkfehler.", "error"); }
-  finally { btn.disabled = false; btn.textContent = "Kunden erstellen & Passwort generieren"; }
+  finally   { btn.disabled = false; btn.textContent = "Kunden erstellen & Passwort generieren"; }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function esc(s) {
-  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function showModalMsg(text, type) {
   const el = document.getElementById("modalMsg");
-  el.textContent = text;
-  el.className   = `msg msg--${type==="success"?"ok":type}`;
+  el.textContent   = text;
+  el.className     = `msg msg--${type === "success" ? "ok" : type}`;
   el.style.display = "";
 }
-function hideModalMsg() { const el = document.getElementById("modalMsg"); el.style.display = "none"; el.textContent = ""; }
+function hideModalMsg() {
+  const el = document.getElementById("modalMsg");
+  el.style.display = "none"; el.textContent = "";
+}
 
 function showModalPwd(email, pwd) {
   const el = document.getElementById("modalPwdBox");
@@ -419,11 +445,14 @@ function showModalPwd(email, pwd) {
   </div>
   <p style="font-size:.73rem;color:#8ba4b0;margin:.35rem 0 0">⚠ Wird nur einmal angezeigt — bitte sichern.</p>`;
 }
-function hideModalPwd() { const el = document.getElementById("modalPwdBox"); el.style.display = "none"; el.innerHTML = ""; }
+function hideModalPwd() {
+  const el = document.getElementById("modalPwdBox");
+  el.style.display = "none"; el.innerHTML = "";
+}
 
 function showPanelMsg(el, text, type) {
-  el.textContent = text;
-  el.className   = `msg msg--${type}`;
+  el.textContent   = text;
+  el.className     = `msg msg--${type}`;
   el.style.display = "";
 }
 
@@ -440,27 +469,20 @@ function toast(text, type = "info") {
   el.textContent = text;
   el.style.cssText = `position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
     padding:.65rem 1.2rem;border-radius:8px;font-size:.88rem;font-weight:600;z-index:99999;
-    background:${type==="error"?"#fff5f5":"#ecfdf5"};
-    border:1.5px solid ${type==="error"?"#fca5a5":"#6ee7b7"};
-    color:${type==="error"?"#b91c1c":"#065f46"};
+    background:${type === "error" ? "#fff5f5" : "#ecfdf5"};
+    border:1.5px solid ${type === "error" ? "#fca5a5" : "#6ee7b7"};
+    color:${type === "error" ? "#b91c1c" : "#065f46"};
     box-shadow:0 4px 16px rgba(0,0,0,.12);white-space:nowrap`;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
 
-// ── Role change in modal ─────────────────────────────────────────────────────
-function onRoleChange() {
-  const isCollab = document.getElementById("mRole").value === "collaborator";
-  document.getElementById("mFachSection").style.display = isCollab ? "" : "none";
-  document.getElementById("mFnGroup").style.display     = isCollab ? "" : "none";
-  document.getElementById("mCaseGroup").style.display   = isCollab ? "" : "none";
-}
-
-// Expose to onclick handlers
+// ── Expose to onclick handlers ───────────────────────────────────────────────
 window.filterList    = filterList;
 window.openAddModal  = openAddModal;
 window.openEditModal = openEditModal;
 window.closeModal    = closeModal;
 window.deleteUser    = deleteUser;
 window.copyText      = copyText;
-window.onRoleChange  = onRoleChange;
+window.selectFnChip  = selectFnChip;
+window.switchTab     = switchTab;
