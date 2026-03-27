@@ -14,11 +14,12 @@ const getUserId = () => Number(sessionStorage.getItem("dmski_user_id") || 0);
 const authHdr   = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
 // ── State ───────────────────────────────────────────────────────────────────
-let allUsers   = [];
-let isAdmin    = false;
-let myUserId   = 0;
-let modalMode  = "add";   // "add" | "edit"
-let editTarget = null;    // { userId, linkId }
+let allUsers    = [];
+let isAdmin     = false;
+let myUserId    = 0;
+let modalMode   = "add";   // "add" | "edit"
+let editTarget  = null;    // { userId, linkId }
+let _editUserId = 0;       // dedicated backup – set only in _fillEditModal
 
 // ── Boot ────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
@@ -169,10 +170,10 @@ function renderList(rows) {
       </div>
       ${fnBadge}${caBadge}
       <span class="${roleCls}">${roleLbl}</span>
-      <button class="ib ib--edit" onclick="openEditModal(${u.userId})" title="Bearbeiten" type="button">
+      <button class="ib ib--edit" title="Bearbeiten" type="button">
         <svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
       </button>
-      <button class="ib ib--del" onclick="deleteUser(${u.userId})" title="Löschen" type="button">
+      <button class="ib ib--del" title="Löschen" type="button">
         <svg viewBox="0 0 24 24" stroke-width="1.9"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       </button>
     </div>`;
@@ -274,10 +275,18 @@ function openEditModal(userId) {
 
 // ── Fill and open the edit modal with a user object ──────────────────────────
 function _fillEditModal(u) {
-  modalMode  = "edit";
-  editTarget = { userId: u.userId, linkId: u.linkId };
+  const uid = Number(u && u.userId);
+  if (!uid) {
+    console.error("[_fillEditModal] invalid userId:", u);
+    showModalMsg("Benutzer konnte nicht geöffnet werden (ID fehlt). Bitte Seite neu laden.", "error");
+    document.getElementById("userModal").classList.add("open");
+    return;
+  }
+  modalMode   = "edit";
+  _editUserId = uid;   // dedicated backup — never cleared elsewhere
+  editTarget  = { userId: uid, linkId: u.linkId };
 
-  document.getElementById("mUserId").value    = u.userId;
+  document.getElementById("mUserId").value    = uid;
   document.getElementById("mFirstName").value = u.firstName;
   document.getElementById("mLastName").value  = u.lastName;
   document.getElementById("mEmail").value     = u.email;
@@ -368,10 +377,13 @@ async function doAddUser() {
 }
 
 async function doEditUser() {
-  // Read userId from hidden field first (most reliable); fall back to editTarget
-  const userId = Number(document.getElementById("mUserId").value) || (editTarget && editTarget.userId);
+  // Use all available sources in priority order: dedicated backup → DOM hidden field → editTarget
+  const userId = _editUserId
+    || Number(document.getElementById("mUserId").value)
+    || (editTarget && editTarget.userId);
   if (!userId) {
     showModalMsg("Ungültige Benutzer-ID – bitte Modal schliessen und erneut öffnen.", "error");
+    console.error("[doEditUser] all userId sources empty — _editUserId:", _editUserId, "mUserId:", document.getElementById("mUserId").value, "editTarget:", editTarget);
     return;
   }
   const fnVal  = document.getElementById("mFunction").value || undefined;
