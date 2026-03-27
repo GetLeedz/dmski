@@ -368,7 +368,12 @@ async function doAddUser() {
 }
 
 async function doEditUser() {
-  const userId = editTarget.userId;
+  // Read userId from hidden field first (most reliable); fall back to editTarget
+  const userId = Number(document.getElementById("mUserId").value) || (editTarget && editTarget.userId);
+  if (!userId) {
+    showModalMsg("Ungültige Benutzer-ID – bitte Modal schliessen und erneut öffnen.", "error");
+    return;
+  }
   const fnVal  = document.getElementById("mFunction").value || undefined;
 
   const body = {
