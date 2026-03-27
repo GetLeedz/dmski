@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const editBtn = e.target.closest(".ib--edit");
     const delBtn  = e.target.closest(".ib--del");
     if (editBtn) {
+      if (editBtn.hasAttribute("onclick")) return;
       const uid = Number(editBtn.dataset.uid);
       const card = editBtn.closest(".u-card");
       try {
@@ -184,7 +185,7 @@ function renderList(rows) {
       </div>
       ${fnBadge}${caBadge}
       <span class="${roleCls}">${roleLbl}</span>
-      <button class="ib ib--edit" data-uid="${u.userId}" title="Bearbeiten" type="button">
+      <button class="ib ib--edit" data-uid="${u.userId}" onclick="openEditModal('${u.userId}')" title="Bearbeiten" type="button">
         <svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
       </button>
       <button class="ib ib--del" data-uid="${u.userId}" title="Löschen" type="button">
@@ -336,19 +337,19 @@ async function openEditModalFromCard(card) {
 
 // ── Open EDIT modal (from onclick fallback with userId) ───────────────────────
 async function openEditModal(userId) {
-  const parsedUserId = Number(userId);
-  if (!parsedUserId) {
+  const id = Number(userId);
+  if (!id) {
     console.warn("openEditModal: userId undefined/invalid", userId);
     showModalMsg("ID undefined: Benutzer-ID ungültig.", "error");
     document.getElementById("userModal").classList.add("open");
     return;
   }
 
-  // 1) Local state lookup
-  let user = allUsers.find(u => Number(u.userId) === parsedUserId);
+  // 1) Local state lookup (primary source)
+  let user = allUsers.find(u => Number(u.userId) === id);
 
   // 2) Fresh API lookup for reliable prefill
-  const liveUser = await fetchUserForEdit(parsedUserId);
+  const liveUser = await fetchUserForEdit(id);
   if (liveUser && Number(liveUser.userId || liveUser.id || liveUser.user_id || liveUser.collaborator_id)) {
     user = {
       userId: Number(liveUser.userId || liveUser.id || liveUser.user_id || liveUser.collaborator_id),
@@ -367,15 +368,15 @@ async function openEditModal(userId) {
   // 3) Local API refresh fallback
   if (!user) {
     await loadUsers_silent();
-    user = allUsers.find(u => Number(u.userId) === parsedUserId);
+    user = allUsers.find(u => Number(u.userId) === id);
   }
 
   // 4) DOM fallback (if state still stale)
   if (!user) {
-    const card = document.getElementById(`uc-${parsedUserId}`);
+    const card = document.getElementById(`uc-${id}`);
     if (card) {
       user = {
-        userId: Number(card.dataset.uid) || parsedUserId,
+        userId: Number(card.dataset.uid) || id,
         linkId: card.dataset.linkId ? Number(card.dataset.linkId) : null,
         email: card.dataset.email || "",
         firstName: card.dataset.fname || "",
@@ -390,7 +391,7 @@ async function openEditModal(userId) {
   }
 
   if (!user || !Number(user.userId)) {
-    console.error("openEditModal: user not found after all lookups", { parsedUserId, allUsersCount: allUsers.length });
+    console.error("openEditModal: user not found after all lookups", { id, allUsersCount: allUsers.length });
     showModalMsg("Benutzer konnte nicht geladen werden. Bitte Liste neu laden.", "error");
     document.getElementById("userModal").classList.add("open");
     return;
@@ -446,10 +447,17 @@ function _fillEditModal(u) {
 
   document.getElementById("mUserId").value    = uid;
   document.getElementById("userModal").dataset.userId = String(uid);
-  document.getElementById("mFirstName").value = firstName;
-  document.getElementById("mLastName").value  = lastName;
-  document.getElementById("mEmail").value     = email;
-  document.getElementById("mMobile").value    = mobile;
+  const editVorname = document.getElementById("edit-vorname") || document.getElementById("mFirstName");
+  const editNachname = document.getElementById("edit-nachname") || document.getElementById("mLastName");
+  const editEmail = document.getElementById("edit-email") || document.getElementById("mEmail");
+  const editMobile = document.getElementById("edit-mobile") || document.getElementById("mMobile");
+  const editFunction = document.getElementById("edit-function") || document.getElementById("mFunction");
+
+  if (editVorname) editVorname.value = firstName;
+  if (editNachname) editNachname.value = lastName;
+  if (editEmail) editEmail.value = email;
+  if (editMobile) editMobile.value = mobile;
+  if (editFunction) editFunction.value = functionLabel;
   setFnChip(functionLabel);
   document.getElementById("mCase").value = caseId;
 
@@ -565,11 +573,19 @@ async function updateUser(userId) {
     case_id: document.getElementById("mCase").value || undefined,
   };
 
-  const res = await fetch(`${API}/users/${userId}`, {
-    method: "PATCH",
+  let res = await fetch(`${API}/users/${userId}`, {
+    method: "PUT",
     headers: authHdr(),
     body: JSON.stringify(body)
   });
+
+  if (res.status === 404 || res.status === 405) {
+    res = await fetch(`${API}/users/${userId}`, {
+      method: "PATCH",
+      headers: authHdr(),
+      body: JSON.stringify(body)
+    });
+  }
 
   const data = await res.json();
   if (!res.ok) {

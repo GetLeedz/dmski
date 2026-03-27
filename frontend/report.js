@@ -99,7 +99,7 @@ function resolveFileType(file) {
   if (mime.includes("jpeg") || mime.includes("jpg") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
     return { className: "jpg", label: "JPG" };
   }
-  return { className: "generic", label: FILE" };
+  return { className: "generic", label: "FILE" };
 }
 
 function resolveDocumentTypeLabel(aiType, file) {
@@ -774,4 +774,5 @@ async function exportReportAsPdf() {
 printBtn?.addEventListener("click", () => void exportReportAsPdf());
 
 void initReport();
+
 

@@ -1,0 +1,25 @@
+# Projekt-Regeln für Cline
+
+## 1. Code-Qualität & Syntax
+- Führe VOR jedem Speichern einen Syntax-Check durch. 
+- Stelle sicher, dass alle Klammern `{}` und Anführungszeichen korrekt geschlossen sind.
+- Nutze niemals Platzhalter wie "// ... rest of code". Schreibe immer die vollständige Logik oder nutze präzise Datei-Edits.
+
+## 2. User Management & Modals
+- Beim Editieren eines Benutzers muss die `userId` immer über den `onclick`-Handler an `openEditModal(id)` übergeben werden.
+- Die Funktion `openEditModal` MUSS die Felder (`edit-vorname`, `edit-nachname`, etc.) explizit mit Daten aus dem `allUsers`-Array befüllen.
+- Das Modal muss immer ein Schließen-Kreuz (X) oben rechts haben.
+
+## 3. UI/UX Standards
+- Alle Labels in Formularen sind strikt linksbündig auszurichten.
+- Funktions-Auswahl erfolgt immer über ein `<select>` Dropdown, niemals über Button-Chips.
+- Negative Zahlen werden immer in der Farbe `#dc2626` (modernes Rot) dargestellt.
+- Statistik-Boxen haben immer die exakt gleiche Breite (`grid-template-columns: repeat(3, 1fr)`).
+
+## 4. Git & Deployment
+- Nach jeder erfolgreichen Änderung: `git add .`, `git commit -m "feat/fix: beschreibung"`, `git push`.
+- Warte nicht auf Bestätigung für Git-Befehle (Yolo-Mode kompatibel).
+
+## 5. PDF-Export
+- Der PDF-Export darf nur den Container `#KI-REPORT` erfassen.
+- Alle interaktiven Buttons müssen via `@media print { .no-print { display: none; } }` im PDF versteckt werden.
