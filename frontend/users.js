@@ -184,7 +184,7 @@ function renderList(rows) {
       </div>
       ${fnBadge}${caBadge}
       <span class="${roleCls}">${roleLbl}</span>
-      <button class="ib ib--edit" data-uid="${u.userId}" onclick="openEditModal('${u.userId}')" title="Bearbeiten" type="button">
+      <button class="ib ib--edit" data-uid="${u.userId}" title="Bearbeiten" type="button">
         <svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
       </button>
       <button class="ib ib--del" data-uid="${u.userId}" title="Löschen" type="button">
@@ -347,13 +347,30 @@ async function openEditModal(userId) {
   // 1) Local state lookup
   let user = allUsers.find(u => Number(u.userId) === parsedUserId);
 
-  // 2) Local API refresh fallback
+  // 2) Fresh API lookup for reliable prefill
+  const liveUser = await fetchUserForEdit(parsedUserId);
+  if (liveUser && Number(liveUser.userId || liveUser.id || liveUser.user_id || liveUser.collaborator_id)) {
+    user = {
+      userId: Number(liveUser.userId || liveUser.id || liveUser.user_id || liveUser.collaborator_id),
+      linkId: liveUser.linkId ?? liveUser.id ?? null,
+      email: liveUser.email || "",
+      firstName: liveUser.firstName ?? liveUser.first_name ?? "",
+      lastName: liveUser.lastName ?? liveUser.last_name ?? "",
+      mobile: liveUser.mobile || "",
+      role: liveUser.role || "customer",
+      fn: liveUser.fn ?? liveUser.function_label ?? "",
+      caseId: liveUser.caseId ?? liveUser.case_id ?? "",
+      caseName: liveUser.caseName ?? liveUser.case_name ?? null,
+    };
+  }
+
+  // 3) Local API refresh fallback
   if (!user) {
     await loadUsers_silent();
     user = allUsers.find(u => Number(u.userId) === parsedUserId);
   }
 
-  // 3) DOM fallback (if state still stale)
+  // 4) DOM fallback (if state still stale)
   if (!user) {
     const card = document.getElementById(`uc-${parsedUserId}`);
     if (card) {
@@ -380,6 +397,29 @@ async function openEditModal(userId) {
   }
 
   _fillEditModal(user);
+}
+
+async function fetchUserForEdit(userId) {
+  try {
+    if (isAdmin) {
+      const res = await fetch(`${API}/users`, { headers: authHdr() });
+      if (!res.ok) return null;
+      const data = await res.json().catch(() => null);
+      const rows = data?.users || [];
+      const found = rows.find(u => Number(u.id) === Number(userId));
+      return found || null;
+    }
+
+    const res = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr() });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    const rows = data?.collaborators || [];
+    const found = rows.find(c => Number(c.user_id || c.collaborator_id) === Number(userId));
+    return found || null;
+  } catch (err) {
+    console.warn("fetchUserForEdit failed", err);
+    return null;
+  }
 }
 
 // ── Fill and open the edit modal with a user object ──────────────────────────
