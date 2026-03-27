@@ -371,12 +371,12 @@ router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), 
   try {
     await ensureCollabSchema();
     const result = await pool.query(
-      `SELECT cc.id, cc.function_label, cc.case_id, cc.created_at,
-              u.id AS user_id, u.email, u.first_name, u.last_name, u.role,
+      `SELECT cc.id, cc.collaborator_id, cc.function_label, cc.case_id, cc.created_at,
+              u.id AS user_id, u.email, u.first_name, u.last_name, u.mobile, u.role,
               c.case_name
        FROM customer_collaborators cc
        JOIN users u ON u.id = cc.collaborator_id
-       LEFT JOIN cases c ON c.id = cc.case_id
+       LEFT JOIN cases c ON c.id::text = cc.case_id
        WHERE cc.customer_id = $1
        ORDER BY cc.created_at ASC`,
       [customerId]

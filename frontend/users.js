@@ -38,17 +38,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("userModalForm").addEventListener("submit", onModalSubmit);
   document.getElementById("newCustomerForm")?.addEventListener("submit", onCreateCustomer);
 
-  // ── Event delegation for edit/delete buttons (most reliable approach) ──
+  // ── Event delegation for edit/delete buttons ──────────────────────────────
+  // Read uid from the button's own data-uid attribute (most reliable – no DOM traversal needed)
   document.getElementById("userList").addEventListener("click", e => {
     const editBtn = e.target.closest(".ib--edit");
     const delBtn  = e.target.closest(".ib--del");
     if (editBtn) {
-      const card = editBtn.closest(".u-card");
-      if (card) openEditModalFromCard(card);
+      const uid = Number(editBtn.dataset.uid);
+      if (uid) {
+        openEditModal(uid);
+      } else {
+        // last-resort: traverse to card
+        const card = editBtn.closest(".u-card");
+        if (card) openEditModalFromCard(card);
+      }
     }
     if (delBtn) {
-      const card = delBtn.closest(".u-card");
-      if (card) deleteUser(Number(card.dataset.uid));
+      const uid = Number(delBtn.dataset.uid);
+      if (uid) {
+        deleteUser(uid);
+      } else {
+        const card = delBtn.closest(".u-card");
+        if (card) deleteUser(Number(card.dataset.uid));
+      }
     }
   });
 
@@ -106,7 +118,8 @@ async function loadUsers() {
       try { data = await res.json(); } catch { showListError("Serverfehler. Bitte Seite neu laden."); return; }
       if (!res.ok) { showListError(data.error || "Serverfehler."); return; }
       rows = (data.collaborators || []).map(c => ({
-        userId:    c.user_id,
+        // user_id is the aliased u.id from the JOIN; collaborator_id is cc.collaborator_id (always set, NOT NULL)
+        userId:    c.user_id || c.collaborator_id || c.userId || null,
         linkId:    c.id,
         email:     c.email,
         firstName: c.first_name || "",
@@ -170,10 +183,10 @@ function renderList(rows) {
       </div>
       ${fnBadge}${caBadge}
       <span class="${roleCls}">${roleLbl}</span>
-      <button class="ib ib--edit" title="Bearbeiten" type="button">
+      <button class="ib ib--edit" data-uid="${u.userId}" title="Bearbeiten" type="button">
         <svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
       </button>
-      <button class="ib ib--del" title="Löschen" type="button">
+      <button class="ib ib--del" data-uid="${u.userId}" title="Löschen" type="button">
         <svg viewBox="0 0 24 24" stroke-width="1.9"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       </button>
     </div>`;
