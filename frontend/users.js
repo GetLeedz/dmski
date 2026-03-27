@@ -44,15 +44,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const delBtn  = e.target.closest(".ib--del");
     if (editBtn) {
       const card = editBtn.closest(".u-card");
-      if (card) await openEditModalFromCard(card);
+      if (!card) return;
+      try { await openEditModalFromCard(card); }
+      catch (err) {
+        console.error("openEditModalFromCard error:", err);
+        toast("Fehler beim Öffnen. Bitte Seite neu laden.", "error");
+      }
     }
     if (delBtn) {
       const uid = Number(delBtn.dataset.uid);
-      if (uid) {
-        deleteUser(uid);
-      } else {
+      if (uid) deleteUser(uid);
+      else {
         const card = delBtn.closest(".u-card");
-        if (card) deleteUser(Number(card.dataset.uid));
+        if (card && Number(card.dataset.uid)) deleteUser(Number(card.dataset.uid));
       }
     }
   });
