@@ -39,19 +39,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("newCustomerForm")?.addEventListener("submit", onCreateCustomer);
 
   // ── Event delegation for edit/delete buttons ──────────────────────────────
-  // Read uid from the button's own data-uid attribute (most reliable – no DOM traversal needed)
-  document.getElementById("userList").addEventListener("click", e => {
+  document.getElementById("userList").addEventListener("click", async e => {
     const editBtn = e.target.closest(".ib--edit");
     const delBtn  = e.target.closest(".ib--del");
     if (editBtn) {
-      const uid = Number(editBtn.dataset.uid);
-      if (uid) {
-        openEditModal(uid);
-      } else {
-        // last-resort: traverse to card
-        const card = editBtn.closest(".u-card");
-        if (card) openEditModalFromCard(card);
-      }
+      const card = editBtn.closest(".u-card");
+      if (card) await openEditModalFromCard(card);
     }
     if (delBtn) {
       const uid = Number(delBtn.dataset.uid);
@@ -250,48 +243,105 @@ function openAddModal() {
   setTimeout(() => document.getElementById("mFirstName").focus(), 60);
 }
 
+// ── Silent reload (refresh allUsers without touching the list UI) ────────────
+async function loadUsers_silent() {
+  try {
+    if (isAdmin) {
+      const res  = await fetch(`${API}/users`, { headers: authHdr() });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      if (!data?.users) return;
+      allUsers = data.users.filter(u => u.role !== "admin").map(u => ({
+        userId:    u.id,
+        linkId:    null,
+        email:     u.email,
+        firstName: u.first_name || "",
+        lastName:  u.last_name  || "",
+        mobile:    u.mobile     || "",
+        role:      u.role,
+        fn:        u.function_label || null,
+        caseId:    u.case_id        || null,
+        caseName:  null,
+      }));
+    } else {
+      const res  = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr() });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      if (!data?.collaborators) return;
+      allUsers = data.collaborators.map(c => ({
+        userId:    c.user_id || c.collaborator_id || null,
+        linkId:    c.id,
+        email:     c.email,
+        firstName: c.first_name || "",
+        lastName:  c.last_name  || "",
+        mobile:    c.mobile     || "",
+        role:      "collaborator",
+        fn:        c.function_label || null,
+        caseId:    c.case_id        || null,
+        caseName:  c.case_name      || null,
+      }));
+    }
+  } catch { /* keep existing allUsers */ }
+}
+
 // ── Open EDIT modal (from event delegation via card element) ─────────────────
-function openEditModalFromCard(card) {
-  const uid = Number(card.dataset.uid);
-  // Try allUsers first; fall back to reading data attributes directly from DOM
-  let u = allUsers.find(x => Number(x.userId) === uid);
+async function openEditModalFromCard(card) {
+  const cardEmail = (card.dataset.email || "").toLowerCase();
+  const cardUid   = Number(card.dataset.uid);
+
+  // 1. Fast path: find by uid in allUsers
+  let u = cardUid ? allUsers.find(x => Number(x.userId) === cardUid) : null;
+
+  // 2. Find by email in allUsers (uid might be wrong but email is always set)
+  if ((!u || !Number(u.userId)) && cardEmail) {
+    u = allUsers.find(x => x.email && x.email.toLowerCase() === cardEmail && Number(x.userId));
+  }
+
+  // 3. Slow fallback: fresh API call — guarantees correct userId from DB
+  if (!u || !Number(u.userId)) {
+    await loadUsers_silent();
+    if (cardUid) u = allUsers.find(x => Number(x.userId) === cardUid);
+    if ((!u || !Number(u.userId)) && cardEmail) {
+      u = allUsers.find(x => x.email && x.email.toLowerCase() === cardEmail && Number(x.userId));
+    }
+  }
+
+  // 4. DOM-only fallback (last resort)
   if (!u) {
-    // Rebuild from data attributes so edit works even if allUsers was cleared
     u = {
-      userId:    uid,
+      userId:    cardUid || null,
       linkId:    card.dataset.linkId ? Number(card.dataset.linkId) : null,
-      email:     card.dataset.email     || "",
-      firstName: card.dataset.fname     || "",
-      lastName:  card.dataset.lname     || "",
-      mobile:    card.dataset.mobile    || "",
-      role:      card.dataset.role      || "customer",
-      fn:        card.dataset.fn        || null,
-      caseId:    card.dataset.caseId    || null,
+      email:     card.dataset.email  || "",
+      firstName: card.dataset.fname  || "",
+      lastName:  card.dataset.lname  || "",
+      mobile:    card.dataset.mobile || "",
+      role:      card.dataset.role   || "customer",
+      fn:        card.dataset.fn     || null,
+      caseId:    card.dataset.caseId || null,
       caseName:  null,
     };
   }
+
   _fillEditModal(u);
 }
 
 // ── Open EDIT modal (from onclick fallback with userId) ───────────────────────
-function openEditModal(userId) {
+async function openEditModal(userId) {
+  const card = document.getElementById(`uc-${userId}`);
+  if (card) { await openEditModalFromCard(card); return; }
+  // No card in DOM – try allUsers directly
   const u = allUsers.find(x => Number(x.userId) === Number(userId));
-  if (!u) {
-    // Try DOM fallback
-    const card = document.getElementById(`uc-${userId}`);
-    if (card) { openEditModalFromCard(card); return; }
-    console.warn("openEditModal: user not found", userId);
-    return;
-  }
-  _fillEditModal(u);
+  if (u) { _fillEditModal(u); return; }
+  console.warn("openEditModal: user not found", userId);
 }
 
 // ── Fill and open the edit modal with a user object ──────────────────────────
 function _fillEditModal(u) {
   const uid = Number(u && u.userId);
   if (!uid) {
+    const diag = `userId=${JSON.stringify(u?.userId)}, email=${u?.email || "?"}, allUsers.length=${allUsers.length}, isAdmin=${isAdmin}`;
     console.error("[_fillEditModal] invalid userId:", u);
-    showModalMsg("Benutzer konnte nicht geöffnet werden (ID fehlt). Bitte Seite neu laden.", "error");
+    showModalMsg(`ID nicht gefunden (${diag}). Seite neu laden.`, "error");
     document.getElementById("userModal").classList.add("open");
     return;
   }
