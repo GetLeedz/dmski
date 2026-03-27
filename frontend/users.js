@@ -40,7 +40,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Event delegation for edit/delete buttons ──────────────────────────────
   document.getElementById("userList").addEventListener("click", async e => {
+    const editBtn = e.target.closest(".ib--edit");
     const delBtn  = e.target.closest(".ib--del");
+    if (editBtn) {
+      const uid = Number(editBtn.dataset.uid);
+      const card = editBtn.closest(".u-card");
+      try {
+        if (uid) await openEditModal(uid);
+        else if (card) await openEditModalFromCard(card);
+      } catch (err) {
+        console.error("edit click handler error:", err);
+        showModalMsg("Benutzerdaten konnten nicht geladen werden.", "error");
+        document.getElementById("userModal").classList.add("open");
+      }
+      return;
+    }
     if (delBtn) {
       const uid = Number(delBtn.dataset.uid);
       if (uid) deleteUser(uid);
@@ -370,7 +384,7 @@ async function openEditModal(userId) {
 
 // ── Fill and open the edit modal with a user object ──────────────────────────
 function _fillEditModal(u) {
-  const uid = Number(u && u.userId);
+  const uid = Number(u?.userId || u?.id || u?.collaborator_id || u?.user_id);
   if (!uid) {
     const diag = `userId=${JSON.stringify(u?.userId)}, email=${u?.email || "?"}, allUsers.length=${allUsers.length}, isAdmin=${isAdmin}`;
     console.error("[_fillEditModal] invalid userId:", u);
@@ -382,16 +396,24 @@ function _fillEditModal(u) {
   _editUserId = uid;   // dedicated backup — never cleared elsewhere
   editTarget  = { userId: uid, linkId: u.linkId };
 
+  const firstName = String(u?.firstName ?? u?.first_name ?? "");
+  const lastName  = String(u?.lastName  ?? u?.last_name  ?? "");
+  const email     = String(u?.email ?? "");
+  const mobile    = String(u?.mobile ?? "");
+  const functionLabel = String(u?.fn ?? u?.function_label ?? "");
+  const caseId    = String(u?.caseId ?? u?.case_id ?? "");
+  const role      = String(u?.role ?? "customer");
+
   document.getElementById("mUserId").value    = uid;
   document.getElementById("userModal").dataset.userId = String(uid);
-  document.getElementById("mFirstName").value = u.firstName;
-  document.getElementById("mLastName").value  = u.lastName;
-  document.getElementById("mEmail").value     = u.email;
-  document.getElementById("mMobile").value    = u.mobile;
-  setFnChip(u.fn || "");
-  document.getElementById("mCase").value = u.caseId || "";
+  document.getElementById("mFirstName").value = firstName;
+  document.getElementById("mLastName").value  = lastName;
+  document.getElementById("mEmail").value     = email;
+  document.getElementById("mMobile").value    = mobile;
+  setFnChip(functionLabel);
+  document.getElementById("mCase").value = caseId;
 
-  const isCollab = u.role === "collaborator";
+  const isCollab = role === "collaborator";
   document.getElementById("mFachSection").style.display = isCollab ? "" : "none";
   document.getElementById("mFnGroup").style.display     = isCollab ? "" : "none";
   document.getElementById("mCaseGroup").style.display   = isCollab ? "" : "none";
