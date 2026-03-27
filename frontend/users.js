@@ -40,17 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Event delegation for edit/delete buttons ──────────────────────────────
   document.getElementById("userList").addEventListener("click", async e => {
-    const editBtn = e.target.closest(".ib--edit");
     const delBtn  = e.target.closest(".ib--del");
-    if (editBtn) {
-      const card = editBtn.closest(".u-card");
-      if (!card) return;
-      try { await openEditModalFromCard(card); }
-      catch (err) {
-        console.error("openEditModalFromCard error:", err);
-        toast("Fehler beim Öffnen. Bitte Seite neu laden.", "error");
-      }
-    }
     if (delBtn) {
       const uid = Number(delBtn.dataset.uid);
       if (uid) deleteUser(uid);
@@ -180,7 +170,7 @@ function renderList(rows) {
       </div>
       ${fnBadge}${caBadge}
       <span class="${roleCls}">${roleLbl}</span>
-      <button class="ib ib--edit" data-uid="${u.userId}" title="Bearbeiten" type="button">
+      <button class="ib ib--edit" data-uid="${u.userId}" onclick="openEditModal('${u.userId}')" title="Bearbeiten" type="button">
         <svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
       </button>
       <button class="ib ib--del" data-uid="${u.userId}" title="Löschen" type="button">
@@ -226,6 +216,7 @@ function openAddModal() {
   editTarget = null;
 
   document.getElementById("mUserId").value    = "";
+  document.getElementById("userModal").dataset.userId = "";
   document.getElementById("mFirstName").value = "";
   document.getElementById("mLastName").value  = "";
   document.getElementById("mEmail").value     = "";
@@ -331,12 +322,50 @@ async function openEditModalFromCard(card) {
 
 // ── Open EDIT modal (from onclick fallback with userId) ───────────────────────
 async function openEditModal(userId) {
-  const card = document.getElementById(`uc-${userId}`);
-  if (card) { await openEditModalFromCard(card); return; }
-  // No card in DOM – try allUsers directly
-  const u = allUsers.find(x => Number(x.userId) === Number(userId));
-  if (u) { _fillEditModal(u); return; }
-  console.warn("openEditModal: user not found", userId);
+  const parsedUserId = Number(userId);
+  if (!parsedUserId) {
+    console.warn("openEditModal: userId undefined/invalid", userId);
+    showModalMsg("ID undefined: Benutzer-ID ungültig.", "error");
+    document.getElementById("userModal").classList.add("open");
+    return;
+  }
+
+  // 1) Local state lookup
+  let user = allUsers.find(u => Number(u.userId) === parsedUserId);
+
+  // 2) Local API refresh fallback
+  if (!user) {
+    await loadUsers_silent();
+    user = allUsers.find(u => Number(u.userId) === parsedUserId);
+  }
+
+  // 3) DOM fallback (if state still stale)
+  if (!user) {
+    const card = document.getElementById(`uc-${parsedUserId}`);
+    if (card) {
+      user = {
+        userId: Number(card.dataset.uid) || parsedUserId,
+        linkId: card.dataset.linkId ? Number(card.dataset.linkId) : null,
+        email: card.dataset.email || "",
+        firstName: card.dataset.fname || "",
+        lastName: card.dataset.lname || "",
+        mobile: card.dataset.mobile || "",
+        role: card.dataset.role || "customer",
+        fn: card.dataset.fn || null,
+        caseId: card.dataset.caseId || null,
+        caseName: null,
+      };
+    }
+  }
+
+  if (!user || !Number(user.userId)) {
+    console.error("openEditModal: user not found after all lookups", { parsedUserId, allUsersCount: allUsers.length });
+    showModalMsg("Benutzer konnte nicht geladen werden. Bitte Liste neu laden.", "error");
+    document.getElementById("userModal").classList.add("open");
+    return;
+  }
+
+  _fillEditModal(user);
 }
 
 // ── Fill and open the edit modal with a user object ──────────────────────────
@@ -354,6 +383,7 @@ function _fillEditModal(u) {
   editTarget  = { userId: uid, linkId: u.linkId };
 
   document.getElementById("mUserId").value    = uid;
+  document.getElementById("userModal").dataset.userId = String(uid);
   document.getElementById("mFirstName").value = u.firstName;
   document.getElementById("mLastName").value  = u.lastName;
   document.getElementById("mEmail").value     = u.email;
@@ -366,9 +396,8 @@ function _fillEditModal(u) {
   document.getElementById("mFnGroup").style.display     = isCollab ? "" : "none";
   document.getElementById("mCaseGroup").style.display   = isCollab ? "" : "none";
 
-  const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email;
-  document.getElementById("modalTitle").textContent      = `${name} bearbeiten`;
-  document.getElementById("modalSaveBtn").textContent    = "Speichern";
+  document.getElementById("modalTitle").textContent      = "Benutzer editieren";
+  document.getElementById("modalSaveBtn").textContent    = "Änderungen speichern";
   document.getElementById("mEmail").removeAttribute("disabled");
 
   hideModalMsg(); hideModalPwd();
@@ -379,6 +408,7 @@ function _fillEditModal(u) {
 
 function closeModal() {
   document.getElementById("userModal").classList.remove("open");
+  document.getElementById("userModal").dataset.userId = "";
 }
 
 // ── Modal submit ─────────────────────────────────────────────────────────────
@@ -404,7 +434,7 @@ async function onModalSubmit(e) {
     );
   } finally {
     btn.disabled = false;
-    btn.textContent = modalMode === "add" ? "Anlegen" : "Speichern";
+    btn.textContent = modalMode === "add" ? "Anlegen" : "Änderungen speichern";
   }
 }
 
@@ -444,34 +474,50 @@ async function doAddUser() {
 }
 
 async function doEditUser() {
-  // Use all available sources in priority order: dedicated backup → DOM hidden field → editTarget
-  const userId = _editUserId
+  const userId = Number(document.getElementById("userModal").dataset.userId)
+    || _editUserId
     || Number(document.getElementById("mUserId").value)
     || (editTarget && editTarget.userId);
-  if (!userId) {
-    showModalMsg("Ungültige Benutzer-ID – bitte Modal schliessen und erneut öffnen.", "error");
-    console.error("[doEditUser] all userId sources empty — _editUserId:", _editUserId, "mUserId:", document.getElementById("mUserId").value, "editTarget:", editTarget);
+  await updateUser(userId);
+}
+
+async function updateUser(userId) {
+  if (!Number(userId)) {
+    showModalMsg("ID undefined: Benutzer-ID fehlt im Edit-Modal.", "error");
+    console.error("[updateUser] invalid userId", {
+      userId,
+      modalDatasetId: document.getElementById("userModal").dataset.userId,
+      hiddenId: document.getElementById("mUserId").value,
+      editTarget,
+      _editUserId
+    });
     return;
   }
-  const fnVal  = document.getElementById("mFunction").value || undefined;
 
   const body = {
-    first_name:     document.getElementById("mFirstName").value.trim() || undefined,
-    last_name:      document.getElementById("mLastName").value.trim()  || undefined,
-    email:          document.getElementById("mEmail").value.trim(),
-    mobile:         document.getElementById("mMobile").value.trim()    || undefined,
-    function_label: fnVal,
-    case_id:        document.getElementById("mCase").value             || undefined,
+    first_name: document.getElementById("mFirstName").value.trim() || undefined,
+    last_name: document.getElementById("mLastName").value.trim() || undefined,
+    email: document.getElementById("mEmail").value.trim(),
+    mobile: document.getElementById("mMobile").value.trim() || undefined,
+    function_label: document.getElementById("mFunction").value || undefined,
+    case_id: document.getElementById("mCase").value || undefined,
   };
 
-  const res  = await fetch(`${API}/users/${userId}`, {
-    method: "PATCH", headers: authHdr(), body: JSON.stringify(body)
+  const res = await fetch(`${API}/users/${userId}`, {
+    method: "PATCH",
+    headers: authHdr(),
+    body: JSON.stringify(body)
   });
+
   const data = await res.json();
-  if (!res.ok) { showModalMsg(data.error || "Fehler.", "error"); return; }
-  showModalMsg("✓ Gespeichert.", "ok");
-  setTimeout(closeModal, 900);
+  if (!res.ok) {
+    showModalMsg(data.error || "Fehler beim Speichern.", "error");
+    return;
+  }
+
+  showModalMsg("✓ Änderungen gespeichert.", "ok");
   await loadUsers();
+  setTimeout(closeModal, 900);
 }
 
 // ── Delete ───────────────────────────────────────────────────────────────────
@@ -628,7 +674,11 @@ async function handleSave() {
     if (modalMode === "add") {
       await doAddUser();
     } else {
-      await doEditUser();
+      const userId = Number(document.getElementById("userModal").dataset.userId)
+        || _editUserId
+        || Number(document.getElementById("mUserId").value)
+        || (editTarget && editTarget.userId);
+      await updateUser(userId);
     }
   } catch (err) {
     console.error("handleSave error:", err);
@@ -641,7 +691,7 @@ async function handleSave() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = modalMode === "add" ? "Anlegen" : "Speichern";
+      btn.textContent = modalMode === "add" ? "Anlegen" : "Änderungen speichern";
     }
   }
 }
@@ -655,3 +705,4 @@ window.deleteUser    = deleteUser;
 window.copyText      = copyText;
 window.switchTab     = switchTab;
 window.handleSave    = handleSave;
+window.updateUser    = updateUser;
