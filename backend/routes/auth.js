@@ -1,3 +1,4 @@
+/* backend/routes/auth.js */
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -7,26 +8,14 @@ const { validatePassword } = require("../utils/passwordPolicy");
 const router = express.Router();
 
 function normalizeDatabaseUrl(rawUrl) {
-  if (!rawUrl) {
-    return rawUrl;
-  }
-
-  const trimmed = String(rawUrl)
-    .trim()
-    .replace(/^['\"]|['\"]$/g, "")
-    .replace(/\s+/g, "");
-
+  if (!rawUrl) return rawUrl;
+  const trimmed = String(rawUrl).trim().replace(/^['\"]|['\"]$/g, "").replace(/\s+/g, "");
   try {
-    // If already valid, keep as-is.
     new URL(trimmed);
     return trimmed;
   } catch {
-    // Recover from unescaped password chars in postgres URLs.
     const match = trimmed.match(/^(postgres(?:ql)?:\/\/)([^:]+):([^@]+)@([^/]+)\/(.+)$/i);
-    if (!match) {
-      return trimmed;
-    }
-
+    if (!match) return trimmed;
     const [, protocol, user, password, host, dbPath] = match;
     return `${protocol}${user}:${encodeURIComponent(password)}@${host}/${dbPath}`;
   }
@@ -37,7 +26,6 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "8h";
 let jwtSecretWarningLogged = false;
 
-// ── One-time schema migration: add role + profile columns to users ──────────
 let userSchemaDone = false;
 async function ensureUserSchema() {
   if (userSchemaDone) return;
@@ -48,12 +36,11 @@ async function ensureUserSchema() {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS mobile TEXT");
-    // Promote admin by ADMIN_EMAIL env var
+    
     const adminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
     if (adminEmail) {
       await pool.query("UPDATE users SET role = 'admin' WHERE email = $1", [adminEmail]);
     }
-    // If still no admin, promote the oldest user
     await pool.query(`
       UPDATE users SET role = 'admin'
       WHERE id = (SELECT MIN(id) FROM users)
@@ -66,27 +53,20 @@ async function ensureUserSchema() {
 }
 
 function ensureJwtSecret(res) {
-  if (JWT_SECRET) {
-    return true;
-  }
-
+  if (JWT_SECRET) return true;
   if (!jwtSecretWarningLogged) {
     console.error("JWT_SECRET environment variable is required");
     jwtSecretWarningLogged = true;
   }
-
-  res.status(503).json({ error: "Server-Konfiguration unvollstaendig (JWT_SECRET fehlt)." });
+  res.status(503).json({ error: "Server-Konfiguration unvollständig." });
   return false;
 }
 
 // POST /auth/login
 router.post("/login", async (req, res) => {
-  if (!ensureJwtSecret(res)) {
-    return;
-  }
+  if (!ensureJwtSecret(res)) return;
 
   const { email, password } = req.body;
-
   if (!email || !password) {
     return res.status(400).json({ error: "E-Mail und Passwort erforderlich." });
   }
@@ -101,8 +81,6 @@ router.post("/login", async (req, res) => {
     );
 
     const user = result.rows[0];
-
-    // Constant-time comparison to prevent timing attacks
     const dummyHash = "$2a$12$KIXLc7e6xFz0OqC1mDkwEupVr4t4gkQr4Ul5w1qPbMgJBFcNvPtmu";
     const hashToCompare = user ? user.password_hash : dummyHash;
     const match = await bcrypt.compare(password, hashToCompare);
@@ -118,61 +96,48 @@ router.post("/login", async (req, res) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    return res.json({ token, email: user.email, role });
+    // WICHTIG: id mitschicken!
+    return res.json({ token, id: user.id, email: user.email, role });
   } catch (err) {
     console.error("Login error:", err.message);
-    return res.status(500).json({ error: "Serverfehler. Bitte erneut versuchen." });
+    return res.status(500).json({ error: "Serverfehler." });
   }
 });
 
 // POST /auth/register
 router.post("/register", async (req, res) => {
-  if (!ensureJwtSecret(res)) {
-    return;
-  }
+  if (!ensureJwtSecret(res)) return;
 
   const { email, password } = req.body;
-
   if (!email || !password) {
     return res.status(400).json({ error: "E-Mail und Passwort erforderlich." });
   }
 
   if (!validatePassword(password)) {
-    return res.status(400).json({
-      error: "Passwort muss mindestens 10 Zeichen, einen Grossbuchstaben, eine Zahl und ein Sonderzeichen enthalten."
-    });
+    return res.status(400).json({ error: "Passwort zu schwach." });
   }
 
   const emailNorm = String(email).trim().toLowerCase();
 
   try {
-    const exists = await pool.query(
-      "SELECT id FROM users WHERE email = $1 LIMIT 1",
-      [emailNorm]
-    );
-
+    const exists = await pool.query("SELECT id FROM users WHERE email = $1 LIMIT 1", [emailNorm]);
     if (exists.rows.length > 0) {
       return res.status(409).json({ error: "E-Mail bereits registriert." });
     }
 
     const password_hash = await bcrypt.hash(password, 12);
-
     const result = await pool.query(
-      "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at",
+      "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, role",
       [emailNorm, password_hash]
     );
 
     const user = result.rows[0];
-    const token = jwt.sign(
-      { sub: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+    const token = jwt.sign({ sub: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
-    return res.status(201).json({ token, email: user.email });
+    // WICHTIG: id mitschicken!
+    return res.status(201).json({ token, id: user.id, email: user.email, role: user.role });
   } catch (err) {
-    console.error("Register error:", err.message);
-    return res.status(500).json({ error: "Serverfehler. Bitte erneut versuchen." });
+    return res.status(500).json({ error: "Serverfehler." });
   }
 });
 

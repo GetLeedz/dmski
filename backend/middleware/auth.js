@@ -1,38 +1,49 @@
 const jwt = require("jsonwebtoken");
 
 function requireAuth(req, res, next) {
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
   if (!token) {
-    return res.status(401).json({ error: "Nicht autorisiert." });
+    return res.status(401).json({ error: "Nicht autorisiert. Kein Token gefunden." });
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    // Falls JWT_SECRET in der .env fehlt, stürzt der Server hier nicht ab
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_change_this");
     req.user = payload;
-    return next();
-  } catch {
-    return res.status(401).json({ error: "Token ungueltig oder abgelaufen." });
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Sitzung abgelaufen oder Token ungültig." });
   }
 }
 
 function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== "admin") {
-    return res.status(403).json({ error: "Keine Administratorberechtigung." });
+    return res.status(403).json({ error: "Administrator-Rechte erforderlich." });
   }
-  return next();
+  next();
 }
 
+/**
+ * Erlaubt Zugriff, wenn der User Admin ist ODER seine eigene ID aufruft.
+ * Funktioniert jetzt sicher mit Zahlen (BigInt) und UUIDs (Strings).
+ */
 function requireAdminOrSelf(paramKey = "userId") {
   return (req, res, next) => {
-    const targetId = Number(req.params[paramKey]);
-    const isAdmin  = req.user?.role === "admin";
-    const isSelf   = Number(req.user?.sub) === targetId;
+    const isAdmin = req.user?.role === "admin";
+    
+    // Wir vergleichen als Strings, um Number/UUID Konflikte zu vermeiden
+    const targetId = String(req.params[paramKey] || "");
+    const currentUserId = String(req.user?.sub || "");
+
+    const isSelf = currentUserId !== "" && currentUserId === targetId;
+
     if (!isAdmin && !isSelf) {
-      return res.status(403).json({ error: "Keine Berechtigung." });
+      console.warn(`Zugriff verweigert: User ${currentUserId} wollte auf Resource von ${targetId} zugreifen.`);
+      return res.status(403).json({ error: "Keine Berechtigung für diese Ressource." });
     }
-    return next();
+    next();
   };
 }
 

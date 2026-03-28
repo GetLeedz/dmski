@@ -636,3 +636,89 @@ body {
     break-inside: avoid;
   }
 }
+
+/* --- Ergänzungen für die Benutzerverwaltung & Icons --- */
+
+/* Container für die Aktions-Icons in der Benutzer-Card */
+.u-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--report-line);
+}
+
+/* Basis-Stil für alle Aktions-Buttons (Icons) */
+.ib {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--report-line);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
+  padding: 0;
+}
+
+/* Spezifische Farben für die Aktionen */
+.ib--invite {
+  color: var(--report-positive);
+  background: var(--report-positive-bg);
+  border-color: #badfc5;
+}
+
+.ib--invite:hover {
+  background: var(--report-positive);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.ib--edit {
+  color: var(--report-accent);
+  background: var(--report-accent-soft);
+  border-color: #c8d9df;
+}
+
+.ib--edit:hover {
+  background: var(--report-accent);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.ib--del {
+  color: var(--report-negative);
+  background: var(--report-negative-bg);
+  border-color: #efd1cb;
+}
+
+.ib--del:hover {
+  background: var(--report-negative);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* Badge-Stile passend zum Report-System */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge--f { background: var(--report-accent-soft); color: var(--report-accent); }
+.badge--k { background: #f4f8f9; color: var(--report-soft); }
+.badge--fn { border: 1px solid var(--report-line); color: var(--report-soft); }
+
+/* Druck-Optimierung: Verstecke die Aktions-Icons beim PDF-Druck */
+@media print {
+  .u-actions, .no-print {
+    display: none !important;
+  }
+}
