@@ -2,7 +2,7 @@
 "use strict";
 
 const BASE_URL = "https://lively-reverence-production-def3.up.railway.app/api/users";
-const API = "https://lively-reverence-production-def3.up.railway.app";
+const API = "https://lively-reverence-production-def3.up.railway.app/api";
 
 const getToken = () => sessionStorage.getItem("token") || localStorage.getItem("token") || "";
 const authHdr = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
@@ -170,11 +170,12 @@ async function sendInvite(targetUserId) {
 
 async function handleSave() {
     const payload = {
-        first_name: byId("mFirstName").value.trim(),
-        last_name: byId("mLastName").value.trim(),
-        email: byId("mEmail").value.trim(),
-        function_label: byId("mFunction").value.trim(),
-        case_id: byId("mCase").value || null
+        first_name: byId("edit-vorname").value.trim(),
+        last_name: byId("edit-nachname").value.trim(),
+        email: byId("edit-email").value.trim(),
+        mobile: byId("edit-mobile").value.trim(),
+        function_label: byId("edit-funktion").value.trim(),
+        case_id: byId("edit-case").value || null
     };
 
     const btn = byId("modalSaveBtn");
@@ -228,11 +229,12 @@ function openEditModal(id) {
 
     modalMode = "edit";
     currentEditId = id;
-    byId("mFirstName").value = u.firstName;
-    byId("mLastName").value = u.lastName;
-    byId("mEmail").value = u.email;
-    byId("mFunction").value = u.fn;
-    byId("mCase").value = u.caseId;
+    byId("edit-vorname").value = u.firstName;
+    byId("edit-nachname").value = u.lastName;
+    byId("edit-email").value = u.email;
+    byId("edit-mobile").value = u.mobile;
+    byId("edit-funktion").value = u.fn;
+    byId("edit-case").value = u.caseId;
     
     byId("modalTitle").textContent = "Benutzer bearbeiten";
     byId("userModal").classList.add("open");
@@ -241,18 +243,18 @@ function openEditModal(id) {
 function openAddModal() {
     modalMode = "add";
     byId("userModalForm").reset();
-    byId("modalTitle").textContent = "Neue Fachperson";
+    byId("modalTitle").textContent = "Neuen Benutzer anlegen";
     byId("userModal").classList.add("open");
 }
 
 function closeModal() { byId("userModal").classList.remove("open"); }
 
 function esc(v) {
-    return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return String(v ?? "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
 }
 
 async function loadCasesForModal() {
-    const sel = byId("mCase");
+    const sel = byId("edit-case");
     if (!sel) return;
     try {
         const res = await fetch(`${API}/cases`, { headers: authHdr(), credentials: "include" });
@@ -271,5 +273,13 @@ window.closeModal = closeModal;
 window.deleteUser = deleteUser;
 window.filterList = () => {
     const q = byId("searchInput").value.toLowerCase();
-    renderList(allUsers.filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q)));
+    const fnFilter = byId("fnFilter")?.value.toLowerCase() || "";
+    const roleFilter = byId("roleFilter")?.value.toLowerCase() || "";
+    
+    renderList(allUsers.filter(u => {
+        const matchesSearch = `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q);
+        const matchesFn = fnFilter ? (u.fn.toLowerCase() === fnFilter) : true;
+        const matchesRole = roleFilter ? (u.role.toLowerCase() === roleFilter) : true;
+        return matchesSearch && matchesFn && matchesRole;
+    }));
 };

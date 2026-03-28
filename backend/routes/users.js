@@ -57,7 +57,7 @@ function generatePassword() {
 async function ensureUserProfileColumns() {
   try {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer'");
-    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT, ADD COLUMN IF NOT EXISTS last_name TEXT, ADD COLUMN IF NOT EXISTS function_label TEXT, ADD COLUMN IF NOT EXISTS case_id TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT, ADD COLUMN IF NOT EXISTS last_name TEXT, ADD COLUMN IF NOT EXISTS mobile TEXT, ADD COLUMN IF NOT EXISTS function_label TEXT, ADD COLUMN IF NOT EXISTS case_id TEXT");
   } catch (err) {
     console.warn("Schema-Update Warnung:", err.message);
   }
@@ -78,14 +78,14 @@ router.get("/me", requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/users/:userId/users (Liste der Fachpersonen für einen Fall/Kunden)
-router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+// GET /api/users (Alle Benutzer - nur Admin)
+router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     await ensureUserProfileColumns();
     const result = await pool.query(
-      `SELECT u.id, u.email, u.first_name, u.last_name, u.function_label, u.case_id, c.case_name 
+      `SELECT u.id, u.email, u.first_name, u.last_name, u.mobile, u.function_label, u.case_id, u.role, c.case_name 
        FROM users u LEFT JOIN cases c ON c.id::text = u.case_id 
-       WHERE u.role = 'collaborator' ORDER BY u.created_at ASC`
+       ORDER BY u.created_at ASC`
     );
     res.json({ users: result.rows });
   } catch (err) {
@@ -93,27 +93,68 @@ router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (r
   }
 });
 
-// POST /api/users/:userId/users (Fachperson anlegen/verknüpfen)
+// GET /api/users/:userId/users (Liste der Fachpersonen für einen Fall/Kunden)
+router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+  try {
+    await ensureUserProfileColumns();
+    const result = await pool.query(
+      `SELECT u.id, u.email, u.first_name, u.last_name, u.mobile, u.function_label, u.case_id, u.role, c.case_name 
+       FROM users u LEFT JOIN cases c ON c.id::text = u.case_id 
+       WHERE u.role != 'admin' ORDER BY u.created_at ASC`
+    );
+    res.json({ users: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: "Fehler beim Laden der Liste" });
+  }
+});
+
+// POST /api/users/:userId/users (Benutzer anlegen/verknüpfen)
 router.post("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
-  const { email, first_name, last_name, function_label, case_id } = req.body;
+  const { email, first_name, last_name, mobile, function_label, case_id } = req.body;
   if (!email) return res.status(400).json({ error: "E-Mail fehlt" });
 
   try {
     const pwd = generatePassword();
     const hash = await bcrypt.hash(pwd, 12);
     const emailNorm = email.toLowerCase().trim();
+    const role = function_label ? 'collaborator' : 'customer';
 
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, role, first_name, last_name, function_label, case_id)
-       VALUES ($1, $2, 'collaborator', $3, $4, $5, $6)
-       ON CONFLICT (email) DO UPDATE SET function_label = $5, case_id = $6
+      `INSERT INTO users (email, password_hash, role, first_name, last_name, mobile, function_label, case_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (email) DO UPDATE SET function_label = $7, case_id = $8, role = $3
        RETURNING id, email`,
-      [emailNorm, hash, first_name, last_name, function_label, case_id]
+      [emailNorm, hash, role, first_name, last_name, mobile, function_label, case_id]
     );
 
-    res.status(201).json({ collaborator: result.rows[0], generatedPassword: pwd });
+    res.status(201).json({ user: result.rows[0], generatedPassword: pwd });
   } catch (err) {
     res.status(500).json({ error: "Fehler beim Anlegen" });
+  }
+});
+
+// PATCH /api/users/:editId (Benutzer bearbeiten)
+router.patch("/:editId", requireAuth, async (req, res) => {
+  try {
+    const { first_name, last_name, email, mobile, function_label, case_id } = req.body;
+    const role = function_label ? 'collaborator' : 'customer';
+    const emailNorm = email ? email.toLowerCase().trim() : undefined;
+    
+    await pool.query(
+      `UPDATE users 
+       SET first_name = COALESCE($1, first_name),
+           last_name = COALESCE($2, last_name),
+           email = COALESCE($3, email),
+           mobile = COALESCE($4, mobile),
+           function_label = $5,
+           case_id = $6,
+           role = $7
+       WHERE id = $8`,
+      [first_name, last_name, emailNorm, mobile, function_label, case_id, role, req.params.editId]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Fehler beim Aktualisieren" });
   }
 });
 
