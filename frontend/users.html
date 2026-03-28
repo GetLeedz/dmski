@@ -203,10 +203,25 @@
     }
     .pwd-gen:hover { background:rgba(17,107,115,.14) !important;border-color:var(--teal) !important;transform:rotate(180deg); }
     .pwd-gen svg, .pwd-eye svg { display:block; }
-    #pwdGenBtn svg, #pwdGenBtn svg path {
-      stroke: #116b73 !important;
-      fill: none !important;
+    #pwdEyeBtn {
+      background: none !important;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%238ba4b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      background-size: 16px 16px !important;
     }
+    #pwdEyeBtn.is-visible {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%23116b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E") !important;
+    }
+    #pwdEyeBtn svg { display: none !important; }
+    #pwdGenBtn {
+      background-color: rgba(17,107,115,.08) !important;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%23116b73' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4v6h6'/%3E%3Cpath d='M23 20v-6h-6'/%3E%3Cpath d='M20.49 9A9 9 0 0 0 5.64 5.64L1 10'/%3E%3Cpath d='M23 14l-4.64 4.36A9 9 0 0 1 3.51 15'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      background-size: 17px 17px !important;
+    }
+    #pwdGenBtn svg { display: none !important; }
     .ib svg { width:1rem;height:1rem;flex-shrink:0;stroke:currentColor;fill:none;
               stroke-linecap:round;stroke-linejoin:round; }
 
@@ -637,6 +652,6 @@
     </div>
   </div>
 
-  <script src="users.js?v=11"></script>
+  <script src="users.js?v=12"></script>
 </body>
 </html>

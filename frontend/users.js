@@ -439,18 +439,17 @@ function generateAndFillPassword() {
     const input = byId("edit-password");
     if (!input) return;
     input.value = pwd;
-    input.type = "text"; // Sichtbar nach Generierung
-    byId("eyeIcon").style.display = "none";
-    byId("eyeOffIcon").style.display = "";
+    input.type = "text";
+    byId("pwdEyeBtn")?.classList.add("is-visible");
 }
 
 function togglePwdVisibility() {
     const input = byId("edit-password");
+    const btn = byId("pwdEyeBtn");
     if (!input) return;
     const isHidden = input.type === "password";
     input.type = isHidden ? "text" : "password";
-    byId("eyeIcon").style.display = isHidden ? "none" : "";
-    byId("eyeOffIcon").style.display = isHidden ? "" : "none";
+    btn?.classList.toggle("is-visible", isHidden);
 }
 
 // Global verfügbar machen für HTML-Attribut-Events
