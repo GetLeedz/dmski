@@ -13,7 +13,7 @@ Kein Localhost: Verwende niemals localhost für API-Requests in der Produktion.
 
 Auth-Handling: Bei 401 Unauthorized Fehlern prüfe sofort die backend/index.js auf erforderliche API-Keys oder Token-Header und implementiere diese in den Fetch-Request.
 
-Endpunkt: Der korrekte Pfad für die Benutzerliste ist /api/collaborators.
+Endpunkt: Der korrekte Pfad für die Benutzerliste ist /users (für Admins) bzw. /users/:id/collaborators (für Kunden).
 
 3. User Management & Modals
 ID-Mapping: Beim Editieren muss die userId über den onclick-Handler an openEditModal(id) übergeben werden.

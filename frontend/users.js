@@ -92,10 +92,10 @@ async function loadUsers() {
   try {
     let rows = [];
     if (isAdmin) {
-      const res = await fetch(`${API}/api/collaborators`, { headers: authHdr(), credentials: "include" });
+      const res = await fetch(`${API}/users`, { headers: authHdr(), credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Benutzer konnten nicht geladen werden.");
-      rows = (data?.users || data?.collaborators || [])
+      rows = (data?.users || [])
         .filter((u) => u.role !== "admin")
         .map((u) => normalizeUser(u, "users"));
     } else {
