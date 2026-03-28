@@ -26,6 +26,9 @@ backend/uploads/
 # Tesseract language data (large binaries, downloaded at runtime)
 *.traineddata
 
+# Sensitive credentials — NEVER commit
+_Accounts.txt
+
 # Local DMSKI working folder
 DMSKI/
 

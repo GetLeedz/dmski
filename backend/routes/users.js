@@ -111,6 +111,34 @@ router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSel
   }
 });
 
+// PATCH /:userId – Benutzer bearbeiten
+router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+  const { first_name, last_name, email, mobile, function_label, case_id } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET first_name = $1, last_name = $2, email = $3, mobile = $4,
+           function_label = $5, case_id = $6
+       WHERE id = $7
+       RETURNING id, email, role, first_name, last_name, mobile, function_label, case_id`,
+      [
+        first_name || null,
+        last_name || null,
+        email,
+        mobile || null,
+        function_label || null,
+        case_id || null,
+        req.params.userId
+      ]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Benutzer nicht gefunden." });
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error("PATCH /users/:userId error:", err.message);
+    res.status(500).json({ error: "Aktualisierung fehlgeschlagen." });
+  }
+});
+
 // DELETE /:userId
 router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
   try {

@@ -260,8 +260,9 @@ function openEditModal(id) {
     byId("edit-mobile").value = u.mobile;
     byId("edit-funktion").value = u.fn;
     byId("edit-case").value = u.caseId;
-    
+
     byId("modalTitle").textContent = "Benutzer bearbeiten";
+    byId("modalSaveBtn").textContent = "Änderungen speichern";
     byId("userModal").classList.add("open");
 }
 
@@ -269,6 +270,7 @@ function openAddModal() {
     modalMode = "add";
     byId("userModalForm").reset();
     byId("modalTitle").textContent = "Neuen Benutzer anlegen";
+    byId("modalSaveBtn").textContent = "Anlegen";
     byId("userModal").classList.add("open");
 }
 
