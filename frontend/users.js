@@ -1,12 +1,7 @@
 /* users.js – Benutzerverwaltung */
 "use strict";
 
-const host = String(window.location.hostname || "").toLowerCase();
-const isLocal = host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")
-  || /^192\.168\./.test(host) || /^10\./.test(host);
-const API = isLocal
-  ? "http://localhost:4000"
-  : "https://lively-reverence-production-def3.up.railway.app";
+const API = "https://lively-reverence-production-def3.up.railway.app";
 
 const getToken = () => sessionStorage.getItem("token") || "";
 const authHdr = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
@@ -68,7 +63,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function normalizeUser(raw, source = "users") {
-  const id = Number(raw?.id || raw?.user_id || raw?.collaborator_id || raw?.userId || 0);
+  let id = 0;
+  if (source === "collaborators") {
+    id = Number(raw?.user_id || raw?.collaborator_id || raw?.userId || 0);
+  } else {
+    id = Number(raw?.id || raw?.user_id || raw?.userId || 0);
+  }
   const userId = id;
   return {
     id,
@@ -97,23 +97,12 @@ async function loadUsers() {
       if (!res.ok) throw new Error(data?.error || "Benutzer konnten nicht geladen werden.");
       rows = (data?.users || [])
         .filter((u) => u.role !== "admin")
-        .map((u) => {
-          const user = normalizeUser(u, "users");
-          user.id = u.id;
-          user.userId = u.id;
-          return user;
-        });
+        .map((u) => normalizeUser(u, "users"));
     } else {
       const res = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr() });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Fachpersonen konnten nicht geladen werden.");
-      rows = (data?.collaborators || []).map((c) => {
-        const user = normalizeUser(c, "collaborators");
-        user.id = c.user_id;
-        user.userId = c.user_id;
-        user.linkId = c.id;
-        return user;
-      });
+      rows = (data?.collaborators || []).map((c) => normalizeUser(c, "collaborators"));
     }
 
     allUsers = rows.filter((u) => Number(u.id) > 0);
@@ -307,10 +296,8 @@ async function saveNewUser() {
     throw new Error("E-Mail ist erforderlich.");
   }
 
-  const fnVal = payload.function_label || "";
   let res;
-
-  if (fnVal) {
+  if (!isAdmin) {
     res = await fetch(`${API}/users/${myUserId}/collaborators`, {
       method: "POST",
       headers: authHdr(),
