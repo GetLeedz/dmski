@@ -4,8 +4,17 @@
 const BASE_URL = "https://lively-reverence-production-def3.up.railway.app/api/users";
 const API = "https://lively-reverence-production-def3.up.railway.app/api";
 
+// Holt das Token aus dem Speicher – Wichtig für die Authentifizierung
 const getToken = () => sessionStorage.getItem("token") || localStorage.getItem("token") || "";
-const authHdr = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
+
+// Erstellt den Header für die API-Anfragen
+const authHdr = () => {
+    const token = getToken();
+    return { 
+        "Content-Type": "application/json", 
+        "Authorization": token ? `Bearer ${token}` : "" 
+    };
+};
 
 let allUsers = [];
 let isAdmin = false;
@@ -19,12 +28,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const yearEl = byId("copyrightYear");
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-    if (!getToken()) {
+    // 1. Sofort-Check: Haben wir überhaupt ein Token?
+    const token = getToken();
+    if (!token) {
+        console.warn("Kein Token vorhanden. Umleitung zum Login.");
         window.location.replace("/");
         return;
     }
 
-    // Event Listeners
+    // Event Listeners für Logout und Modal
     byId("logoutBtn")?.addEventListener("click", () => {
         sessionStorage.clear();
         localStorage.clear();
@@ -40,29 +52,49 @@ document.addEventListener("DOMContentLoaded", async () => {
         void handleSave();
     });
 
-    // Auth Check & Role Loading
+    // 2. Sitzung beim Server prüfen
     try {
-        const res = await fetch(`${BASE_URL}/me`, { headers: authHdr(), credentials: "include" });
-        if (!res.ok) throw new Error("Unauthorized");
+        console.log("Prüfe Sitzung bei /me...");
+        const res = await fetch(`${BASE_URL}/me`, { 
+            headers: authHdr(), 
+            credentials: "include" 
+        });
+
+        if (!res.ok) {
+            console.error("Sitzung ungültig (Server-Antwort nicht OK)");
+            window.location.replace("/");
+            return;
+        }
         
         const data = await res.json();
-        const user = data?.user || data; 
-        isAdmin = user.role === "admin";
-        myUserId = user.id; 
+        // Erkennt sowohl { user: {...} } als auch das direkte User-Objekt
+        const user = data?.user || data;
+        
+        if (!user || !user.id) {
+            throw new Error("Keine Benutzerdaten in der Antwort gefunden.");
+        }
+
+        isAdmin = (user.role === "admin");
+        myUserId = user.id;
         
         sessionStorage.setItem("dmski_role", user.role || "customer");
         sessionStorage.setItem("dmski_user_id", String(myUserId));
 
-        // ERFOLG: AuthGate verstecken und Main zeigen
+        // 3. Erfolg: UI anzeigen
         if (byId("authGate")) byId("authGate").style.display = "none";
         if (byId("usersMain")) byId("usersMain").style.display = "block";
         if (isAdmin && byId("roleFilter")) byId("roleFilter").style.display = "inline-block";
 
+        // Daten laden
         await loadUsers();
         await loadCasesForModal();
+
     } catch (err) {
-        console.error("Auth error:", err);
-        window.location.replace("/");
+        console.error("Kritischer Fehler im Auth-Check:", err);
+        // Nur umleiten, wenn es wirklich ein Auth-Fehler ist, nicht bei Netzwerk-Glitch
+        if (err.message.includes("Unauthorized") || err.message.includes("401")) {
+            window.location.replace("/");
+        }
     }
 });
 
@@ -242,12 +274,14 @@ function openAddModal() {
 
 function closeModal() { byId("userModal").classList.remove("open"); }
 
+// Sauberer HTML-Escaper
 function esc(v) {
     return String(v ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 async function loadCasesForModal() {
@@ -262,7 +296,7 @@ async function loadCasesForModal() {
     } catch (e) { console.error("Cases load error", e); }
 }
 
-// Exports für HTML
+// Global verfügbar machen für HTML-Attribut-Events
 window.sendInvite = sendInvite;
 window.openEditModal = openEditModal;
 window.openAddModal = openAddModal;
@@ -275,7 +309,7 @@ window.filterList = () => {
     
     renderList(allUsers.filter(u => {
         const matchesSearch = `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q);
-        const matchesFn = fnFilter ? (u.fn.toLowerCase() === fnFilter) : true;
+        const matchesFn = (u.fn || "").toLowerCase().includes(fnFilter);
         const matchesRole = roleFilter ? (u.role.toLowerCase() === roleFilter) : true;
         return matchesSearch && matchesFn && matchesRole;
     }));
