@@ -42,6 +42,7 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/cases", casesRouter);
 app.use("/users", usersRouter);
+app.use("/api/users", usersRouter);
 
 // 404 catch-all – return JSON instead of HTML
 app.use((_req, res) => {

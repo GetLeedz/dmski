@@ -1,6 +1,7 @@
 /* users.js – Benutzerverwaltung */
 "use strict";
 
+const BASE_URL = "https://lively-reverence-production-def3.up.railway.app/api/users";
 const API = "https://lively-reverence-production-def3.up.railway.app";
 
 const getToken = () => sessionStorage.getItem("token") || localStorage.getItem("token") || "";
@@ -38,7 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   try {
-    const res = await fetch(`${API}/users/me`, { headers: authHdr(), credentials: "include" });
+    const res = await fetch(`${BASE_URL}/me`, { headers: authHdr(), credentials: "include" });
     if (!res.ok) {
       window.location.replace("/");
       return;
@@ -92,14 +93,14 @@ async function loadUsers() {
   try {
     let rows = [];
     if (isAdmin) {
-      const res = await fetch(`${API}/users`, { headers: authHdr(), credentials: "include" });
+      const res = await fetch(`${BASE_URL}`, { headers: authHdr(), credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Benutzer konnten nicht geladen werden.");
       rows = (data?.users || [])
         .filter((u) => u.role !== "admin")
         .map((u) => normalizeUser(u, "users"));
     } else {
-      const res = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr(), credentials: "include" });
+      const res = await fetch(`${BASE_URL}/${myUserId}/collaborators`, { headers: authHdr(), credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Fachpersonen konnten nicht geladen werden.");
       rows = (data?.collaborators || []).map((c) => normalizeUser(c, "collaborators"));
@@ -198,7 +199,6 @@ function openEditModal(selectedId) {
   modalMode = "edit";
   currentEditId = String(selectedId);
 
-  // Explizite Befüllung wie gefordert
   const editVorname = byId("edit-vorname") || byId("mFirstName");
   const editNachname = byId("edit-nachname") || byId("mLastName");
   const editEmail = byId("edit-email") || byId("mEmail");
@@ -266,7 +266,7 @@ async function saveEditUser() {
 
   const payload = buildUserPayload();
 
-  const res = await fetch(`${API}/users/${currentEditId}`, {
+  const res = await fetch(`${BASE_URL}/${currentEditId}`, {
     method: "PATCH",
     headers: authHdr(),
     credentials: "include",
@@ -293,14 +293,14 @@ async function saveNewUser() {
   let res;
 
   if (fnVal) {
-    res = await fetch(`${API}/users/${myUserId}/collaborators`, {
+    res = await fetch(`${BASE_URL}/${myUserId}/collaborators`, {
       method: "POST",
       headers: authHdr(),
       credentials: "include",
       body: JSON.stringify(payload)
     });
   } else {
-    res = await fetch(`${API}/users/customers`, {
+    res = await fetch(`${BASE_URL}/customers`, {
       method: "POST",
       headers: authHdr(),
       credentials: "include",
@@ -329,13 +329,13 @@ async function deleteUser(userId) {
   try {
     let res;
     if (!isAdmin && user?.linkId) {
-      res = await fetch(`${API}/users/${myUserId}/collaborators/${user.linkId}`, {
+      res = await fetch(`${BASE_URL}/${myUserId}/collaborators/${user.linkId}`, {
         method: "DELETE",
         headers: authHdr(),
         credentials: "include"
       });
     } else {
-      res = await fetch(`${API}/users/${uid}`, {
+      res = await fetch(`${BASE_URL}/${uid}`, {
         method: "DELETE",
         headers: authHdr(),
         credentials: "include"
@@ -358,7 +358,7 @@ async function loadCasesForModal() {
 
   const current = sel.value;
   try {
-    let res = await fetch(isAdmin ? `${API}/cases` : `${API}/users/${myUserId}/cases`, { headers: authHdr(), credentials: "include" });
+    let res = await fetch(isAdmin ? `${API}/cases` : `${BASE_URL}/${myUserId}/cases`, { headers: authHdr(), credentials: "include" });
     if (!res.ok) res = await fetch(`${API}/cases`, { headers: authHdr(), credentials: "include" });
     if (!res.ok) return;
 
@@ -395,10 +395,10 @@ function switchTab(tab) {
 
 function esc(v) {
   return String(v ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """);
 }
 
 window.filterList = filterList;
