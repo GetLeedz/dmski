@@ -187,19 +187,22 @@
     .pwd-input-wrap .fi { width:100%;box-sizing:border-box;padding-right:2.6rem; }
     .pwd-eye {
       position:absolute;right:.5rem;top:50%;transform:translateY(-50%);
-      background:none;border:none;cursor:pointer;padding:.2rem;
-      color:#8ba4b0;display:flex;align-items:center;
+      background:none !important;border:none !important;cursor:pointer;padding:.2rem;
+      color:#8ba4b0 !important;display:flex;align-items:center;
+      box-shadow:none !important;
       transition:color .15s;
     }
-    .pwd-eye:hover { color:var(--teal); }
+    .pwd-eye:hover { color:var(--teal) !important; }
     .pwd-gen {
       flex-shrink:0;width:2.4rem;height:2.4rem;
-      display:inline-flex;align-items:center;justify-content:center;
-      border:1.5px solid rgba(17,107,115,.25);border-radius:10px;
-      background:rgba(17,107,115,.06);color:var(--teal);
+      display:inline-flex !important;align-items:center;justify-content:center;
+      border:1.5px solid rgba(17,107,115,.25) !important;border-radius:10px;
+      background:rgba(17,107,115,.06) !important;color:var(--teal) !important;
       cursor:pointer;transition:background .15s,border-color .15s,transform .15s;
+      box-shadow:none !important;
     }
-    .pwd-gen:hover { background:rgba(17,107,115,.14);border-color:var(--teal);transform:rotate(20deg); }
+    .pwd-gen:hover { background:rgba(17,107,115,.14) !important;border-color:var(--teal) !important;transform:rotate(20deg); }
+    .pwd-gen svg, .pwd-eye svg { display:block; }
     .ib svg { width:1rem;height:1rem;flex-shrink:0;stroke:currentColor;fill:none;
               stroke-linecap:round;stroke-linejoin:round; }
 
@@ -613,6 +616,6 @@
     </div>
   </div>
 
-  <script src="users.js?v=8"></script>
+  <script src="users.js?v=9"></script>
 </body>
 </html>
