@@ -203,6 +203,10 @@
     }
     .pwd-gen:hover { background:rgba(17,107,115,.14) !important;border-color:var(--teal) !important;transform:rotate(180deg); }
     .pwd-gen svg, .pwd-eye svg { display:block; }
+    #pwdGenBtn svg, #pwdGenBtn svg path {
+      stroke: #116b73 !important;
+      fill: none !important;
+    }
     .ib svg { width:1rem;height:1rem;flex-shrink:0;stroke:currentColor;fill:none;
               stroke-linecap:round;stroke-linejoin:round; }
 
@@ -495,6 +499,25 @@
     </footer>
   </main>
 
+  <!-- ── Confirm Modal (ersetzt browser confirm()) ── -->
+  <div class="modal-bg" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal" style="max-width:380px;padding:1.75rem 2rem 1.5rem;">
+      <div class="modal-hd" style="margin-bottom:1rem;">
+        <div class="modal-hd-icon" style="background:linear-gradient(135deg,#116b73,#0d5760);">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </div>
+        <h2 id="confirmTitle" style="font-size:.97rem;">Einladung senden</h2>
+      </div>
+      <p id="confirmText" style="color:#4a6672;font-size:.875rem;line-height:1.6;margin:0 0 1.25rem;"></p>
+      <div class="modal-ft" style="margin-top:0;padding-top:0;border-top:none;">
+        <button type="button" class="btn-cancel" id="confirmCancelBtn">Abbrechen</button>
+        <button type="button" class="btn-save" id="confirmOkBtn">Senden</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Add / Edit Modal ── -->
   <div class="modal-bg" id="userModal">
     <div class="modal">
@@ -614,6 +637,6 @@
     </div>
   </div>
 
-  <script src="users.js?v=10"></script>
+  <script src="users.js?v=11"></script>
 </body>
 </html>

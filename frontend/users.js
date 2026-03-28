@@ -189,21 +189,65 @@ function renderList(rows) {
 
 // --- AKTIONEN ---
 
-async function sendInvite(targetUserId) {
-    if (!confirm("Einladungs-E-Mail jetzt an diesen Benutzer senden?")) return;
-    document.body.style.cursor = 'wait';
-    try {
-        const res = await fetch(`${BASE_URL}/${myUserId}/users/${targetUserId}/send-invite`, {
-            method: "POST", headers: authHdr(), credentials: "include"
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Versand fehlgeschlagen");
-        alert("✓ Einladung erfolgreich versendet!");
-    } catch (err) {
-        alert("Fehler: " + err.message);
-    } finally {
-        document.body.style.cursor = 'default';
+function showConfirm(text, onOk) {
+    const modal = byId("confirmModal");
+    byId("confirmText").textContent = text;
+    modal.classList.add("open");
+
+    const okBtn = byId("confirmOkBtn");
+    const cancelBtn = byId("confirmCancelBtn");
+
+    function cleanup() {
+        modal.classList.remove("open");
+        okBtn.removeEventListener("click", handleOk);
+        cancelBtn.removeEventListener("click", handleCancel);
     }
+    function handleOk() { cleanup(); onOk(); }
+    function handleCancel() { cleanup(); }
+
+    okBtn.addEventListener("click", handleOk);
+    cancelBtn.addEventListener("click", handleCancel);
+}
+
+async function sendInvite(targetUserId) {
+    showConfirm("Einladungs-E-Mail jetzt an diesen Benutzer senden?", async () => {
+        const okBtn = byId("confirmOkBtn");
+        if (okBtn) { okBtn.disabled = true; okBtn.textContent = "Sendet …"; }
+
+        try {
+            const res = await fetch(`${BASE_URL}/${myUserId}/users/${targetUserId}/send-invite`, {
+                method: "POST", headers: authHdr(), credentials: "include"
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || "Versand fehlgeschlagen");
+            showToast("✓ Einladung erfolgreich versendet.");
+        } catch (err) {
+            showToast("Fehler: " + err.message, true);
+        } finally {
+            if (okBtn) { okBtn.disabled = false; okBtn.textContent = "Senden"; }
+        }
+    });
+}
+
+function showToast(text, isError = false) {
+    let el = byId("dmskiToast");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "dmskiToast";
+        el.style.cssText = [
+            "position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%)",
+            "padding:.65rem 1.4rem;border-radius:12px;font-size:.875rem;font-weight:600",
+            "box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:99999",
+            "transition:opacity .3s;pointer-events:none"
+        ].join(";");
+        document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.style.background = isError ? "#fee2e2" : "#d1fae5";
+    el.style.color = isError ? "#b91c1c" : "#065f46";
+    el.style.opacity = "1";
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.opacity = "0"; }, 3000);
 }
 
 function showModalMsg(text, type) {
@@ -270,16 +314,23 @@ async function handleSave() {
 }
 
 async function deleteUser(id) {
-    if (!confirm("Benutzer wirklich löschen?")) return;
-    try {
-        const res = await fetch(`${BASE_URL}/${id}`, { 
-            method: "DELETE", headers: authHdr(), credentials: "include" 
-        });
-        if (!res.ok) throw new Error("Löschen fehlgeschlagen");
-        await loadUsers();
-    } catch (err) {
-        alert(err.message);
-    }
+    showConfirm("Benutzer wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.", async () => {
+        byId("confirmOkBtn").textContent = "Löscht …";
+        byId("confirmOkBtn").disabled = true;
+        try {
+            const res = await fetch(`${BASE_URL}/${id}`, {
+                method: "DELETE", headers: authHdr(), credentials: "include"
+            });
+            if (!res.ok) throw new Error("Löschen fehlgeschlagen");
+            await loadUsers();
+            showToast("Benutzer wurde gelöscht.");
+        } catch (err) {
+            showToast(err.message, true);
+        } finally {
+            byId("confirmOkBtn").textContent = "Senden";
+            byId("confirmOkBtn").disabled = false;
+        }
+    });
 }
 
 // --- MODAL & FILTER ---
@@ -410,6 +461,7 @@ window.closeModal = closeModal;
 window.deleteUser = deleteUser;
 window.generateAndFillPassword = generateAndFillPassword;
 window.togglePwdVisibility = togglePwdVisibility;
+window.showToast = showToast;
 window.filterList = () => {
     const q = byId("searchInput").value.toLowerCase();
     const fnFilter = byId("fnFilter")?.value.toLowerCase() || "";
