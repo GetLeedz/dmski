@@ -83,19 +83,23 @@ loginForm?.addEventListener("submit", async (event) => {
         sessionStorage.setItem("token", data.token);
         sessionStorage.setItem("dmski_user_id", String(data.id || ""));
         sessionStorage.setItem("dmski_role", data.role || "customer");
+        sessionStorage.setItem("dmski_pwd_change", data.password_change_required ? "1" : "0");
 
         if (rememberInput.checked) {
             localStorage.setItem(REMEMBER_KEY, email);
-            localStorage.setItem("token", data.token); // Permanent für Auto-Login
+            localStorage.setItem("token", data.token);
         } else {
             localStorage.removeItem(REMEMBER_KEY);
         }
 
         setMessage("Erfolgreich angemeldet. Weiterleitung...", "success");
 
-        // --- WEITERLEITUNG ---
-        // Admins gehen direkt zur Benutzerverwaltung, Kunden zum Dashboard
         setTimeout(() => {
+            // Passwort-Änderung erzwingen
+            if (data.password_change_required) {
+                window.location.href = "/profile.html?mustchange=1";
+                return;
+            }
             if (data.role === "admin") {
                 window.location.href = "/users.html";
             } else {

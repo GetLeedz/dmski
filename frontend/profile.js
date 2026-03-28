@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   const token=getToken();
   if(!token){sessionStorage.removeItem("token");window.location.replace("/");return;}
   document.getElementById("logoutBtn").addEventListener("click",()=>{
-    sessionStorage.removeItem("token");sessionStorage.removeItem("currentCaseId");window.location.href="/";
+    sessionStorage.clear();localStorage.removeItem("token");window.location.href="/";
   });
   document.getElementById("authGate").style.display="none";
   document.getElementById("profileMain").style.display="";
@@ -20,6 +20,18 @@ document.addEventListener("DOMContentLoaded",async()=>{
     showMsg(document.getElementById("profileMsg"),"Profil konnte nicht geladen werden.","error");
   }
   document.getElementById("profileForm").addEventListener("submit",onSave);
+
+  // Passwort-Änderung erzwingen (nach erstem Login mit temporärem Passwort)
+  const mustChange = new URLSearchParams(window.location.search).get("mustchange") === "1"
+    || sessionStorage.getItem("dmski_pwd_change") === "1";
+  if(mustChange){
+    const banner=document.getElementById("pwdChangeBanner");
+    if(banner) banner.style.display="";
+    const pwdSection=document.getElementById("pwdChangeSection");
+    if(pwdSection){ pwdSection.style.display=""; pwdSection.scrollIntoView({behavior:"smooth"}); }
+    const fieldNewPwd=document.getElementById("fieldNewPwd");
+    if(fieldNewPwd) fieldNewPwd.focus();
+  }
 });
 
 async function loadProfile(){

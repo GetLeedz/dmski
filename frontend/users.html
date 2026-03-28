@@ -174,10 +174,32 @@
       transition:background .15s,transform .12s,box-shadow .12s;
     }
     .ib:hover { transform:scale(1.08);box-shadow:0 2px 8px rgba(0,0,0,.12); }
+    .ib--invite { border-color:#99d4da;color:#116b73; }
+    .ib--invite:hover { background:#f0fafb; }
     .ib--edit { border-color:#93c5fd;color:#1d4ed8; }
     .ib--edit:hover { background:#eff6ff; }
     .ib--del  { border-color:#fca5a5;color:#b91c1c; }
     .ib--del:hover  { background:#fff1f2; }
+
+    /* Password input row */
+    .pwd-input-row { display:flex;gap:.5rem;align-items:center; }
+    .pwd-input-wrap { flex:1;position:relative; }
+    .pwd-input-wrap .fi { width:100%;box-sizing:border-box;padding-right:2.6rem; }
+    .pwd-eye {
+      position:absolute;right:.5rem;top:50%;transform:translateY(-50%);
+      background:none;border:none;cursor:pointer;padding:.2rem;
+      color:#8ba4b0;display:flex;align-items:center;
+      transition:color .15s;
+    }
+    .pwd-eye:hover { color:var(--teal); }
+    .pwd-gen {
+      flex-shrink:0;width:2.4rem;height:2.4rem;
+      display:inline-flex;align-items:center;justify-content:center;
+      border:1.5px solid rgba(17,107,115,.25);border-radius:10px;
+      background:rgba(17,107,115,.06);color:var(--teal);
+      cursor:pointer;transition:background .15s,border-color .15s,transform .15s;
+    }
+    .pwd-gen:hover { background:rgba(17,107,115,.14);border-color:var(--teal);transform:rotate(20deg); }
     .ib svg { width:1rem;height:1rem;flex-shrink:0;stroke:currentColor;fill:none;
               stroke-linecap:round;stroke-linejoin:round; }
 
@@ -508,6 +530,39 @@
           <div class="fg">
             <label class="fl" for="edit-mobile">Mobile</label>
             <input id="edit-mobile" type="tel" class="fi" placeholder="+41 79 …"/>
+          </div>
+        </div>
+
+        <!-- Section: Passwort -->
+        <div class="modal-section" id="mPwdSection">
+          <p class="modal-section-title">Passwort</p>
+          <div class="fg">
+            <label class="fl" for="edit-password">Passwort <span class="req" id="pwdReq">*</span></label>
+            <div class="pwd-input-row">
+              <div class="pwd-input-wrap">
+                <input id="edit-password" type="password" class="fi" placeholder="Passwort generieren …" autocomplete="new-password"/>
+                <button type="button" class="pwd-eye" id="pwdEyeBtn" onclick="togglePwdVisibility()" title="Sichtbarkeit" aria-label="Passwort anzeigen">
+                  <svg id="eyeIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg id="eyeOffIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                </button>
+              </div>
+              <button type="button" class="pwd-gen" id="pwdGenBtn" onclick="generateAndFillPassword()" title="Sicheres Passwort generieren">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="4"/>
+                  <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>
+                  <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>
+                  <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                  <circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/>
+                  <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/>
+                </svg>
+              </button>
+            </div>
+            <p class="fn-hint" id="pwdHint">Leer lassen, um das Passwort nicht zu ändern.</p>
           </div>
         </div>
 

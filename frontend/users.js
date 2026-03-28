@@ -84,6 +84,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (byId("authGate")) byId("authGate").style.display = "none";
         if (byId("usersMain")) byId("usersMain").style.display = "block";
         if (isAdmin && byId("roleFilter")) byId("roleFilter").style.display = "inline-block";
+        // Anlegen-Button nur für Admins
+        if (!isAdmin && byId("addBtnLabel")) byId("addBtnLabel").closest("button").style.display = "none";
 
         // Daten laden
         await loadUsers();
@@ -150,6 +152,27 @@ function renderList(rows) {
         const roleClass = u.role === "collaborator" ? "badge badge--f" : "badge badge--k";
         const roleLabel = u.role === "collaborator" ? "Fachperson" : "Kunde";
 
+        const adminActions = isAdmin ? `
+            <button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladung senden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+            </button>
+            <button class="ib ib--edit" onclick="openEditModal('${u.id}')" title="Bearbeiten">
+                <svg viewBox="0 0 24 24" stroke-width="2" style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/>
+                </svg>
+            </button>
+            <button class="ib ib--del" onclick="deleteUser('${u.id}')" title="Löschen">
+                <svg viewBox="0 0 24 24" stroke-width="2" style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+            </button>` : "";
+
         return `
             <div class="u-card" id="uc-${u.id}">
                 <div class="u-av ${u.role === "collaborator" ? "u-av--f" : "u-av--k"}">${esc(initials)}</div>
@@ -159,23 +182,8 @@ function renderList(rows) {
                 </div>
                 ${u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : ""}
                 <span class="${roleClass}">${roleLabel}</span>
-                
-                <div class="u-actions">
-                    <button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladung senden">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                    </button>
-                    <button class="ib ib--edit" onclick="openEditModal('${u.id}')" title="Bearbeiten">
-                        <svg viewBox="0 0 24 24" stroke-width="2" style="width:18px; height:18px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                    </button>
-                    <button class="ib ib--del" onclick="deleteUser('${u.id}')" title="Löschen">
-                        <svg viewBox="0 0 24 24" stroke-width="2" style="width:18px; height:18px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                    </button>
-                </div>
-            </div>
-        `;
+                <div class="u-actions">${adminActions}</div>
+            </div>`;
     }).join("");
 }
 
@@ -199,37 +207,44 @@ async function sendInvite(targetUserId) {
 }
 
 async function handleSave() {
+    const password = (byId("edit-password")?.value || "").trim();
+    const isAdd = modalMode === "add";
+
+    if (isAdd && !password) {
+        alert("Bitte ein Passwort generieren, bevor Sie den Benutzer anlegen.");
+        return;
+    }
+
     const payload = {
         first_name: byId("edit-vorname").value.trim(),
         last_name: byId("edit-nachname").value.trim(),
         email: byId("edit-email").value.trim(),
         mobile: byId("edit-mobile").value.trim(),
         function_label: byId("edit-funktion").value.trim(),
-        case_id: byId("edit-case").value || null
+        case_id: byId("edit-case").value || null,
     };
+    if (password) payload.password = password;
 
     const btn = byId("modalSaveBtn");
-    if (btn) btn.disabled = true;
+    if (btn) { btn.disabled = true; btn.textContent = isAdd ? "Anlegt …" : "Speichert …"; }
 
     try {
-        const method = modalMode === "edit" ? "PATCH" : "POST";
-        const url = modalMode === "edit" ? `${BASE_URL}/${currentEditId}` : `${BASE_URL}/${myUserId}/users`;
+        const method = isAdd ? "POST" : "PATCH";
+        const url = isAdd ? `${BASE_URL}/${myUserId}/users` : `${BASE_URL}/${currentEditId}`;
 
         const res = await fetch(url, {
             method, headers: authHdr(), credentials: "include", body: JSON.stringify(payload)
         });
 
-        if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || "Speichern fehlgeschlagen");
-        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Speichern fehlgeschlagen.");
 
         await loadUsers();
         closeModal();
     } catch (err) {
         alert(err.message);
     } finally {
-        if (btn) btn.disabled = false;
+        if (btn) { btn.disabled = false; btn.textContent = isAdd ? "Anlegen" : "Änderungen speichern"; }
     }
 }
 
@@ -261,6 +276,14 @@ function openEditModal(id) {
     byId("edit-funktion").value = u.fn;
     byId("edit-case").value = u.caseId;
 
+    // Passwort-Feld leeren + Hint anpassen
+    const pwdInput = byId("edit-password");
+    if (pwdInput) { pwdInput.value = ""; pwdInput.type = "password"; }
+    if (byId("eyeIcon")) byId("eyeIcon").style.display = "";
+    if (byId("eyeOffIcon")) byId("eyeOffIcon").style.display = "none";
+    if (byId("pwdReq")) byId("pwdReq").style.display = "none";
+    if (byId("pwdHint")) byId("pwdHint").textContent = "Leer lassen, um das Passwort nicht zu ändern.";
+
     byId("modalTitle").textContent = "Benutzer bearbeiten";
     byId("modalSaveBtn").textContent = "Änderungen speichern";
     byId("userModal").classList.add("open");
@@ -269,6 +292,15 @@ function openEditModal(id) {
 function openAddModal() {
     modalMode = "add";
     byId("userModalForm").reset();
+
+    // Passwort-Feld zurücksetzen
+    const pwdInput = byId("edit-password");
+    if (pwdInput) { pwdInput.value = ""; pwdInput.type = "password"; }
+    if (byId("eyeIcon")) byId("eyeIcon").style.display = "";
+    if (byId("eyeOffIcon")) byId("eyeOffIcon").style.display = "none";
+    if (byId("pwdReq")) byId("pwdReq").style.display = "";
+    if (byId("pwdHint")) byId("pwdHint").textContent = "Pflichtfeld – Klicken Sie auf den Würfel, um ein sicheres Passwort zu generieren.";
+
     byId("modalTitle").textContent = "Neuen Benutzer anlegen";
     byId("modalSaveBtn").textContent = "Anlegen";
     byId("userModal").classList.add("open");
@@ -298,12 +330,62 @@ async function loadCasesForModal() {
     } catch (e) { console.error("Cases load error", e); }
 }
 
+// ── Passwort-Generator ───────────────────────────────────────────────────────
+
+function generatePassword() {
+    const upper   = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower   = 'abcdefghjkmnpqrstuvwxyz';
+    const digits  = '23456789';
+    const special = '!@#$%&*+?';
+    const all = upper + lower + digits + special;
+    // Mindestens 2 aus jeder Zeichenklasse für Policy-Konformität
+    const pool = [
+        upper[Math.floor(Math.random() * upper.length)],
+        upper[Math.floor(Math.random() * upper.length)],
+        lower[Math.floor(Math.random() * lower.length)],
+        lower[Math.floor(Math.random() * lower.length)],
+        digits[Math.floor(Math.random() * digits.length)],
+        digits[Math.floor(Math.random() * digits.length)],
+        special[Math.floor(Math.random() * special.length)],
+        special[Math.floor(Math.random() * special.length)],
+        all[Math.floor(Math.random() * all.length)],
+        all[Math.floor(Math.random() * all.length)],
+    ];
+    // Fisher-Yates Shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.join('');
+}
+
+function generateAndFillPassword() {
+    const pwd = generatePassword();
+    const input = byId("edit-password");
+    if (!input) return;
+    input.value = pwd;
+    input.type = "text"; // Sichtbar nach Generierung
+    byId("eyeIcon").style.display = "none";
+    byId("eyeOffIcon").style.display = "";
+}
+
+function togglePwdVisibility() {
+    const input = byId("edit-password");
+    if (!input) return;
+    const isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    byId("eyeIcon").style.display = isHidden ? "none" : "";
+    byId("eyeOffIcon").style.display = isHidden ? "" : "none";
+}
+
 // Global verfügbar machen für HTML-Attribut-Events
 window.sendInvite = sendInvite;
 window.openEditModal = openEditModal;
 window.openAddModal = openAddModal;
 window.closeModal = closeModal;
 window.deleteUser = deleteUser;
+window.generateAndFillPassword = generateAndFillPassword;
+window.togglePwdVisibility = togglePwdVisibility;
 window.filterList = () => {
     const q = byId("searchInput").value.toLowerCase();
     const fnFilter = byId("fnFilter")?.value.toLowerCase() || "";

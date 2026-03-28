@@ -65,7 +65,7 @@ router.post("/login", async (req, res) => {
     
     // WICHTIG: Nutze LOWER(TRIM()) auch hier in der Abfrage!
     const result = await pool.query(
-      "SELECT id, email, password_hash, role FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
+      "SELECT id, email, password_hash, role, password_change_required FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
       [emailNorm]
     );
 
@@ -91,7 +91,13 @@ router.post("/login", async (req, res) => {
     );
 
     console.log(`Login erfolgreich: ${user.email}`);
-    return res.json({ token, id: user.id, email: user.email, role });
+    return res.json({
+      token,
+      id: user.id,
+      email: user.email,
+      role,
+      password_change_required: user.password_change_required || false,
+    });
   } catch (err) {
     console.error("Login error:", err.message);
     return res.status(500).json({ error: "Serverfehler." });
