@@ -97,12 +97,23 @@ async function loadUsers() {
       if (!res.ok) throw new Error(data?.error || "Benutzer konnten nicht geladen werden.");
       rows = (data?.users || [])
         .filter((u) => u.role !== "admin")
-        .map((u) => normalizeUser(u, "users"));
+        .map((u) => {
+          const user = normalizeUser(u, "users");
+          user.id = u.id;
+          user.userId = u.id;
+          return user;
+        });
     } else {
       const res = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr() });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Fachpersonen konnten nicht geladen werden.");
-      rows = (data?.collaborators || []).map((c) => normalizeUser(c, "collaborators"));
+      rows = (data?.collaborators || []).map((c) => {
+        const user = normalizeUser(c, "collaborators");
+        user.id = c.user_id;
+        user.userId = c.user_id;
+        user.linkId = c.id;
+        return user;
+      });
     }
 
     allUsers = rows.filter((u) => Number(u.id) > 0);
