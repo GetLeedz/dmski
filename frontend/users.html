@@ -486,39 +486,39 @@
       </div>
 
       <form id="userModalForm">
-        <input type="hidden" id="mUserId"/>
+        <input type="hidden" id="edit-id"/>
 
         <!-- Section: Kontakt -->
         <div class="modal-section">
           <p class="modal-section-title">Kontaktdaten</p>
           <div class="two-col mb">
             <div class="fg">
-              <label class="fl" for="mFirstName">Vorname</label>
-              <input id="mFirstName" type="text" class="fi" placeholder="Anna"/>
+              <label class="fl" for="edit-vorname">Vorname</label>
+              <input id="edit-vorname" type="text" class="fi" placeholder="Anna"/>
             </div>
             <div class="fg">
-              <label class="fl" for="mLastName">Nachname</label>
-              <input id="mLastName" type="text" class="fi" placeholder="Meier"/>
+              <label class="fl" for="edit-nachname">Nachname</label>
+              <input id="edit-nachname" type="text" class="fi" placeholder="Meier"/>
             </div>
           </div>
           <div class="fg mb">
-            <label class="fl" for="mEmail">E-Mail&thinsp;<span class="req">*</span></label>
-            <input id="mEmail" type="email" class="fi" placeholder="person@beispiel.ch" required/>
+            <label class="fl" for="edit-email">E-Mail&thinsp;<span class="req">*</span></label>
+            <input id="edit-email" type="email" class="fi" placeholder="person@beispiel.ch" required/>
           </div>
           <div class="fg">
-            <label class="fl" for="mMobile">Mobile</label>
-            <input id="mMobile" type="tel" class="fi" placeholder="+41 79 …"/>
+            <label class="fl" for="edit-mobile">Mobile</label>
+            <input id="edit-mobile" type="tel" class="fi" placeholder="+41 79 …"/>
           </div>
         </div>
 
         <!-- Section: Funktion + Fall (Fachperson only) -->
         <div class="modal-section" id="mFachSection">
-          <p class="modal-section-title">Funktion &amp; Fall</p>
+          <p class="modal-section-title">Funktion & Fall</p>
 
           <!-- Funktion: dropdown -->
           <div class="fg mb" id="mFnGroup">
-            <label class="fl" for="mFunction">Funktion</label>
-            <select id="mFunction" class="fi fi-sel">
+            <label class="fl" for="edit-funktion">Funktion</label>
+            <select id="edit-funktion" class="fi fi-sel">
               <option value="">Bitte Funktion wählen …</option>
               <option value="Gutachter/in">Gutachter/in</option>
               <option value="Therapeut/in">Therapeut/in</option>
@@ -540,8 +540,8 @@
 
           <!-- Fall zuweisen: full-width -->
           <div class="fg" id="mCaseGroup">
-            <label class="fl" for="mCase">Fall zuweisen</label>
-            <select id="mCase" class="fi fi-sel">
+            <label class="fl" for="edit-case">Fall zuweisen</label>
+            <select id="edit-case" class="fi fi-sel">
               <option value="">Keinen Fall zuweisen</option>
             </select>
           </div>

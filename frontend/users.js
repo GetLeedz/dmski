@@ -173,8 +173,9 @@ function openAddModal() {
   setField("edit-nachname", "mLastName", "");
   setField("edit-email", "mEmail", "");
   setField("edit-mobile", "mMobile", "");
-  setField("edit-function", "mFunction", "");
+  setField("edit-funktion", "mFunction", "");
   setField("edit-case", "mCase", "");
+  if (byId("edit-id")) byId("edit-id").value = "";
   if (byId("mUserId")) byId("mUserId").value = "";
 
   byId("modalTitle").textContent = isAdmin ? "Benutzer anlegen" : "Fachperson anlegen";
@@ -211,6 +212,7 @@ function openEditModal(selectedId) {
   if (editFunktion) editFunktion.value = user.fn || "";
 
   setField("edit-case", "mCase", user.caseId || "");
+  if (byId("edit-id")) byId("edit-id").value = String(user.id);
   if (byId("mUserId")) byId("mUserId").value = String(user.id);
 
   byId("modalTitle").textContent = "Benutzer editieren";
@@ -296,8 +298,10 @@ async function saveNewUser() {
     throw new Error("E-Mail ist erforderlich.");
   }
 
+  const fnVal = payload.function_label || "";
   let res;
-  if (!isAdmin) {
+
+  if (fnVal) {
     res = await fetch(`${API}/users/${myUserId}/collaborators`, {
       method: "POST",
       headers: authHdr(),
