@@ -3,7 +3,7 @@
 
 const API = "https://lively-reverence-production-def3.up.railway.app";
 
-const getToken = () => sessionStorage.getItem("token") || "";
+const getToken = () => sessionStorage.getItem("token") || localStorage.getItem("token") || "";
 const authHdr = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
 let allUsers = [];
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   try {
-    const res = await fetch(`${API}/users/me`, { headers: authHdr() });
+    const res = await fetch(`${API}/users/me`, { headers: authHdr(), credentials: "include" });
     if (!res.ok) {
       window.location.replace("/");
       return;
@@ -92,14 +92,14 @@ async function loadUsers() {
   try {
     let rows = [];
     if (isAdmin) {
-      const res = await fetch(`${API}/users`, { headers: authHdr() });
+      const res = await fetch(`${API}/users`, { headers: authHdr(), credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Benutzer konnten nicht geladen werden.");
       rows = (data?.users || [])
         .filter((u) => u.role !== "admin")
         .map((u) => normalizeUser(u, "users"));
     } else {
-      const res = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr() });
+      const res = await fetch(`${API}/users/${myUserId}/collaborators`, { headers: authHdr(), credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Fachpersonen konnten nicht geladen werden.");
       rows = (data?.collaborators || []).map((c) => normalizeUser(c, "collaborators"));
@@ -266,21 +266,12 @@ async function saveEditUser() {
 
   const payload = buildUserPayload();
 
-  // Primärer Zielendpunkt laut Anforderung
-  let res = await fetch(`${API}/api/collaborators/${currentEditId}`, {
-    method: "PUT",
+  const res = await fetch(`${API}/users/${currentEditId}`, {
+    method: "PATCH",
     headers: authHdr(),
+    credentials: "include",
     body: JSON.stringify(payload)
   });
-
-  // Fallback auf bestehendes Backend-Routing
-  if (!res.ok) {
-    res = await fetch(`${API}/users/${currentEditId}`, {
-      method: "PATCH",
-      headers: authHdr(),
-      body: JSON.stringify(payload)
-    });
-  }
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -305,12 +296,14 @@ async function saveNewUser() {
     res = await fetch(`${API}/users/${myUserId}/collaborators`, {
       method: "POST",
       headers: authHdr(),
+      credentials: "include",
       body: JSON.stringify(payload)
     });
   } else {
     res = await fetch(`${API}/users/customers`, {
       method: "POST",
       headers: authHdr(),
+      credentials: "include",
       body: JSON.stringify(payload)
     });
   }
@@ -338,12 +331,14 @@ async function deleteUser(userId) {
     if (!isAdmin && user?.linkId) {
       res = await fetch(`${API}/users/${myUserId}/collaborators/${user.linkId}`, {
         method: "DELETE",
-        headers: authHdr()
+        headers: authHdr(),
+        credentials: "include"
       });
     } else {
       res = await fetch(`${API}/users/${uid}`, {
         method: "DELETE",
-        headers: authHdr()
+        headers: authHdr(),
+        credentials: "include"
       });
     }
 
@@ -363,8 +358,8 @@ async function loadCasesForModal() {
 
   const current = sel.value;
   try {
-    let res = await fetch(isAdmin ? `${API}/cases` : `${API}/users/${myUserId}/cases`, { headers: authHdr() });
-    if (!res.ok) res = await fetch(`${API}/cases`, { headers: authHdr() });
+    let res = await fetch(isAdmin ? `${API}/cases` : `${API}/users/${myUserId}/cases`, { headers: authHdr(), credentials: "include" });
+    if (!res.ok) res = await fetch(`${API}/cases`, { headers: authHdr(), credentials: "include" });
     if (!res.ok) return;
 
     const data = await res.json().catch(() => ({}));

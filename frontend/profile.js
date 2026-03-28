@@ -1,7 +1,7 @@
 /* profile.js – My Profile (form only) */
 const _h=String(window.location.hostname||"").toLowerCase();
 const _isLocal=_h==="localhost"||_h==="127.0.0.1"||_h.endsWith(".local")||/^192\.168\./.test(_h)||/^10\./.test(_h);
-const API=_isLocal?"http://localhost:4000":"https://lively-reverence-production-def3.up.railway.app";
+const API = "https://lively-reverence-production-def3.up.railway.app";
 const getToken=()=>sessionStorage.getItem("token")||"";
 const getRole=()=>sessionStorage.getItem("dmski_role")||"customer";
 const authHdr=()=>({...{"Content-Type":"application/json"},Authorization:`Bearer ${getToken()}`});

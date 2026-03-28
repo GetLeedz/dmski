@@ -1,25 +1,40 @@
-# Projekt-Regeln für Cline
+📄 Projekt-Regeln für Cline (Update 2026)
+1. Code-Qualität & Syntax
+Validierung: Führe VOR jedem Speichern einen Syntax-Check durch.
 
-## 1. Code-Qualität & Syntax
-- Führe VOR jedem Speichern einen Syntax-Check durch. 
-- Stelle sicher, dass alle Klammern `{}` und Anführungszeichen korrekt geschlossen sind.
-- Nutze niemals Platzhalter wie "// ... rest of code". Schreibe immer die vollständige Logik oder nutze präzise Datei-Edits.
+Vollständigkeit: Nutze niemals Platzhalter wie // ... rest of code. Schreibe immer die vollständige Logik oder nutze präzise Datei-Edits.
 
-## 2. User Management & Modals
-- Beim Editieren eines Benutzers muss die `userId` immer über den `onclick`-Handler an `openEditModal(id)` übergeben werden.
-- Die Funktion `openEditModal` MUSS die Felder (`edit-vorname`, `edit-nachname`, etc.) explizit mit Daten aus dem `allUsers`-Array befüllen.
-- Das Modal muss immer ein Schließen-Kreuz (X) oben rechts haben.
+Fehlerresistenz: Stelle sicher, dass alle Klammern {} und Anführungszeichen korrekt geschlossen sind.
 
-## 3. UI/UX Standards
-- Alle Labels in Formularen sind strikt linksbündig auszurichten.
-- Funktions-Auswahl erfolgt immer über ein `<select>` Dropdown, niemals über Button-Chips.
-- Negative Zahlen werden immer in der Farbe `#dc2626` (modernes Rot) dargestellt.
-- Statistik-Boxen haben immer die exakt gleiche Breite (`grid-template-columns: repeat(3, 1fr)`).
+2. API & Endpoints (Kritisch)
+Produktions-URL: https://lively-reverence-production-def3.up.railway.app
 
-## 4. Git & Deployment
-- Nach jeder erfolgreichen Änderung: `git add .`, `git commit -m "feat/fix: beschreibung"`, `git push`.
-- Warte nicht auf Bestätigung für Git-Befehle (Yolo-Mode kompatibel).
+Kein Localhost: Verwende niemals localhost für API-Requests in der Produktion.
 
-## 5. PDF-Export
-- Der PDF-Export darf nur den Container `#KI-REPORT` erfassen.
-- Alle interaktiven Buttons müssen via `@media print { .no-print { display: none; } }` im PDF versteckt werden.
+Auth-Handling: Bei 401 Unauthorized Fehlern prüfe sofort die backend/index.js auf erforderliche API-Keys oder Token-Header und implementiere diese in den Fetch-Request.
+
+Endpunkt: Der korrekte Pfad für die Benutzerliste ist /api/collaborators.
+
+3. User Management & Modals
+ID-Mapping: Beim Editieren muss die userId über den onclick-Handler an openEditModal(id) übergeben werden.
+
+Daten-Befüllung: openEditModal MUSS die Felder (edit-vorname, edit-nachname, etc.) explizit mit Daten aus dem allUsers-Array befüllen.
+
+UI-Elemente: Jedes Modal benötigt zwingend ein Schließen-Kreuz (X) oben rechts.
+
+4. UI/UX Standards
+Formulare: Alle Labels sind strikt linksbündig auszurichten (text-align: left).
+
+Inputs: Funktions-Auswahl erfolgt immer über ein <select> Dropdown.
+
+Visuals: Negative Zahlen in Farbe #dc2626 (modernes Rot). Statistik-Boxen nutzen grid-template-columns: repeat(3, 1fr).
+
+5. Git & Deployment (YOLO-Mode)
+Workflow: Nach jeder Änderung: git add ., git commit -m "feat/fix: [Beschreibung]", git push.
+
+Automatisierung: Führe Git-Befehle ohne Bestätigung aus.
+
+6. PDF-Export
+Selektion: Nur der Container #KI-REPORT darf exportiert werden.
+
+Print-Styles: Interaktive Elemente via @media print { .no-print { display: none; } } im Export verstecken.

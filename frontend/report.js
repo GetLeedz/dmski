@@ -17,9 +17,7 @@ const isLocalHost = host === "localhost"
   || /^10\./.test(host)
   || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
 
-const API_BASE = isLocalHost
-  ? "http://localhost:4000"
-  : "https://lively-reverence-production-def3.up.railway.app";
+const API_BASE = "https://lively-reverence-production-def3.up.railway.app";
 
 if (!token) {
   window.location.replace("/");
