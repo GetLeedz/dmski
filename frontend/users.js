@@ -206,12 +206,22 @@ async function sendInvite(targetUserId) {
     }
 }
 
+function showModalMsg(text, type) {
+    const el = byId("modalMsg");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "msg" + (type ? " msg--" + type : "");
+    el.style.display = text ? "" : "none";
+}
+
 async function handleSave() {
     const password = (byId("edit-password")?.value || "").trim();
     const isAdd = modalMode === "add";
 
+    showModalMsg("", "");
+
     if (isAdd && !password) {
-        alert("Bitte ein Passwort generieren, bevor Sie den Benutzer anlegen.");
+        showModalMsg("Bitte zuerst ein Passwort generieren (Würfel-Icon).", "err");
         return;
     }
 
@@ -228,12 +238,19 @@ async function handleSave() {
     const btn = byId("modalSaveBtn");
     if (btn) { btn.disabled = true; btn.textContent = isAdd ? "Anlegt …" : "Speichert …"; }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     try {
         const method = isAdd ? "POST" : "PATCH";
         const url = isAdd ? `${BASE_URL}/${myUserId}/users` : `${BASE_URL}/${currentEditId}`;
 
         const res = await fetch(url, {
-            method, headers: authHdr(), credentials: "include", body: JSON.stringify(payload)
+            method,
+            headers: authHdr(),
+            credentials: "include",
+            body: JSON.stringify(payload),
+            signal: controller.signal,
         });
 
         const data = await res.json().catch(() => ({}));
@@ -242,8 +259,12 @@ async function handleSave() {
         await loadUsers();
         closeModal();
     } catch (err) {
-        alert(err.message);
+        const msg = err.name === "AbortError"
+            ? "Zeitüberschreitung – Server antwortet nicht. Bitte erneut versuchen."
+            : err.message;
+        showModalMsg(msg, "err");
     } finally {
+        clearTimeout(timeout);
         if (btn) { btn.disabled = false; btn.textContent = isAdd ? "Anlegen" : "Änderungen speichern"; }
     }
 }
@@ -306,7 +327,10 @@ function openAddModal() {
     byId("userModal").classList.add("open");
 }
 
-function closeModal() { byId("userModal").classList.remove("open"); }
+function closeModal() {
+    byId("userModal").classList.remove("open");
+    showModalMsg("", "");
+}
 
 // Sauberer HTML-Escaper
 function esc(v) {
