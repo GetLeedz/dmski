@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function normalizeUser(raw, source = "users") {
   let id = 0;
-  if (source === "collaborators") {
+  if (source === "users") {
     id = Number(raw?.user_id || raw?.collaborator_id || raw?.userId || 0);
   } else {
     id = Number(raw?.id || raw?.user_id || raw?.userId || 0);
@@ -74,12 +74,12 @@ function normalizeUser(raw, source = "users") {
   return {
     id,
     userId,
-    linkId: source === "collaborators" ? Number(raw?.id || 0) || null : null,
+    linkId: source === "users" ? Number(raw?.id || 0) || null : null,
     email: String(raw?.email || ""),
     firstName: String(raw?.first_name || raw?.firstName || ""),
     lastName: String(raw?.last_name || raw?.lastName || ""),
     mobile: String(raw?.mobile || ""),
-    role: String(raw?.role || (source === "collaborators" ? "collaborator" : "customer")),
+    role: String(raw?.role || (source === "users" ? "collaborator" : "customer")),
     fn: String(raw?.function_label || raw?.fn || ""),
     caseId: String(raw?.case_id || raw?.caseId || ""),
     caseName: String(raw?.case_name || raw?.caseName || "")
@@ -100,10 +100,10 @@ async function loadUsers() {
         .filter((u) => u.role !== "admin")
         .map((u) => normalizeUser(u, "users"));
     } else {
-      const res = await fetch(`${BASE_URL}/${myUserId}/collaborators`, { headers: authHdr(), credentials: "include" });
+      const res = await fetch(`${BASE_URL}/${myUserId}/users`, { headers: authHdr(), credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Fachpersonen konnten nicht geladen werden.");
-      rows = (data?.collaborators || []).map((c) => normalizeUser(c, "collaborators"));
+      rows = (data?.users || []).map((c) => normalizeUser(c, "users"));
     }
 
     allUsers = rows.filter((u) => Number(u.id) > 0);
@@ -293,7 +293,7 @@ async function saveNewUser() {
   let res;
 
   if (fnVal) {
-    res = await fetch(`${BASE_URL}/${myUserId}/collaborators`, {
+    res = await fetch(`${BASE_URL}/${myUserId}/users`, {
       method: "POST",
       headers: authHdr(),
       credentials: "include",
@@ -329,7 +329,7 @@ async function deleteUser(userId) {
   try {
     let res;
     if (!isAdmin && user?.linkId) {
-      res = await fetch(`${BASE_URL}/${myUserId}/collaborators/${user.linkId}`, {
+      res = await fetch(`${BASE_URL}/${myUserId}/users/${user.linkId}`, {
         method: "DELETE",
         headers: authHdr(),
         credentials: "include"

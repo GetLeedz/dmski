@@ -2634,9 +2634,9 @@ async function ensureCaseOptionalColumns() {
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS region text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS city text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS owner_id integer");
-        // Ensure customer_collaborators exists for access-control queries
+        // Ensure customer_users exists for access-control queries
         await pool.query(`
-          CREATE TABLE IF NOT EXISTS customer_collaborators (
+          CREATE TABLE IF NOT EXISTS customer_users (
             id SERIAL PRIMARY KEY,
             customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             collaborator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -46,7 +46,11 @@ function buildInviteEmail({ inviteeName, inviteeEmail, customerName, functionLab
 }
 
 function escHtmlEmail(str) {
-  return String(str || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
+  return String(str || "")
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """);
 }
 
 let userProfileSchemaDone = false;
@@ -202,8 +206,8 @@ router.post("/customers", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// ── GET /users/:userId/collaborators ──────────────────────────────────────
-router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+// ── GET /users/:userId/users ──────────────────────────────────────
+router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   try {
     await ensureUserProfileColumns();
     const result = await pool.query(
@@ -215,15 +219,15 @@ router.get("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), 
        WHERE u.role = 'collaborator'
        ORDER BY u.created_at ASC`
     );
-    return res.json({ collaborators: result.rows });
+    return res.json({ users: result.rows });
   } catch (err) {
     console.error("List collabs error:", err.message);
     return res.status(500).json({ error: "Fachpersonenliste konnte nicht geladen werden." });
   }
 });
 
-// ── POST /users/:userId/collaborators ─────────────────────────────────────
-router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+// ── POST /users/:userId/users ─────────────────────────────────────
+router.post("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const { email, function_label, first_name, last_name, case_id } = req.body;
   if (!email) return res.status(400).json({ error: "E-Mail erforderlich." });
   const emailNorm = String(email).trim().toLowerCase();
@@ -281,8 +285,8 @@ router.post("/:userId/collaborators", requireAuth, requireAdminOrSelf("userId"),
   }
 });
 
-// ── POST /users/:userId/collaborators/:linkId/send-invite ──────────────────
-router.post("/:userId/collaborators/:linkId/send-invite", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+// ── POST /users/:userId/users/:linkId/send-invite ──────────────────
+router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const customerId = Number(req.params.userId);
   const linkId     = Number(req.params.linkId);
 
@@ -382,8 +386,8 @@ router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// ── DELETE /users/:userId/collaborators/:linkId ────────────────────────────
-router.delete("/:userId/collaborators/:linkId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
+// ── DELETE /users/:userId/users/:linkId ────────────────────────────
+router.delete("/:userId/users/:linkId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   const linkId = Number(req.params.linkId);
   try {
     await pool.query("DELETE FROM users WHERE id = $1 AND role = 'collaborator'", [linkId]);
