@@ -1,5 +1,11 @@
+/* backend/middleware/auth.js */
+"use strict";
+
 const jwt = require("jsonwebtoken");
 
+/**
+ * Prüft, ob ein gültiges JWT im Authorization-Header (Bearer) vorhanden ist.
+ */
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
@@ -9,15 +15,21 @@ function requireAuth(req, res, next) {
   }
 
   try {
-    // Falls JWT_SECRET in der .env fehlt, stürzt der Server hier nicht ab
+    // Verwendet das JWT_SECRET aus der Umgebungsvariable
     const payload = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_change_this");
+    
+    // Payload (enthält sub, email, role) an das Request-Objekt hängen
     req.user = payload;
     next();
   } catch (err) {
+    console.error("JWT Verification Error:", err.message);
     return res.status(401).json({ error: "Sitzung abgelaufen oder Token ungültig." });
   }
 }
 
+/**
+ * Erlaubt den Zugriff nur, wenn der User die Rolle 'admin' hat.
+ */
 function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== "admin") {
     return res.status(403).json({ error: "Administrator-Rechte erforderlich." });
@@ -27,24 +39,30 @@ function requireAdmin(req, res, next) {
 
 /**
  * Erlaubt Zugriff, wenn der User Admin ist ODER seine eigene ID aufruft.
- * Funktioniert jetzt sicher mit Zahlen (BigInt) und UUIDs (Strings).
+ * Funktioniert sicher mit Zahlen (BigInt) und UUIDs (Strings).
  */
 function requireAdminOrSelf(paramKey = "userId") {
   return (req, res, next) => {
     const isAdmin = req.user?.role === "admin";
     
-    // Wir vergleichen als Strings, um Number/UUID Konflikte zu vermeiden
-    const targetId = String(req.params[paramKey] || "");
-    const currentUserId = String(req.user?.sub || "");
+    // Normalisierung der IDs zu kleingeschriebenen Strings für UUID-Kompatibilität
+    const targetId = String(req.params[paramKey] || "").trim().toLowerCase();
+    const currentUserId = String(req.user?.sub || "").trim().toLowerCase();
 
+    // Validierung: Sind die IDs identisch?
     const isSelf = currentUserId !== "" && currentUserId === targetId;
 
     if (!isAdmin && !isSelf) {
-      console.warn(`Zugriff verweigert: User ${currentUserId} wollte auf Resource von ${targetId} zugreifen.`);
+      console.warn(`Zugriff verweigert: User ${currentUserId} wollte auf Ressource von ${targetId} zugreifen.`);
       return res.status(403).json({ error: "Keine Berechtigung für diese Ressource." });
     }
+    
     next();
   };
 }
 
-module.exports = { requireAuth, requireAdmin, requireAdminOrSelf };
+module.exports = { 
+  requireAuth, 
+  requireAdmin, 
+  requireAdminOrSelf 
+};
