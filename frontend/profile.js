@@ -7,7 +7,7 @@ const getRole=()=>sessionStorage.getItem("dmski_role")||"customer";
 const authHdr=()=>({...{"Content-Type":"application/json"},Authorization:`Bearer ${getToken()}`});
 
 document.addEventListener("DOMContentLoaded",async()=>{
-  document.getElementById("copyrightYear").textContent=new Date().getFullYear();
+  const yearEl=document.getElementById("copyrightYear");if(yearEl)yearEl.textContent=new Date().getFullYear();
   const token=getToken();
   if(!token){sessionStorage.removeItem("token");window.location.replace("/");return;}
   document.getElementById("logoutBtn").addEventListener("click",()=>{

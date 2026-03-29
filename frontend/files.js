@@ -3112,7 +3112,7 @@ document.addEventListener("click", async (event) => {
   }
 });
 
-copyrightYearEl.textContent = String(new Date().getFullYear());
+if (copyrightYearEl) copyrightYearEl.textContent = String(new Date().getFullYear());
 void loadCaseContext().then(() => {
   loadFiles();
 });

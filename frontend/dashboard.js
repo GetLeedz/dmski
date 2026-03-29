@@ -446,5 +446,5 @@ if (countrySelect instanceof HTMLSelectElement && regionSelect instanceof HTMLSe
   populateRegionOptions(countrySelect.value);
 }
 
-copyrightYearEl.textContent = String(new Date().getFullYear());
+if (copyrightYearEl) copyrightYearEl.textContent = String(new Date().getFullYear());
 loadCasesList();

@@ -689,6 +689,6 @@ logoutBtn.addEventListener("click", () => {
   window.location.href = "/";
 });
 
-copyrightYearEl.textContent = String(new Date().getFullYear());
+if (copyrightYearEl) copyrightYearEl.textContent = String(new Date().getFullYear());
 loadCasePartyLabels();
 
