@@ -86,7 +86,7 @@ async function loadProfile() {
   document.getElementById("profileEmail").textContent = user.email;
 
   const badge = document.getElementById("profileBadge");
-  const labels = { admin: "Administrator", customer: "Kunde", collaborator: "Team" };
+  const labels = { admin: "Administrator", customer: "Kunde (Fallinhaber)", collaborator: "Team" };
   badge.textContent = labels[user.role] || user.role;
   badge.className = `badge-role badge-${user.role || "customer"}`;
 
