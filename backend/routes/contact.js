@@ -1,5 +1,5 @@
 const express = require("express");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const { Pool } = require("pg");
 
 const router = express.Router();
@@ -13,24 +13,6 @@ const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATAB
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || "0x4AAAAAACxqY5ny-6FUdG1wJsiPPTAUhjQ";
 const RECIPIENT = process.env.CONTACT_RECIPIENT || "ayhan.ergen@getleedz.com";
-
-function createMailTransport() {
-  return nodemailer.createTransport({
-    host: "asmtp.mail.hostpoint.ch",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER || "info@dmski.ch",
-      pass: process.env.SMTP_PASS || "",
-    },
-    tls: {
-      rejectUnauthorized: false
-    },
-    connectionTimeout: 8000,
-    greetingTimeout: 8000,
-    socketTimeout: 12000,
-  });
-}
 
 function esc(str) {
   return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -115,41 +97,45 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ error: "Anfrage konnte nicht gespeichert werden." });
   }
 
-  // 2. Try to send email notification (best effort, don't fail if SMTP blocked)
-  try {
-    const now = new Date().toLocaleString("de-CH", { timeZone: "Europe/Zurich" });
-    const htmlBody = `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8f9fa;border-radius:12px;overflow:hidden">
-        <div style="background:#1A2B3C;padding:1.5rem 2rem">
-          <h2 style="margin:0;color:#F8F9FA;font-size:1.2rem">Neue Zugangsanfrage</h2>
-          <p style="margin:0.3rem 0 0;color:rgba(255,255,255,0.5);font-size:0.85rem">${esc(now)}</p>
-        </div>
-        <div style="padding:1.5rem 2rem">
-          <table style="width:100%;border-collapse:collapse;font-size:0.92rem">
-            <tr><td style="padding:0.5rem 0;color:#6b7b8a;width:120px">Name</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(vorname)} ${esc(nachname)}</td></tr>
-            <tr><td style="padding:0.5rem 0;color:#6b7b8a">E-Mail</td><td style="padding:0.5rem 0"><a href="mailto:${esc(email)}" style="color:#C5A059">${esc(email)}</a></td></tr>
-            ${telefon ? `<tr><td style="padding:0.5rem 0;color:#6b7b8a">Telefon</td><td style="padding:0.5rem 0;color:#1A2B3C">${esc(telefon)}</td></tr>` : ""}
-            <tr><td style="padding:0.5rem 0;color:#6b7b8a">Rolle</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(rolleLabel)}</td></tr>
-          </table>
-          <div style="margin-top:1rem;padding:1rem;background:#fff;border-radius:8px;border:1px solid #e8edf2">
-            <p style="margin:0 0 0.3rem;font-size:0.75rem;color:#6b7b8a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700">Nachricht</p>
-            <p style="margin:0;color:#1A2B3C;line-height:1.6;white-space:pre-wrap">${esc(nachricht)}</p>
+  // 2. Send email via Resend (HTTPS API, no SMTP ports needed)
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    try {
+      const now = new Date().toLocaleString("de-CH", { timeZone: "Europe/Zurich" });
+      const htmlBody = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8f9fa;border-radius:12px;overflow:hidden">
+          <div style="background:#1A2B3C;padding:1.5rem 2rem">
+            <h2 style="margin:0;color:#F8F9FA;font-size:1.2rem">Neue Zugangsanfrage</h2>
+            <p style="margin:0.3rem 0 0;color:rgba(255,255,255,0.5);font-size:0.85rem">${esc(now)}</p>
           </div>
-        </div>
-      </div>`;
+          <div style="padding:1.5rem 2rem">
+            <table style="width:100%;border-collapse:collapse;font-size:0.92rem">
+              <tr><td style="padding:0.5rem 0;color:#6b7b8a;width:120px">Name</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(vorname)} ${esc(nachname)}</td></tr>
+              <tr><td style="padding:0.5rem 0;color:#6b7b8a">E-Mail</td><td style="padding:0.5rem 0"><a href="mailto:${esc(email)}" style="color:#C5A059">${esc(email)}</a></td></tr>
+              ${telefon ? `<tr><td style="padding:0.5rem 0;color:#6b7b8a">Telefon</td><td style="padding:0.5rem 0;color:#1A2B3C">${esc(telefon)}</td></tr>` : ""}
+              <tr><td style="padding:0.5rem 0;color:#6b7b8a">Rolle</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(rolleLabel)}</td></tr>
+            </table>
+            <div style="margin-top:1rem;padding:1rem;background:#fff;border-radius:8px;border:1px solid #e8edf2">
+              <p style="margin:0 0 0.3rem;font-size:0.75rem;color:#6b7b8a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700">Nachricht</p>
+              <p style="margin:0;color:#1A2B3C;line-height:1.6;white-space:pre-wrap">${esc(nachricht)}</p>
+            </div>
+          </div>
+        </div>`;
 
-    const transporter = createMailTransport();
-    await transporter.sendMail({
-      from: `"DMSKI Forensik-System" <${process.env.SMTP_USER || "info@dmski.ch"}>`,
-      to: RECIPIENT,
-      replyTo: email,
-      subject: `Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
-      html: htmlBody,
-    });
-    console.log(`[contact] E-Mail gesendet an ${RECIPIENT}`);
-  } catch (mailErr) {
-    // Email failed but DB save succeeded — that's fine
-    console.warn(`[contact] E-Mail fehlgeschlagen (DB-Eintrag existiert): ${mailErr.message}`);
+      const resend = new Resend(resendKey);
+      await resend.emails.send({
+        from: "DMSKI Forensik-System <onboarding@resend.dev>",
+        to: [RECIPIENT],
+        replyTo: email,
+        subject: `Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
+        html: htmlBody,
+      });
+      console.log(`[contact] E-Mail gesendet via Resend an ${RECIPIENT}`);
+    } catch (mailErr) {
+      console.warn(`[contact] Resend fehlgeschlagen: ${mailErr.message}`);
+    }
+  } else {
+    console.log("[contact] RESEND_API_KEY nicht gesetzt — E-Mail übersprungen (DB-Eintrag existiert)");
   }
 
   return res.json({ ok: true, message: "Anfrage erfolgreich gesendet." });
