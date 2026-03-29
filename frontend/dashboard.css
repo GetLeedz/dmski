@@ -4495,17 +4495,17 @@ select.case-edit-input {
 
 /* ── Header cells ── */
 .tactic-table thead tr {
-  background: rgba(26,43,60,0.06);
-  border-bottom: 2px solid rgba(197,160,89,0.4);
+  background: #f1f3f5;
+  border-bottom: 2px solid rgba(26,43,60,0.12);
 }
 
 .tactic-table th {
   padding: 0.85rem 1.1rem;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--navy);
+  color: rgba(26,43,60,0.6);
   border-bottom: none;
   text-align: left;
   background: transparent;
@@ -4774,7 +4774,7 @@ select.case-edit-input {
 }
 
 .tactic-row-present .tactic-evidence-text {
-  color: #2d1b3d;
+  color: var(--navy);
 }
 
 .tactic-row-absent .tactic-evidence-text {
@@ -4799,29 +4799,29 @@ select.case-edit-input {
 
 .tactic-doc-ids {
   display: block;
-  white-space: pre-line;
+  white-space: normal;
   word-break: break-word;
   line-height: 1.65;
-  font-size: 0.66rem;
-  font-weight: 600;
-  font-family: "Inter", monospace, sans-serif;
-  color: #6b4a8a;
-  letter-spacing: 0.01em;
+  font-size: 0.76rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--navy);
+  letter-spacing: 0;
   text-align: left;
-  background: rgba(107,74,138,0.06);
-  border-radius: 5px;
-  padding: 0.25rem 0.45rem;
+  background: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 #analysisReportTactics .tactic-doc-ids {
-  font-size: 0.58rem;
+  font-size: 0.76rem;
 }
 
 /* ================================================================
    TACTIC TABLE – row state overrides
    ================================================================ */
 .tactic-table .tactic-row-present td {
-  background: rgba(192, 57, 43, 0.03);
+  background: rgba(26, 43, 60, 0.02);
 }
 
 .tactic-table .tactic-row-absent td {
@@ -4856,8 +4856,8 @@ select.case-edit-input {
 
 /* Present row: left accent bar */
 .tactic-row-present td:first-child {
-  border-left: 3px solid rgba(139,63,168,0.45);
-  padding-left: calc(0.9rem - 3px);
+  border-left: 3px solid rgba(197,160,89,0.5);
+  padding-left: calc(1.1rem - 3px);
 }
 
 /* Absent row: lighter left bar */
