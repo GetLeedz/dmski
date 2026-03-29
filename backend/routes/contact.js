@@ -1,37 +1,16 @@
 const express = require("express");
-const nodemailer = require("nodemailer");
+const { Pool } = require("pg");
 
 const router = express.Router();
 
+function normalizeDatabaseUrl(rawUrl) {
+  if (!rawUrl) return rawUrl;
+  return String(rawUrl).trim().replace(/^["']+|["']+$/g, "");
+}
+
+const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
+
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || "0x4AAAAAACxqY5ny-6FUdG1wJsiPPTAUhjQ";
-const RECIPIENT = process.env.CONTACT_RECIPIENT || "ayhan.ergen@getleedz.com";
-
-function createMailTransport() {
-  const smtpUser = process.env.SMTP_USER || "info@dmski.ch";
-  const smtpPass = process.env.SMTP_PASS || "";
-  console.log(`[contact] SMTP config: user=${smtpUser}, pass=${smtpPass ? "***set***" : "EMPTY"}, host=asmtp.mail.hostpoint.ch:465`);
-  return nodemailer.createTransport({
-    host: "asmtp.mail.hostpoint.ch",
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-  });
-}
-
-function esc(str) {
-  return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 const ROLLE_LABELS = {
   betroffene_person: "Betroffene Person",
@@ -41,10 +20,33 @@ const ROLLE_LABELS = {
   andere: "Andere",
 };
 
+// Ensure contact_requests table exists
+let tableInitPromise = null;
+async function ensureContactTable() {
+  if (!tableInitPromise) {
+    tableInitPromise = pool.query(`
+      CREATE TABLE IF NOT EXISTS contact_requests (
+        id SERIAL PRIMARY KEY,
+        vorname TEXT NOT NULL,
+        nachname TEXT NOT NULL,
+        email TEXT NOT NULL,
+        telefon TEXT,
+        rolle TEXT NOT NULL,
+        nachricht TEXT NOT NULL,
+        status TEXT DEFAULT 'neu',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `).catch((err) => {
+      console.warn("Could not create contact_requests table:", err.message);
+      tableInitPromise = null;
+    });
+  }
+  await tableInitPromise;
+}
+
 router.post("/", async (req, res) => {
   const { vorname, nachname, email, telefon, rolle, nachricht, turnstileToken } = req.body || {};
 
-  // Validate required fields
   if (!vorname || !nachname || !email || !rolle || !nachricht) {
     return res.status(400).json({ error: "Bitte füllen Sie alle Pflichtfelder aus." });
   }
@@ -53,19 +55,16 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Bitte geben Sie eine gültige E-Mail-Adresse ein." });
   }
 
-  // Verify Turnstile token
   if (!turnstileToken) {
     return res.status(400).json({ error: "Bitte bestätigen Sie, dass Sie kein Roboter sind." });
   }
 
+  // Verify Turnstile
   try {
     const turnstileRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        secret: TURNSTILE_SECRET,
-        response: turnstileToken,
-      }),
+      body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: turnstileToken }),
     });
     const turnstileData = await turnstileRes.json();
     if (!turnstileData.success) {
@@ -76,49 +75,33 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ error: "Sicherheitsprüfung konnte nicht durchgeführt werden." });
   }
 
-  // Send email
-  const rolleLabel = ROLLE_LABELS[rolle] || rolle;
-  const now = new Date().toLocaleString("de-CH", { timeZone: "Europe/Zurich" });
-
-  const htmlBody = `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8f9fa;border-radius:12px;overflow:hidden">
-      <div style="background:#1A2B3C;padding:1.5rem 2rem">
-        <h2 style="margin:0;color:#F8F9FA;font-size:1.2rem">Neue Zugangsanfrage</h2>
-        <p style="margin:0.3rem 0 0;color:rgba(255,255,255,0.5);font-size:0.85rem">${esc(now)}</p>
-      </div>
-      <div style="padding:1.5rem 2rem">
-        <table style="width:100%;border-collapse:collapse;font-size:0.92rem">
-          <tr><td style="padding:0.5rem 0;color:#6b7b8a;width:120px">Name</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(vorname)} ${esc(nachname)}</td></tr>
-          <tr><td style="padding:0.5rem 0;color:#6b7b8a">E-Mail</td><td style="padding:0.5rem 0"><a href="mailto:${esc(email)}" style="color:#C5A059">${esc(email)}</a></td></tr>
-          ${telefon ? `<tr><td style="padding:0.5rem 0;color:#6b7b8a">Telefon</td><td style="padding:0.5rem 0;color:#1A2B3C">${esc(telefon)}</td></tr>` : ""}
-          <tr><td style="padding:0.5rem 0;color:#6b7b8a">Rolle</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(rolleLabel)}</td></tr>
-        </table>
-        <div style="margin-top:1rem;padding:1rem;background:#fff;border-radius:8px;border:1px solid #e8edf2">
-          <p style="margin:0 0 0.3rem;font-size:0.75rem;color:#6b7b8a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700">Nachricht</p>
-          <p style="margin:0;color:#1A2B3C;line-height:1.6;white-space:pre-wrap">${esc(nachricht)}</p>
-        </div>
-      </div>
-      <div style="padding:1rem 2rem;background:#f0f2f5;font-size:0.78rem;color:#8a96a3">
-        Gesendet über dmski.ch/zugang.html
-      </div>
-    </div>
-  `;
-
+  // Save to database
   try {
-    const transporter = createMailTransport();
-    await transporter.sendMail({
-      from: `"DMSKI Plattform" <${process.env.SMTP_USER || "info@dmski.ch"}>`,
-      to: RECIPIENT,
-      replyTo: email,
-      subject: `DMSKI Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
-      html: htmlBody,
-    });
+    await ensureContactTable();
+    await pool.query(
+      `INSERT INTO contact_requests (vorname, nachname, email, telefon, rolle, nachricht)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [vorname.trim(), nachname.trim(), email.trim(), (telefon || "").trim(), rolle, nachricht.trim()]
+    );
 
-    console.log(`[contact] Zugangsanfrage von ${email} (${rolleLabel})`);
+    const rolleLabel = ROLLE_LABELS[rolle] || rolle;
+    console.log(`[contact] Neue Zugangsanfrage gespeichert: ${email} (${rolleLabel})`);
     return res.json({ ok: true, message: "Anfrage erfolgreich gesendet." });
   } catch (err) {
-    console.error("[contact] Mail send error:", err.message, err.code, err.responseCode);
-    return res.status(500).json({ error: `E-Mail konnte nicht gesendet werden: ${err.message}` });
+    console.error("[contact] DB save error:", err.message);
+    return res.status(500).json({ error: "Anfrage konnte nicht gespeichert werden. Bitte versuchen Sie es später erneut." });
+  }
+});
+
+// GET all requests (admin only — protected by requireAuth in a future iteration)
+router.get("/", async (req, res) => {
+  try {
+    await ensureContactTable();
+    const result = await pool.query("SELECT * FROM contact_requests ORDER BY created_at DESC");
+    return res.json(result.rows);
+  } catch (err) {
+    console.error("[contact] GET error:", err.message);
+    return res.status(500).json({ error: "Anfragen konnten nicht geladen werden." });
   }
 });
 
