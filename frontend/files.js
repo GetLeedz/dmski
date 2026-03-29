@@ -556,7 +556,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
               <th>Tatbestand / Methode</th>
               <th>Evidenz</th>
               <th>KI-Einschätzung</th>
-              <th>File-IDs</th>
+              <th>File Nummer</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
