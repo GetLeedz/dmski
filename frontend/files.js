@@ -487,7 +487,40 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
     rows.push({ tactic: "Keine Auffälligkeiten erkannt", article: "–", present: false, evidence: "File erscheint sachlich" });
   }
 
-  return { profileTitle, summary, legalTitle, legalNote, rows, pressure };
+  // Section 4: Counsel assessment & client advice
+  let counselTitle = "";
+  let counselItems = [];
+
+  if (pressure >= 4 || (protNeg >= 3 && oppPos >= 2)) {
+    counselTitle = "Handlungsempfehlung für die benachteiligte Person";
+    counselItems = [
+      { icon: "⚠️", label: "Anwaltliche Vertretung prüfen", text: `Bei einem derart ausgeprägten Degradierungsmuster ist entscheidend, ob Ihr Rechtsbeistand die systematische Natur der Angriffe erkennt und aktiv dagegen vorgeht. Ein Anwalt, der die Tragweite nicht erfasst oder die Strategie der Gegenpartei unterschätzt, kann Ihre Position erheblich schwächen.` },
+      { icon: "🔍", label: "Sprache Ihres Anwalts gegenüber dem Gericht", text: `Überprüfen Sie, ob Ihr Anwalt gegenüber dem Gericht und der Behörde auf der richtigen <strong>Flughöhe</strong> kommuniziert. Formuliert er/sie sachlich-forensisch oder emotional? Ein professioneller Ton – nüchtern, belegt, strukturiert – ist zwingend. Emotionale Sprache schadet Ihrer Glaubwürdigkeit.` },
+      { icon: "📋", label: "Gegenstrategie einfordern", text: `Verlangen Sie von Ihrem Anwalt eine schriftliche Gegenstrategie, die jeden erkannten Tatbestand einzeln adressiert. Wenn Ihr Anwalt auf wiederholte Ad-hominem-Angriffe nicht mit formellen Rügen (Art. 152 ZPO) reagiert, fehlt möglicherweise die nötige Kampfbereitschaft.` },
+      { icon: "🔄", label: "Zweitmeinung einholen", text: `Bei einem Score dieser Schwere empfiehlt die KI-Analyse dringend eine anwaltliche Zweitmeinung. Zeigen Sie diesem Report einem unabhängigen Fachanwalt für Familienrecht. Sollte Ihr aktueller Anwalt die Muster nicht sehen oder verharmlosen, kann ein Wechsel Ihre Position retten.` },
+      { icon: "🛡️", label: "Dokumentation intensivieren", text: `Halten Sie jede Interaktion – mit Behörden, Gegenpartei und Ihrem eigenen Anwalt – schriftlich fest. Je mehr Unterlagen die KI analysieren kann, desto stärker werden Widersprüche und Muster sichtbar.` }
+    ];
+  } else if (pressure >= 2 || protNeg >= 2) {
+    counselTitle = "Handlungsempfehlung für die benachteiligte Person";
+    counselItems = [
+      { icon: "📊", label: "Selektive Darstellung dokumentieren", text: `Die erkannte Belastungstendenz zeigt, dass Informationen einseitig ausgewählt werden. Besprechen Sie mit Ihrem Anwalt, ob er/sie diese Muster aktiv im Verfahren rügt oder stillschweigend hinnimmt.` },
+      { icon: "🔍", label: "Kommunikationsstil des Anwalts", text: `Achten Sie darauf, wie Ihr Anwalt mit der Gegenseite und dem Gericht kommuniziert. Bleibt er/sie sachlich und belegt? Oder übernimmt Ihr Anwalt unbewusst das Framing der Gegenpartei? Ein guter Anwalt hinterfragt – ein schlechter folgt der Erzählung.` },
+      { icon: "📋", label: "Entlastungsmaterial sammeln", text: `Sammeln Sie aktiv entlastende Dokumente, Zeugenaussagen und schriftliche Belege, die das einseitige Bild korrigieren. Jedes zusätzliche Dokument stärkt die forensische Analyse.` }
+    ];
+  } else if (pressure >= 1) {
+    counselTitle = "Hinweis zur anwaltlichen Begleitung";
+    counselItems = [
+      { icon: "👁️", label: "Aufmerksam bleiben", text: `Die leichte Tendenz ist noch kein Alarmsignal, kann sich aber über mehrere Dokumente verdichten. Informieren Sie Ihren Anwalt über diese KI-Einschätzung und bitten Sie um Beobachtung.` },
+      { icon: "📁", label: "Dossier weiter aufbauen", text: `Laden Sie weitere Dokumente hoch. Die KI erkennt Muster erst ab einer gewissen Datenmenge zuverlässig. Je mehr Material, desto präziser die Analyse.` }
+    ];
+  } else {
+    counselTitle = "Hinweis zur anwaltlichen Begleitung";
+    counselItems = [
+      { icon: "✅", label: "Keine Auffälligkeiten", text: `Dieses Dokument zeigt keine erkennbaren taktischen Muster. Die anwaltliche Begleitung erscheint im Rahmen. Empfehlung: Gesamtdossier weiter beobachten.` }
+    ];
+  }
+
+  return { profileTitle, summary, legalTitle, legalNote, rows, pressure, counselTitle, counselItems };
 }
 
 function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds, tacticFileMap) {
@@ -545,32 +578,81 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
     </tr>`;
   }).join("");
 
+  // Section 3: Legal assessment
   const legalHtml = profile.legalNote
-    ? `<div class="tactic-legal-assessment">
-        <p class="tactic-legal-assessment-title">⚖️ ${escapeHtml(profile.legalTitle)}</p>
-        <p class="tactic-legal-assessment-text">${profile.legalNote}</p>
-       </div>`
+    ? `<div class="tactic-section">
+        <div class="tactic-section-number">3</div>
+        <div class="tactic-section-content">
+          <p class="tactic-section-title">Juristische Bewertung</p>
+          <p class="tactic-section-subtitle">KI als neutraler Rechtsbeobachter</p>
+          <div class="tactic-legal-text">${profile.legalNote}</div>
+        </div>
+      </div>`
     : "";
+
+  // Section 4: Counsel advice
+  const counselHtml = profile.counselItems.length > 0
+    ? `<div class="tactic-section">
+        <div class="tactic-section-number">4</div>
+        <div class="tactic-section-content">
+          <p class="tactic-section-title">${escapeHtml(profile.counselTitle)}</p>
+          <p class="tactic-section-subtitle">Strategische Einschätzung zur anwaltlichen Vertretung</p>
+          <div class="tactic-counsel-grid">
+            ${profile.counselItems.map(item => `
+              <div class="tactic-counsel-item">
+                <span class="tactic-counsel-icon">${item.icon}</span>
+                <div>
+                  <p class="tactic-counsel-label">${escapeHtml(item.label)}</p>
+                  <p class="tactic-counsel-text">${item.text}</p>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>`
+    : "";
+
+  const presentCount = profile.rows.filter(r => r.present).length;
 
   return `
     <div class="tactic-analysis-box">
-      <p class="tactic-analysis-eyebrow">Einordnung · KI-Analyse</p>
-      <p class="tactic-analysis-profile-title">${escapeHtml(profile.profileTitle)}</p>
-      <div class="tactic-analysis-body">${profile.summary}</div>
-      <div class="tactic-table-wrap">
-        <table class="tactic-table">
-          <thead>
-            <tr>
-              <th>Tatbestand / Methode</th>
-              <th>Evidenz</th>
-              <th>KI-Einschätzung</th>
-              <th>File Nummer</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+      <div class="tactic-report-header">
+        <p class="tactic-analysis-eyebrow">KI-Forensik · Dokumentenanalyse</p>
+        <h3 class="tactic-analysis-profile-title">${escapeHtml(profile.profileTitle)}</h3>
       </div>
+
+      <div class="tactic-section">
+        <div class="tactic-section-number">1</div>
+        <div class="tactic-section-content">
+          <p class="tactic-section-title">Forensische Einordnung</p>
+          <p class="tactic-section-subtitle">Analyse der Darstellungsmuster im Dossier</p>
+          <div class="tactic-analysis-body">${profile.summary}</div>
+        </div>
+      </div>
+
+      <div class="tactic-section">
+        <div class="tactic-section-number">2</div>
+        <div class="tactic-section-content">
+          <p class="tactic-section-title">Erkannte Tatbestände</p>
+          <p class="tactic-section-subtitle">${presentCount} von ${profile.rows.length} Tatbeständen mit Indizien – Schweizer Recht (StGB / ZGB / ZPO)</p>
+          <div class="tactic-table-wrap">
+            <table class="tactic-table">
+              <thead>
+                <tr>
+                  <th>Tatbestand / Methode</th>
+                  <th>Evidenz</th>
+                  <th>KI-Einschätzung</th>
+                  <th>File Nummer</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       ${legalHtml}
+      ${counselHtml}
     </div>
   `;
 }

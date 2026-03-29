@@ -4009,10 +4009,10 @@ select.case-edit-input {
 .tactic-analysis-box {
   margin-top: 0.68rem;
   margin-bottom: 2rem;
-  padding: 0.56rem 0.64rem;
-  border-radius: 12px;
-  border: 1.5px solid rgba(26,43,60,0.12);
-  background: #ffffff;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -4459,6 +4459,118 @@ select.case-edit-input {
   color: var(--navy);
 }
 
+/* ── Report header ── */
+.tactic-report-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 2px solid rgba(197,160,89,0.3);
+}
+
+/* ── Numbered sections ── */
+.tactic-section {
+  display: flex;
+  gap: 1.2rem;
+  margin-bottom: 2.2rem;
+  align-items: flex-start;
+}
+
+.tactic-section-number {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #F8F9FA;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-top: 0.1rem;
+}
+
+.tactic-section-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tactic-section-title {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.01em;
+}
+
+.tactic-section-subtitle {
+  margin: 0 0 0.8rem;
+  font-size: 0.78rem;
+  color: rgba(26,43,60,0.5);
+}
+
+/* ── Legal text ── */
+.tactic-legal-text {
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: #2c3e50;
+  padding: 1rem 1.2rem;
+  background: rgba(26,43,60,0.03);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--gold);
+}
+
+.tactic-legal-text em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* ── Counsel advice grid ── */
+.tactic-counsel-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.tactic-counsel-item {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  background: rgba(26,43,60,0.025);
+  border-radius: var(--radius-md);
+  transition: background 120ms ease;
+}
+
+.tactic-counsel-item:hover {
+  background: rgba(26,43,60,0.05);
+}
+
+.tactic-counsel-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.tactic-counsel-label {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.tactic-counsel-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+.tactic-counsel-text strong {
+  font-weight: 700;
+  color: var(--navy);
+}
+
 /* ── Tactic table ── */
 .tactic-table-wrap {
   overflow-x: auto;
@@ -4593,37 +4705,8 @@ select.case-edit-input {
   border: 1px solid rgba(90,130,150,0.22);
 }
 
-/* ── Legal assessment block ── */
-.tactic-legal-assessment {
-  margin-top: 0.35rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(192,57,43,0.06), rgba(192,57,43,0.02));
-  border: 1px solid rgba(192,57,43,0.22);
-}
-
-.tactic-legal-assessment-title {
-  margin: 0 0 0.28rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #7c2416;
-}
-
-.tactic-legal-assessment-text {
-  margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.58;
-  color: #4a1a14;
-  font-weight: 400;
-}
-
-.tactic-legal-assessment-text em {
-  font-style: italic;
-  font-weight: 700;
-  color: #6e1e12;
-}
+/* ── Legacy legal assessment block (kept for backwards compat) ── */
+.tactic-legal-assessment { display: none; }
 
 /* ── Compact dossier-level tactic table (top report area) ── */
 #analysisReportTactics .tactic-analysis-box {
@@ -4673,20 +4756,23 @@ select.case-edit-input {
 
 /* table-layout not needed – layout is now CSS Grid */
 
-#analysisReportTactics .tactic-legal-assessment {
-  margin-top: 0.26rem;
-  padding: 0.42rem 0.52rem;
+/* Compact sections for dossier-level */
+#analysisReportTactics .tactic-section {
+  gap: 0.8rem;
+  margin-bottom: 1.4rem;
 }
-
-#analysisReportTactics .tactic-legal-assessment-title {
-  font-size: 0.62rem;
-  margin: 0 0 0.16rem;
+#analysisReportTactics .tactic-section-number {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.65rem;
 }
-
-#analysisReportTactics .tactic-legal-assessment-text {
-  font-size: 0.71rem;
-  line-height: 1.42;
-}
+#analysisReportTactics .tactic-section-title { font-size: 0.88rem; }
+#analysisReportTactics .tactic-section-subtitle { font-size: 0.72rem; margin-bottom: 0.5rem; }
+#analysisReportTactics .tactic-report-header { margin-bottom: 1.2rem; padding-bottom: 0.8rem; }
+#analysisReportTactics .tactic-legal-text { font-size: 0.76rem; padding: 0.7rem 0.9rem; }
+#analysisReportTactics .tactic-counsel-item { padding: 0.6rem 0.8rem; }
+#analysisReportTactics .tactic-counsel-label { font-size: 0.78rem; }
+#analysisReportTactics .tactic-counsel-text { font-size: 0.74rem; }
 
 /* ================================================================
    ANZAHL FILES CARD – same design as party cards
