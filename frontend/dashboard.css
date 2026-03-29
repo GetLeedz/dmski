@@ -91,19 +91,19 @@ h1, h2, h3, h4, .card-title, .step-title, .workflow-gutachter-title {
 .sb-brand { display: inline-block; text-decoration: none; }
 .sb-logo {
   display: block;
-  height: 1.55rem;
+  height: 2rem;
   width: auto;
   filter: brightness(0) invert(1);
-  opacity: .92;
+  opacity: 1;
 }
 
 .sb-tagline {
-  margin: .45rem 0 0;
-  font-size: .64rem;
-  font-weight: 500;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.28);
+  margin: .5rem 0 0;
+  font-size: .67rem;
+  font-weight: 400;
+  line-height: 1.45;
+  font-style: italic;
+  color: rgba(255,255,255,.52);
   font-family: "Inter", sans-serif !important;
 }
 
@@ -121,7 +121,7 @@ h1, h2, h3, h4, .card-title, .step-title, .workflow-gutachter-title {
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.22);
+  color: rgba(255,255,255,.38);
   padding: .7rem 1.25rem .3rem;
   font-family: "Inter", sans-serif !important;
 }
@@ -133,7 +133,7 @@ h1, h2, h3, h4, .card-title, .step-title, .workflow-gutachter-title {
   padding: .62rem 1.25rem;
   font-size: .84rem;
   font-weight: 500;
-  color: rgba(255,255,255,.58);
+  color: rgba(255,255,255,.78);
   text-decoration: none;
   transition: color .15s ease, background .15s ease;
   border: none;
@@ -173,9 +173,9 @@ h1, h2, h3, h4, .card-title, .step-title, .workflow-gutachter-title {
   flex-shrink: 0;
 }
 
-.sb-logout { color: rgba(255,255,255,.35) !important; }
-.sb-logout:hover { color: #ff9494 !important; background: rgba(255,80,80,.07) !important; }
-.sb-logout svg { opacity: .6; }
+.sb-logout { color: rgba(255,255,255,.50) !important; }
+.sb-logout:hover { color: #ff9494 !important; background: rgba(255,80,80,.08) !important; }
+.sb-logout svg { opacity: .75; }
 
 /* ── Sidebar mobile collapse ── */
 @media (max-width: 768px) {
@@ -987,7 +987,8 @@ body {
 }
 
 .files-card {
-  overflow: hidden;
+  overflow-x: auto;
+  min-width: 0;
 }
 
 .card h2 {

@@ -32,7 +32,7 @@
         <a href="/dashboard.html" class="sb-brand">
           <img src="/assets/logo-dmski.png" alt="DMSKI" class="sb-logo" />
         </a>
-        <p class="sb-tagline">Digital Legal Vault</p>
+        <p class="sb-tagline">Gerechtigkeit durch Mustererkennung.</p>
       </div>
 
       <nav class="sb-nav">
