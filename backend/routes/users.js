@@ -81,7 +81,7 @@ function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
       ${warningBlock}
       <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
         <tr><td style="background:#1A2B3C;border-radius:10px;text-align:center;">
-          <a href="${LOGIN_URL}" style="display:inline-block;padding:14px 44px;color:#F8F9FA;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:.03em;">Jetzt anmelden &rarr;</a>
+          <a href="${LOGIN_URL}" style="display:inline-block;padding:14px 44px;color:#F8F9FA;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:.03em;">Zur forensischen Analyse &rarr;</a>
         </td></tr>
       </table>
       <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0;text-align:center;">
@@ -99,7 +99,7 @@ function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
         <a href="https://dmski.ch" style="color:#C5A059;text-decoration:none;">dmski.ch</a>
         &middot; <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;">info@dmski.ch</a>
       </p>
-      <p style="margin:10px 0 0;font-size:10px;color:#a0adb8;">Vertraulich &middot; Bitte nicht weiterleiten</p>
+      <p style="margin:10px 0 0;font-size:10px;color:#a0adb8;">Diese Nachricht enth&auml;lt vertrauliche Informationen und ist ausschliesslich f&uuml;r den bezeichneten Empf&auml;nger bestimmt. Eine Weiterleitung oder Vervielf&auml;ltigung ist nicht gestattet.</p>
     </td>
   </tr>
 
@@ -147,14 +147,15 @@ async function sendWelcomeEmail(user, password) {
   const salutation = name ? ` ${esc(name)}` : "";
   const html = buildEmail({
     greeting: `Guten Tag${salutation},<br><br>
-      willkommen bei DMSKI Scrutor. Ihr pers&ouml;nlicher Zugang zur forensischen Fallanalyse wurde eingerichtet.<br><br>
-      Nachfolgend finden Sie Ihre Zugangsdaten:`,
+      Ihr pers&ouml;nlicher Zugang zu <strong>DMSKI Scrutor</strong> wurde eingerichtet &ndash; der forensischen KI-Plattform f&uuml;r die pr&auml;zise Analyse juristischer Aktenlagen.<br><br>
+      Unsere KI durchleuchtet jedes Dokument Wort f&uuml;r Wort: Sie erkennt Widerspr&uuml;che, manipulative Darstellungsmuster und Inkonsistenzen, die bei manueller Pr&uuml;fung h&auml;ufig unentdeckt bleiben.<br><br>
+      Nachfolgend Ihre Zugangsdaten f&uuml;r die gesch&uuml;tzte Analyseumgebung:`,
     bodyHtml: credentialsTable(user.email, password),
     showPwdChange: true,
   });
   await sendEmail({
     to: user.email,
-    subject: "Willkommen bei DMSKI Scrutor – Ihre Zugangsdaten",
+    subject: `DMSKI Scrutor: Ihr Zugang zur forensischen Dossier-Analyse`,
     html,
   });
 }
@@ -164,14 +165,14 @@ async function sendCredentialsUpdatedEmail(user, password) {
   const salutation = name ? ` ${esc(name)}` : "";
   const html = buildEmail({
     greeting: `Guten Tag${salutation},<br><br>
-      Ihre Zugangsdaten f&uuml;r DMSKI Scrutor wurden aktualisiert.
-      Bitte verwenden Sie ab sofort das folgende tempor&auml;re Passwort:`,
+      Ihre Zugangsdaten f&uuml;r <strong>DMSKI Scrutor</strong> wurden aktualisiert.
+      Bitte verwenden Sie ab sofort die folgenden Anmeldedaten:`,
     bodyHtml: credentialsTable(user.email, password),
     showPwdChange: true,
   });
   await sendEmail({
     to: user.email,
-    subject: "DMSKI Scrutor – Ihre Zugangsdaten wurden aktualisiert",
+    subject: "DMSKI Scrutor: Aktualisierte Zugangsdaten",
     html,
   });
 }
@@ -181,14 +182,15 @@ async function sendInviteReminderEmail(user) {
   const salutation = name ? ` ${esc(name)}` : "";
   const html = buildEmail({
     greeting: `Guten Tag${salutation},<br><br>
-      Sie wurden zu DMSKI Scrutor eingeladen &ndash; Ihrer Plattform f&uuml;r KI-gest&uuml;tzte forensische Fallanalyse.<br><br>
-      Ihr Zugang ist eingerichtet. Melden Sie sich jetzt an und entdecken Sie, was unsere KI in Ihren Dokumenten findet.`,
+      Sie wurden zur forensischen Analyseplattform <strong>DMSKI Scrutor</strong> eingeladen.<br><br>
+      DMSKI Scrutor ist ein KI-gest&uuml;tztes System f&uuml;r die Analyse komplexer Aktenlagen. Die forensische KI pr&uuml;ft jedes Dokument auf Widerspr&uuml;che, systematische Darstellungsmuster und unbelegte Behauptungen &ndash; und unterst&uuml;tzt damit die Wahrheitsfindung im Verfahren.<br><br>
+      Ihre Analyseergebnisse stehen in einer gesch&uuml;tzten, vertraulichen Umgebung bereit. Sensible Prozessdaten verlassen zu keinem Zeitpunkt die gesicherte Infrastruktur.`,
     bodyHtml: inviteOnlyTable(user.email),
     showPwdChange: false,
   });
   await sendEmail({
     to: user.email,
-    subject: "Sie wurden zu DMSKI Scrutor eingeladen",
+    subject: "DMSKI Scrutor: Einladung zur forensischen Dossier-Analyse",
     html,
   });
 }
