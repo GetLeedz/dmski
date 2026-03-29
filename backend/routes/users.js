@@ -189,19 +189,29 @@ async function sendCredentialsUpdatedEmail(user, password) {
   });
 }
 
-async function sendInviteReminderEmail(user) {
+async function sendDossierAccessEmail(user, password, caseName) {
   const greeting = buildFormalGreeting(user);
+  const caseRef = caseName ? esc(caseName) : "–";
+  const caseBlock = caseName ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(26,43,60,.03);border:1px solid #e2e8ef;border-radius:10px;margin-bottom:20px;">
+      <tr><td style="padding:14px 20px;">
+        <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:rgba(26,43,60,.45);text-transform:uppercase;letter-spacing:.08em;">Fall-Referenz</p>
+        <span style="color:#1A2B3C;font-size:15px;font-weight:700;">${caseRef}</span>
+      </td></tr>
+    </table>` : "";
+
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Sie wurden zur forensischen Analyseplattform <strong>DMSKI Scrutor</strong> eingeladen.<br><br>
-      DMSKI Scrutor ist ein KI-gest&uuml;tztes System f&uuml;r die Analyse komplexer Aktenlagen. Die forensische KI pr&uuml;ft jedes Dokument auf Widerspr&uuml;che, systematische Darstellungsmuster und unbelegte Behauptungen &ndash; und unterst&uuml;tzt damit die Wahrheitsfindung im Verfahren.<br><br>
-      Ihre Analyseergebnisse stehen in einer gesch&uuml;tzten, vertraulichen Umgebung bereit. Sensible Prozessdaten verlassen zu keinem Zeitpunkt die gesicherte Infrastruktur.`,
-    bodyHtml: inviteOnlyTable(user.email),
-    showPwdChange: false,
+      Ihnen wurde der Zugriff auf das digitale Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf der forensischen Analyseplattform <strong>DMSKI Scrutor</strong> gew&auml;hrt.<br><br>
+      Die integrierte KI unterst&uuml;tzt Sie bei der Einordnung der Aktenlage: Sie strukturiert die vorliegenden Dokumente, pr&uuml;ft diese auf Widerspr&uuml;che und systematische Darstellungsmuster und hebt relevante Indizien sowie potenzielle Inkonsistenzen direkt in der &Uuml;bersicht hervor &ndash; um die Effizienz Ihrer Fallpr&uuml;fung zu maximieren.<br><br>
+      S&auml;mtliche Prozessdaten werden in einer gesch&uuml;tzten, vertraulichen Umgebung verarbeitet. Sensible Akteninhalte verlassen zu keinem Zeitpunkt die gesicherte Infrastruktur.<br><br>
+      Nachfolgend Ihre Zugangsdaten:`,
+    bodyHtml: caseBlock + credentialsTable(user.email, password),
+    showPwdChange: true,
   });
   await sendEmail({
     to: user.email,
-    subject: "DMSKI Scrutor: Einladung zur forensischen Dossier-Analyse",
+    subject: `DMSKI Scrutor: Bereitstellung digitales Dossier & KI-Analyse${caseName ? ` – ${caseName}` : ""}`,
     html,
   });
 }
@@ -385,20 +395,47 @@ router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, 
   }
 });
 
-// POST /:userId/users/:linkId/send-invite – Einladung erneut senden
+function generateServerPassword() {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const special = "!@#$%&*+?";
+  const all = upper + lower + digits + special;
+  const pick = (s) => s[Math.floor(Math.random() * s.length)];
+  const result = [pick(upper), pick(lower), pick(digits), pick(special)];
+  for (let i = 4; i < 14; i++) result.push(pick(all));
+  // Shuffle
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result.join("");
+}
+
+// POST /:userId/users/:linkId/send-invite – Einladung mit Zugangsdaten senden
 router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   try {
     const userRes = await pool.query("SELECT * FROM users WHERE id = $1", [req.params.linkId]);
     const user = userRes.rows[0];
     if (!user) return res.status(404).json({ error: "Empfänger nicht gefunden." });
 
-    // Check if user has a password set
-    if (!user.password_hash) {
-      return res.status(400).json({ error: "Bitte setzen Sie zuerst ein Passwort für diesen Benutzer (Bearbeiten → Passwort generieren)." });
+    // Generate a fresh password for the invite
+    const password = generateServerPassword();
+    const password_hash = await bcrypt.hash(password, 12);
+    await pool.query(
+      "UPDATE users SET password_hash = $1, password_change_required = true WHERE id = $2",
+      [password_hash, user.id]
+    );
+
+    // Look up case name if assigned
+    let caseName = "";
+    if (user.case_id) {
+      const caseRes = await pool.query("SELECT case_name FROM cases WHERE id = $1", [user.case_id]);
+      caseName = caseRes.rows[0]?.case_name || String(user.case_id);
     }
 
-    await sendInviteReminderEmail(user);
-    res.json({ ok: true, message: "Einladung erfolgreich versendet." });
+    await sendDossierAccessEmail({ ...user }, password, caseName);
+    res.json({ ok: true, message: "Einladung mit Zugangsdaten erfolgreich versendet." });
   } catch (err) {
     console.error("send-invite error:", err.message);
     res.status(500).json({ error: "Versand-Fehler: " + err.message });
