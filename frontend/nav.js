@@ -1,66 +1,67 @@
-/* nav.js – Einheitliche Top-Navigation für alle App-Seiten */
+/* nav.js – Sidebar Navigation – DMSKI Design System */
 (function () {
   const role = sessionStorage.getItem("dmski_role") || localStorage.getItem("dmski_role") || "customer";
-  const path = window.location.pathname.replace(/\/$/, "") || "/";
+  const path = window.location.pathname;
 
   function isActive(href) {
-    const target = href.replace(/\/$/, "") || "/";
-    return path === target || path.endsWith(target);
+    return path === href || path.endsWith(href.replace(/^\//, ""));
   }
 
-  function navLink(href, label, svgPath) {
-    const active = isActive(href) ? ' aria-current="page" style="opacity:1;font-weight:600;"' : '';
-    return `
-      <a href="${href}" class="ghost topbar-link" style="text-decoration:none;font-size:.875rem;display:inline-flex;align-items:center;gap:.28rem"${active}>
-        <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;flex-shrink:0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          ${svgPath}
-        </svg>
-        ${label}
-      </a>`;
+  function sbLink(href, label, svgInner, isBtn) {
+    const active = !isBtn && isActive(href) ? " sb-active" : "";
+    if (isBtn) {
+      return `<button id="logoutBtn" type="button" class="sb-link sb-logout">${svgInner}<span>${label}</span></button>`;
+    }
+    return `<a href="${href}" class="sb-link${active}">${svgInner}<span>${label}</span></a>`;
   }
 
-  const links = {
-    dashboard: navLink(
-      "/dashboard.html", "Dashboard",
-      '<path d="M3 10.5L10 4l7 6.5"/><path d="M5 9v7h4v-4h2v4h4V9"/>'
-    ),
-    users: navLink(
-      "/users.html", "Benutzer",
-      '<path d="M13 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2 17c0-3.314 3.582-5 8-5s8 1.686 8 5"/><path d="M16 7v4M18 9h-4"/>'
-    ),
-    profile: navLink(
-      "/profile.html", "Profil",
-      '<circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"/>'
-    ),
+  const icons = {
+    dashboard: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L10 4l7 6.5"/><path d="M5 9v7h4v-4h2v4h4V9"/></svg>`,
+    users:     `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2 17c0-3.314 3.582-5 8-5s8 1.686 8 5"/><path d="M16 7v4M18 9h-4"/></svg>`,
+    profile:   `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"/></svg>`,
+    logout:    `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10H3M7 6l-4 4 4 4"/><path d="M10 3h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-5"/></svg>`,
   };
 
-  const adminNav = role === "admin" ? links.users : "";
+  const adminBlock = role === "admin"
+    ? `<span class="sb-section">Verwaltung</span>${sbLink("/users.html", "Benutzer", icons.users)}`
+    : "";
 
-  const html = `
-    <header class="topbar" id="dmski-topbar">
-      <div class="brand-lockup">
-        <a href="/dashboard.html" class="brand-home-link" aria-label="Dashboard">
-          <img src="/assets/logo-dmski.png" alt="DMSKI" class="header-logo" />
+  const sidebarHTML = `
+    <aside class="dmski-sidebar" id="dmski-sidebar" role="navigation" aria-label="Hauptnavigation">
+      <div class="sb-logo-area">
+        <a href="/dashboard.html" class="sb-brand">
+          <img src="/assets/logo-dmski.png" alt="DMSKI" class="sb-logo" />
         </a>
+        <p class="sb-tagline">Digital Legal Vault</p>
       </div>
-      <nav style="display:flex;gap:.35rem;align-items:center">
-        ${links.dashboard}
-        ${adminNav}
-        ${links.profile}
-        <button id="logoutBtn" class="ghost" type="button">Logout</button>
+
+      <nav class="sb-nav">
+        <span class="sb-section">Plattform</span>
+        ${sbLink("/dashboard.html", "Dashboard", icons.dashboard)}
+        ${adminBlock}
+        ${sbLink("/profile.html", "Mein Profil", icons.profile)}
       </nav>
-    </header>`;
 
-  const container = document.getElementById("site-nav");
-  if (container) {
-    container.outerHTML = html;
-  }
+      <div class="sb-footer">
+        ${sbLink(null, "Abmelden", icons.logout, true)}
+      </div>
+    </aside>`;
 
-  // Default logout handler — JS-Dateien können eigene Handler hinzufügen
+  // Inject sidebar into body
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = sidebarHTML;
+  document.body.prepend(wrapper.firstElementChild);
+  document.body.classList.add("has-sidebar");
+
+  // Remove old site-nav placeholder
+  const placeholder = document.getElementById("site-nav");
+  if (placeholder) placeholder.remove();
+
+  // Logout handler
   document.addEventListener("DOMContentLoaded", function () {
     const btn = document.getElementById("logoutBtn");
-    if (btn && !btn._navHandlerAttached) {
-      btn._navHandlerAttached = true;
+    if (btn && !btn._navHandled) {
+      btn._navHandled = true;
       btn.addEventListener("click", function () {
         sessionStorage.clear();
         localStorage.removeItem("token");

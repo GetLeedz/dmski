@@ -1,13 +1,13 @@
 :root {
-  --bg-top: #091523;
-  --bg-mid: #101f33;
-  --bg-bottom: #1a2f45;
+  --bg-top: #0F1E2B;
+  --bg-mid: #1A2B3C;
+  --bg-bottom: #243447;
   --ink: #ddf0ff;
   --ink-soft: #a4bfd3;
   --card: rgba(12, 30, 46, 0.58);
   --line: rgba(163, 206, 234, 0.24);
-  --accent: #1ce0b6;
-  --accent-strong: #0ca684;
+  --accent: #C5A059;
+  --accent-strong: #B8904A;
   --surface-soft: rgba(255, 255, 255, 0.08);
   --ok: #2b7a40;
   --error: #ff8d7f;
@@ -24,11 +24,11 @@ body {
 }
 
 body {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at 16% 24%, rgba(28, 224, 182, 0.18), transparent 40%),
-    radial-gradient(circle at 85% 14%, rgba(255, 131, 78, 0.18), transparent 38%),
+    radial-gradient(circle at 16% 24%, rgba(197, 160, 89, 0.12), transparent 40%),
+    radial-gradient(circle at 85% 14%, rgba(197, 160, 89, 0.08), transparent 38%),
     linear-gradient(150deg, var(--bg-top), var(--bg-mid) 52%, var(--bg-bottom));
 }
 
@@ -60,7 +60,7 @@ body {
   height: 30rem;
   top: -9rem;
   right: -10rem;
-  background: radial-gradient(circle at 35% 35%, rgba(28, 224, 182, 0.36), rgba(28, 224, 182, 0.06) 65%);
+  background: radial-gradient(circle at 35% 35%, rgba(197, 160, 89, 0.28), rgba(197, 160, 89, 0.05) 65%);
 }
 
 .shape-b {
@@ -68,7 +68,7 @@ body {
   height: 20rem;
   left: -5rem;
   bottom: -3rem;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 131, 78, 0.26), rgba(255, 131, 78, 0.05) 65%);
+  background: radial-gradient(circle at 50% 50%, rgba(197, 160, 89, 0.18), rgba(197, 160, 89, 0.04) 65%);
   animation-delay: 120ms;
 }
 
@@ -77,7 +77,7 @@ body {
   height: 14rem;
   left: 52%;
   top: 12%;
-  background: radial-gradient(circle at 50% 50%, rgba(143, 128, 255, 0.24), rgba(143, 128, 255, 0.06) 60%);
+  background: radial-gradient(circle at 50% 50%, rgba(36, 52, 71, 0.40), rgba(36, 52, 71, 0.10) 60%);
   animation-delay: 220ms;
 }
 
@@ -189,7 +189,7 @@ input::placeholder {
 
 input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(28, 224, 182, 0.22);
+  box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.22);
   transform: translateY(-1px);
 }
 
@@ -270,7 +270,7 @@ input:focus {
 
 .text-link {
   font-size: 0.91rem;
-  color: #9de8d5;
+  color: #C5A059;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 2px;
 }
@@ -283,14 +283,14 @@ button {
   font-weight: 700;
   font-size: 0.98rem;
   background: linear-gradient(160deg, var(--accent), var(--accent-strong));
-  color: #03261f;
+  color: #fff;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
 }
 
 button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(10, 166, 132, 0.36);
+  box-shadow: 0 10px 24px rgba(197, 160, 89, 0.36);
   filter: saturate(1.06);
 }
 
@@ -332,14 +332,14 @@ button:disabled {
 }
 
 .site-footer a {
-  color: #b7ebdc;
+  color: #C5A059;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
 .site-footer a:hover {
-  color: #ddfff5;
+  color: #d4b575;
 }
 
 .footer-sep {

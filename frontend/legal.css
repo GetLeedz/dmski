@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-  --bg: #eef1f2;
+  --bg: #F8F9FA;
   --card: #ffffff;
-  --ink: #1b2a31;
-  --line: #d7dfe2;
-  --accent: #116b73;
+  --ink: #1A2B3C;
+  --line: #E2E8EF;
+  --accent: #1A2B3C;
 }
 
 * {
@@ -12,9 +14,9 @@
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at 20% -10%, #d4ecef, transparent 40%), var(--bg);
+  background: radial-gradient(circle at 20% -10%, rgba(26, 43, 60, 0.06), transparent 40%), var(--bg);
 }
 
 .legal-header {
@@ -47,11 +49,15 @@ body {
 h1 {
   margin: 0 0 0.6rem;
   font-size: clamp(1.4rem, 2.8vw, 2rem);
+  font-family: "Poppins", "Inter", system-ui, sans-serif;
+  letter-spacing: -.01em;
 }
 
 h2 {
   margin: 1.2rem 0 0.5rem;
   font-size: 1.05rem;
+  font-family: "Poppins", "Inter", system-ui, sans-serif;
+  letter-spacing: -.01em;
 }
 
 p,
@@ -81,14 +87,14 @@ a {
 }
 
 .dashboard-footer a {
-  color: #1f6e76;
+  color: #1A2B3C;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
 .dashboard-footer a:hover {
-  color: #0f5960;
+  color: #C5A059;
 }
 
 .footer-sep {

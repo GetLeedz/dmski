@@ -1,4 +1,337 @@
 /* ================================================================
+   DMSKI DESIGN SYSTEM – High-Trust Navy + Gold
+   "A Private Digital Vault with a Senior Legal AI Adviser"
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Design Tokens ── */
+:root {
+  --navy:          #1A2B3C;
+  --navy-2:        #243447;
+  --navy-3:        #0F1E2B;
+  --navy-glass:    rgba(26, 43, 60, 0.04);
+  --gold:          #C5A059;
+  --gold-2:        #B8904A;
+  --gold-light:    rgba(197, 160, 89, 0.10);
+  --gold-border:   rgba(197, 160, 89, 0.28);
+  --emerald:       #166534;
+  --emerald-light: #DCFCE7;
+
+  --bg:            #F8F9FA;
+  --bg-subtle:     #F0F2F5;
+  --card:          #FFFFFF;
+  --border:        #E2E8EF;
+  --border-soft:   #EEF2F6;
+
+  --ink:           #1A2B3C;
+  --ink-soft:      #4A5568;
+  --ink-muted:     #8899AA;
+
+  /* Semantic aliases — kept so existing CSS still works */
+  --accent:        #C5A059;
+  --accent-2:      #B8904A;
+  --accent-light:  rgba(197, 160, 89, 0.08);
+  --error:         #C0392B;
+  --error-light:   #FDF0EF;
+  --ok:            #166534;
+  --ok-light:      #DCFCE7;
+
+  --radius-lg:     8px;
+  --radius-md:     6px;
+  --radius-sm:     4px;
+
+  --sidebar-w:     220px;
+  --shadow:        0 1px 3px rgba(26,43,60,.05), 0 2px 10px rgba(26,43,60,.07);
+  --shadow-md:     0 4px 20px rgba(26,43,60,.10), 0 1px 4px rgba(26,43,60,.06);
+  --shadow-lg:     0 8px 32px rgba(26,43,60,.14);
+}
+
+/* ── Global reset (ensure Inter is used everywhere) ── */
+* { box-sizing: border-box; }
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Headings use Poppins */
+h1, h2, h3, h4, .card-title, .step-title, .workflow-gutachter-title {
+  font-family: "Poppins", "Inter", system-ui, sans-serif !important;
+  letter-spacing: -.01em;
+}
+
+/* ================================================================
+   SIDEBAR NAVIGATION
+   ================================================================ */
+.dmski-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+
+/* Logo area */
+.sb-logo-area {
+  padding: 1.5rem 1.25rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
+}
+
+.sb-brand { display: inline-block; text-decoration: none; }
+.sb-logo {
+  display: block;
+  height: 1.55rem;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: .92;
+}
+
+.sb-tagline {
+  margin: .45rem 0 0;
+  font-size: .64rem;
+  font-weight: 500;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.28);
+  font-family: "Inter", sans-serif !important;
+}
+
+/* Nav area */
+.sb-nav {
+  flex: 1;
+  padding: 1rem 0 .5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-section {
+  display: block;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.22);
+  padding: .7rem 1.25rem .3rem;
+  font-family: "Inter", sans-serif !important;
+}
+
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .62rem 1.25rem;
+  font-size: .84rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.58);
+  text-decoration: none;
+  transition: color .15s ease, background .15s ease;
+  border: none;
+  background: none;
+  font-family: "Inter", sans-serif !important;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border-left: 2px solid transparent;
+}
+
+.sb-link:hover {
+  color: rgba(255,255,255,.92);
+  background: rgba(255,255,255,.05);
+}
+
+.sb-link.sb-active {
+  color: var(--gold);
+  background: rgba(197,160,89,.09);
+  border-left-color: var(--gold);
+  font-weight: 600;
+}
+
+.sb-link svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  opacity: .8;
+}
+
+.sb-link.sb-active svg { opacity: 1; }
+
+/* Footer / Logout */
+.sb-footer {
+  padding: .75rem 0 1.25rem;
+  border-top: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
+}
+
+.sb-logout { color: rgba(255,255,255,.35) !important; }
+.sb-logout:hover { color: #ff9494 !important; background: rgba(255,80,80,.07) !important; }
+.sb-logout svg { opacity: .6; }
+
+/* ── Sidebar mobile collapse ── */
+@media (max-width: 768px) {
+  .dmski-sidebar { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; }
+  .sb-logo-area { padding: .75rem 1rem; border-bottom: none; border-right: 1px solid rgba(255,255,255,.08); }
+  .sb-nav { flex-direction: row; padding: .5rem 0; flex: 1; }
+  .sb-section { display: none; }
+  .sb-link { padding: .5rem .85rem; font-size: .8rem; border-left: none; border-bottom: 2px solid transparent; }
+  .sb-link.sb-active { border-bottom-color: var(--gold); border-left-color: transparent; }
+  .sb-footer { padding: .5rem 0; border-top: none; border-left: 1px solid rgba(255,255,255,.08); }
+  .sb-tagline { display: none; }
+}
+
+/* ── Page layout with sidebar ── */
+body.has-sidebar .page {
+  margin-left: var(--sidebar-w);
+  max-width: none;
+  padding: 2rem 2.5rem 4rem;
+}
+
+@media (max-width: 768px) {
+  body.has-sidebar .page {
+    margin-left: 0;
+    padding: 1.25rem 1rem 3rem;
+  }
+}
+
+/* ── Hide old topbar (replaced by sidebar) ── */
+.topbar { display: none !important; }
+
+/* ── Auth Gate update ── */
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+/* ================================================================
+   CARDS – updated to new design system
+   ================================================================ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+
+/* Card accent lines – updated to gold */
+.card-new-case  { border-top: 3px solid var(--gold); }
+.card-open-case { border-top: 3px solid var(--navy); }
+.card-workflow  { border-top: 3px solid var(--emerald); }
+
+/* ================================================================
+   BUTTONS – Primary now uses Gold
+   ================================================================ */
+.btn-primary {
+  background: linear-gradient(150deg, var(--gold), var(--gold-2)) !important;
+  color: #fff !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 2px 8px rgba(197,160,89,.28);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(197,160,89,.38) !important;
+  filter: brightness(1.05);
+}
+
+button[type="submit"],
+.btn-save {
+  background: linear-gradient(150deg, var(--gold), var(--gold-2)) !important;
+  border-color: var(--gold-2) !important;
+}
+
+/* Ghost buttons – use Navy style */
+.ghost {
+  border: 1.5px solid rgba(26,43,60,.15);
+  color: var(--ink-soft);
+  background: transparent;
+}
+.ghost:hover {
+  background: var(--navy-glass);
+  border-color: rgba(26,43,60,.28);
+  color: var(--navy);
+}
+
+/* ================================================================
+   FORM ELEMENTS – updated focus to gold
+   ================================================================ */
+.field-input:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(197,160,89,.15) !important;
+}
+
+select.field-input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--gold) 50%),
+    linear-gradient(135deg, var(--gold) 50%, transparent 50%) !important;
+}
+
+/* ================================================================
+   MISC COMPONENT UPDATES
+   ================================================================ */
+/* Step numbers – Navy instead of teal */
+.step-number {
+  background: linear-gradient(145deg, var(--navy-2), var(--navy)) !important;
+  box-shadow: 0 2px 6px rgba(26,43,60,.22) !important;
+}
+
+/* Workflow step connector line */
+.workflow-step:not(:last-child)::after {
+  background: linear-gradient(to bottom, var(--gold), transparent) !important;
+}
+
+/* Required dot */
+.required-dot { color: var(--gold) !important; }
+
+/* Open case select border */
+.open-case-select { border-color: var(--navy) !important; }
+
+/* Welcome strip */
+.welcome-strip {
+  background: linear-gradient(135deg, rgba(197,160,89,.06), rgba(197,160,89,.03)) !important;
+  border-color: rgba(197,160,89,.22) !important;
+}
+.welcome-icon {
+  background: rgba(197,160,89,.12) !important;
+  color: var(--gold) !important;
+}
+
+/* Card icon variants */
+.card-icon--teal  { background: rgba(197,160,89,.12); color: var(--gold); }
+.card-icon--blue  { background: rgba(26,43,60,.08); color: var(--navy); }
+.card-icon--amber { background: var(--emerald-light); color: var(--emerald); }
+
+/* Workflow gutachter box – green preserved */
+.workflow-gutachter-box { background: linear-gradient(135deg, #f0f8f1, #e8f5ea) !important; border-color: #b8d9be !important; }
+.workflow-gutachter-num { color: var(--emerald) !important; }
+
+/* Workflow tip box */
+.workflow-tip { background: rgba(197,160,89,.06) !important; border-color: rgba(197,160,89,.3) !important; color: var(--ink-soft) !important; }
+.workflow-tip svg { color: var(--gold) !important; }
+.workflow-tip strong { color: var(--navy) !important; }
+
+/* Message states */
+.message--success { color: var(--emerald) !important; }
+.message--error   { color: var(--error) !important; }
+
+/* ================================================================
    DASHBOARD – NEW UI COMPONENTS (welcome strip, grid, workflow)
    ================================================================ */
 
