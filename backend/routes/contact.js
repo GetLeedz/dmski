@@ -1,4 +1,5 @@
 const express = require("express");
+const nodemailer = require("nodemailer");
 const { Pool } = require("pg");
 
 const router = express.Router();
@@ -11,6 +12,29 @@ function normalizeDatabaseUrl(rawUrl) {
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || "0x4AAAAAACxqY5ny-6FUdG1wJsiPPTAUhjQ";
+const RECIPIENT = process.env.CONTACT_RECIPIENT || "ayhan.ergen@getleedz.com";
+
+function createMailTransport() {
+  return nodemailer.createTransport({
+    host: "asmtp.mail.hostpoint.ch",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER || "info@dmski.ch",
+      pass: process.env.SMTP_PASS || "",
+    },
+    tls: {
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 12000,
+  });
+}
+
+function esc(str) {
+  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 const ROLLE_LABELS = {
   betroffene_person: "Betroffene Person",
@@ -75,7 +99,9 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ error: "Sicherheitsprüfung konnte nicht durchgeführt werden." });
   }
 
-  // Save to database
+  const rolleLabel = ROLLE_LABELS[rolle] || rolle;
+
+  // 1. Save to database (always works)
   try {
     await ensureContactTable();
     await pool.query(
@@ -83,17 +109,53 @@ router.post("/", async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [vorname.trim(), nachname.trim(), email.trim(), (telefon || "").trim(), rolle, nachricht.trim()]
     );
-
-    const rolleLabel = ROLLE_LABELS[rolle] || rolle;
-    console.log(`[contact] Neue Zugangsanfrage gespeichert: ${email} (${rolleLabel})`);
-    return res.json({ ok: true, message: "Anfrage erfolgreich gesendet." });
+    console.log(`[contact] Anfrage gespeichert: ${email} (${rolleLabel})`);
   } catch (err) {
     console.error("[contact] DB save error:", err.message);
-    return res.status(500).json({ error: "Anfrage konnte nicht gespeichert werden. Bitte versuchen Sie es später erneut." });
+    return res.status(500).json({ error: "Anfrage konnte nicht gespeichert werden." });
   }
+
+  // 2. Try to send email notification (best effort, don't fail if SMTP blocked)
+  try {
+    const now = new Date().toLocaleString("de-CH", { timeZone: "Europe/Zurich" });
+    const htmlBody = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8f9fa;border-radius:12px;overflow:hidden">
+        <div style="background:#1A2B3C;padding:1.5rem 2rem">
+          <h2 style="margin:0;color:#F8F9FA;font-size:1.2rem">Neue Zugangsanfrage</h2>
+          <p style="margin:0.3rem 0 0;color:rgba(255,255,255,0.5);font-size:0.85rem">${esc(now)}</p>
+        </div>
+        <div style="padding:1.5rem 2rem">
+          <table style="width:100%;border-collapse:collapse;font-size:0.92rem">
+            <tr><td style="padding:0.5rem 0;color:#6b7b8a;width:120px">Name</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(vorname)} ${esc(nachname)}</td></tr>
+            <tr><td style="padding:0.5rem 0;color:#6b7b8a">E-Mail</td><td style="padding:0.5rem 0"><a href="mailto:${esc(email)}" style="color:#C5A059">${esc(email)}</a></td></tr>
+            ${telefon ? `<tr><td style="padding:0.5rem 0;color:#6b7b8a">Telefon</td><td style="padding:0.5rem 0;color:#1A2B3C">${esc(telefon)}</td></tr>` : ""}
+            <tr><td style="padding:0.5rem 0;color:#6b7b8a">Rolle</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(rolleLabel)}</td></tr>
+          </table>
+          <div style="margin-top:1rem;padding:1rem;background:#fff;border-radius:8px;border:1px solid #e8edf2">
+            <p style="margin:0 0 0.3rem;font-size:0.75rem;color:#6b7b8a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700">Nachricht</p>
+            <p style="margin:0;color:#1A2B3C;line-height:1.6;white-space:pre-wrap">${esc(nachricht)}</p>
+          </div>
+        </div>
+      </div>`;
+
+    const transporter = createMailTransport();
+    await transporter.sendMail({
+      from: `"DMSKI Forensik-System" <${process.env.SMTP_USER || "info@dmski.ch"}>`,
+      to: RECIPIENT,
+      replyTo: email,
+      subject: `Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
+      html: htmlBody,
+    });
+    console.log(`[contact] E-Mail gesendet an ${RECIPIENT}`);
+  } catch (mailErr) {
+    // Email failed but DB save succeeded — that's fine
+    console.warn(`[contact] E-Mail fehlgeschlagen (DB-Eintrag existiert): ${mailErr.message}`);
+  }
+
+  return res.json({ ok: true, message: "Anfrage erfolgreich gesendet." });
 });
 
-// GET all requests (admin only — protected by requireAuth in a future iteration)
+// GET all requests (for admin)
 router.get("/", async (req, res) => {
   try {
     await ensureContactTable();
