@@ -2421,7 +2421,16 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
           content: [
             {
               type: "text",
-              text: "Analysiere dieses Dokument und gib das JSON zurueck:"
+              text: [
+                "Analysiere dieses Dokument-Bild und gib das JSON zurueck.",
+                "",
+                "WICHTIG – Lies das Bild genau:",
+                "- Wenn du E-Mail-Header siehst (Von/From, Gesendet/Sent, An/To, Betreff/Subject): documentType = 'E-Mail', datum = Sendedatum.",
+                "- Lies ALLE sichtbaren Personen-Namen aus dem Text (Absender, Empfaenger, erwaehnte Personen, Unterschrift/Grussformel).",
+                "- Grussformeln wie 'Freundliche Gruesse' gefolgt von einem Namen: Das ist der VERFASSER.",
+                "- Lies das DATUM aus dem Bild (Gesendet-Zeile, Briefkopf, Stempel).",
+                "- Gib ALLE erkannten Namen in 'personen' zurueck mit ihrer Rolle."
+              ].join("\n")
             },
             {
               type: "image_url",
