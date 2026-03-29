@@ -124,7 +124,7 @@ router.post("/", async (req, res) => {
 
       const resend = new Resend(resendKey);
       await resend.emails.send({
-        from: "DMSKI Forensik-System <info@dmski.ch>",
+        from: "DMSKI Scrutor <info@dmski.ch>",
         to: ["info@dmski.ch", "ayhan.ergen@getleedz.com"],
         replyTo: email,
         subject: `Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
@@ -151,7 +151,7 @@ router.get("/test-email", async (req, res) => {
   try {
     const resend = new Resend(resendKey);
     const result = await resend.emails.send({
-      from: "DMSKI Forensik-System <info@dmski.ch>",
+      from: "DMSKI Scrutor <info@dmski.ch>",
       to: ["info@dmski.ch", "ayhan.ergen@getleedz.com"],
       subject: "DMSKI Test - E-Mail funktioniert!",
       html: "<h2 style='color:#1A2B3C'>Test erfolgreich!</h2><p>Resend API + dmski.ch Domain verifiziert. E-Mails werden jetzt zugestellt.</p>",
