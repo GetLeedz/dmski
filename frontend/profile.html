@@ -13,9 +13,9 @@
        PROFILE PAGE – Premium Design
     ═══════════════════════════════════════════ */
     :root {
-      --profile-accent: #116b73;
-      --profile-accent2: #0d5760;
-      --profile-mid: #1a5068;
+      --profile-accent: #1A2B3C;
+      --profile-accent2: #243447;
+      --profile-mid: #C5A059;
     }
 
     .profile-layout {
@@ -29,13 +29,13 @@
 
     /* ── Profile hero card ── */
     .profile-hero {
-      background: linear-gradient(135deg, #0d5760 0%, #116b73 45%, #1a8a94 100%);
+      background: linear-gradient(135deg, #1A2B3C 0%, #243447 100%);
       border-radius: 18px;
       padding: 2rem 2.2rem 2rem;
       display: flex;
       align-items: center;
       gap: 1.5rem;
-      box-shadow: 0 8px 32px rgba(17,107,115,.28);
+      box-shadow: 0 8px 32px rgba(26,43,60,.25);
       position: relative;
       overflow: hidden;
     }
@@ -123,7 +123,7 @@
       gap: .75rem;
       padding: 1.25rem 1.6rem;
       border-bottom: 1px solid #edf2f5;
-      background: linear-gradient(135deg, #f7fbfc, #eef5f7);
+      background: #f5f6f8;
     }
     .profile-card-icon {
       width: 2.2rem;
@@ -134,7 +134,7 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .profile-card-icon--teal  { background: linear-gradient(135deg, #116b73, #0d5760); }
+    .profile-card-icon--teal  { background: linear-gradient(135deg, #1A2B3C, #243447); }
     .profile-card-icon--blue  { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
     .profile-card-icon--amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
     .profile-card-icon svg { width: 1.05rem; height: 1.05rem; stroke: #fff; fill: none; }
@@ -167,8 +167,8 @@
 
     /* ── Password box ── */
     .password-box {
-      background: linear-gradient(135deg, #f5fafc, #eef4f7);
-      border: 1px solid #d5e5ec;
+      background: #f5f6f8;
+      border: 1px solid rgba(26,43,60,.1);
       border-radius: 12px;
       padding: 1.1rem 1.2rem;
       margin-top: .25rem;
@@ -183,6 +183,26 @@
       gap: .45rem;
     }
     .password-box-title svg { width: .95rem; height: .95rem; stroke: var(--profile-accent); fill: none; }
+
+    /* PW requirements */
+    .pw-reqs { list-style:none; padding:0; margin:.6rem 0 0; display:flex; flex-wrap:wrap; gap:.3rem .8rem; }
+    .pw-reqs li { font-size:.75rem; color:rgba(26,43,60,.4); display:flex; align-items:center; gap:.3rem; }
+    .pw-reqs li::before { content:"○"; font-size:.6rem; }
+    .pw-reqs li.pw-ok { color:#16a34a; }
+    .pw-reqs li.pw-ok::before { content:"●"; }
+    .pw-reqs li.pw-fail { color:#b91c1c; }
+    .pw-reqs li.pw-fail::before { content:"○"; }
+
+    /* PW gen/eye buttons */
+    .pw-actions { display:flex; gap:.4rem; margin-top:.5rem; }
+    .pw-action-btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:.3rem;
+      padding:.4rem .8rem; border:1px solid rgba(26,43,60,.12); border-radius:8px;
+      background:#fff; color:#1A2B3C; font-size:.78rem; font-weight:600;
+      cursor:pointer; transition:all 120ms;
+    }
+    .pw-action-btn:hover { background:rgba(26,43,60,.04); border-color:rgba(26,43,60,.2); }
+    .pw-action-btn svg { width:.85rem; height:.85rem; }
 
     /* ── Generated password box ── */
     .generated-pwd {
@@ -218,7 +238,7 @@
       transition: box-shadow .15s, border-color .15s;
     }
     .fach-card:hover {
-      box-shadow: 0 3px 14px rgba(17,107,115,.1);
+      box-shadow: 0 3px 14px rgba(26,43,60,.1);
       border-color: #b8d4dc;
     }
     .fach-avatar {
@@ -232,7 +252,7 @@
       font-weight: 800;
       color: #fff;
       flex-shrink: 0;
-      background: linear-gradient(135deg, #116b73, #0d5760);
+      background: linear-gradient(135deg, #1A2B3C, #1A2B3C);
     }
     .fach-info { flex: 1; min-width: 0; }
     .fach-name {
@@ -328,7 +348,7 @@
       align-items: center;
       gap: .5rem;
       padding: .6rem 1.15rem;
-      background: linear-gradient(135deg, #116b73, #0d5760);
+      background: linear-gradient(135deg, #1A2B3C, #1A2B3C);
       border: none;
       border-radius: 10px;
       color: #fff;
@@ -337,10 +357,10 @@
       font-weight: 700;
       cursor: pointer;
       transition: opacity .15s, box-shadow .15s;
-      box-shadow: 0 2px 10px rgba(17,107,115,.22);
+      box-shadow: 0 2px 10px rgba(26,43,60,.22);
       text-decoration: none;
     }
-    .action-btn:hover { opacity: .9; box-shadow: 0 4px 16px rgba(17,107,115,.32); }
+    .action-btn:hover { opacity: .9; box-shadow: 0 4px 16px rgba(26,43,60,.32); }
     .action-btn svg { width: .9rem; height: .9rem; stroke: #fff; fill: none; flex-shrink: 0; }
     .action-btn .chevron {
       width: .85rem; height: .85rem;
@@ -486,6 +506,30 @@
           <form id="profileForm">
             <div class="two-col mb-3">
               <div class="field-group">
+                <label class="field-label" for="fieldSalutation">Anrede</label>
+                <select id="fieldSalutation" class="field-input">
+                  <option value="">–</option>
+                  <option value="Herr">Herr</option>
+                  <option value="Frau">Frau</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="fieldTitle">Titel</label>
+                <select id="fieldTitle" class="field-input">
+                  <option value="">Kein Titel</option>
+                  <option value="Dr.">Dr.</option>
+                  <option value="Dr. med.">Dr. med.</option>
+                  <option value="Dr. iur.">Dr. iur.</option>
+                  <option value="Prof.">Prof.</option>
+                  <option value="Prof. Dr.">Prof. Dr.</option>
+                  <option value="lic. iur.">lic. iur.</option>
+                  <option value="MLaw">MLaw</option>
+                  <option value="RA">RA</option>
+                </select>
+              </div>
+            </div>
+            <div class="two-col mb-3">
+              <div class="field-group">
                 <label class="field-label" for="fieldFirstName">Vorname</label>
                 <input id="fieldFirstName" type="text" class="field-input" placeholder="Max" />
               </div>
@@ -553,6 +597,23 @@
                   <input id="fieldNewPwd2" type="password" class="field-input" placeholder="••••••••" autocomplete="new-password" />
                 </div>
               </div>
+              <div class="pw-actions">
+                <button type="button" id="pwdGenBtn" class="pw-action-btn" title="Sicheres Passwort generieren">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                  Generieren
+                </button>
+                <button type="button" id="pwdEyeBtn" class="pw-action-btn" title="Passwort anzeigen/verbergen">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Anzeigen
+                </button>
+              </div>
+              <ul class="pw-reqs">
+                <li id="pw-len">Mind. 10 Zeichen</li>
+                <li id="pw-upper">Grossbuchstabe</li>
+                <li id="pw-lower">Kleinbuchstabe</li>
+                <li id="pw-num">Zahl</li>
+                <li id="pw-special">Sonderzeichen</li>
+              </ul>
             </div>
 
             <button type="submit" class="btn-primary" style="margin-top:1.1rem;min-width:160px">

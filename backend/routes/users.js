@@ -249,7 +249,7 @@ router.post("/me/accept-tos", requireAuth, async (req, res) => {
 
 // PATCH /me – Self-update (any authenticated user)
 router.patch("/me", requireAuth, async (req, res) => {
-  const { first_name, last_name, email, mobile, address, function_label, password, currentPassword } = req.body;
+  const { salutation, academic_title, first_name, last_name, email, mobile, address, function_label, password, currentPassword } = req.body;
   try {
     if (password) {
       if (!currentPassword) return res.status(400).json({ error: "Aktuelles Passwort erforderlich." });
@@ -272,10 +272,10 @@ router.patch("/me", requireAuth, async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE users SET first_name=$1, last_name=$2, email=$3, mobile=$4, address=$5, function_label=$6
-       WHERE id=$7
-       RETURNING id, email, role, first_name, last_name, mobile, address, function_label, password_change_required`,
-      [first_name || null, last_name || null, email, mobile || null, address || null, function_label || null, req.user.sub]
+      `UPDATE users SET salutation=$1, academic_title=$2, first_name=$3, last_name=$4, email=$5, mobile=$6, address=$7, function_label=$8
+       WHERE id=$9
+       RETURNING id, email, role, salutation, academic_title, first_name, last_name, mobile, address, function_label, password_change_required`,
+      [salutation || null, academic_title || null, first_name || null, last_name || null, email, mobile || null, address || null, function_label || null, req.user.sub]
     );
     if (!result.rows.length) return res.status(404).json({ error: "User nicht gefunden." });
     res.json({ user: result.rows[0] });
