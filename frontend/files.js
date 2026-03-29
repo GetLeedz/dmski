@@ -2445,44 +2445,81 @@ async function loadRowAnalysis(file, options = {}) {
     ? `${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}`
     : "";
 
+  // Derive overall bias direction for the stat section
+  const totalNeg = negativeMentions + opposingPositiveMentions;
+  const totalPos = positiveMentions + opposingNegativeMentions;
+  const biasDirection = totalNeg > totalPos ? "belastend" : totalPos > totalNeg ? "entlastend" : "neutral";
+
   box.innerHTML = `
-    <div class="queue-analysis">
-      <div class="forensic-report">
-        <div class="forensic-report-head">
-          <div class="forensic-head-left">
-            <span class="forensic-title">KI-Analyse</span>
-          </div>
-          <div class="qa-chip-row">
-            ${resolvedDocType ? `<div class="qa-doctype-wrap"><span class="qa-doctype-label">Dokumenttyp</span><span class="qa-tag">${escapeHtml(resolvedDocType)}</span></div>` : ""}
-          </div>
+    <div class="qa-modern">
+      <!-- Header -->
+      <div class="qa-mod-header">
+        <div>
+          <p class="qa-mod-eyebrow">Dokumentenanalyse</p>
+          <h4 class="qa-mod-title">${escapeHtml(title)}</h4>
         </div>
-        <div class="forensic-fields-grid">
-          <div class="forensic-field is-full"><span class="forensic-field-label">Titel</span><span class="forensic-field-value">${escapeHtml(title)}</span></div>
-          <div class="forensic-field"><span class="forensic-field-label">Verfasser</span><span class="forensic-field-value">${escapeHtml(author)}</span></div>
-          <div class="forensic-field"><span class="forensic-field-label">Datum</span><span class="forensic-field-value">${escapeHtml(date)}</span></div>
-          <div class="forensic-field"><span class="forensic-field-label">Herkunft</span><span class="forensic-field-value">${escapeHtml(senderInstitution)}</span></div>
+        ${resolvedDocType ? `<span class="qa-mod-doctype">${escapeHtml(resolvedDocType)}</span>` : ""}
+      </div>
+
+      <!-- Meta fields -->
+      <div class="qa-mod-meta">
+        <div class="qa-mod-meta-item">
+          <span class="qa-mod-meta-label">Verfasser</span>
+          <span class="qa-mod-meta-value">${escapeHtml(author)}</span>
         </div>
-        ${people.length > 0 ? `<div class="forensic-persons-row"><span class="forensic-field-label" style="width:100%;margin-bottom:0.25rem">Personen</span>${people.map((p) => `<span class="forensic-person-chip">${escapeHtml(p)}</span>`).join("")}</div>` : ""}
+        <div class="qa-mod-meta-item">
+          <span class="qa-mod-meta-label">Datum</span>
+          <span class="qa-mod-meta-value">${escapeHtml(date)}</span>
+        </div>
+        <div class="qa-mod-meta-item">
+          <span class="qa-mod-meta-label">Herkunft</span>
+          <span class="qa-mod-meta-value">${escapeHtml(senderInstitution)}</span>
+        </div>
       </div>
-      <div class="doc-evidence-box doc-ev-${verdict.tone}">
-        <span class="doc-ev-label">KI-Evidenz · Rechtliche Einordnung</span>
-        <span class="doc-ev-verdict">${escapeHtml(verdict.label)}</span>
-        <p class="doc-ev-text">${escapeHtml(lawyerEvidenceText)}</p>
+
+      <!-- Persons -->
+      ${people.length > 0 ? `
+      <div class="qa-mod-persons">
+        <span class="qa-mod-meta-label">Personen</span>
+        <div class="qa-mod-persons-list">${people.map(p => `<span class="qa-mod-person">${escapeHtml(p)}</span>`).join("")}</div>
+      </div>` : ""}
+
+      <!-- Evidence verdict -->
+      <div class="qa-mod-verdict qa-mod-verdict--${verdict.tone}">
+        <div class="qa-mod-verdict-head">
+          <span class="qa-mod-verdict-label">KI-Einschätzung</span>
+          <span class="qa-mod-verdict-badge qa-mod-verdict-badge--${verdict.tone}">${escapeHtml(verdict.label)}</span>
+        </div>
+        <p class="qa-mod-verdict-text">${escapeHtml(lawyerEvidenceText)}</p>
       </div>
-      <div class="qa-mentions">
-        <div class="qa-persons-grid">
-          <div class="qa-person-col">
-            <div class="qa-person-col-label"><span class="qa-person-role">${currentCaseProtectedLabel}</span><span class="qa-person-keywords">${protectedKeywords}</span></div>
-            <div class="qa-stat-row">
-              <div class="qa-stat is-positive"><span class="qa-stat-num">${positiveMentions}</span><span class="qa-stat-label">Positiv</span></div>
-              <div class="qa-stat is-negative"><span class="qa-stat-num">${negativeMentions}</span><span class="qa-stat-label">Negativ</span></div>
+
+      <!-- Party stats -->
+      <div class="qa-mod-stats">
+        <div class="qa-mod-stat-col">
+          <span class="qa-mod-stat-role">${currentCaseProtectedLabel}</span>
+          <span class="qa-mod-stat-name">${protectedKeywords}</span>
+          <div class="qa-mod-stat-nums">
+            <div class="qa-mod-stat-box is-positive">
+              <span class="qa-mod-stat-num">${positiveMentions}</span>
+              <span class="qa-mod-stat-label">Positiv</span>
+            </div>
+            <div class="qa-mod-stat-box is-negative">
+              <span class="qa-mod-stat-num">${negativeMentions}</span>
+              <span class="qa-mod-stat-label">Negativ</span>
             </div>
           </div>
-          <div class="qa-person-col">
-            <div class="qa-person-col-label"><span class="qa-person-role">${currentCaseOpposingLabel}</span><span class="qa-person-keywords">${opposingKeywords}</span></div>
-            <div class="qa-stat-row">
-              <div class="qa-stat is-positive"><span class="qa-stat-num">${opposingPositiveMentions}</span><span class="qa-stat-label">Positiv</span></div>
-              <div class="qa-stat is-negative"><span class="qa-stat-num">${opposingNegativeMentions}</span><span class="qa-stat-label">Negativ</span></div>
+        </div>
+        <div class="qa-mod-stat-col">
+          <span class="qa-mod-stat-role">${currentCaseOpposingLabel}</span>
+          <span class="qa-mod-stat-name">${opposingKeywords}</span>
+          <div class="qa-mod-stat-nums">
+            <div class="qa-mod-stat-box is-positive">
+              <span class="qa-mod-stat-num">${opposingPositiveMentions}</span>
+              <span class="qa-mod-stat-label">Positiv</span>
+            </div>
+            <div class="qa-mod-stat-box is-negative">
+              <span class="qa-mod-stat-num">${opposingNegativeMentions}</span>
+              <span class="qa-mod-stat-label">Negativ</span>
             </div>
           </div>
         </div>
