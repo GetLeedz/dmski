@@ -5401,8 +5401,198 @@ select.case-edit-input {
 }
 
 /* ================================================================
-   FILTER SECTION – redesigned (overrides legacy .filter-row)
+   FILES TOOLBAR – modern, borderless, airy
    ================================================================ */
+.files-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin: 1.5rem 0 1.8rem;
+}
+
+/* Upload CTA */
+.toolbar-upload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toolbar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.6rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(150deg, var(--navy), #243447);
+  color: #F8F9FA;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 3px 12px rgba(26,43,60,0.2);
+}
+.toolbar-upload-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(26,43,60,0.28);
+}
+.toolbar-upload-btn svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: var(--gold);
+}
+
+.toolbar-upload-hint {
+  font-size: 0.72rem;
+  color: rgba(26,43,60,0.4);
+}
+
+/* Filter row */
+.toolbar-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toolbar-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.toolbar-filter-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(26,43,60,0.4);
+}
+
+.toolbar-input {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(26,43,60,0.12);
+  border-radius: var(--radius-md);
+  background: #fff;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--navy);
+  transition: border-color 120ms ease;
+  min-width: 6rem;
+}
+.toolbar-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+select.toolbar-input {
+  cursor: pointer;
+  padding-right: 1.8rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%231A2B3C' opacity='.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+}
+
+/* Sort */
+.toolbar-sort {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.toolbar-sort-group {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.toolbar-sort-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(26,43,60,0.5);
+  margin-right: 0.15rem;
+}
+
+.toolbar-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(26,43,60,0.3);
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+.toolbar-sort-btn svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.toolbar-sort-btn:hover {
+  background: rgba(26,43,60,0.06);
+  color: var(--navy);
+}
+.toolbar-sort-btn.sort-dir-btn--active {
+  background: rgba(26,43,60,0.08);
+  color: var(--navy);
+}
+
+/* Action buttons */
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.toolbar-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: #f5f6f8;
+  color: var(--navy);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.toolbar-action-btn svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+}
+.toolbar-action-btn:hover {
+  background: rgba(26,43,60,0.08);
+}
+
+.toolbar-action-btn.is-danger {
+  color: #c0392b;
+}
+.toolbar-action-btn.is-danger:hover {
+  background: rgba(192,57,43,0.06);
+}
+
+.toolbar-action-btn.is-primary {
+  background: var(--navy);
+  color: #F8F9FA;
+}
+.toolbar-action-btn.is-primary:hover {
+  background: #243447;
+}
+.toolbar-action-btn.is-primary svg {
+  stroke: var(--gold);
+}
+
+/* Legacy filter-section kept for CSS references */
 .filter-section {
   display: flex;
   flex-direction: column;

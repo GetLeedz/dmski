@@ -49,106 +49,74 @@
         </button>
       </div>
 
-      <!-- ── Upload Hero Button ── -->
-      <p class="upload-section-title">Files hinzufügen</p>
-      <div class="upload-hero-wrap">
-        <button id="goToUploadBtnHero" type="button" class="upload-hero-btn">
-          <span class="upload-hero-btn-icon" aria-hidden="true">
+      <!-- ── Files Toolbar ── -->
+      <div class="files-toolbar">
+
+        <!-- Upload CTA -->
+        <div class="toolbar-upload">
+          <button id="goToUploadBtnHero" type="button" class="toolbar-upload-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </span>
-          <span class="upload-hero-btn-text">
-            <span class="upload-hero-btn-label">Files hochladen</span>
-            <span class="upload-hero-btn-sub">PDF · DOCX · XLSX · JPG · PNG · MOV · MP4 · AVI · MP3 · WAV · HEIC · TIFF und mehr</span>
-          </span>
-        </button>
-      </div>
+            Files hochladen
+          </button>
+          <span class="toolbar-upload-hint">PDF · DOCX · XLSX · JPG · PNG · MP4 · MP3 · HEIC und mehr</span>
+        </div>
 
-      <!-- ── Filter Section ── -->
-      <div class="filter-section">
-
-        <!-- Row 1: Filter Inputs -->
-        <div class="filter-controls">
-          <div class="filter-group">
-            <label class="filter-label" for="fileTypeFilter">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              File-Typ
-            </label>
-            <select id="fileTypeFilter" class="field-input">
-              <option value="all">Alle Typen</option>
+        <!-- Filter + Sort row -->
+        <div class="toolbar-filters">
+          <div class="toolbar-filter-item">
+            <label class="toolbar-filter-label" for="fileTypeFilter">Typ</label>
+            <select id="fileTypeFilter" class="toolbar-input">
+              <option value="all">Alle</option>
               <option value="pdf">PDF</option>
               <option value="png">PNG</option>
-              <option value="jpg">JPG / JPEG</option>
+              <option value="jpg">JPG</option>
             </select>
           </div>
-          <div class="filter-group">
-            <label class="filter-label" for="dateFromFilter">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Upload ab
-            </label>
-            <input id="dateFromFilter" type="date" class="field-input" />
+          <div class="toolbar-filter-item">
+            <label class="toolbar-filter-label" for="dateFromFilter">Von</label>
+            <input id="dateFromFilter" type="date" class="toolbar-input" />
           </div>
-          <div class="filter-group">
-            <label class="filter-label" for="dateToFilter">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Upload bis
-            </label>
-            <input id="dateToFilter" type="date" class="field-input" />
+          <div class="toolbar-filter-item">
+            <label class="toolbar-filter-label" for="dateToFilter">Bis</label>
+            <input id="dateToFilter" type="date" class="toolbar-input" />
+          </div>
+
+          <div class="toolbar-sort">
+            <span class="toolbar-filter-label">Sortierung</span>
+            <div class="toolbar-sort-group">
+              <span class="toolbar-sort-name">Upload</span>
+              <button id="sortUploadAscBtn" type="button" class="toolbar-sort-btn" data-sort-field="uploadDate" data-sort-order="asc" title="Älteste zuerst" aria-label="Upload aufsteigend">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+              </button>
+              <button id="sortUploadDescBtn" type="button" class="toolbar-sort-btn sort-dir-btn--active" data-sort-field="uploadDate" data-sort-order="desc" title="Neueste zuerst" aria-label="Upload absteigend">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>
+              </button>
+            </div>
+            <div class="toolbar-sort-group">
+              <span class="toolbar-sort-name">Datum</span>
+              <button id="sortFileAscBtn" type="button" class="toolbar-sort-btn" data-sort-field="fileDate" data-sort-order="asc" title="Älteste zuerst" aria-label="File-Datum aufsteigend">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+              </button>
+              <button id="sortFileDescBtn" type="button" class="toolbar-sort-btn" data-sort-field="fileDate" data-sort-order="desc" title="Neueste zuerst" aria-label="File-Datum absteigend">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Row 2: Sort Bar -->
-        <div class="sort-bar">
-          <span class="sort-bar-label">Sortierung</span>
-          <div class="sort-groups">
-
-            <div class="sort-group">
-              <span class="sort-group-label">Upload-Datum</span>
-              <div class="sort-group-btns" role="group" aria-label="Upload-Datum sortieren">
-                <button id="sortUploadAscBtn" type="button" class="sort-dir-btn"
-                  data-sort-field="uploadDate" data-sort-order="asc"
-                  title="Aufsteigend – älteste zuerst" aria-label="Upload-Datum aufsteigend">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
-                </button>
-                <button id="sortUploadDescBtn" type="button" class="sort-dir-btn sort-dir-btn--active"
-                  data-sort-field="uploadDate" data-sort-order="desc"
-                  title="Absteigend – neueste zuerst" aria-label="Upload-Datum absteigend">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="sort-group">
-              <span class="sort-group-label">File-Datum</span>
-              <div class="sort-group-btns" role="group" aria-label="File-Datum sortieren">
-                <button id="sortFileAscBtn" type="button" class="sort-dir-btn"
-                  data-sort-field="fileDate" data-sort-order="asc"
-                  title="Aufsteigend – älteste zuerst" aria-label="File-Datum aufsteigend">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
-                </button>
-                <button id="sortFileDescBtn" type="button" class="sort-dir-btn"
-                  data-sort-field="fileDate" data-sort-order="desc"
-                  title="Absteigend – neueste zuerst" aria-label="File-Datum absteigend">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></svg>
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Row 3: Actions -->
-        <div class="filter-actions">
-          <button id="toggleMultiDeleteBtn" type="button" class="filter-btn filter-btn--danger">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
+        <!-- Actions row -->
+        <div class="toolbar-actions">
+          <button id="toggleMultiDeleteBtn" type="button" class="toolbar-action-btn is-danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
             Mehrere löschen
           </button>
-          <button id="downloadAllFilesBtn" type="button" class="filter-btn filter-btn--files">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            PDF Files Download
+          <button id="downloadAllFilesBtn" type="button" class="toolbar-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            PDF Download
           </button>
-          <button id="goToUploadBtn" type="button" class="filter-btn filter-btn--upload">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            + Files hochladen
+          <button id="goToUploadBtn" type="button" class="toolbar-action-btn is-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            + Hochladen
           </button>
         </div>
 
