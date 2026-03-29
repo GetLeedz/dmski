@@ -141,6 +141,28 @@ router.post("/", async (req, res) => {
   return res.json({ ok: true, message: "Anfrage erfolgreich gesendet." });
 });
 
+// Test email sending (temporary debug endpoint)
+router.get("/test-email", async (req, res) => {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    return res.json({ error: "RESEND_API_KEY not set", env_keys: Object.keys(process.env).filter(k => /resend|smtp|mail/i.test(k)) });
+  }
+  try {
+    const resend = new Resend(resendKey);
+    const result = await resend.emails.send({
+      from: "DMSKI Forensik-System <info@dmski.ch>",
+      to: ["info@dmski.ch"],
+      subject: "DMSKI Test - Ambulanz von Rico",
+      html: "<h2>Test erfolgreich!</h2><p>Resend API funktioniert.</p>",
+    });
+    console.log("[contact] Test email result:", JSON.stringify(result));
+    return res.json({ ok: true, result });
+  } catch (err) {
+    console.error("[contact] Test email error:", err);
+    return res.json({ error: err.message, name: err.name, statusCode: err.statusCode });
+  }
+});
+
 // GET all requests (for admin)
 router.get("/", async (req, res) => {
   try {
