@@ -5408,12 +5408,12 @@ select.case-edit-input {
 .files-panel {
   background: #f5f6f8;
   border-radius: var(--radius-lg);
-  padding: 1.5rem 1.5rem;
-  margin-top: 1.5rem;
+  padding: 1.8rem 1.8rem;
+  margin-top: 1.8rem;
 }
 
 .files-panel table {
-  margin-top: 1rem;
+  margin-top: 0;
 }
 
 /* ── Header: upload + search ── */
@@ -5422,7 +5422,7 @@ select.case-edit-input {
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
 }
 
 .fp-search-wrap {
@@ -5466,9 +5466,9 @@ select.case-edit-input {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.2rem;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
 }
 
 .fp-upload-btn {
@@ -5615,15 +5615,16 @@ select.fp-input {
 .fp-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
+  margin-bottom: 1.5rem;
 }
 
 .fp-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.55rem 1.1rem;
+  gap: 0.5rem;
+  padding: 0.6rem 1.3rem;
   border: none;
   border-radius: var(--radius-md);
   background: #fff;
