@@ -2172,7 +2172,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- Sei extrem kritisch: Wenn der Autor eine Partei nur lobt und die andere nur kritisiert, zaehle jeden einzelnen klaren Bewertungsunterschied.",
     "- Ignoriere neutrale Fakten, Adressen, reine Chronologie und Verfahrensgeschichte ohne Wertung.",
     "- Empfehlungen oder Rechtfertigungen zugunsten einer Partei zaehlen als positiv fuer diese Partei.",
-    "- Zaehle Kinder (z.B. Timur, Nael) als Personen im Dokument auf, aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
+    "- Zaehle Kinder als Personen im Dokument auf (Name, Vorname, Geburtsdatum wie im Text angegeben), aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
     "- POLIZEI/BEHOERDEN-KORRESPONDENZ: Wenn ein Dokument eine Polizeiantwort, Bedrohungsmanagement-Mitteilung oder KESB-Meldung ist, werte dies IMMER als Belastungsmuster – auch wenn 'keine strafbaren Handlungen' oder 'kein Einsatz' steht. Die Existenz solcher Dokumente im Dossier ist selbst der Beweis fuer systematische Attacken.",
     "",
     "### 4. OUTPUT-STRUKTUR:",
