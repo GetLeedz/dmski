@@ -142,11 +142,22 @@ function inviteOnlyTable(email) {
 </table>`;
 }
 
-async function sendWelcomeEmail(user, password) {
+function buildFormalGreeting(user) {
+  const sal = (user.salutation || "").trim();
+  const lastName = (user.last_name || "").trim();
+  if (sal && lastName) {
+    return sal === "Frau"
+      ? `Sehr geehrte Frau ${esc(lastName)}`
+      : `Sehr geehrter Herr ${esc(lastName)}`;
+  }
   const name = [user.first_name, user.last_name].filter(Boolean).join(" ");
-  const salutation = name ? ` ${esc(name)}` : "";
+  return name ? `Guten Tag ${esc(name)}` : "Guten Tag";
+}
+
+async function sendWelcomeEmail(user, password) {
+  const greeting = buildFormalGreeting(user);
   const html = buildEmail({
-    greeting: `Guten Tag${salutation},<br><br>
+    greeting: `${greeting},<br><br>
       Ihr pers&ouml;nlicher Zugang zu <strong>DMSKI Scrutor</strong> wurde eingerichtet &ndash; der forensischen KI-Plattform f&uuml;r die pr&auml;zise Analyse juristischer Aktenlagen.<br><br>
       Unsere KI durchleuchtet jedes Dokument Wort f&uuml;r Wort: Sie erkennt Widerspr&uuml;che, manipulative Darstellungsmuster und Inkonsistenzen, die bei manueller Pr&uuml;fung h&auml;ufig unentdeckt bleiben.<br><br>
       Nachfolgend Ihre Zugangsdaten f&uuml;r die gesch&uuml;tzte Analyseumgebung:`,
@@ -161,10 +172,9 @@ async function sendWelcomeEmail(user, password) {
 }
 
 async function sendCredentialsUpdatedEmail(user, password) {
-  const name = [user.first_name, user.last_name].filter(Boolean).join(" ");
-  const salutation = name ? ` ${esc(name)}` : "";
+  const greeting = buildFormalGreeting(user);
   const html = buildEmail({
-    greeting: `Guten Tag${salutation},<br><br>
+    greeting: `${greeting},<br><br>
       Ihre Zugangsdaten f&uuml;r <strong>DMSKI Scrutor</strong> wurden aktualisiert.
       Bitte verwenden Sie ab sofort die folgenden Anmeldedaten:`,
     bodyHtml: credentialsTable(user.email, password),
@@ -178,10 +188,9 @@ async function sendCredentialsUpdatedEmail(user, password) {
 }
 
 async function sendInviteReminderEmail(user) {
-  const name = [user.first_name, user.last_name].filter(Boolean).join(" ");
-  const salutation = name ? ` ${esc(name)}` : "";
+  const greeting = buildFormalGreeting(user);
   const html = buildEmail({
-    greeting: `Guten Tag${salutation},<br><br>
+    greeting: `${greeting},<br><br>
       Sie wurden zur forensischen Analyseplattform <strong>DMSKI Scrutor</strong> eingeladen.<br><br>
       DMSKI Scrutor ist ein KI-gest&uuml;tztes System f&uuml;r die Analyse komplexer Aktenlagen. Die forensische KI pr&uuml;ft jedes Dokument auf Widerspr&uuml;che, systematische Darstellungsmuster und unbelegte Behauptungen &ndash; und unterst&uuml;tzt damit die Wahrheitsfindung im Verfahren.<br><br>
       Ihre Analyseergebnisse stehen in einer gesch&uuml;tzten, vertraulichen Umgebung bereit. Sensible Prozessdaten verlassen zu keinem Zeitpunkt die gesicherte Infrastruktur.`,
@@ -201,7 +210,7 @@ async function sendInviteReminderEmail(user) {
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, first_name, last_name, function_label,
+      `SELECT id, email, role, salutation, first_name, last_name, function_label,
               case_id, mobile, address, password_change_required, tos_accepted_at
        FROM users WHERE id = $1`,
       [req.user.sub]
@@ -268,7 +277,7 @@ router.patch("/me", requireAuth, async (req, res) => {
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, first_name, last_name, function_label, case_id, mobile
+      `SELECT id, email, role, salutation, first_name, last_name, function_label, case_id, mobile
        FROM users ORDER BY created_at DESC`
     );
     res.json({ users: result.rows });
@@ -281,7 +290,7 @@ router.get("/", requireAuth, requireAdmin, async (req, res) => {
 router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, first_name, last_name, function_label, case_id, mobile
+      `SELECT id, email, role, salutation, first_name, last_name, function_label, case_id, mobile
        FROM users WHERE role != 'admin' ORDER BY created_at DESC`
     );
     res.json({ users: result.rows });
@@ -329,7 +338,7 @@ router.post("/:adminId/users", requireAuth, requireAdmin, async (req, res) => {
 
 // PATCH /:userId – Benutzer bearbeiten
 router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
-  const { first_name, last_name, email, mobile, function_label, case_id, password } = req.body;
+  const { salutation, first_name, last_name, email, mobile, function_label, case_id, password } = req.body;
   try {
     let result;
     if (password) {
@@ -338,18 +347,18 @@ router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, 
       }
       const password_hash = await bcrypt.hash(password, 12);
       result = await pool.query(
-        `UPDATE users SET first_name=$1, last_name=$2, email=$3, mobile=$4, function_label=$5,
-                case_id=$6, password_hash=$7, password_change_required=true
-         WHERE id=$8
-         RETURNING id, email, role, first_name, last_name`,
-        [first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, password_hash, req.params.userId]
+        `UPDATE users SET salutation=$1, first_name=$2, last_name=$3, email=$4, mobile=$5, function_label=$6,
+                case_id=$7, password_hash=$8, password_change_required=true
+         WHERE id=$9
+         RETURNING id, email, role, salutation, first_name, last_name`,
+        [salutation || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, password_hash, req.params.userId]
       );
     } else {
       result = await pool.query(
-        `UPDATE users SET first_name=$1, last_name=$2, email=$3, mobile=$4, function_label=$5, case_id=$6
-         WHERE id=$7
-         RETURNING id, email, role, first_name, last_name`,
-        [first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, req.params.userId]
+        `UPDATE users SET salutation=$1, first_name=$2, last_name=$3, email=$4, mobile=$5, function_label=$6, case_id=$7
+         WHERE id=$8
+         RETURNING id, email, role, salutation, first_name, last_name`,
+        [salutation || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, req.params.userId]
       );
     }
 

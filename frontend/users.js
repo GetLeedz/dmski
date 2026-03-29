@@ -106,6 +106,7 @@ function normalizeUser(raw) {
     return {
         id: raw.id,
         email: String(raw.email || ""),
+        salutation: String(raw.salutation || ""),
         firstName: String(raw.first_name || ""),
         lastName: String(raw.last_name || ""),
         mobile: String(raw.mobile || ""),
@@ -270,6 +271,7 @@ async function handleSave() {
     }
 
     const payload = {
+        salutation: byId("edit-anrede").value,
         first_name: byId("edit-vorname").value.trim(),
         last_name: byId("edit-nachname").value.trim(),
         email: byId("edit-email").value.trim(),
@@ -341,6 +343,7 @@ function openEditModal(id) {
 
     modalMode = "edit";
     currentEditId = id;
+    byId("edit-anrede").value = u.salutation || "";
     byId("edit-vorname").value = u.firstName;
     byId("edit-nachname").value = u.lastName;
     byId("edit-email").value = u.email;

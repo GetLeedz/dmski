@@ -32,6 +32,7 @@ async function ensureUserSchema() {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer'");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS salutation TEXT");
     const adminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
     if (adminEmail) {
       await pool.query("UPDATE users SET role = 'admin' WHERE LOWER(TRIM(email)) = $1", [adminEmail]);
