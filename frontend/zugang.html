@@ -305,9 +305,12 @@
       msg.className = "zugang-msg";
 
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
         const res = await fetch(`${API_BASE}/contact`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({
             vorname: form.vorname.value.trim(),
             nachname: form.nachname.value.trim(),
@@ -318,6 +321,7 @@
             turnstileToken: turnstileResponse
           })
         });
+        clearTimeout(timeout);
 
         const data = await res.json().catch(() => ({}));
 

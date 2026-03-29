@@ -11,6 +11,9 @@ function createMailTransport() {
     host: "asmtp.mail.hostpoint.ch",
     port: 465,
     secure: true,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: {
       user: process.env.SMTP_USER || "dmski@aikmu.ch",
       pass: process.env.SMTP_PASS,
@@ -67,6 +70,12 @@ router.post("/", async (req, res) => {
   } catch (err) {
     console.warn("Turnstile verification failed:", err.message);
     return res.status(500).json({ error: "Sicherheitsprüfung konnte nicht durchgeführt werden." });
+  }
+
+  // Check SMTP config
+  if (!process.env.SMTP_PASS) {
+    console.error("[contact] SMTP_PASS not configured");
+    return res.status(500).json({ error: "E-Mail-Versand ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator." });
   }
 
   // Send email
