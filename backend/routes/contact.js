@@ -12,8 +12,9 @@ function createMailTransport() {
   console.log(`[contact] SMTP config: user=${smtpUser}, pass=${smtpPass ? "***set***" : "EMPTY"}, host=asmtp.mail.hostpoint.ch:465`);
   return nodemailer.createTransport({
     host: "asmtp.mail.hostpoint.ch",
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
+    requireTLS: true,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
