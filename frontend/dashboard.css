@@ -230,10 +230,10 @@ body.has-sidebar .page {
   box-shadow: var(--shadow);
 }
 
-/* Card accent lines – updated to gold */
-.card-new-case  { border-top: 3px solid var(--gold); }
-.card-open-case { border-top: 3px solid var(--navy); }
-.card-workflow  { border-top: 3px solid var(--emerald); }
+/* Card accent lines – subtle, modern */
+.card-new-case  { border-top: 2px solid var(--gold); }
+.card-open-case { border-top: 2px solid rgba(26,43,60,0.15); }
+.card-workflow  { border-top: 2px solid rgba(26,43,60,0.1); }
 
 /* ================================================================
    BUTTONS – Primary now uses Gold
@@ -337,11 +337,11 @@ select.field-input {
 
 /* ── Welcome strip ── */
 .welcome-strip {
-  margin-bottom: 1.4rem;
-  padding: .7rem 1.1rem;
+  margin-bottom: 1.5rem;
+  padding: .85rem 1.2rem;
   border-radius: var(--radius-md);
-  background: var(--accent-light);
-  border: 1px solid rgba(17,107,115,.18);
+  background: #f5f6f8;
+  border: none;
 }
 
 .welcome-inner {
@@ -375,8 +375,8 @@ select.field-input {
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
   align-items: start;
 }
 
