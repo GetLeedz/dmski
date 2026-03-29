@@ -2445,13 +2445,6 @@ async function loadRowAnalysis(file, options = {}) {
     ? `${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}`
     : "";
 
-  // Fill doctype badge on preview side
-  const doctypeBadge = filesTableBody.querySelector(`.preview-doctype[data-file-id="${file.id}"]`);
-  if (doctypeBadge && resolvedDocType) {
-    doctypeBadge.textContent = resolvedDocType;
-    doctypeBadge.classList.add("is-visible");
-  }
-
   box.innerHTML = `
     <div class="queue-analysis">
       <div class="forensic-report">
@@ -2460,7 +2453,7 @@ async function loadRowAnalysis(file, options = {}) {
             <span class="forensic-title">KI-Analyse</span>
           </div>
           <div class="qa-chip-row">
-            ${resolvedDocType ? `<span class="qa-tag">${escapeHtml(resolvedDocType)}</span>` : ""}
+            ${resolvedDocType ? `<div class="qa-doctype-wrap"><span class="qa-doctype-label">Dokumenttyp</span><span class="qa-tag">${escapeHtml(resolvedDocType)}</span></div>` : ""}
           </div>
         </div>
         <div class="forensic-fields-grid">
@@ -2533,7 +2526,6 @@ function renderFiles(files) {
             <div class="preview-meta-row">
               <span class="file-icon ${fileType.className}">${fileType.label}</span>
               <span class="preview-size">${formatSizeKB(file.size_bytes)} KB</span>
-              <span class="preview-doctype" data-file-id="${file.id}"></span>
             </div>
           </div>
           <div class="row-actions">
