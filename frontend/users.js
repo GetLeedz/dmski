@@ -211,6 +211,13 @@ function showConfirm(text, onOk) {
 }
 
 async function sendInvite(targetUserId) {
+    // Check if user has password set (client-side hint)
+    const user = allUsers.find(u => String(u.id) === String(targetUserId));
+    if (user && !user.fn) {
+        showToast("Bitte wählen Sie zuerst eine Funktion für diesen Benutzer.", true);
+        return;
+    }
+
     showConfirm("Einladungs-E-Mail jetzt an diesen Benutzer senden?", async () => {
         const okBtn = byId("confirmOkBtn");
         if (okBtn) { okBtn.disabled = true; okBtn.textContent = "Sendet …"; }
@@ -270,14 +277,24 @@ async function handleSave() {
         return;
     }
 
+    const funktionValue = byId("edit-funktion").value.trim();
+    const caseValue = byId("edit-case").value || null;
+    const isKunde = funktionValue === "Kunde/Kundin";
+
+    // Fall zuweisen ist mandatory für alle ausser Kunden
+    if (!isKunde && !caseValue) {
+        showModalMsg("Bitte weisen Sie einen Fall zu (nur Kunden benötigen keine Zuweisung).", "err");
+        return;
+    }
+
     const payload = {
         salutation: byId("edit-anrede").value,
         first_name: byId("edit-vorname").value.trim(),
         last_name: byId("edit-nachname").value.trim(),
         email: byId("edit-email").value.trim(),
         mobile: byId("edit-mobile").value.trim(),
-        function_label: byId("edit-funktion").value.trim(),
-        case_id: byId("edit-case").value || null,
+        function_label: funktionValue,
+        case_id: isKunde ? null : caseValue,
     };
     if (password) payload.password = password;
 
@@ -362,6 +379,7 @@ function openEditModal(id) {
     byId("modalTitle").textContent = "Benutzer bearbeiten";
     byId("modalSaveBtn").textContent = "Änderungen speichern";
     byId("userModal").classList.add("open");
+    toggleCaseGroup();
 }
 
 function openAddModal() {
@@ -379,6 +397,24 @@ function openAddModal() {
     byId("modalTitle").textContent = "Neuen Benutzer anlegen";
     byId("modalSaveBtn").textContent = "Anlegen";
     byId("userModal").classList.add("open");
+    toggleCaseGroup();
+}
+
+function toggleCaseGroup() {
+    const fn = byId("edit-funktion")?.value || "";
+    const caseGroup = byId("mCaseGroup");
+    if (!caseGroup) return;
+    if (fn === "Kunde/Kundin") {
+        caseGroup.style.display = "none";
+    } else {
+        caseGroup.style.display = "";
+    }
+}
+
+// Toggle Fall zuweisen on Funktion change
+const funktionSelect = byId("edit-funktion");
+if (funktionSelect) {
+    funktionSelect.addEventListener("change", toggleCaseGroup);
 }
 
 function closeModal() {
