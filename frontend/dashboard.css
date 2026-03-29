@@ -2081,22 +2081,16 @@ a.ghost:hover {
 .analysis-report {
   position: relative;
   overflow: hidden;
-  margin-top: 0.7rem;
-  padding: 0.75rem 0.8rem 0.8rem;
-  border: 1px solid rgba(26,43,60,0.14);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.9), transparent 34%),
-    linear-gradient(140deg, #f8f9fa, #f1f3f5);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 16px 34px rgba(26, 43, 60, 0.07);
+  margin-top: 0.5rem;
+  padding: 1.2rem 1.3rem 1.3rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .analysis-report::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(197,160,89,0.04), transparent 24%, transparent 76%, rgba(197,160,89,0.03));
-  pointer-events: none;
+  display: none;
 }
 
 .analysis-report-head-actions {
@@ -2112,21 +2106,21 @@ a.ghost:hover {
 .analysis-report-head-actions #exportPdfReportBtn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 0.36rem !important;
-  padding: 0.45rem 0.9rem !important;
-  border: 1.5px solid rgba(197,160,89,0.5) !important;
+  gap: 0.5rem !important;
+  padding: 0.6rem 1.2rem !important;
+  border: none !important;
   border-radius: var(--radius-md) !important;
-  background: linear-gradient(145deg, #fdfaf4, #f7f0e0) !important;
-  color: var(--navy) !important;
+  background: linear-gradient(150deg, var(--navy), #243447) !important;
+  color: #F8F9FA !important;
   font: inherit !important;
   font-size: 0.8rem !important;
   font-weight: 700 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
-  letter-spacing: 0.01em !important;
-  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease !important;
+  letter-spacing: 0.02em !important;
+  transition: transform 120ms ease, box-shadow 120ms ease !important;
   min-width: 0 !important;
-  box-shadow: 0 1px 3px rgba(197,160,89,0.15) !important;
+  box-shadow: 0 2px 8px rgba(26,43,60,0.2) !important;
   transform: none !important;
 }
 
@@ -2136,16 +2130,15 @@ a.ghost:hover {
   height: 0.85rem;
   flex-shrink: 0;
   stroke-width: 2.2;
-  stroke: var(--gold-2);
+  stroke: var(--gold);
 }
 
 .analysis-report-head-actions .filter-btn--report:hover:not(:disabled),
 .analysis-report-head-actions #exportPdfReportBtn:hover:not(:disabled) {
-  background: linear-gradient(145deg, #f5e9ca, #edd97e30) !important;
-  border-color: var(--gold) !important;
-  color: var(--navy) !important;
-  transform: none !important;
-  box-shadow: 0 2px 8px rgba(197,160,89,0.25) !important;
+  background: linear-gradient(150deg, #243447, var(--navy)) !important;
+  color: #F8F9FA !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(26,43,60,0.3) !important;
   filter: none !important;
 }
 
@@ -2158,8 +2151,10 @@ a.ghost:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.9rem;
-  margin-bottom: 0.8rem;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(26,43,60,0.08);
 }
 
 .analysis-report-eyebrow {
@@ -2281,21 +2276,21 @@ a.ghost:hover {
 }
 
 .analysis-report-card.is-positive {
-  border-color: #cfe4d5;
-  background: linear-gradient(135deg, #f8fcf9, #eef8f0);
+  border-color: rgba(26,43,60,0.1);
+  background: #fff;
 }
 
 .analysis-report-card.is-positive .analysis-report-card-value {
-  color: #1b6c34;
+  color: var(--navy);
 }
 
 .analysis-report-card.is-negative {
-  border-color: #efd7d3;
-  background: linear-gradient(135deg, #fff9f8, #fdf0ee);
+  border-color: rgba(26,43,60,0.1);
+  background: #fff;
 }
 
 .analysis-report-card.is-negative .analysis-report-card-value {
-  color: #b84434;
+  color: var(--navy);
 }
 
 .case-person-field {
@@ -3733,8 +3728,8 @@ body.printing .analysis-report-head-actions { display: none !important; }
 
 .party-split {
   display: flex;
-  gap: 0.45rem;
-  margin-top: 0.3rem;
+  gap: 0.55rem;
+  margin-top: 0.4rem;
 }
 
 .party-split-item {
@@ -3750,13 +3745,13 @@ body.printing .analysis-report-head-actions { display: none !important; }
 }
 
 .party-split-item.is-positive {
-  background: #f8f9fa;
-  border: 1.5px solid #d1e8d8;
+  background: rgba(22,163,74,0.04);
+  border: 1px solid rgba(22,163,74,0.15);
 }
 
 .party-split-item.is-negative {
-  background: #fef2f2;
-  border: 1.5px solid #fca5a5;
+  background: rgba(220,38,38,0.03);
+  border: 1px solid rgba(220,38,38,0.15);
 }
 
 .party-split-num {
@@ -4787,11 +4782,11 @@ select.case-edit-input {
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
-  padding: 0.85rem 0.9rem;
-  border-radius: 14px;
-  border: 1.5px solid #d9e7ec;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(15,43,54,0.06);
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(26,43,60,0.1);
+  background: #fff;
+  box-shadow: none;
 }
 
 .file-count-split {
@@ -4808,8 +4803,8 @@ select.case-edit-input {
   gap: 0.1rem;
   padding: 0.65rem 0.4rem 0.55rem;
   border-radius: 10px;
-  background: #f8f9fa;
-  border: 1.5px solid #d1e8d8;
+  background: rgba(26,43,60,0.03);
+  border: 1px solid rgba(26,43,60,0.1);
 }
 
 .file-count-num {
@@ -4818,7 +4813,7 @@ select.case-edit-input {
   line-height: 1;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
-  color: #16a34a;
+  color: var(--navy);
 }
 
 .file-count-label {
@@ -4827,7 +4822,7 @@ select.case-edit-input {
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-top: 0.04rem;
-  color: #16a34a;
+  color: rgba(26,43,60,0.5);
 }
 
 /* ================================================================
