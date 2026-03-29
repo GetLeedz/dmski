@@ -100,11 +100,7 @@ loginForm?.addEventListener("submit", async (event) => {
                 window.location.href = "/profile.html?mustchange=1";
                 return;
             }
-            if (data.role === "admin") {
-                window.location.href = "/users.html";
-            } else {
-                window.location.href = "/dashboard.html";
-            }
+            window.location.href = "/dashboard.html";
         }, 800);
 
     } catch (err) {
