@@ -491,32 +491,34 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
   let counselTitle = "";
   let counselItems = [];
 
+  const presentCount = rows.filter(r => r.present).length;
+
   if (pressure >= 4 || (protNeg >= 3 && oppPos >= 2)) {
-    counselTitle = "Handlungsempfehlung für die benachteiligte Person";
+    counselTitle = `Alarmstufe Rot – Ihr Rechtsbeistand muss JETZT handeln`;
     counselItems = [
-      { icon: "⚠️", label: "Anwaltliche Vertretung prüfen", text: `Bei einem derart ausgeprägten Degradierungsmuster ist entscheidend, ob Ihr Rechtsbeistand die systematische Natur der Angriffe erkennt und aktiv dagegen vorgeht. Ein Anwalt, der die Tragweite nicht erfasst oder die Strategie der Gegenpartei unterschätzt, kann Ihre Position erheblich schwächen.` },
-      { icon: "🔍", label: "Sprache Ihres Anwalts gegenüber dem Gericht", text: `Überprüfen Sie, ob Ihr Anwalt gegenüber dem Gericht und der Behörde auf der richtigen <strong>Flughöhe</strong> kommuniziert. Formuliert er/sie sachlich-forensisch oder emotional? Ein professioneller Ton – nüchtern, belegt, strukturiert – ist zwingend. Emotionale Sprache schadet Ihrer Glaubwürdigkeit.` },
-      { icon: "📋", label: "Gegenstrategie einfordern", text: `Verlangen Sie von Ihrem Anwalt eine schriftliche Gegenstrategie, die jeden erkannten Tatbestand einzeln adressiert. Wenn Ihr Anwalt auf wiederholte Ad-hominem-Angriffe nicht mit formellen Rügen (Art. 152 ZPO) reagiert, fehlt möglicherweise die nötige Kampfbereitschaft.` },
-      { icon: "🔄", label: "Zweitmeinung einholen", text: `Bei einem Score dieser Schwere empfiehlt die KI-Analyse dringend eine anwaltliche Zweitmeinung. Zeigen Sie diesem Report einem unabhängigen Fachanwalt für Familienrecht. Sollte Ihr aktueller Anwalt die Muster nicht sehen oder verharmlosen, kann ein Wechsel Ihre Position retten.` },
-      { icon: "🛡️", label: "Dokumentation intensivieren", text: `Halten Sie jede Interaktion – mit Behörden, Gegenpartei und Ihrem eigenen Anwalt – schriftlich fest. Je mehr Unterlagen die KI analysieren kann, desto stärker werden Widersprüche und Muster sichtbar.` }
+      { icon: "🚨", label: "Ihr Anwalt schläft – oder sieht er das Muster?", text: `Die KI hat <strong>${presentCount} aktive Tatbestände</strong> gegen ${nameP} erkannt. ${protNeg} negative Zuschreibungen stehen ${protPos} positiven gegenüber – das ist kein Zufall, das ist eine <strong>Kampagne</strong>. Wenn Ihr Anwalt das nicht als systematisches Degradierungsmuster benennt und vor Gericht rügt, hat er die Tragweite nicht verstanden. Fragen Sie ihn direkt: „Sehen Sie das Muster? Was ist Ihre Gegenstrategie?"` },
+      { icon: "⚖️", label: "Falsche Flughöhe = verlorener Fall", text: `Kommuniziert Ihr Anwalt gegenüber dem Gericht <strong>auf Augenhöhe</strong> – sachlich, forensisch, belegt? Oder schreibt er emotional, devot oder unpräzise? Die Gegenpartei (${nameG}) fährt eine kalkulierte Strategie. Wenn Ihr Anwalt das Spiel nicht durchschaut und auf derselben taktischen Ebene kontert, verlieren Sie. Ein Anwalt, der die Behörde nicht herausfordert, legitimiert die Angriffe.` },
+      { icon: "📋", label: "Konkrete Sofortmassnahmen", text: `Fordern Sie von Ihrem Anwalt: <strong>1)</strong> Formelle Rüge nach Art. 152 ZPO gegen jede sachfremde Darstellung. <strong>2)</strong> Befangenheitsantrag prüfen, falls beteiligte Amtspersonen einseitig agieren. <strong>3)</strong> Gegendarstellung zu jedem einzelnen der ${presentCount} erkannten Tatbestände. Wenn er/sie das nicht liefern kann, ist das ein Warnsignal.` },
+      { icon: "🔄", label: "Anwaltswechsel ernsthaft prüfen", text: `Bei einem Druck-Score von <strong>${pressure}</strong> und ${presentCount} aktiven Indizien empfiehlt die KI-Analyse <strong>dringend eine Zweitmeinung</strong>. Zeigen Sie diesen Report einem unabhängigen Fachanwalt für Familienrecht. Wenn Ihr aktueller Anwalt die Muster verharmlost, die falschen Prioritäten setzt oder die Behörde nicht konfrontiert – wechseln Sie. Lieber jetzt als nach dem Urteil.` },
+      { icon: "🛡️", label: "Jedes Dokument zählt", text: `Laden Sie <strong>jedes Schreiben</strong> hoch – von Behörden, Gegenpartei, Ihrem eigenen Anwalt. Die KI wird Widersprüche aufdecken, die dem menschlichen Auge entgehen. Je mehr Material, desto stärker Ihre Position. Halten Sie auch Telefonate schriftlich fest.` }
     ];
   } else if (pressure >= 2 || protNeg >= 2) {
-    counselTitle = "Handlungsempfehlung für die benachteiligte Person";
+    counselTitle = `Achtung – Die Gegenseite baut Druck auf`;
     counselItems = [
-      { icon: "📊", label: "Selektive Darstellung dokumentieren", text: `Die erkannte Belastungstendenz zeigt, dass Informationen einseitig ausgewählt werden. Besprechen Sie mit Ihrem Anwalt, ob er/sie diese Muster aktiv im Verfahren rügt oder stillschweigend hinnimmt.` },
-      { icon: "🔍", label: "Kommunikationsstil des Anwalts", text: `Achten Sie darauf, wie Ihr Anwalt mit der Gegenseite und dem Gericht kommuniziert. Bleibt er/sie sachlich und belegt? Oder übernimmt Ihr Anwalt unbewusst das Framing der Gegenpartei? Ein guter Anwalt hinterfragt – ein schlechter folgt der Erzählung.` },
-      { icon: "📋", label: "Entlastungsmaterial sammeln", text: `Sammeln Sie aktiv entlastende Dokumente, Zeugenaussagen und schriftliche Belege, die das einseitige Bild korrigieren. Jedes zusätzliche Dokument stärkt die forensische Analyse.` }
+      { icon: "⚠️", label: "Ihr Anwalt muss das Framing durchbrechen", text: `Die KI erkennt <strong>${presentCount} Indizien</strong> für selektive Darstellung gegen ${nameP}. ${nameG} setzt gezielt auf Ablenkung und einseitige Information. Besprechen Sie mit Ihrem Anwalt: Rügt er/sie diese Muster aktiv – oder lässt er sie stillschweigend stehen? Schweigen ist Zustimmung vor Gericht.` },
+      { icon: "🔍", label: "Sprache und Haltung Ihres Anwalts", text: `Beobachten Sie kritisch: Übernimmt Ihr Anwalt unbewusst das <strong>Framing der Gegenpartei</strong>? Ein guter Anwalt hinterfragt jede Behauptung – ein schlechter folgt der Erzählung. Achten Sie darauf, ob Ihr Anwalt ${nameP} aktiv verteidigt oder nur reagiert.` },
+      { icon: "📋", label: "Gegenbeweise aufbauen", text: `Sammeln Sie gezielt Dokumente, die das einseitige Bild widerlegen: Zeugenaussagen, positive Berichte, eigene Korrespondenz. Die KI-Analyse wird mit jedem neuen Dokument präziser. ${protNeg} negative Zuschreibungen brauchen konkrete Gegenpunkte.` }
     ];
   } else if (pressure >= 1) {
-    counselTitle = "Hinweis zur anwaltlichen Begleitung";
+    counselTitle = `Beobachtungsmodus – Leichte Tendenz erkannt`;
     counselItems = [
-      { icon: "👁️", label: "Aufmerksam bleiben", text: `Die leichte Tendenz ist noch kein Alarmsignal, kann sich aber über mehrere Dokumente verdichten. Informieren Sie Ihren Anwalt über diese KI-Einschätzung und bitten Sie um Beobachtung.` },
-      { icon: "📁", label: "Dossier weiter aufbauen", text: `Laden Sie weitere Dokumente hoch. Die KI erkennt Muster erst ab einer gewissen Datenmenge zuverlässig. Je mehr Material, desto präziser die Analyse.` }
+      { icon: "👁️", label: "Noch kein Alarm, aber wachsam bleiben", text: `Die KI hat eine <strong>leichte einseitige Tendenz</strong> zuungunsten von ${nameP} erkannt. Das ist noch kein Alarmsignal – aber informieren Sie Ihren Anwalt über diese Einschätzung. Fragen Sie: „Sehen Sie eine Schieflage?" Die Antwort zeigt, ob er den Fall richtig einschätzt.` },
+      { icon: "📁", label: "Dossier systematisch aufbauen", text: `Einzelne Dokumente sind Momentaufnahmen. Laden Sie <strong>weitere Unterlagen</strong> hoch – die KI erkennt Muster erst ab einer gewissen Datenmenge. Was heute als leichte Tendenz erscheint, kann sich über mehrere Dokumente zu einem belastenden Muster verdichten.` }
     ];
   } else {
-    counselTitle = "Hinweis zur anwaltlichen Begleitung";
+    counselTitle = `Unauffällig – Gute Ausgangslage`;
     counselItems = [
-      { icon: "✅", label: "Keine Auffälligkeiten", text: `Dieses Dokument zeigt keine erkennbaren taktischen Muster. Die anwaltliche Begleitung erscheint im Rahmen. Empfehlung: Gesamtdossier weiter beobachten.` }
+      { icon: "✅", label: "Keine taktischen Muster erkannt", text: `In den analysierten Dokumenten zeigt die KI <strong>keine offensichtlichen Angriffsmuster</strong> gegen ${nameP}. Die Darstellung erscheint sachlich. Das ist eine gute Ausgangslage – aber bleiben Sie wachsam und laden Sie weitere Dokumente hoch, um das Gesamtbild zu vervollständigen.` }
     ];
   }
 
