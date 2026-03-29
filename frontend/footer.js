@@ -42,7 +42,7 @@
       max-width: 1100px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 2.2fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr;
       gap: 3rem;
       padding: 3.5rem 1.8rem 2.5rem;
     }
@@ -149,16 +149,6 @@
         <div class="dmski-footer-brand">
           <img src="/assets/logo-dmski.png" alt="DMSKI" class="dmski-footer-logo" />
           <p class="dmski-footer-tagline">Gerechtigkeit durch Mustererkennung.<br>KI-gestützte forensische Fallanalyse für Schweizer Recht.</p>
-          <div class="dmski-footer-ext">
-            <a href="https://www.getleedz.com" target="_blank" rel="noopener noreferrer">getleedz.com</a>
-            <a href="https://www.aikmu.ch" target="_blank" rel="noopener noreferrer">aikmu.ch</a>
-          </div>
-        </div>
-
-        <div class="dmski-footer-col">
-          <strong>Plattform</strong>
-          <a href="/">Anmelden</a>
-          <a href="https://dmski.ch">dmski.ch</a>
         </div>
 
         <div class="dmski-footer-col">
