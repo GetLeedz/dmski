@@ -2659,13 +2659,48 @@ async function extractTextFromPdfWithOcr(fileBuffer) {
 
 async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "", protectedPersonName = "", opposingPartyName = "") {
   const fileNameTitle = deriveTitleFromFileName(originalName);
+  const isChatImage = /whats?app|chat|nachricht|dialog|sms|signal|telegram/i.test(String(originalName || "").toLowerCase());
 
+  // Strategy: For non-chat images (emails, letters, documents),
+  // ALWAYS prefer OCR → text analysis. The text analysis prompt
+  // handles structured data (dates, names, roles) much better
+  // than the vision model which tends to dump text into wrong fields.
+
+  if (!isChatImage) {
+    // OCR-first path for documents, emails, screenshots
+    try {
+      const ocrText = await extractTextFromImageWithOcr(fileBuffer);
+      if (ocrText && ocrText.trim().length > 30) {
+        console.log(`[image-analysis] OCR extracted ${ocrText.length} chars from ${originalName}`);
+        const fallback = buildHeuristicAnalysisFromText(ocrText, {});
+        if (getOpenAiClient()) {
+          const aiFromText = await analyzeTextWithAi(ocrText, fallback, protectedPersonName, opposingPartyName);
+          if (aiFromText.status === "ok") {
+            return aiFromText;
+          }
+        }
+        return buildFallbackAnalysis({
+          ...fallback,
+          title: fallback.title || fileNameTitle,
+          message: fallback.message || "Bildtext via OCR analysiert."
+        });
+      }
+    } catch (ocrErr) {
+      console.warn(`[image-analysis] OCR failed for ${originalName}:`, ocrErr.message);
+    }
+
+    // OCR failed or insufficient text — fall through to vision model
+    console.log(`[image-analysis] OCR insufficient, trying vision model for ${originalName}`);
+  }
+
+  // Vision model path (chat images, or OCR-failed non-chat)
   try {
     const imageResult = await extractTitleFromImageWithAi(fileBuffer, mimeType, originalName, protectedPersonName, opposingPartyName);
     if (imageResult.status !== "needs-ocr" && imageResult.status !== "needs-config") {
       return imageResult;
     }
 
+    // Vision failed, try OCR as last resort
     const ocrText = await extractTextFromImageWithOcr(fileBuffer);
     if (!ocrText) {
       return {
