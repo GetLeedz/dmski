@@ -102,30 +102,76 @@ router.post("/", async (req, res) => {
   if (resendKey) {
     try {
       const now = new Date().toLocaleString("de-CH", { timeZone: "Europe/Zurich" });
-      const htmlBody = `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8f9fa;border-radius:12px;overflow:hidden">
-          <div style="background:#1A2B3C;padding:1.5rem 2rem">
-            <h2 style="margin:0;color:#F8F9FA;font-size:1.2rem">Neue Zugangsanfrage</h2>
-            <p style="margin:0.3rem 0 0;color:rgba(255,255,255,0.5);font-size:0.85rem">${esc(now)}</p>
-          </div>
-          <div style="padding:1.5rem 2rem">
-            <table style="width:100%;border-collapse:collapse;font-size:0.92rem">
-              <tr><td style="padding:0.5rem 0;color:#6b7b8a;width:120px">Name</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(vorname)} ${esc(nachname)}</td></tr>
-              <tr><td style="padding:0.5rem 0;color:#6b7b8a">E-Mail</td><td style="padding:0.5rem 0"><a href="mailto:${esc(email)}" style="color:#C5A059">${esc(email)}</a></td></tr>
-              ${telefon ? `<tr><td style="padding:0.5rem 0;color:#6b7b8a">Telefon</td><td style="padding:0.5rem 0;color:#1A2B3C">${esc(telefon)}</td></tr>` : ""}
-              <tr><td style="padding:0.5rem 0;color:#6b7b8a">Rolle</td><td style="padding:0.5rem 0;color:#1A2B3C;font-weight:600">${esc(rolleLabel)}</td></tr>
-            </table>
-            <div style="margin-top:1rem;padding:1rem;background:#fff;border-radius:8px;border:1px solid #e8edf2">
-              <p style="margin:0 0 0.3rem;font-size:0.75rem;color:#6b7b8a;text-transform:uppercase;letter-spacing:0.05em;font-weight:700">Nachricht</p>
-              <p style="margin:0;color:#1A2B3C;line-height:1.6;white-space:pre-wrap">${esc(nachricht)}</p>
-            </div>
-          </div>
-        </div>`;
+      const htmlBody = `<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#0a0e17;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0e17;padding:40px 20px;">
+<tr><td>
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#1A2B3C;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4);">
+
+  <tr><td style="height:2px;background:linear-gradient(90deg,transparent,#C5A059,#8b5cf6,#C5A059,transparent);font-size:0;line-height:0;">&nbsp;</td></tr>
+
+  <tr>
+    <td style="background:#1A2B3C;padding:32px 40px 20px;text-align:center;">
+      <span style="color:#C5A059;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">DMSKI SCRUTOR</span>
+      <p style="color:rgba(255,255,255,.4);font-size:12px;margin:6px 0 0;">Neue Zugangsanfrage</p>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="background:#ffffff;padding:32px 40px;">
+      <p style="margin:0 0 20px;font-size:15px;color:#1A2B3C;line-height:1.6;">
+        Eine neue Zugangsanfrage ist &uuml;ber <strong>dmski.ch</strong> eingegangen:
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fa;border:1px solid #e2e8ef;border-radius:10px;overflow:hidden;margin-bottom:20px;">
+        <tr><td style="padding:14px 20px;border-bottom:1px solid #e2e8ef;">
+          <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:rgba(26,43,60,.45);text-transform:uppercase;letter-spacing:.08em;">Name</p>
+          <span style="color:#1A2B3C;font-size:15px;font-weight:700;">${esc(vorname)} ${esc(nachname)}</span>
+        </td></tr>
+        <tr><td style="padding:14px 20px;border-bottom:1px solid #e2e8ef;">
+          <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:rgba(26,43,60,.45);text-transform:uppercase;letter-spacing:.08em;">E-Mail</p>
+          <a href="mailto:${esc(email)}" style="color:#C5A059;font-size:14px;font-weight:600;text-decoration:none;">${esc(email)}</a>
+        </td></tr>
+        ${telefon ? `<tr><td style="padding:14px 20px;border-bottom:1px solid #e2e8ef;">
+          <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:rgba(26,43,60,.45);text-transform:uppercase;letter-spacing:.08em;">Telefon</p>
+          <span style="color:#1A2B3C;font-size:14px;font-weight:600;">${esc(telefon)}</span>
+        </td></tr>` : ""}
+        <tr><td style="padding:14px 20px;">
+          <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:rgba(26,43,60,.45);text-transform:uppercase;letter-spacing:.08em;">Rolle</p>
+          <span style="color:#1A2B3C;font-size:14px;font-weight:700;">${esc(rolleLabel)}</span>
+        </td></tr>
+      </table>
+
+      <div style="padding:16px 20px;background:#f8f9fa;border-radius:10px;border-left:3px solid #C5A059;margin-bottom:20px;">
+        <p style="margin:0 0 6px;font-size:10px;font-weight:700;color:rgba(26,43,60,.45);text-transform:uppercase;letter-spacing:.08em;">Nachricht</p>
+        <p style="margin:0;color:#1A2B3C;font-size:14px;line-height:1.7;white-space:pre-wrap;">${esc(nachricht)}</p>
+      </div>
+
+      <p style="margin:0;font-size:12px;color:#8a96a3;">
+        Eingegangen am ${esc(now)} &middot; <a href="mailto:${esc(email)}" style="color:#C5A059;text-decoration:none;">Direkt antworten</a>
+      </p>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="background:#0f1520;padding:20px 40px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);">DMSKI Scrutor &middot; GetLeedz GmbH</p>
+      <p style="margin:0;font-size:10px;color:rgba(255,255,255,.25);">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen &middot; <a href="https://dmski.ch" style="color:rgba(197,160,89,.5);text-decoration:none;">dmski.ch</a></p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 
       const resend = new Resend(resendKey);
       await resend.emails.send({
         from: "DMSKI Scrutor <info@dmski.ch>",
-        to: ["info@dmski.ch", "ayhan.ergen@getleedz.com"],
+        to: ["info@dmski.ch"],
         replyTo: email,
         subject: `Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
         html: htmlBody,
@@ -152,7 +198,7 @@ router.get("/test-email", async (req, res) => {
     const resend = new Resend(resendKey);
     const result = await resend.emails.send({
       from: "DMSKI Scrutor <info@dmski.ch>",
-      to: ["info@dmski.ch", "ayhan.ergen@getleedz.com"],
+      to: ["info@dmski.ch"],
       subject: "DMSKI Test - E-Mail funktioniert!",
       html: "<h2 style='color:#1A2B3C'>Test erfolgreich!</h2><p>Resend API + dmski.ch Domain verifiziert. E-Mails werden jetzt zugestellt.</p>",
     });
