@@ -17,25 +17,7 @@
 
   <main class="page" style="display:none" id="dashboardMain">
 
-    <!-- ── TOP BAR ── -->
-    <header class="topbar">
-      <div class="brand-lockup">
-        <a href="/dashboard.html" class="brand-home-link" aria-label="Zur Startseite">
-          <img src="assets/logo-dmski.png" alt="DMSKI" class="header-logo" />
-        </a>
-      </div>
-      <nav style="display:flex;gap:.5rem;align-items:center">
-        <a href="/users.html" class="ghost" style="text-decoration:none;font-size:.875rem" title="Benutzerverwaltung">
-          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.2em" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2 17c0-3.314 3.582-5 8-5s8 1.686 8 5"/><path d="M16 7v4M18 9h-4"/></svg>
-          Benutzer
-        </a>
-        <a href="/profile.html" class="ghost" style="text-decoration:none;font-size:.875rem" title="Mein Profil">
-          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.2em"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          Profil
-        </a>
-        <button id="logoutBtn" class="ghost">Logout</button>
-      </nav>
-    </header>
+    <div id="site-nav"></div>
 
     <!-- ── WELCOME STRIP ── -->
     <div class="welcome-strip">
@@ -284,6 +266,7 @@
     </div>
   </div>
 
+  <script src="nav.js"></script>
   <script src="dashboard.js"></script>
   <script src="footer.js"></script>
   <script src="tos.js"></script>

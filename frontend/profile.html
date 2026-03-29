@@ -457,21 +457,7 @@
 
   <main class="page" style="display:none" id="profileMain">
 
-    <!-- TOP BAR -->
-    <header class="topbar">
-      <div class="brand-lockup">
-        <a href="/dashboard.html" class="brand-home-link" aria-label="Zur Startseite">
-          <img src="assets/logo-dmski.png" alt="DMSKI" class="header-logo" />
-        </a>
-      </div>
-      <nav style="display:flex;gap:.5rem;align-items:center">
-        <a href="/dashboard.html" class="ghost" style="text-decoration:none;font-size:.875rem">
-          <svg viewBox="0 0 20 20" fill="none" style="width:1em;height:1em;vertical-align:-.1em;margin-right:.2em"><path d="M3 10.5L10 4l7 6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h4v-4h2v4h4V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Dashboard
-        </a>
-        <button id="logoutBtn" class="ghost">Logout</button>
-      </nav>
-    </header>
+    <div id="site-nav"></div>
 
     <div class="profile-layout">
 
@@ -584,6 +570,7 @@
     <div id="site-footer"></div>
   </main>
 
+  <script src="nav.js"></script>
   <script src="profile.js"></script>
   <script src="footer.js"></script>
 </body>
