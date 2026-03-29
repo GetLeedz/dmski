@@ -60,50 +60,46 @@ function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
   return `<!DOCTYPE html>
 <html lang="de">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;padding:0;background:#0a0e17;font-family:'Helvetica Neue',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0e17;padding:40px 20px;">
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6f8;padding:40px 20px;">
 <tr><td>
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#1A2B3C;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4);">
-
-  <!-- Neon accent line -->
-  <tr><td style="height:2px;background:linear-gradient(90deg,transparent,#C5A059,#8b5cf6,#C5A059,transparent);font-size:0;line-height:0;">&nbsp;</td></tr>
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08);">
 
   <!-- Header -->
   <tr>
-    <td style="background:#1A2B3C;padding:36px 40px 28px;text-align:center;">
-      <span style="color:#C5A059;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">DMSKI SCRUTOR</span>
-      <p style="color:rgba(255,255,255,.45);font-size:12px;margin:6px 0 0;letter-spacing:.03em;">KI-gest&uuml;tzte forensische Fallanalyse</p>
+    <td style="background:#1A2B3C;padding:28px 40px;text-align:center;">
+      <span style="color:#C5A059;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">DMSKI SCRUTOR</span>
+      <p style="color:rgba(255,255,255,.5);font-size:11px;margin:5px 0 0;letter-spacing:.03em;">KI-gest&uuml;tzte forensische Fallanalyse</p>
     </td>
   </tr>
 
   <!-- Body -->
   <tr>
-    <td style="background:#ffffff;padding:36px 40px 32px;">
-      <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 22px;">${greeting}</p>
+    <td style="padding:36px 40px 32px;">
+      <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 24px;">${greeting}</p>
       ${bodyHtml}
       ${warningBlock}
       <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
-        <tr><td style="background:linear-gradient(150deg,#1A2B3C,#243447);border-radius:10px;text-align:center;">
-          <a href="${LOGIN_URL}" style="display:inline-block;padding:14px 40px;color:#F8F9FA;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:.03em;">Jetzt anmelden &rarr;</a>
+        <tr><td style="background:#1A2B3C;border-radius:10px;text-align:center;">
+          <a href="${LOGIN_URL}" style="display:inline-block;padding:14px 44px;color:#F8F9FA;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:.03em;">Jetzt anmelden &rarr;</a>
         </td></tr>
       </table>
-      <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0;">
-        Bei Fragen wenden Sie sich bitte an
-        <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;">info@dmski.ch</a>.
+      <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+        Bei Fragen: <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;">info@dmski.ch</a>
       </p>
     </td>
   </tr>
 
   <!-- Footer -->
   <tr>
-    <td style="background:#0f1520;padding:24px 40px;text-align:center;">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:rgba(255,255,255,.5);">DMSKI Scrutor &middot; GetLeedz GmbH</p>
-      <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,.3);">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen</p>
-      <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,.3);">
-        <a href="https://dmski.ch" style="color:rgba(197,160,89,.6);text-decoration:none;">dmski.ch</a>
-        &middot; <a href="mailto:info@dmski.ch" style="color:rgba(197,160,89,.6);text-decoration:none;">info@dmski.ch</a>
+    <td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI Scrutor &middot; GetLeedz GmbH</p>
+      <p style="margin:0 0 4px;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen &middot; Schweiz</p>
+      <p style="margin:0;font-size:11px;color:#6b7b8a;">
+        <a href="https://dmski.ch" style="color:#C5A059;text-decoration:none;">dmski.ch</a>
+        &middot; <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;">info@dmski.ch</a>
       </p>
-      <p style="margin:10px 0 0;font-size:10px;color:rgba(255,255,255,.2);">Diese E-Mail enth&auml;lt vertrauliche Zugangsdaten. Bitte nicht weiterleiten.</p>
+      <p style="margin:10px 0 0;font-size:10px;color:#a0adb8;">Vertraulich &middot; Bitte nicht weiterleiten</p>
     </td>
   </tr>
 
@@ -185,14 +181,14 @@ async function sendInviteReminderEmail(user) {
   const salutation = name ? ` ${esc(name)}` : "";
   const html = buildEmail({
     greeting: `Guten Tag${salutation},<br><br>
-      eine freundliche Erinnerung: Ihr Zugang zu DMSKI Scrutor ist eingerichtet und wartet auf Sie.
-      Melden Sie sich jetzt an, um Ihre forensische Fallanalyse zu starten.`,
+      Sie wurden zu DMSKI Scrutor eingeladen &ndash; Ihrer Plattform f&uuml;r KI-gest&uuml;tzte forensische Fallanalyse.<br><br>
+      Ihr Zugang ist eingerichtet. Melden Sie sich jetzt an und entdecken Sie, was unsere KI in Ihren Dokumenten findet.`,
     bodyHtml: inviteOnlyTable(user.email),
     showPwdChange: false,
   });
   await sendEmail({
     to: user.email,
-    subject: "DMSKI Scrutor – Erinnerung an Ihren Zugang",
+    subject: "Sie wurden zu DMSKI Scrutor eingeladen",
     html,
   });
 }
@@ -378,6 +374,11 @@ router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSel
     const userRes = await pool.query("SELECT * FROM users WHERE id = $1", [req.params.linkId]);
     const user = userRes.rows[0];
     if (!user) return res.status(404).json({ error: "Empfänger nicht gefunden." });
+
+    // Check if user has a password set
+    if (!user.password_hash) {
+      return res.status(400).json({ error: "Bitte setzen Sie zuerst ein Passwort für diesen Benutzer (Bearbeiten → Passwort generieren)." });
+    }
 
     await sendInviteReminderEmail(user);
     res.json({ ok: true, message: "Einladung erfolgreich versendet." });
