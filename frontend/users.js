@@ -288,7 +288,7 @@ async function handleSave() {
     }
 
     const payload = {
-        salutation: byId("edit-anrede").value,
+        salutation: (document.querySelector('input[name="edit-anrede"]:checked') || {}).value || "",
         first_name: byId("edit-vorname").value.trim(),
         last_name: byId("edit-nachname").value.trim(),
         email: byId("edit-email").value.trim(),
@@ -360,7 +360,7 @@ function openEditModal(id) {
 
     modalMode = "edit";
     currentEditId = id;
-    byId("edit-anrede").value = u.salutation || "";
+    document.querySelectorAll('input[name="edit-anrede"]').forEach(r => { r.checked = r.value === (u.salutation || ""); });
     byId("edit-vorname").value = u.firstName;
     byId("edit-nachname").value = u.lastName;
     byId("edit-email").value = u.email;
