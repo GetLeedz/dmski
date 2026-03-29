@@ -1988,7 +1988,7 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   return buildFallbackAnalysis({
     title: topTitle || fallback.title,
     author: topAuthor || topSender || fallback.author,
-    documentType: fallback.documentType || "Brief",
+    documentType: normalizeWhitespace(src.documentType || src.dokument_typ || "") || fallback.documentType || "",
     authoredDate: topDate || fallback.authoredDate,
     people: effectivePeople,
     disadvantagedPerson: fallback.disadvantagedPerson || "",
@@ -2120,6 +2120,28 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- GRUEN (+1 Positiv): Aufwertung, Rechtfertigung, Lob, Loesungsorientierung, Reflektion, gute Argumente, Stabilitaet, Empfehlung zugunsten dieser Partei.",
     "- ROT (+1 Negativ): Kritik, Fehlverhalten, mangelnde Flexibilitaet, Verweigerung, Nichteinhalten von Abmachungen.",
     "",
+    "### 2b. E-MAIL-ERKENNUNG:",
+    "Wenn das Dokument E-Mail-Header enthaelt (z.B. 'Von:', 'From:', 'Gesendet:', 'Sent:', 'An:', 'To:', 'Betreff:', 'Subject:', 'CC:', 'BCC:'):",
+    "- documentType MUSS 'E-Mail' sein (NICHT 'Chat', NICHT 'Brief').",
+    "- verfasser = Absender aus dem 'Von:'/'From:' Feld (nur Name, keine E-Mail-Adresse).",
+    "- datum = Datum aus 'Gesendet:'/'Sent:'/'Date:' Feld. Format: TT.MM.JJJJ oder wie angegeben.",
+    "- absender = Organisation/Institution des Absenders (z.B. 'Polizei Basel-Landschaft', 'KESB Leimental').",
+    "- Empfaenger aus 'An:'/'To:' als Person mit rolle 'Empfaenger' auffuehren.",
+    "- E-Mails sind KEINE Chats. Chats haben Sprechblasen und Messenger-UI-Elemente.",
+    "",
+    "### 2c. DOKUMENTTYP-KLASSIFIKATION:",
+    "Bestimme den documentType anhand des Inhalts:",
+    "- 'Verfuegung' = amtliche Anordnung einer Behoerde",
+    "- 'Superprovisorische Massnahme' = dringliche Massnahme ohne Anhoerung",
+    "- 'Brief' = formelles Schreiben (Briefkopf, Anrede, Grussformel)",
+    "- 'E-Mail' = elektronische Korrespondenz (Von/An/Betreff Header)",
+    "- 'Gutachten' = fachliche Beurteilung durch Experte",
+    "- 'Bericht' = Stellungnahme oder Bericht einer Fachstelle",
+    "- 'Protokoll' = Sitzungsprotokoll oder Aktennotiz",
+    "- 'Eingabe' = anwaltliche Eingabe ans Gericht",
+    "- 'Urteil' = Gerichtsentscheid",
+    "- 'Chat' = NUR bei Messenger-Dialogen (WhatsApp, SMS, Signal etc.)",
+    "",
     "### 3. FORENSISCHE REGELN:",
     "- Sei extrem kritisch: Wenn der Autor eine Partei nur lobt und die andere nur kritisiert, zaehle jeden einzelnen klaren Bewertungsunterschied.",
     "- Ignoriere neutrale Fakten, Adressen, reine Chronologie und Verfahrensgeschichte ohne Wertung.",
@@ -2127,7 +2149,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- Zaehle Kinder (z.B. Timur, Nael) als Personen im Dokument auf, aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
     "",
     "### 4. OUTPUT-STRUKTUR:",
-    "- TITEL, VERFASSER, DATUM, ABSENDER, PERSONEN extrahieren.",
+    "- TITEL, VERFASSER, DATUM, ABSENDER, PERSONEN, DOKUMENTTYP extrahieren.",
     "- ZUSAMMENFASSUNG: Beschreibe die psychologische Schieflage oder Ausgewogenheit in maximal 2 Saetzen.",
     "- DARSTELLUNG: Am Ende nur die nackten Summen fuer Fokus-Person und Gegenpartei.",
     "- Wenn ein Wert 0 ist, bleibt er 0.",
@@ -2137,8 +2159,9 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "{",
     '  "titel": "",',
     '  "verfasser": "",',
-    '  "datum": "",',
+    '  "datum": "TT.MM.JJJJ oder wie im Dokument angegeben",',
     '  "absender": "",',
+    '  "documentType": "Verfuegung|Brief|E-Mail|Gutachten|Bericht|Protokoll|Eingabe|Urteil|Superprovisorische Massnahme|Chat",',
     '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind"}],',
     '  "benachteiligte_person": {',
     '    "positiv": 0,',
@@ -2349,7 +2372,9 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
 
   const base64 = fileBuffer.toString("base64");
 
-  const isChatHint = /whats?app|chat|nachricht|dialog|sms|signal|telegram|screen|screenshot/i.test(String(originalName || "").toLowerCase());
+  // Only treat as chat if filename explicitly suggests messenger apps.
+  // "screenshot" alone is NOT a chat hint — screenshots of emails are common.
+  const isChatHint = /whats?app|chat|nachricht|dialog|sms|signal|telegram/i.test(String(originalName || "").toLowerCase());
 
   try {
     const response = await createChatCompletionWithFallback(client, {

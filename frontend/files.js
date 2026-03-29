@@ -1738,12 +1738,20 @@ function normalizeTitleText(text) {
 }
 
 function resolveDocumentTypeLabel(aiType, file) {
-  const normalized = normalizeTitleText(aiType).toLowerCase();
+  const normalized = normalizeTitleText(aiType).toLowerCase().replace(/ü/g, "ue");
   const map = {
     "chat": "Chat",
     "brief": "Brief",
     "e-mail": "E-Mail",
     "email": "E-Mail",
+    "verfuegung": "Verfügung",
+    "verfügung": "Verfügung",
+    "gutachten": "Gutachten",
+    "bericht": "Bericht",
+    "protokoll": "Protokoll",
+    "eingabe": "Eingabe",
+    "urteil": "Urteil",
+    "superprovisorische massnahme": "Superprov. Massnahme",
     "foto": "Foto",
     "film": "Film",
     "whatsapp": "Chat"
@@ -1753,9 +1761,14 @@ function resolveDocumentTypeLabel(aiType, file) {
     return map[normalized];
   }
 
+  // Check if AI returned a known type as part of a longer string
+  for (const [key, label] of Object.entries(map)) {
+    if (normalized.includes(key)) return label;
+  }
+
   const mime = String(file?.mime_type || "").toLowerCase();
   if (mime.includes("pdf")) {
-    return "Brief";
+    return "Dokument";
   }
   if (mime.startsWith("image/")) {
     return "Foto";
@@ -1764,7 +1777,7 @@ function resolveDocumentTypeLabel(aiType, file) {
     return "Film";
   }
 
-  return normalizeTitleText(aiType) || "Nicht erkannt";
+  return normalizeTitleText(aiType) || "Dokument";
 }
 
 function renderMentionDots(count, tone) {
