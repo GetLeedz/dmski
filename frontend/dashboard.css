@@ -4476,9 +4476,15 @@ select.case-edit-input {
   font-family: var(--font, "Inter"), system-ui, sans-serif;
 }
 
-.tactic-table col { display: none; } /* cols no longer used — grid handles widths */
+.tactic-table col { display: none; }
 
-.tactic-table thead,
+.tactic-table thead {
+  display: block;
+  width: 100%;
+  background: var(--navy, #1A2B3C);
+  border-bottom: 3px solid var(--gold, #C5A059);
+}
+
 .tactic-table tbody {
   display: block;
   width: 100%;
@@ -4495,20 +4501,20 @@ select.case-edit-input {
 
 /* ── Header cells ── */
 .tactic-table thead tr {
-  background: none;
-  border-bottom: none;
+  background: transparent;
+  border: none;
 }
 
 .tactic-table th {
   padding: 0.85rem 1.1rem;
   font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(26,43,60,0.6);
-  border-bottom: 2px solid rgba(26,43,60,0.1);
+  color: #F8F9FA;
+  border: none;
   text-align: left;
-  background: #f1f3f5;
+  background: transparent;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4644,8 +4650,11 @@ select.case-edit-input {
 #analysisReportTactics .tactic-table th {
   padding: 0.7rem 0.9rem;
   font-size: 0.6rem;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
+  color: #F8F9FA;
+  background: transparent;
+  border: none;
 }
 
 #analysisReportTactics .tactic-table td {
