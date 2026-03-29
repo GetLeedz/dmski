@@ -490,10 +490,10 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
   return { profileTitle, summary, legalTitle, legalNote, rows, pressure };
 }
 
-function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds) {
+function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds, tacticFileMap) {
   const profile = deriveTacticProfile(analysis, protectedPerson, opposingParty);
 
-  // Build compact doc ID list for the DOC-ID column
+  // Build compact doc ID list for the DOC-ID column (fallback for per-file view)
   let docRefList = [];
   if (Array.isArray(docIds)) {
     docRefList = docIds.map(id => escapeHtml(String(id)));
@@ -504,9 +504,17 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
   const tableRows = profile.rows.map(r => {
     const cls      = r.present ? "tactic-row-present" : "tactic-row-absent";
     const evidenceText = escapeHtml(r.evidence.replace(/^Indiz erkannt – ?|^Erkannt – ?|^Kein ausreichender Nachweis ?|^Kein Nachweis ?|^Leichte Tendenz erkannt ?/i, ""));
-    const docCell  = r.present && docRefList.length > 0
-      ? `<span class="tactic-doc-ids">${docRefList.join(", ")}</span>`
-      : (r.present ? "–" : "");
+
+    // Per-tactic file numbers: use tacticFileMap if available, otherwise fallback to docRefList
+    let docCell = "";
+    if (tacticFileMap && tacticFileMap.has(r.tactic)) {
+      const fileNums = tacticFileMap.get(r.tactic).map(id => escapeHtml(String(id)));
+      docCell = `<span class="tactic-doc-ids">${fileNums.join(", ")}</span>`;
+    } else if (r.present && docRefList.length > 0) {
+      docCell = `<span class="tactic-doc-ids">${docRefList.join(", ")}</span>`;
+    } else {
+      docCell = r.present ? "–" : "";
+    }
     const articlePart = r.article && r.article !== "–"
       ? `<span class="tactic-td-article">${escapeHtml(r.article)}</span>`
       : "";
@@ -1213,13 +1221,29 @@ async function refreshAnalysisReport(files = allFiles) {
         documentType: "",
         title: ""
       };
-      // Pass all document IDs from the dossier
-      const compactDocIds = fileList.map(f => compactDocId(f.id));
+
+      // Build per-tactic file number map: tactic name → [compact file IDs]
+      const tacticFileMap = new Map();
+      for (let i = 0; i < analyses.length; i++) {
+        const a = analyses[i];
+        if (!a || a.status === "auth-redirect") continue;
+        const fileDocId = compactDocId(fileList[i].id);
+        const fileProfile = deriveTacticProfile(a, currentCaseProtectedPerson, currentCaseOpposingParty);
+        for (const row of fileProfile.rows) {
+          if (row.present) {
+            if (!tacticFileMap.has(row.tactic)) tacticFileMap.set(row.tactic, []);
+            const arr = tacticFileMap.get(row.tactic);
+            if (!arr.includes(fileDocId)) arr.push(fileDocId);
+          }
+        }
+      }
+
       analysisReportTactics.innerHTML = renderTacticAnalysisBox(
         aggregateSynthesis,
         currentCaseProtectedPerson,
         currentCaseOpposingParty,
-        compactDocIds
+        null,
+        tacticFileMap
       );
     }
 
