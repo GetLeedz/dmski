@@ -2427,17 +2427,16 @@ async function loadRowAnalysis(file, options = {}) {
 
   box.innerHTML = `
     <div class="ai-scanning">
-      <div class="ai-scanning-visual">
-        <div class="ai-scanning-ring"></div>
-        <div class="ai-scanning-ring ai-scanning-ring--2"></div>
-        <div class="ai-scanning-core"></div>
-        <div class="ai-scanning-bars">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
+      <div class="ai-scanning-orb-wrap">
+        <img src="/assets/ai-orb.svg" alt="" class="ai-scanning-orb" />
+        <div class="ai-scanning-orb-glow"></div>
       </div>
       <div class="ai-scanning-text">
         <p class="ai-scanning-title">KI-Analyse läuft</p>
         <p class="ai-scanning-sub">Forensische Mustererkennung · Parteienanalyse · Rechtliche Einordnung</p>
+        <div class="ai-scanning-bars">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
       </div>
     </div>`;
   const analysis = await getDocumentAnalysis(file, options);
