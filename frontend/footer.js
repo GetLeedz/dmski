@@ -118,7 +118,16 @@
   const el = document.getElementById("site-footer");
   if (!el) return;
 
+  // Hide footer on dashboard/app pages (logged-in area)
+  const path = window.location.pathname;
+  const isAppPage = ["/dashboard.html", "/files.html", "/upload.html", "/users.html", "/profile.html"].some(p => path.endsWith(p));
+  if (isAppPage) {
+    el.style.display = "none";
+    return;
+  }
+
   const year = new Date().getFullYear();
+  const version = "1.0.0";
   el.innerHTML = `
     <footer class="dmski-footer" role="contentinfo">
       <div class="dmski-footer-inner">
@@ -148,7 +157,7 @@
 
       <div class="dmski-footer-bottom">
         <span>&copy; ${year} GetLeedz GmbH &nbsp;&middot;&nbsp; <a href="https://dmski.ch">dmski.ch</a></span>
-        <span class="dmski-footer-hosted">&#127464;&#127469; Daten in Zürich &nbsp;&middot;&nbsp; &#127466;&#127482; Server in Amsterdam</span>
+        <span class="dmski-footer-hosted">v${version} &nbsp;&middot;&nbsp; &#127464;&#127469; Daten in Zürich &nbsp;&middot;&nbsp; &#127466;&#127482; Server in Amsterdam</span>
       </div>
     </footer>
   `;

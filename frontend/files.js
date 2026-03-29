@@ -2445,6 +2445,13 @@ async function loadRowAnalysis(file, options = {}) {
     ? `${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}`
     : "";
 
+  // Fill doctype badge on preview side
+  const doctypeBadge = filesTableBody.querySelector(`.preview-doctype[data-file-id="${file.id}"]`);
+  if (doctypeBadge && resolvedDocType) {
+    doctypeBadge.textContent = resolvedDocType;
+    doctypeBadge.classList.add("is-visible");
+  }
+
   box.innerHTML = `
     <div class="queue-analysis">
       <div class="forensic-report">
@@ -2536,6 +2543,7 @@ function renderFiles(files) {
         <div class="preview-meta-row">
           <span class="file-icon ${fileType.className}">${fileType.label}</span>
           <span class="preview-size">${formatSizeKB(file.size_bytes)} KB</span>
+          <span class="preview-doctype" data-file-id="${file.id}"></span>
         </div>
       </td>
       <td class="analysis-cell">
