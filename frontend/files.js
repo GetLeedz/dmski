@@ -2528,7 +2528,13 @@ function renderFiles(files) {
         <div class="preview-topline">
           <div>
             <div class="preview-doc-id">File-ID: ${compactDocId(file.id)}</div>
+            <div class="preview-filename">${displayName}</div>
             <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
+            <div class="preview-meta-row">
+              <span class="file-icon ${fileType.className}">${fileType.label}</span>
+              <span class="preview-size">${formatSizeKB(file.size_bytes)} KB</span>
+              <span class="preview-doctype" data-file-id="${file.id}"></span>
+            </div>
           </div>
           <div class="row-actions">
             <button type="button" class="row-action-btn download" data-action="download" data-id="${file.id}" title="Herunterladen">
@@ -2544,12 +2550,6 @@ function renderFiles(files) {
           <button type="button" class="preview-zoom-btn" data-action="zoom" data-id="${file.id}" title="Vollbild öffnen (Zoom)" aria-label="Vergrössern">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
           </button>
-        </div>
-        <div class="preview-filename">${displayName}</div>
-        <div class="preview-meta-row">
-          <span class="file-icon ${fileType.className}">${fileType.label}</span>
-          <span class="preview-size">${formatSizeKB(file.size_bytes)} KB</span>
-          <span class="preview-doctype" data-file-id="${file.id}"></span>
         </div>
       </td>
       <td class="analysis-cell">
