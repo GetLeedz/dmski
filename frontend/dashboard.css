@@ -2835,11 +2835,13 @@ td {
 .row-preview-frame {
   width: 100%;
   max-width: 100%;
-  height: clamp(500px, 75vh, 1100px);
-  border: 1px solid rgba(26,43,60,0.1);
+  /* A4 ratio = 1:1.414 — use aspect-ratio with min/max height for responsiveness */
+  aspect-ratio: 210 / 297;
+  min-height: 500px;
+  max-height: 1200px;
+  border: 1px solid rgba(26,43,60,0.08);
   border-radius: var(--radius-md);
   background: #ffffff;
-  /* pointer-events intentionally NOT set – allows scrolling inside the PDF */
 }
 
 .row-preview-image {
@@ -5406,19 +5408,65 @@ select.case-edit-input {
 .files-panel {
   background: #f5f6f8;
   border-radius: var(--radius-lg);
-  padding: 1.2rem 1.3rem;
+  padding: 1.5rem 1.5rem;
   margin-top: 1.5rem;
 }
 
 .files-panel table {
-  margin-top: 0.8rem;
+  margin-top: 1rem;
 }
 
-/* ── Header: upload + filters ── */
+/* ── Header: upload + search ── */
 .fp-header {
   display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+}
+
+.fp-search-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 14rem;
+}
+
+.fp-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.05rem;
+  height: 1.05rem;
+  color: rgba(26,43,60,0.35);
+  pointer-events: none;
+}
+
+.fp-search {
+  width: 100%;
+  padding: 0.7rem 0.85rem 0.7rem 2.6rem;
+  border: 1px solid rgba(26,43,60,0.12);
+  border-radius: var(--radius-md);
+  background: #fff;
+  font-size: 0.88rem;
+  font-family: inherit;
+  color: var(--navy);
+}
+.fp-search:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(197,160,89,0.12);
+}
+.fp-search::placeholder {
+  color: rgba(26,43,60,0.38);
+}
+
+/* ── Filters row ── */
+.fp-filters-row {
+  display: flex;
   align-items: flex-end;
-  gap: 1.2rem;
+  justify-content: space-between;
+  gap: 1rem;
   flex-wrap: wrap;
   margin-bottom: 1rem;
 }
@@ -5556,7 +5604,8 @@ select.fp-input {
   background: rgba(26,43,60,0.08);
   color: var(--navy);
 }
-.fp-sort-btn.fp-sort-btn--active {
+.fp-sort-btn.fp-sort-btn--active,
+.fp-sort-btn.sort-dir-btn--active {
   background: var(--navy);
   color: #F8F9FA;
   border-radius: var(--radius-sm);

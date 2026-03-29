@@ -1534,20 +1534,22 @@ function updateSortUI() {
   const sortFileDescBtn   = document.getElementById("sortFileDescBtn");
 
   [sortUploadAscBtn, sortUploadDescBtn, sortFileAscBtn, sortFileDescBtn].forEach(btn => {
-    btn?.classList.remove("sort-dir-btn--active");
+    btn?.classList.remove("fp-sort-btn--active");
   });
 
   if (currentSortField === "uploadDate") {
-    (currentSortOrder === "asc" ? sortUploadAscBtn : sortUploadDescBtn)?.classList.add("sort-dir-btn--active");
+    (currentSortOrder === "asc" ? sortUploadAscBtn : sortUploadDescBtn)?.classList.add("fp-sort-btn--active");
   } else {
-    (currentSortOrder === "asc" ? sortFileAscBtn : sortFileDescBtn)?.classList.add("sort-dir-btn--active");
+    (currentSortOrder === "asc" ? sortFileAscBtn : sortFileDescBtn)?.classList.add("fp-sort-btn--active");
   }
 }
 
 function filterFiles(files) {
-  const type = String(fileTypeFilter.value || "all").toLowerCase();
+  const type = String(fileTypeFilter?.value || "all").toLowerCase();
   const fromDate = dateFromFilter.value ? new Date(`${dateFromFilter.value}T00:00:00`) : null;
   const toDate = dateToFilter?.value ? new Date(`${dateToFilter.value}T23:59:59`) : null;
+  const searchEl = document.getElementById("fileSearchInput");
+  const searchTerms = (searchEl?.value || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
 
   let result = files.filter((file) => {
     const fileType = resolveFileType(file).className;
@@ -1555,6 +1557,24 @@ function filterFiles(files) {
     if (type !== "all" && fileType !== type) return false;
     if (fromDate && uploadedAt < fromDate) return false;
     if (toDate && uploadedAt > toDate) return false;
+
+    // Text search across filename + cached analysis data
+    if (searchTerms.length > 0) {
+      const name = (file.original_name || "").toLowerCase();
+      const cached = analysisCache.get(file.id);
+      const haystack = [
+        name,
+        cached?.title || "",
+        cached?.author || "",
+        cached?.senderInstitution || "",
+        cached?.documentType || "",
+        cached?.authoredDate || "",
+        cached?.impactAssessment || "",
+        ...(cached?.people || []).map(p => typeof p === "string" ? p : (p?.name || "") + " " + (p?.affiliation || ""))
+      ].join(" ").toLowerCase();
+      if (!searchTerms.every(term => haystack.includes(term))) return false;
+    }
+
     return true;
   });
 
@@ -2963,8 +2983,20 @@ for (const element of [fileTypeFilter, dateFromFilter, dateToFilter].filter(Bool
   });
 }
 
+// Search input – debounced live search
+const fileSearchInput = document.getElementById("fileSearchInput");
+if (fileSearchInput) {
+  let searchTimer = null;
+  fileSearchInput.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      renderFiles(filterFiles(allFiles));
+    }, 250);
+  });
+}
+
 // Sort dir buttons – delegated handler covers all 4 ASC/DESC buttons
-document.querySelectorAll(".sort-dir-btn[data-sort-field]").forEach(btn => {
+document.querySelectorAll(".fp-sort-btn[data-sort-field]").forEach(btn => {
   btn.addEventListener("click", () => {
     currentSortField = btn.dataset.sortField;
     currentSortOrder = btn.dataset.sortOrder;
@@ -2978,7 +3010,7 @@ downloadAllFilesBtn?.addEventListener("click", () => void downloadAllFilesAsPdf(
 goToUploadBtnHero?.addEventListener("click", () => {
   window.location.href = "/upload.html";
 });
-goToUploadBtn.addEventListener("click", () => {
+goToUploadBtn?.addEventListener("click", () => {
   window.location.href = "/upload.html";
 });
 

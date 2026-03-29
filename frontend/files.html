@@ -52,23 +52,23 @@
       <!-- ── Files Panel (toolbar + table unified) ── -->
       <div class="files-panel">
 
-        <!-- Row 1: Upload + Filters -->
+        <!-- Row 1: Upload + Search -->
         <div class="fp-header">
           <button id="goToUploadBtnHero" type="button" class="fp-upload-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Files hochladen
           </button>
 
+          <select id="fileTypeFilter" class="fp-input" style="display:none"><option value="all">Alle</option></select>
+          <div class="fp-search-wrap">
+            <svg class="fp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="fileSearchInput" type="text" class="fp-search" placeholder="Files durchsuchen — Name, Verfasser, Personen, Inhalt…" />
+          </div>
+        </div>
+
+        <!-- Row 2: Filters + Sort -->
+        <div class="fp-filters-row">
           <div class="fp-filters">
-            <div class="fp-filter">
-              <label class="fp-label" for="fileTypeFilter">Typ</label>
-              <select id="fileTypeFilter" class="fp-input">
-                <option value="all">Alle</option>
-                <option value="pdf">PDF</option>
-                <option value="png">PNG</option>
-                <option value="jpg">JPG</option>
-              </select>
-            </div>
             <div class="fp-filter">
               <label class="fp-label" for="dateFromFilter">Upload ab</label>
               <input id="dateFromFilter" type="date" class="fp-input" />
@@ -78,10 +78,7 @@
               <input id="dateToFilter" type="date" class="fp-input" />
             </div>
           </div>
-        </div>
 
-        <!-- Row 2: Sort + Actions -->
-        <div class="fp-bar">
           <div class="fp-sort">
             <span class="fp-sort-label">Sortierung</span>
             <div class="fp-sort-group">
@@ -103,21 +100,18 @@
               </button>
             </div>
           </div>
+        </div>
 
-          <div class="fp-actions">
-            <button id="toggleMultiDeleteBtn" type="button" class="fp-action-btn fp-action--danger">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
-              Mehrere löschen
-            </button>
-            <button id="downloadAllFilesBtn" type="button" class="fp-action-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              PDF Download
-            </button>
-            <button id="goToUploadBtn" type="button" class="fp-action-btn fp-action--navy">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Files hochladen
-            </button>
-          </div>
+        <!-- Row 3: Actions -->
+        <div class="fp-actions">
+          <button id="toggleMultiDeleteBtn" type="button" class="fp-action-btn fp-action--danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
+            Mehrere löschen
+          </button>
+          <button id="downloadAllFilesBtn" type="button" class="fp-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download alle Files als PDF
+          </button>
         </div>
 
         <table>
