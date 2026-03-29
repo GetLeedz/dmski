@@ -5,6 +5,7 @@ const OpenAI = require("openai");
 const { Pool } = require("pg");
 const { createClient } = require("@supabase/supabase-js");
 const { requireAuth } = require("../middleware/auth");
+const { analyzeLegalDocument } = require("../services/analysisService");
 
 const router = express.Router();
 
@@ -3416,6 +3417,304 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     }
     console.error("Analyze file error:", err.message);
     return res.status(500).json({ error: "Dateianalyse konnte nicht geladen werden." });
+  }
+});
+
+/* ================================================================
+   FORENSIC ANALYSIS – Claude-powered deep document forensics
+   GET /:caseId/files/:fileId/forensic
+   GET /:caseId/forensic  (dossier-level: all files)
+   ================================================================ */
+
+let forensicStorageInitPromise = null;
+async function ensureForensicStorageTable() {
+  if (!forensicStorageInitPromise) {
+    forensicStorageInitPromise = pool.query(
+      `CREATE TABLE IF NOT EXISTS case_document_forensic (
+        document_id UUID PRIMARY KEY REFERENCES case_documents(id) ON DELETE CASCADE,
+        forensic_json JSONB NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`
+    ).catch((err) => {
+      console.warn("Could not create forensic storage table:", err.message);
+      forensicStorageInitPromise = null;
+    });
+  }
+  await forensicStorageInitPromise;
+}
+
+async function loadStoredForensic(documentId) {
+  try {
+    await ensureForensicStorageTable();
+    const result = await pool.query(
+      "SELECT forensic_json FROM case_document_forensic WHERE document_id = $1 LIMIT 1",
+      [documentId]
+    );
+    return result.rows[0]?.forensic_json || null;
+  } catch (err) {
+    console.warn("Load forensic warning:", err.message);
+    return null;
+  }
+}
+
+async function saveForensicAnalysis(documentId, forensic) {
+  try {
+    await ensureForensicStorageTable();
+    await pool.query(
+      `INSERT INTO case_document_forensic (document_id, forensic_json, updated_at)
+       VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
+       ON CONFLICT (document_id)
+       DO UPDATE SET forensic_json = EXCLUDED.forensic_json, updated_at = CURRENT_TIMESTAMP`,
+      [documentId, JSON.stringify(forensic)]
+    );
+  } catch (err) {
+    console.warn("Save forensic warning:", err.message);
+  }
+}
+
+// Single file forensic analysis
+router.get("/:caseId/files/:fileId/forensic", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  const fileId = String(req.params.fileId || "").trim();
+  const forceRefresh = ["1", "true", "yes"].includes(String(req.query.refresh || "").toLowerCase());
+
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT id, original_name, stored_name, mime_type FROM case_documents WHERE case_id = $1 AND id = $2 LIMIT 1",
+      [caseId, fileId]
+    );
+    const file = result.rows[0];
+    if (!file) {
+      return res.status(404).json({ error: "Datei nicht gefunden." });
+    }
+
+    // Check cache
+    if (!forceRefresh) {
+      const stored = await loadStoredForensic(file.id);
+      if (stored && typeof stored === "object" && stored.status === "ok") {
+        return res.json(stored);
+      }
+    }
+
+    // Only PDFs and images supported
+    const mimeType = String(file.mime_type || "");
+    if (!mimeType.includes("pdf") && !mimeType.startsWith("image/")) {
+      return res.json({
+        status: "unsupported",
+        score: 0,
+        findings: [],
+        fazit: "Forensische Analyse ist nur fuer PDF- und Bild-Dateien verfuegbar."
+      });
+    }
+
+    const fileBuffer = await downloadStorageFile(caseId, file.stored_name);
+    let extractedText = "";
+
+    if (mimeType.includes("pdf")) {
+      const pdfParse = getPdfParse();
+      const parsed = pdfParse ? await pdfParse(fileBuffer) : { text: "" };
+      const parsedText = String(parsed?.text || "");
+      const ocrText = shouldUsePdfOcrFallback(parsedText)
+        ? await extractTextFromPdfWithOcr(fileBuffer)
+        : "";
+      extractedText = pickBetterPdfText(parsedText, ocrText);
+    } else if (mimeType.startsWith("image/")) {
+      try {
+        const { createWorker } = require("tesseract.js");
+        const worker = await createWorker("deu");
+        const { data } = await worker.recognize(fileBuffer);
+        extractedText = data?.text || "";
+        await worker.terminate();
+      } catch (ocrErr) {
+        console.warn("OCR for forensic failed:", ocrErr.message);
+      }
+    }
+
+    if (!extractedText || !extractedText.trim()) {
+      const empty = {
+        status: "empty",
+        score: 0,
+        findings: [],
+        fazit: "Kein lesbarer Text im Dokument gefunden."
+      };
+      await saveForensicAnalysis(file.id, empty);
+      return res.json(empty);
+    }
+
+    const forensicResult = await analyzeLegalDocument(extractedText, {
+      documentTitle: file.original_name,
+      documentType: mimeType.includes("pdf") ? "PDF" : "Bild/OCR"
+    });
+
+    forensicResult.documentId = file.id;
+    forensicResult.fileName = file.original_name;
+    await saveForensicAnalysis(file.id, forensicResult);
+    return res.json(forensicResult);
+
+  } catch (err) {
+    if (Number(err?.statusCode || 0) === 404 || Number(err?.statusCode || 0) === 503) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error("Forensic analysis error:", err.message);
+    return res.status(500).json({ error: "Forensische Analyse konnte nicht durchgefuehrt werden." });
+  }
+});
+
+// Dossier-level forensic analysis (all files in a case)
+router.get("/:caseId/forensic", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+
+  try {
+    const filesResult = await pool.query(
+      "SELECT id, original_name, stored_name, mime_type FROM case_documents WHERE case_id = $1 ORDER BY uploaded_at ASC",
+      [caseId]
+    );
+    const files = filesResult.rows;
+    if (files.length === 0) {
+      return res.json({
+        caseId,
+        status: "empty",
+        totalScore: 0,
+        fileCount: 0,
+        files: [],
+        gesamtFazit: "Keine Dateien im Dossier."
+      });
+    }
+
+    const fileResults = [];
+    let totalScore = 0;
+    let analyzedCount = 0;
+    const allFindings = [];
+
+    for (const file of files) {
+      // Try cached first
+      let forensic = await loadStoredForensic(file.id);
+      if (forensic && forensic.status === "ok") {
+        fileResults.push({
+          fileId: file.id,
+          fileName: file.original_name,
+          score: forensic.score,
+          risikoStufe: forensic.risikoStufe,
+          findingsCount: (forensic.findings || []).length,
+          fazit: forensic.fazit
+        });
+        totalScore += forensic.score || 0;
+        analyzedCount++;
+        for (const f of (forensic.findings || [])) {
+          allFindings.push({ ...f, fileName: file.original_name });
+        }
+        continue;
+      }
+
+      // Not cached — analyze only PDFs
+      const mimeType = String(file.mime_type || "");
+      if (!mimeType.includes("pdf")) {
+        fileResults.push({
+          fileId: file.id,
+          fileName: file.original_name,
+          score: 0,
+          risikoStufe: "niedrig",
+          findingsCount: 0,
+          fazit: "Nur PDF-Analyse verfuegbar."
+        });
+        continue;
+      }
+
+      try {
+        const fileBuffer = await downloadStorageFile(caseId, file.stored_name);
+        const pdfParse = getPdfParse();
+        const parsed = pdfParse ? await pdfParse(fileBuffer) : { text: "" };
+        const parsedText = String(parsed?.text || "");
+        const ocrText = shouldUsePdfOcrFallback(parsedText)
+          ? await extractTextFromPdfWithOcr(fileBuffer)
+          : "";
+        const extractedText = pickBetterPdfText(parsedText, ocrText);
+
+        if (!extractedText || !extractedText.trim()) {
+          fileResults.push({
+            fileId: file.id,
+            fileName: file.original_name,
+            score: 0,
+            risikoStufe: "niedrig",
+            findingsCount: 0,
+            fazit: "Kein lesbarer Text."
+          });
+          continue;
+        }
+
+        const result = await analyzeLegalDocument(extractedText, {
+          documentTitle: file.original_name,
+          documentType: "PDF"
+        });
+        result.documentId = file.id;
+        result.fileName = file.original_name;
+        await saveForensicAnalysis(file.id, result);
+
+        fileResults.push({
+          fileId: file.id,
+          fileName: file.original_name,
+          score: result.score || 0,
+          risikoStufe: result.risikoStufe || "niedrig",
+          findingsCount: (result.findings || []).length,
+          fazit: result.fazit
+        });
+        totalScore += result.score || 0;
+        analyzedCount++;
+        for (const f of (result.findings || [])) {
+          allFindings.push({ ...f, fileName: file.original_name });
+        }
+      } catch (fileErr) {
+        console.warn(`Forensic skip ${file.original_name}:`, fileErr.message);
+        fileResults.push({
+          fileId: file.id,
+          fileName: file.original_name,
+          score: 0,
+          risikoStufe: "niedrig",
+          findingsCount: 0,
+          fazit: `Fehler: ${fileErr.message}`
+        });
+      }
+    }
+
+    // Sort findings by severity
+    const severityOrder = { kritisch: 0, hoch: 1, mittel: 2, niedrig: 3 };
+    allFindings.sort((a, b) => (severityOrder[a.schweregrad] || 3) - (severityOrder[b.schweregrad] || 3));
+
+    const avgScore = analyzedCount > 0 ? Math.round(totalScore / analyzedCount) : 0;
+    const kritischCount = allFindings.filter(f => f.schweregrad === "kritisch").length;
+    const hochCount = allFindings.filter(f => f.schweregrad === "hoch").length;
+
+    let gesamtRisiko = "niedrig";
+    if (avgScore >= 70 || kritischCount > 0) gesamtRisiko = "kritisch";
+    else if (avgScore >= 50 || hochCount >= 3) gesamtRisiko = "hoch";
+    else if (avgScore >= 25 || hochCount >= 1) gesamtRisiko = "mittel";
+
+    return res.json({
+      caseId,
+      status: "ok",
+      totalScore: avgScore,
+      gesamtRisiko,
+      fileCount: files.length,
+      analyzedCount,
+      findingsTotal: allFindings.length,
+      topFindings: allFindings.slice(0, 15),
+      files: fileResults,
+      gesamtFazit: analyzedCount === 0
+        ? "Keine Dateien konnten analysiert werden."
+        : `${analyzedCount} von ${files.length} Dateien forensisch analysiert. Durchschnittlicher Manipulationsrisiko-Score: ${avgScore}/100 (${gesamtRisiko}). ${allFindings.length} Auffaelligkeiten erkannt, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
+    });
+
+  } catch (err) {
+    console.error("Dossier forensic error:", err.message);
+    return res.status(500).json({ error: "Dossier-Forensik konnte nicht durchgefuehrt werden." });
   }
 });
 
