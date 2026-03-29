@@ -4495,8 +4495,8 @@ select.case-edit-input {
 
 /* ── Header cells ── */
 .tactic-table thead tr {
-  background: #f1f3f5;
-  border-bottom: 2px solid rgba(26,43,60,0.12);
+  background: none;
+  border-bottom: none;
 }
 
 .tactic-table th {
@@ -4506,9 +4506,9 @@ select.case-edit-input {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(26,43,60,0.6);
-  border-bottom: none;
+  border-bottom: 2px solid rgba(26,43,60,0.1);
   text-align: left;
-  background: transparent;
+  background: #f1f3f5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
