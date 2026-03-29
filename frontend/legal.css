@@ -1,102 +1,150 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
-  --bg: #F8F9FA;
-  --card: #ffffff;
-  --ink: #1A2B3C;
-  --line: #E2E8EF;
-  --accent: #1A2B3C;
+  --bg: #0a0e17;
+  --card: rgba(15, 22, 36, 0.75);
+  --ink: #e8edf4;
+  --ink-soft: #9aacbe;
+  --line: rgba(255,255,255,0.06);
+  --accent: #C5A059;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at 20% -10%, rgba(26, 43, 60, 0.06), transparent 40%), var(--bg);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-.legal-header {
+/* ── Top bar (same as login/zugang) ── */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
-  margin-bottom: 1.2rem;
+  justify-content: space-between;
+  padding: 0.8rem 2rem;
+  background: rgba(10,14,23,0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
-.legal-logo {
-  display: block;
-  height: 2.8rem;
-  width: auto;
-  object-fit: contain;
+.top-bar-logo img {
+  height: 1.95rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
 }
+
+.top-bar-nav {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.top-bar-link {
+  padding: 0.45rem 1.2rem;
+  border: 1px solid rgba(197,160,89,0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 150ms ease;
+}
+
+.top-bar-link:hover {
+  background: rgba(197,160,89,0.1);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.top-bar-link--subtle {
+  border-color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.55);
+}
+
+/* ── Legacy header (hidden, replaced by top-bar) ── */
+.legal-header { display: none; }
+.legal-logo { display: none; }
 
 .page {
-  max-width: 980px;
+  flex: 1;
+  max-width: 780px;
   margin: 0 auto;
-  padding: 1.2rem;
+  padding: 5.5rem 1.5rem 2rem;
+  width: 100%;
 }
 
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border-radius: 16px;
+  padding: 2rem 2.2rem;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(12px);
+  position: relative;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), #8b5cf6, var(--accent), transparent);
+  border-radius: 16px 16px 0 0;
 }
 
 h1 {
-  margin: 0 0 0.6rem;
-  font-size: clamp(1.4rem, 2.8vw, 2rem);
-  font-family: "Poppins", "Inter", system-ui, sans-serif;
-  letter-spacing: -.01em;
+  margin: 0 0 1rem;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff 40%, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 h2 {
-  margin: 1.2rem 0 0.5rem;
-  font-size: 1.05rem;
-  font-family: "Poppins", "Inter", system-ui, sans-serif;
-  letter-spacing: -.01em;
+  margin: 1.5rem 0 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.01em;
 }
 
-p,
-li {
-  line-height: 1.45;
+p, li {
+  line-height: 1.65;
+  color: var(--ink-soft);
 }
 
 ul {
-  margin: 0.4rem 0 0.8rem;
-  padding-left: 1.1rem;
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.2rem;
 }
 
 a {
   color: var(--accent);
+  text-decoration: none;
 }
 
-.dashboard-footer {
-  text-align: center;
-  color: #4d646e;
-  font-size: 0.82rem;
-  margin: 0.2rem 0 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+a:hover {
+  color: #fff;
 }
 
-.dashboard-footer a {
-  color: #1A2B3C;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-}
+/* Legacy footer styles (overridden by footer.js) */
+.dashboard-footer { display: none; }
 
-.dashboard-footer a:hover {
-  color: #C5A059;
-}
-
-.footer-sep {
-  opacity: 0.72;
+@media (max-width: 600px) {
+  .card { padding: 1.5rem 1.2rem; }
+  .top-bar { padding: 0.6rem 1rem; }
 }

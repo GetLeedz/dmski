@@ -148,7 +148,7 @@
       <div class="dmski-footer-inner">
         <div class="dmski-footer-brand">
           <img src="/assets/logo-dmski.png" alt="DMSKI" class="dmski-footer-logo" />
-          <p class="dmski-footer-tagline">Gerechtigkeit durch Mustererkennung.<br>KI-gestützte forensische Fallanalyse für Schweizer Recht.</p>
+          <p class="dmski-footer-tagline">DMSKI Scrutor<br>KI-gestützte forensische Fallanalyse.</p>
         </div>
 
         <div class="dmski-footer-col">
