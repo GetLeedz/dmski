@@ -7,6 +7,7 @@ const express = require("express");
 const authRouter = require("./routes/auth");
 const casesRouter = require("./routes/cases");
 const usersRouter = require("./routes/users");
+const contactRouter = require("./routes/contact");
 
 const app = express();
 const port = Number(process.env.PORT) || 8080;
@@ -49,6 +50,9 @@ app.use("/api/cases", casesRouter);
 
 app.use("/users", usersRouter);
 app.use("/api/users", usersRouter);
+
+app.use("/contact", contactRouter);
+app.use("/api/contact", contactRouter);
 
 // 404 Handler
 app.use((_req, res) => res.status(404).json({ error: "Route nicht gefunden." }));

@@ -153,6 +153,7 @@
 
         <div class="dmski-footer-col">
           <strong>Rechtliches</strong>
+          <a href="/zugang.html">Zugang anfragen</a>
           <a href="/impressum.html">Impressum</a>
           <a href="/datenschutz.html">Datenschutz</a>
           <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI – Zugang anfragen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <style>
+    .page { padding-top: 6rem; align-items: start; }
+
+    .zugang-hero {
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto 2.5rem;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .zugang-hero h1 {
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.8rem;
+      background: linear-gradient(135deg, #fff 40%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .zugang-hero p {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .zugang-card {
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 2.2rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(15,22,36,0.75);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 32px 64px rgba(0,0,0,0.4);
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .zugang-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), #8b5cf6, var(--accent), transparent);
+      border-radius: 20px 20px 0 0;
+    }
+
+    .zugang-card h2 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .zugang-card .card-kicker {
+      margin: 0 0 0.5rem;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.84rem;
+    }
+
+    .zugang-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .zugang-field label {
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .zugang-field input,
+    .zugang-field select,
+    .zugang-field textarea {
+      width: 100%;
+      padding: 0.78rem 0.95rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #f0f4f8;
+      font-family: inherit;
+      font-size: 0.92rem;
+      outline: none;
+      resize: vertical;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .zugang-field textarea { min-height: 100px; }
+
+    .zugang-field input:focus,
+    .zugang-field select:focus,
+    .zugang-field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(197,160,89,0.15);
+    }
+
+    .zugang-field input::placeholder,
+    .zugang-field textarea::placeholder {
+      color: rgba(255,255,255,0.22);
+    }
+
+    .zugang-field select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='white' opacity='.35'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.8rem center;
+      padding-right: 2rem;
+    }
+
+    .zugang-field select option {
+      background: #1a2030;
+      color: #f0f4f8;
+    }
+
+    .turnstile-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 0.3rem 0;
+    }
+
+    .zugang-submit {
+      margin-top: 0.3rem;
+      border: 0;
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      font-weight: 700;
+      font-size: 1rem;
+      font-family: inherit;
+      background: linear-gradient(150deg, var(--accent), var(--accent-strong));
+      color: #fff;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .zugang-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(197,160,89,0.3);
+    }
+
+    .zugang-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .zugang-msg {
+      min-height: 1.2rem;
+      font-size: 0.88rem;
+      text-align: center;
+    }
+    .zugang-msg.success { color: var(--ok); }
+    .zugang-msg.error { color: var(--error); }
+
+    .zugang-success {
+      text-align: center;
+      padding: 2rem 0;
+    }
+
+    .zugang-success-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .zugang-success h3 {
+      font-size: 1.3rem;
+      margin: 0 0 0.5rem;
+      color: var(--ok);
+    }
+
+    .zugang-success p {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      .zugang-card { padding: 1.8rem 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <a href="/" class="top-bar-logo">
+      <img src="assets/logo-dmski.png" alt="DMSKI" />
+    </a>
+    <nav style="display:flex;gap:1rem;align-items:center">
+      <a href="/zugang.html" class="top-bar-login" style="border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.6)">Zugang anfragen</a>
+      <a href="/" class="top-bar-login">Anmelden</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="ambient" aria-hidden="true">
+      <div class="shape shape-a"></div>
+      <div class="shape shape-b"></div>
+      <div class="shape shape-c"></div>
+    </section>
+
+    <div class="zugang-hero">
+      <h1>Zugang anfragen</h1>
+      <p>DMSKI ist eine geschlossene Plattform. Beschreiben Sie Ihren Fall und wir prüfen, ob wir Ihnen helfen können.</p>
+    </div>
+
+    <div class="zugang-card" id="zugangCard">
+      <h2>Anfrage senden</h2>
+      <p class="card-kicker">Alle Angaben werden vertraulich behandelt</p>
+
+      <form id="zugangForm" novalidate>
+        <div style="display:flex;flex-direction:column;gap:0.9rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="zugang-field">
+              <label for="zVorname">Vorname *</label>
+              <input id="zVorname" name="vorname" type="text" placeholder="Max" required />
+            </div>
+            <div class="zugang-field">
+              <label for="zNachname">Nachname *</label>
+              <input id="zNachname" name="nachname" type="text" placeholder="Muster" required />
+            </div>
+          </div>
+
+          <div class="zugang-field">
+            <label for="zEmail">E-Mail *</label>
+            <input id="zEmail" name="email" type="email" placeholder="max.muster@beispiel.ch" required />
+          </div>
+
+          <div class="zugang-field">
+            <label for="zTelefon">Telefon (optional)</label>
+            <input id="zTelefon" name="telefon" type="tel" placeholder="+41 79 000 00 00" />
+          </div>
+
+          <div class="zugang-field">
+            <label for="zRolle">Ihre Rolle *</label>
+            <select id="zRolle" name="rolle" required>
+              <option value="">Bitte wählen</option>
+              <option value="betroffene_person">Betroffene Person</option>
+              <option value="anwalt">Anwältin / Anwalt</option>
+              <option value="gutachter">Gutachter / Forensiker</option>
+              <option value="berater">Berater / Sozialarbeiter</option>
+              <option value="andere">Andere</option>
+            </select>
+          </div>
+
+          <div class="zugang-field">
+            <label for="zNachricht">Beschreibung Ihres Anliegens *</label>
+            <textarea id="zNachricht" name="nachricht" placeholder="Beschreiben Sie kurz Ihren Fall und wie DMSKI Ihnen helfen kann..." required></textarea>
+          </div>
+
+          <div class="turnstile-wrap">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAACxqY-MwQt4fHgbb" data-theme="dark"></div>
+          </div>
+
+          <button type="submit" class="zugang-submit" id="zugangSubmit">Anfrage absenden</button>
+          <p id="zugangMsg" class="zugang-msg" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script>
+    const API_BASE = "https://lively-reverence-production-def3.up.railway.app/api";
+
+    document.getElementById("zugangForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("zugangSubmit");
+      const msg = document.getElementById("zugangMsg");
+      const form = e.target;
+
+      const turnstileResponse = document.querySelector("[name='cf-turnstile-response']")?.value;
+      if (!turnstileResponse) {
+        msg.textContent = "Bitte bestätigen Sie, dass Sie kein Roboter sind.";
+        msg.className = "zugang-msg error";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Wird gesendet...";
+      msg.textContent = "";
+      msg.className = "zugang-msg";
+
+      try {
+        const res = await fetch(`${API_BASE}/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vorname: form.vorname.value.trim(),
+            nachname: form.nachname.value.trim(),
+            email: form.email.value.trim(),
+            telefon: form.telefon.value.trim(),
+            rolle: form.rolle.value,
+            nachricht: form.nachricht.value.trim(),
+            turnstileToken: turnstileResponse
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+          document.getElementById("zugangCard").innerHTML = `
+            <div class="zugang-success">
+              <div class="zugang-success-icon">&#10003;</div>
+              <h3>Anfrage gesendet</h3>
+              <p>Vielen Dank für Ihr Interesse. Wir melden uns innerhalb von 48 Stunden bei Ihnen.</p>
+            </div>`;
+        } else {
+          throw new Error(data.error || "Anfrage konnte nicht gesendet werden.");
+        }
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.className = "zugang-msg error";
+        btn.disabled = false;
+        btn.textContent = "Anfrage absenden";
+        if (window.turnstile) turnstile.reset();
+      }
+    });
+  </script>
+  <script src="footer.js"></script>
+</body>
+</html>
