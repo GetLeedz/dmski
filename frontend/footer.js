@@ -4,7 +4,7 @@
     #site-footer { margin-top: auto; }
 
     .dmski-footer {
-      background: linear-gradient(135deg, #0a3d42 0%, #0d5760 60%, #116b73 100%);
+      background: linear-gradient(135deg, #0f1e2b 0%, #1A2B3C 60%, #243447 100%);
       color: rgba(255,255,255,.82);
       font-family: inherit;
       padding: 2.8rem 1.5rem 0;
@@ -18,7 +18,7 @@
       grid-template-columns: 2fr 1fr 1fr;
       gap: 2.5rem;
       padding-bottom: 2.2rem;
-      border-bottom: 1px solid rgba(255,255,255,.12);
+      border-bottom: 1px solid rgba(197,160,89,.2);
     }
 
     @media (max-width: 680px) {
@@ -67,11 +67,11 @@
     .dmski-footer-col strong {
       display: block;
       font-size: .72rem;
-      letter-spacing: .06em;
+      letter-spacing: .08em;
       text-transform: uppercase;
-      color: rgba(255,255,255,.4);
+      color: rgba(197,160,89,.65);
       margin-bottom: .75rem;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .dmski-footer-col a {
@@ -124,7 +124,7 @@
       <div class="dmski-footer-inner">
         <div class="dmski-footer-brand">
           <img src="/assets/logo-dmski.png" alt="DMSKI" class="dmski-footer-logo" />
-          <p class="dmski-footer-tagline">KI-gestützte Fallanalyse<br>für Recht &amp; Beratung</p>
+          <p class="dmski-footer-tagline">Gerechtigkeit durch Mustererkennung.<br>KI-gestützte forensische Fallanalyse.</p>
           <div class="dmski-footer-ext">
             <a href="https://www.getleedz.com" target="_blank" rel="noopener noreferrer">getleedz.com</a>
             <a href="https://www.aikmu.ch" target="_blank" rel="noopener noreferrer">aikmu.ch</a>

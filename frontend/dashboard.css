@@ -2778,19 +2778,20 @@ td {
 
 .row-preview-frame {
   width: 100%;
-  max-width: 31.5rem;
-  aspect-ratio: 210 / 297;
-  border: 1px solid #ccd9df;
-  border-radius: var(--radius-sm);
+  max-width: 100%;
+  height: clamp(400px, 65vh, 900px);
+  border: 1px solid rgba(26,43,60,0.12);
+  border-radius: var(--radius-md);
   background: #ffffff;
   /* pointer-events intentionally NOT set – allows scrolling inside the PDF */
 }
 
 .row-preview-image {
   width: 100%;
-  max-width: 31.5rem;
-  aspect-ratio: 210 / 297;
-  border: 1px solid var(--border);
+  max-width: 100%;
+  max-height: clamp(400px, 65vh, 900px);
+  object-fit: contain;
+  border: 1px solid rgba(26,43,60,0.12);
   border-radius: var(--radius-sm);
   background: #ffffff;
   pointer-events: none;   /* images don't need interaction */
@@ -3421,6 +3422,7 @@ body.printing .analysis-report-head-actions { display: none !important; }
   .row-preview-empty,
   .row-preview-frame,
   .row-preview-image { width: 100%; }
+  .row-preview-frame { height: clamp(300px, 50vh, 600px); }
 }
 
 @media (max-width: 600px) {
