@@ -157,9 +157,8 @@
 
         <div class="dmski-footer-col">
           <strong>Plattform</strong>
-          <a href="/dashboard.html">Dashboard</a>
-          <a href="/profile.html">Mein Profil</a>
           <a href="/">Anmelden</a>
+          <a href="https://dmski.ch">dmski.ch</a>
         </div>
 
         <div class="dmski-footer-col">

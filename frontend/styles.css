@@ -21,15 +21,61 @@ body {
   font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg-top);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Top header bar ── */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 2rem;
+  background: rgba(10,14,23,0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.top-bar-logo img {
+  height: 1.6rem;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+.top-bar-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.2rem;
+  border: 1px solid rgba(197,160,89,0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 150ms ease;
+}
+
+.top-bar-login:hover {
+  background: rgba(197,160,89,0.1);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .page {
-  min-height: 100vh;
+  flex: 1;
   position: relative;
   overflow: hidden;
   display: grid;
   place-items: center;
-  padding: 1.5rem;
+  padding: 5rem 1.5rem 2rem;
 }
 
 /* ── Ambient background ── */
@@ -347,28 +393,7 @@ button[type="submit"]:disabled {
 .message.success { color: var(--ok); }
 .message.error { color: var(--error); }
 
-/* ── Footer ── */
-.site-footer {
-  position: absolute;
-  bottom: 1.2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  color: rgba(255,255,255,0.3);
-  font-size: 0.78rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.site-footer a {
-  color: rgba(197,160,89,0.6);
-  text-decoration: none;
-}
-
-.site-footer a:hover { color: var(--accent); }
-.footer-sep { opacity: 0.5; }
+/* Footer handled by footer.js */
 
 /* ── Animations ── */
 @keyframes rise-in {
@@ -386,10 +411,6 @@ button[type="submit"]:disabled {
   .login-shell { grid-template-columns: 1fr; }
   .brand-block { padding: 2.2rem 1.5rem; }
   .login-card { padding: 1.8rem 1.5rem; }
-  .site-footer {
-    position: static;
-    transform: none;
-    margin-top: 1.5rem;
-    text-align: center;
-  }
+  .top-bar { padding: 0.6rem 1rem; }
+  .top-bar-logo img { height: 1.3rem; }
 }
