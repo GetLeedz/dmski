@@ -2708,8 +2708,7 @@ td {
 
 .row-preview-box {
   width: 100%;
-  max-width: 31.5rem;
-  aspect-ratio: 210 / 297;
+  max-width: 100%;
 }
 
 .row-preview-loading,
@@ -2733,7 +2732,7 @@ td {
   position: relative;
   display: block;
   width: 100%;
-  max-width: 31.5rem;
+  max-width: 100%;
 }
 
 /* Magnify-glass button – bottom-right corner of the preview */
