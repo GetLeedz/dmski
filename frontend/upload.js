@@ -113,7 +113,7 @@ const copyrightYearEl = document.getElementById("copyrightYear");
 let pendingFiles = [];
 let isUploading = false;
 let totalUploadedCount = 0;
-let currentCaseProtectedLabel = "Benachteiligte Person";
+let currentCaseProtectedLabel = "Fokus-Partei";
 let currentCaseOpposingLabel = "Gegenpartei";
 let currentCaseProtectedKeywords = "";
 let currentCaseOpposingKeywords = "";
@@ -177,7 +177,7 @@ async function loadCasePartyLabels() {
       return;
     }
 
-    currentCaseProtectedLabel = "Benachteiligte Person";
+    currentCaseProtectedLabel = "Fokus-Partei";
     currentCaseOpposingLabel = "Gegenpartei";
     currentCaseProtectedKeywords = String(active?.protected_person_name || "").trim();
     currentCaseOpposingKeywords = String(active?.opposing_party || "").trim();

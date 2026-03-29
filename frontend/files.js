@@ -136,7 +136,7 @@ const selectedFileIds = new Set();
 let currentCaseProtectedKeywords = "";
 let currentCaseOpposingKeywords = "";
 let currentCaseProtectedPerson = "";
-let currentCaseProtectedLabel = "Benachteiligte Person";
+let currentCaseProtectedLabel = "Fokus-Partei";
 let currentCaseName = "";
 let currentCaseOpposingParty = "";
 let currentCaseOpposingLabel = "Gegenpartei";
@@ -434,7 +434,7 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
   const pressure = (protNeg + oppPos) - (protPos + oppNeg);
 
   const nameG = escapeHtml(opposingParty || "Gegenpartei");
-  const nameP = escapeHtml(protectedPerson || "benachteiligte Person");
+  const nameP = escapeHtml(protectedPerson || "Fokus-Partei");
 
   let profileTitle = "";
   let summary = "";
@@ -462,7 +462,7 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
     profileTitle = "Forensisches Profil: Selektive Darstellung mit Belastungstendenz";
     summary = `Die KI-Analyse erkennt <strong>gezielte Ablenkungsstrategien</strong> im vorliegenden Material. Sachfremde Informationen über ${nameP} werden eingebracht, um vom eigentlichen Verfahrensgegenstand abzulenken. Diese als <strong>Red-Herring-Taktik</strong> bekannte Methode setzt irrelevante Charakterinformationen – Lebensstil, vergangene Ereignisse, Drittmeinungen – ein, um Behörden oder Gericht zu beeinflussen, ohne sachliche Argumente vorzubringen.`;
     legalTitle = "Juristische Bewertung (KI als neutraler Rechtsbeobachter)";
-    legalNote = `Irrelevante Persönlichkeitsinformationen über die benachteiligte Person können gemäss Art. 152 ZPO formell gerügt werden. Das Gericht kann solche Ausführungen aus dem Recht weisen. Selektive Darstellungen können unter Art. 28 ZGB als Persönlichkeitsrechtsverletzung geprüft werden.`;
+    legalNote = `Irrelevante Persönlichkeitsinformationen über die Fokus-Partei können gemäss Art. 152 ZPO formell gerügt werden. Das Gericht kann solche Ausführungen aus dem Recht weisen. Selektive Darstellungen können unter Art. 28 ZGB als Persönlichkeitsrechtsverletzung geprüft werden.`;
     rows.push({ tactic: "Üble Nachrede", article: "Art. 173 StGB (CH)", present: protNeg >= 2, evidence: protNeg >= 2 ? "Indiz erkannt" : "Kein ausreichender Nachweis" });
     rows.push({ tactic: "Verletzung der Persönlichkeitsrechte", article: "Art. 28 ZGB (CH)", present: true, evidence: "Indiz erkannt – sachfremde Darstellung" });
     rows.push({ tactic: "Red-Herring-Argumentation", article: "Forensisch / ZPO Art. 152", present: true, evidence: "Erkannt – Ablenkung vom Verfahrensgegenstand" });
@@ -822,7 +822,7 @@ function formatNameLastFirst(raw) {
 function getSentimentLabel(sentiment) {
   if (sentiment === "positive")  return "Positiv gegenüber Betroffener";
   if (sentiment === "negative")  return "Negativ gegenüber Betroffener";
-  if (sentiment === "protected") return "Benachteiligte Person";
+  if (sentiment === "protected") return "Fokus-Partei";
   if (sentiment === "unknown")   return "Keine Daten – KI konnte Einordnung nicht bestimmen";
   return "Neutral / Sachlich";
 }
@@ -853,7 +853,7 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
 
   // 1. Is this the protected person?
   const protWords = protNorm.split(/[\s,]+/).filter(w => w.length > 2);
-  if (protWords.length > 0 && protWords.every(w => nameNorm.includes(w))) return "Benachteiligte Person";
+  if (protWords.length > 0 && protWords.every(w => nameNorm.includes(w))) return "Fokus-Partei";
 
   // 2. Is this the exact opposing party?
   const oppWords = oppNorm.split(/[\s,]+/).filter(w => w.length > 2);
@@ -1088,7 +1088,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
     `;
   }
 
-  // Sort: benachteiligte Person (protected) always at top
+  // Sort: Fokus-Partei (protected) always at top
   const protFirstWord = (normalizeTitleText(protectedPerson || "").toLowerCase().split(/[\s,]+/)[0] || "");
   const sorted = [...unique].sort((a, b) => {
     const aN = normalizeTitleText(a.name || "").toLowerCase();
@@ -1195,7 +1195,7 @@ function setAnalysisReportLoading() {
   );
   analysisReportGrid.innerHTML = [
     renderFileCountCard(allFiles.length || 0),
-    renderPartyReportCard("Benachteiligte Person", 0, 0),
+    renderPartyReportCard("Fokus-Partei", 0, 0),
     renderPartyReportCard("Gegenpartei", 0, 0)
   ].join("");
 }
@@ -1217,7 +1217,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(0),
-      renderPartyReportCard("Benachteiligte Person", 0, 0),
+      renderPartyReportCard("Fokus-Partei", 0, 0),
       renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
     return;
@@ -1290,7 +1290,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(fileCount),
-      renderPartyReportCard("Benachteiligte Person", protectedPositiveTotal, protectedNegativeTotal),
+      renderPartyReportCard("Fokus-Partei", protectedPositiveTotal, protectedNegativeTotal),
       renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
     ].join("");
 
@@ -1406,7 +1406,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(fileCount),
-      renderPartyReportCard("Benachteiligte Person", 0, 0),
+      renderPartyReportCard("Fokus-Partei", 0, 0),
       renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
   }
@@ -2470,9 +2470,9 @@ async function loadRowAnalysis(file, options = {}) {
 
   // Lawyer-style evidence text for per-document box
   const lawyerEvidenceMap = {
-    "Deutlich belastend": "Das vorliegende Dokument weist im Gesamtbild eine deutlich belastende Wirkung gegenüber der benachteiligten Person aus. Die Häufung negativer Aussagen ohne sachliche Notwendigkeit stellt aus anwaltlicher Sicht ein Indiz für eine gezielte Nachteilszufügung im Sinne von Art. 28 ZGB dar.",
+    "Deutlich belastend": "Das vorliegende Dokument weist im Gesamtbild eine deutlich belastende Wirkung gegenüber der Fokus-Partei aus. Die Häufung negativer Aussagen ohne sachliche Notwendigkeit stellt aus anwaltlicher Sicht ein Indiz für eine gezielte Nachteilszufügung im Sinne von Art. 28 ZGB dar.",
     "Leicht belastend": "Das Dokument zeigt eine leicht belastende Tendenz. Einzelne Formulierungen erscheinen nicht sachlich neutral und könnten als einseitige Darstellung gewertet werden. Eine Gesamtbetrachtung im Dossierkontext ist angezeigt.",
-    "Deutlich entlastend": "Das vorliegende Dokument enthält überwiegend sachlich konstruktive Aussagen. Aus rechtlicher Sicht erscheint das Dokument neutral bis günstig für die benachteiligte Person.",
+    "Deutlich entlastend": "Das vorliegende Dokument enthält überwiegend sachlich konstruktive Aussagen. Aus rechtlicher Sicht erscheint das Dokument neutral bis günstig für die Fokus-Partei.",
     "Leicht entlastend": "Das Dokument enthält tendenziell ausgewogene bis leicht positive Aussagen. Keine unmittelbaren Hinweise auf taktisch motivierte Negativdarstellungen erkennbar.",
     "Eher ausgewogen": "Das vorliegende Dokument erscheint im Wesentlichen sachlich ausgewogen. Kein eindeutiges Belastungsmuster erkennbar. Gesamtdossier-Betrachtung empfohlen."
   };
@@ -2791,7 +2791,7 @@ async function loadCaseContext() {
         : currentCaseId;
       parts.push(buildEditableField("is-meta is-case", "case_name", "Fallname", currentCaseName));
       parts.push(`<div class="case-person-field is-meta"><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">Fallnummer</span><span class="case-person-value">${escapeHtml(currentCaseId)}</span></div></div></div>`);
-      parts.push(buildEditableField("is-protected", "protected_person_name", "Benachteiligte Person", currentCaseProtectedPerson));
+      parts.push(buildEditableField("is-protected", "protected_person_name", "Fokus-Partei", currentCaseProtectedPerson));
       parts.push(buildEditableField("is-opposing", "opposing_party", "Gegenpartei", currentCaseOpposingParty));
       const regionLabel = currentCaseCountry === "Schweiz" ? "Kanton" : currentCaseCountry ? "Bundesland" : "Kanton / Bundesland";
       parts.push(buildEditableField("is-meta", "country", "Land", currentCaseCountry));
