@@ -545,17 +545,33 @@
         <!-- Section: Kontakt -->
         <div class="modal-section">
           <p class="modal-section-title">Kontaktdaten</p>
-          <div class="fg mb">
-            <label class="fl">Anrede</label>
-            <div class="anrede-radios">
-              <label class="anrede-radio">
-                <input type="radio" name="edit-anrede" value="Herr" />
-                <span>Herr</span>
-              </label>
-              <label class="anrede-radio">
-                <input type="radio" name="edit-anrede" value="Frau" />
-                <span>Frau</span>
-              </label>
+          <div class="two-col mb">
+            <div class="fg">
+              <label class="fl">Anrede</label>
+              <div class="anrede-radios">
+                <label class="anrede-radio">
+                  <input type="radio" name="edit-anrede" value="Herr" />
+                  <span>Herr</span>
+                </label>
+                <label class="anrede-radio">
+                  <input type="radio" name="edit-anrede" value="Frau" />
+                  <span>Frau</span>
+                </label>
+              </div>
+            </div>
+            <div class="fg">
+              <label class="fl" for="edit-titel">Titel</label>
+              <select id="edit-titel" class="fi fi-sel">
+                <option value="">Kein Titel</option>
+                <option value="Dr.">Dr.</option>
+                <option value="Dr. med.">Dr. med.</option>
+                <option value="Dr. iur.">Dr. iur.</option>
+                <option value="Prof.">Prof.</option>
+                <option value="Prof. Dr.">Prof. Dr.</option>
+                <option value="lic. iur.">lic. iur.</option>
+                <option value="MLaw">MLaw</option>
+                <option value="RA">RA</option>
+              </select>
             </div>
           </div>
           <div class="two-col mb">

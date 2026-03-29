@@ -144,13 +144,15 @@ function inviteOnlyTable(email) {
 
 function buildFormalGreeting(user) {
   const sal = (user.salutation || "").trim();
+  const title = (user.academic_title || "").trim();
   const lastName = (user.last_name || "").trim();
+  const titlePart = title ? ` ${esc(title)}` : "";
   if (sal && lastName) {
     return sal === "Frau"
-      ? `Sehr geehrte Frau ${esc(lastName)}`
-      : `Sehr geehrter Herr ${esc(lastName)}`;
+      ? `Sehr geehrte Frau${titlePart} ${esc(lastName)}`
+      : `Sehr geehrter Herr${titlePart} ${esc(lastName)}`;
   }
-  const name = [user.first_name, user.last_name].filter(Boolean).join(" ");
+  const name = [title, user.first_name, user.last_name].filter(Boolean).join(" ");
   return name ? `Guten Tag ${esc(name)}` : "Guten Tag";
 }
 
@@ -210,7 +212,7 @@ async function sendInviteReminderEmail(user) {
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, salutation, first_name, last_name, function_label,
+      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label,
               case_id, mobile, address, password_change_required, tos_accepted_at
        FROM users WHERE id = $1`,
       [req.user.sub]
@@ -277,7 +279,7 @@ router.patch("/me", requireAuth, async (req, res) => {
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, salutation, first_name, last_name, function_label, case_id, mobile
+      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile
        FROM users ORDER BY created_at DESC`
     );
     res.json({ users: result.rows });
@@ -290,7 +292,7 @@ router.get("/", requireAuth, requireAdmin, async (req, res) => {
 router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, salutation, first_name, last_name, function_label, case_id, mobile
+      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile
        FROM users WHERE role != 'admin' ORDER BY created_at DESC`
     );
     res.json({ users: result.rows });
@@ -338,7 +340,7 @@ router.post("/:adminId/users", requireAuth, requireAdmin, async (req, res) => {
 
 // PATCH /:userId – Benutzer bearbeiten
 router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
-  const { salutation, first_name, last_name, email, mobile, function_label, case_id, password } = req.body;
+  const { salutation, academic_title, first_name, last_name, email, mobile, function_label, case_id, password } = req.body;
   try {
     let result;
     if (password) {
@@ -347,18 +349,18 @@ router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, 
       }
       const password_hash = await bcrypt.hash(password, 12);
       result = await pool.query(
-        `UPDATE users SET salutation=$1, first_name=$2, last_name=$3, email=$4, mobile=$5, function_label=$6,
-                case_id=$7, password_hash=$8, password_change_required=true
-         WHERE id=$9
-         RETURNING id, email, role, salutation, first_name, last_name`,
-        [salutation || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, password_hash, req.params.userId]
+        `UPDATE users SET salutation=$1, academic_title=$2, first_name=$3, last_name=$4, email=$5, mobile=$6, function_label=$7,
+                case_id=$8, password_hash=$9, password_change_required=true
+         WHERE id=$10
+         RETURNING id, email, role, salutation, academic_title, first_name, last_name`,
+        [salutation || null, academic_title || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, password_hash, req.params.userId]
       );
     } else {
       result = await pool.query(
-        `UPDATE users SET salutation=$1, first_name=$2, last_name=$3, email=$4, mobile=$5, function_label=$6, case_id=$7
-         WHERE id=$8
-         RETURNING id, email, role, salutation, first_name, last_name`,
-        [salutation || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, req.params.userId]
+        `UPDATE users SET salutation=$1, academic_title=$2, first_name=$3, last_name=$4, email=$5, mobile=$6, function_label=$7, case_id=$8
+         WHERE id=$9
+         RETURNING id, email, role, salutation, academic_title, first_name, last_name`,
+        [salutation || null, academic_title || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, req.params.userId]
       );
     }
 

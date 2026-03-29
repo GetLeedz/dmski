@@ -107,6 +107,7 @@ function normalizeUser(raw) {
         id: raw.id,
         email: String(raw.email || ""),
         salutation: String(raw.salutation || ""),
+        academicTitle: String(raw.academic_title || ""),
         firstName: String(raw.first_name || ""),
         lastName: String(raw.last_name || ""),
         mobile: String(raw.mobile || ""),
@@ -148,7 +149,7 @@ function renderList(rows) {
     }
 
     el.innerHTML = rows.map((u) => {
-        const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
+        const name = [u.academicTitle, u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
         const initials = (u.firstName || u.email || "?")[0].toUpperCase();
         const roleClass = u.role === "collaborator" ? "badge badge--f" : "badge badge--k";
         const roleLabel = u.role === "collaborator" ? "Fachperson" : "Kunde";
@@ -289,6 +290,7 @@ async function handleSave() {
 
     const payload = {
         salutation: (document.querySelector('input[name="edit-anrede"]:checked') || {}).value || "",
+        academic_title: byId("edit-titel").value,
         first_name: byId("edit-vorname").value.trim(),
         last_name: byId("edit-nachname").value.trim(),
         email: byId("edit-email").value.trim(),
@@ -361,6 +363,7 @@ function openEditModal(id) {
     modalMode = "edit";
     currentEditId = id;
     document.querySelectorAll('input[name="edit-anrede"]').forEach(r => { r.checked = r.value === (u.salutation || ""); });
+    byId("edit-titel").value = u.academicTitle || "";
     byId("edit-vorname").value = u.firstName;
     byId("edit-nachname").value = u.lastName;
     byId("edit-email").value = u.email;
