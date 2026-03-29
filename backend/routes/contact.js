@@ -9,21 +9,19 @@ const RECIPIENT = process.env.CONTACT_RECIPIENT || "ayhan.ergen@getleedz.com";
 function createMailTransport() {
   const smtpUser = process.env.SMTP_USER || "info@dmski.ch";
   const smtpPass = process.env.SMTP_PASS || "";
-  const config = {
+  console.log(`[contact] SMTP config: user=${smtpUser}, pass=${smtpPass ? "***set***" : "EMPTY"}, host=asmtp.mail.hostpoint.ch:465`);
+  return nodemailer.createTransport({
     host: "asmtp.mail.hostpoint.ch",
     port: 465,
     secure: true,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-  };
-  // Hostpoint allows auth with just username (password can be empty)
-  if (smtpPass) {
-    config.auth = { user: smtpUser, pass: smtpPass };
-  } else {
-    config.auth = { user: smtpUser, pass: process.env.SMTP_ACCOUNT_PASS || "SEtdoCtv*OGS1p%!" };
-  }
-  return nodemailer.createTransport(config);
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
 }
 
 function esc(str) {
@@ -118,8 +116,8 @@ router.post("/", async (req, res) => {
     console.log(`[contact] Zugangsanfrage von ${email} (${rolleLabel})`);
     return res.json({ ok: true, message: "Anfrage erfolgreich gesendet." });
   } catch (err) {
-    console.error("[contact] Mail send error:", err.message);
-    return res.status(500).json({ error: "E-Mail konnte nicht gesendet werden. Bitte versuchen Sie es später erneut." });
+    console.error("[contact] Mail send error:", err.message, err.code, err.responseCode);
+    return res.status(500).json({ error: `E-Mail konnte nicht gesendet werden: ${err.message}` });
   }
 });
 
