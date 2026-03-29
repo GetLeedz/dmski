@@ -5401,8 +5401,217 @@ select.case-edit-input {
 }
 
 /* ================================================================
-   FILES TOOLBAR – modern, borderless, airy
+   FILES PANEL – unified toolbar + table wrapper
    ================================================================ */
+.files-panel {
+  background: #f5f6f8;
+  border-radius: var(--radius-lg);
+  padding: 1.2rem 1.3rem;
+  margin-top: 1.5rem;
+}
+
+.files-panel table {
+  margin-top: 0.8rem;
+}
+
+/* ── Header: upload + filters ── */
+.fp-header {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.fp-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.8rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(150deg, var(--navy), #243447);
+  color: #F8F9FA;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 3px 12px rgba(26,43,60,0.2);
+  flex-shrink: 0;
+}
+.fp-upload-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(26,43,60,0.28);
+}
+.fp-upload-btn svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: var(--gold);
+}
+
+.fp-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.fp-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.fp-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(26,43,60,0.55);
+}
+
+.fp-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(26,43,60,0.15);
+  border-radius: var(--radius-md);
+  background: #fff;
+  font-size: 0.84rem;
+  font-family: inherit;
+  color: var(--navy);
+  min-width: 6.5rem;
+}
+.fp-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+select.fp-input {
+  cursor: pointer;
+  padding-right: 1.8rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%231A2B3C' opacity='.4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+}
+
+/* ── Bar: sort + actions ── */
+.fp-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(26,43,60,0.06);
+}
+
+.fp-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.fp-sort-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(26,43,60,0.55);
+}
+
+.fp-sort-group {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.fp-sort-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-right: 0.25rem;
+}
+
+.fp-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(26,43,60,0.35);
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+.fp-sort-btn svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+.fp-sort-btn:hover {
+  background: rgba(26,43,60,0.08);
+  color: var(--navy);
+}
+.fp-sort-btn.fp-sort-btn--active {
+  background: var(--navy);
+  color: #F8F9FA;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Action buttons ── */
+.fp-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.fp-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--navy);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.fp-action-btn svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+}
+.fp-action-btn:hover {
+  background: rgba(26,43,60,0.06);
+}
+
+.fp-action--danger {
+  color: #b91c1c;
+}
+.fp-action--danger:hover {
+  background: rgba(185,28,28,0.06);
+}
+
+.fp-action--navy {
+  background: var(--navy);
+  color: #F8F9FA;
+}
+.fp-action--navy:hover {
+  background: #243447;
+}
+.fp-action--navy svg {
+  stroke: var(--gold);
+}
+
+/* Legacy .files-toolbar kept */
 .files-toolbar {
   display: flex;
   flex-direction: column;
