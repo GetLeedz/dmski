@@ -447,4 +447,18 @@ if (countrySelect instanceof HTMLSelectElement && regionSelect instanceof HTMLSe
 }
 
 if (copyrightYearEl) copyrightYearEl.textContent = String(new Date().getFullYear());
+
+// Hide "Neuen Fall anlegen" for Team members (collaborators)
+const role = sessionStorage.getItem("dmski_role") || "customer";
+if (role === "collaborator") {
+  const newCaseCard = document.querySelector(".card-new-case");
+  if (newCaseCard) newCaseCard.style.display = "none";
+  // Make open-case card full width
+  const openCaseCard = document.querySelector(".card-open-case");
+  if (openCaseCard) openCaseCard.style.gridColumn = "1 / -1";
+  // Hide welcome strip mentioning "Fall anlegen"
+  const welcomeStrip = document.querySelector(".welcome-strip");
+  if (welcomeStrip) welcomeStrip.style.display = "none";
+}
+
 loadCasesList();

@@ -3205,8 +3205,26 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/", requireAuth, async (_req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
+    const userRole = req.user.role;
+
+    // Team members (collaborators) only see their assigned case
+    if (userRole === "collaborator") {
+      const userRes = await pool.query("SELECT case_id FROM users WHERE id = $1", [req.user.sub]);
+      const assignedCaseId = userRes.rows[0]?.case_id;
+      if (!assignedCaseId) {
+        return res.json({ cases: [] });
+      }
+      await ensureCaseOptionalColumns();
+      const caseRes = await pool.query(
+        "SELECT id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city, created_at FROM cases WHERE id = $1",
+        [assignedCaseId]
+      );
+      return res.json({ cases: caseRes.rows });
+    }
+
+    // Admin and Customer see all cases
     const cases = await listCasesCompat();
     return res.json({ cases });
   } catch (err) {
