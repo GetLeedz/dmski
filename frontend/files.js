@@ -2457,7 +2457,7 @@ async function loadRowAnalysis(file, options = {}) {
       <div class="forensic-report">
         <div class="forensic-report-head">
           <div class="forensic-head-left">
-            <span class="forensic-title">Forensischer Bericht</span>
+            <span class="forensic-title">KI-Analyse</span>
           </div>
           <div class="qa-chip-row">
             ${resolvedDocType ? `<span class="qa-tag">${escapeHtml(resolvedDocType)}</span>` : ""}
@@ -2526,13 +2526,19 @@ function renderFiles(files) {
       <td class="${checkboxClass}"><input type="checkbox" class="file-checkbox" data-file-id="${file.id}" ${isSelected ? "checked" : ""} /></td>
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
         <div class="preview-topline">
-          <div class="preview-doc-id">File-ID: ${compactDocId(file.id)}</div>
+          <div>
+            <div class="preview-doc-id">File-ID: ${compactDocId(file.id)}</div>
+            <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
+          </div>
           <div class="row-actions">
-            <button type="button" class="btn-inline download" data-action="download" data-id="${file.id}">DOWNLOAD</button>
-            <button type="button" class="btn-inline delete" data-action="delete" data-id="${file.id}">Löschen</button>
+            <button type="button" class="row-action-btn download" data-action="download" data-id="${file.id}" title="Herunterladen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button type="button" class="row-action-btn delete" data-action="delete" data-id="${file.id}" title="Löschen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
+            </button>
           </div>
         </div>
-        <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
         <div class="row-preview-box-wrap">
           <div class="row-preview-box" data-file-id="${file.id}"><div class="row-preview-loading"><span class="spinner spinner--preview" aria-label="Vorschau wird geladen"></span></div></div>
           <button type="button" class="preview-zoom-btn" data-action="zoom" data-id="${file.id}" title="Vollbild öffnen (Zoom)" aria-label="Vergrössern">
@@ -2548,9 +2554,9 @@ function renderFiles(files) {
       </td>
       <td class="analysis-cell">
         <div class="analysis-cell-top">
-          <button type="button" class="btn-inline icon-only" data-action="refresh-analysis" data-id="${file.id}" title="Analyse neu laden" aria-label="Analyse neu laden">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 4a8 8 0 0 1 7.75 6h-2.2A6 6 0 1 0 16.2 16l-2.2-2.2H20v6l-2.35-2.35A8 8 0 1 1 12 4z" />
+          <button type="button" class="row-action-btn refresh" data-action="refresh-analysis" data-id="${file.id}" title="Analyse neu laden" aria-label="Analyse neu laden">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
             </svg>
           </button>
         </div>

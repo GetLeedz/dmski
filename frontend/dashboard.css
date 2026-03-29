@@ -1295,8 +1295,8 @@ a.ghost:hover {
 
 .qa-tag {
   display: inline-block;
-  background: var(--accent);
-  color: #fff;
+  background: var(--navy);
+  color: #F8F9FA;
   font-size: 0.73rem;
   font-weight: 700;
   border-radius: 999px;
@@ -1795,8 +1795,8 @@ a.ghost:hover {
 
 .qa-tag {
   display: inline-block;
-  background: var(--accent);
-  color: #fff;
+  background: var(--navy);
+  color: #F8F9FA;
   font-size: 0.73rem;
   font-weight: 700;
   border-radius: 999px;
@@ -2575,6 +2575,44 @@ td {
   color: var(--gold-2);
 }
 
+/* ── Modern row action buttons (icon-only) ── */
+.row-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(26,43,60,0.12);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: rgba(26,43,60,0.45);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.row-action-btn svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.row-action-btn:hover {
+  background: #f5f6f8;
+  color: var(--navy);
+  border-color: rgba(26,43,60,0.2);
+}
+.row-action-btn.delete:hover {
+  color: #c0392b;
+  border-color: rgba(192,57,43,0.25);
+  background: rgba(192,57,43,0.04);
+}
+.row-action-btn.refresh {
+  border: none;
+  background: transparent;
+}
+.row-action-btn.refresh:hover {
+  background: rgba(26,43,60,0.06);
+  color: var(--navy);
+}
+
 /* ================================================================
    FILE TYPE BADGES
    ================================================================ */
@@ -2605,6 +2643,7 @@ td {
   flex-wrap: wrap;
 }
 
+/* Legacy btn-inline kept for backwards compat */
 .btn-inline {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
@@ -2858,8 +2897,8 @@ td {
 
 .analysis-cell-top {
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 0.45rem;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
 }
 
 .analysis-box {
@@ -3713,13 +3752,13 @@ body.printing .analysis-report-head-actions { display: none !important; }
 }
 
 .qa-stat.is-positive {
-  background: #f8f9fa;
-  border: 1.5px solid #d1e8d8;
+  background: rgba(22,163,74,0.04);
+  border: 1px solid rgba(22,163,74,0.15);
 }
 
 .qa-stat.is-negative {
-  background: #fef2f2;
-  border: 1.5px solid #fca5a5;
+  background: rgba(220,38,38,0.03);
+  border: 1px solid rgba(220,38,38,0.15);
 }
 
 .qa-stat-num {
@@ -3927,16 +3966,16 @@ select.case-edit-input {
 
 .forensic-title {
   font-size: 1rem;
-  font-weight: 800;
-  color: #0b4d57;
+  font-weight: 700;
+  color: var(--navy);
   letter-spacing: -0.01em;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: inherit;
 }
 
 .forensic-subtitle {
   font-size: 0.72rem;
-  color: #56727e;
-  font-family: "Inter", system-ui, sans-serif;
+  color: rgba(26,43,60,0.5);
+  font-family: inherit;
 }
 
 .forensic-fields-grid {
@@ -3954,41 +3993,41 @@ select.case-edit-input {
 .forensic-field.is-full { grid-column: 1 / -1; }
 
 .forensic-field-label {
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6e8a97;
-  font-family: "Inter", system-ui, sans-serif;
+  color: rgba(26,43,60,0.45);
+  font-family: inherit;
 }
 
 .forensic-field-value {
-  font-size: 0.83rem;
+  font-size: 0.84rem;
   font-weight: 500;
-  color: #1f3e4a;
-  line-height: 1.38;
-  font-family: "Inter", system-ui, sans-serif;
+  color: var(--navy);
+  line-height: 1.4;
+  font-family: inherit;
 }
 
 .forensic-persons-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  padding: 0.45rem 0;
-  border-top: 1px dashed #c9dbe1;
-  border-bottom: 1px dashed #c9dbe1;
+  gap: 0.35rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(26,43,60,0.06);
+  border-bottom: none;
 }
 
 .forensic-person-chip {
   display: inline-block;
-  padding: 0.18rem 0.62rem;
+  padding: 0.2rem 0.65rem;
   border-radius: 999px;
-  background: #f0f7f9;
-  border: 1px solid #c5dae0;
+  background: #f5f6f8;
+  border: 1px solid rgba(26,43,60,0.1);
   font-size: 0.76rem;
   font-weight: 600;
-  color: #1b4756;
-  font-family: "Inter", system-ui, sans-serif;
+  color: var(--navy);
+  font-family: inherit;
 }
 
 .forensic-fazit {
@@ -5065,8 +5104,8 @@ select.case-edit-input {
 /* ── Per-document evidence box ── */
 .doc-evidence-box {
   margin-top: 0.75rem;
-  padding: 0.7rem 0.9rem;
-  border-radius: 12px;
+  padding: 0.75rem 0.95rem;
+  border-radius: var(--radius-md);
   border: 1.5px solid #d4e4ea;
   background: rgba(255,255,255,0.75);
   display: flex;
@@ -5075,18 +5114,18 @@ select.case-edit-input {
 }
 
 .doc-ev-label {
-  font-size: 0.6rem;
-  font-weight: 800;
+  font-size: 0.62rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #6e8a97;
+  color: rgba(26,43,60,0.45);
 }
 
 .doc-ev-verdict {
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 700;
   line-height: 1.2;
-  color: #153f4b;
+  color: var(--navy);
 }
 
 .doc-ev-text {
