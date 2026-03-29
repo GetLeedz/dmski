@@ -3141,3 +3141,170 @@ void loadCaseContext().then(() => {
   loadFiles();
 });
 
+/* ================================================================
+   FORENSIC SCAN – Claude KI-Tiefenanalyse
+   ================================================================ */
+(function initForensicScan() {
+  const scanBtn = document.getElementById("startForensicScanBtn");
+  const progressWrap = document.getElementById("forensicProgress");
+  const progressFill = document.getElementById("forensicProgressFill");
+  const progressText = document.getElementById("forensicProgressText");
+  const resultsWrap = document.getElementById("forensicResults");
+  if (!scanBtn) return;
+
+  function setProgress(pct, text) {
+    if (progressWrap) progressWrap.classList.remove("hidden");
+    if (progressFill) progressFill.style.width = `${pct}%`;
+    if (progressText) progressText.textContent = text;
+  }
+
+  function riskClass(level) {
+    if (level === "kritisch") return "is-kritisch";
+    if (level === "hoch") return "is-hoch";
+    if (level === "mittel") return "is-mittel";
+    return "is-niedrig";
+  }
+
+  function renderForensicResults(data) {
+    if (!resultsWrap) return;
+    const crossDoc = data.crossDoc || {};
+    const widersprueche = crossDoc.widersprueche || [];
+    const muster = crossDoc.muster || [];
+    const findings = data.topFindings || [];
+
+    let html = "";
+
+    // Score cards row
+    html += `<div class="forensic-score-row">
+      <div class="forensic-score-card">
+        <span class="forensic-score-card-label">Einzeldokument-Score</span>
+        <span class="forensic-score-card-value ${riskClass(data.gesamtRisiko)}">${data.totalScore}/100</span>
+      </div>`;
+    if (data.crossDocScore != null) {
+      html += `<div class="forensic-score-card">
+        <span class="forensic-score-card-label">Kreuzanalyse-Score</span>
+        <span class="forensic-score-card-value ${riskClass(crossDoc.gesamtRisiko || data.gesamtRisiko)}">${data.crossDocScore}/100</span>
+      </div>`;
+    }
+    html += `<div class="forensic-score-card">
+        <span class="forensic-score-card-label">Gesamt-Risiko</span>
+        <span class="forensic-score-card-value ${riskClass(data.gesamtRisiko)}">${(data.combinedScore || data.totalScore)}/100</span>
+        <span class="forensic-risk-badge ${riskClass(data.gesamtRisiko)}">${escapeHtml(data.gesamtRisiko || "niedrig")}</span>
+      </div>
+      <div class="forensic-score-card">
+        <span class="forensic-score-card-label">Analysiert</span>
+        <span class="forensic-score-card-value">${data.analyzedCount}/${data.fileCount}</span>
+      </div>
+    </div>`;
+
+    // Fazit
+    html += `<div class="forensic-fazit">${escapeHtml(data.gesamtFazit || "")}</div>`;
+
+    // Cross-doc contradictions
+    if (widersprueche.length > 0) {
+      html += `<h4 class="forensic-contradictions-title">Dokumentuebergreifende Widersprueche (${widersprueche.length})</h4>`;
+      for (const w of widersprueche) {
+        html += `<div class="forensic-contradiction">
+          <div class="forensic-contradiction-header">
+            <span>Widerspruch</span>
+            <span class="forensic-risk-badge ${riskClass(w.schweregrad)}">${escapeHtml(w.schweregrad)}</span>
+          </div>
+          <div class="forensic-contradiction-body">
+            <div class="forensic-contradiction-docs">
+              <div class="forensic-contradiction-doc">
+                <span class="forensic-contradiction-doc-name">${escapeHtml(w.dokument_a)}</span>
+                ${escapeHtml(w.aussage_a)}
+              </div>
+              <div class="forensic-contradiction-vs">VS</div>
+              <div class="forensic-contradiction-doc">
+                <span class="forensic-contradiction-doc-name">${escapeHtml(w.dokument_b)}</span>
+                ${escapeHtml(w.aussage_b)}
+              </div>
+            </div>
+            <p class="forensic-contradiction-analyse">${escapeHtml(w.analyse)}</p>
+          </div>
+        </div>`;
+      }
+    }
+
+    // Patterns
+    if (muster.length > 0) {
+      html += `<h4 class="forensic-patterns-title">Erkannte Muster (${muster.length})</h4>`;
+      for (const m of muster) {
+        const typeLabels = {
+          systematische_negativdarstellung: "Systematische Negativdarstellung",
+          eskalation: "Eskalationsmuster",
+          koordination: "Koordinierte Strategie",
+          fehlende_gegendarstellung: "Fehlende Gegendarstellung",
+          instrumentalisierung_kinder: "Instrumentalisierung von Kindern"
+        };
+        html += `<div class="forensic-pattern">
+          <p class="forensic-pattern-type">${escapeHtml(typeLabels[m.typ] || m.typ)}</p>
+          <p class="forensic-pattern-analyse">${escapeHtml(m.analyse)}</p>
+          ${m.betroffene_dokumente.length > 0 ? `<p class="forensic-pattern-docs">Dokumente: ${m.betroffene_dokumente.map(d => escapeHtml(d)).join(", ")}</p>` : ""}
+        </div>`;
+      }
+    }
+
+    // Top findings
+    if (findings.length > 0) {
+      html += `<h4 class="forensic-findings-title">Top-Auffaelligkeiten (${data.findingsTotal || findings.length})</h4>`;
+      for (const f of findings) {
+        html += `<div class="forensic-finding">
+          <span class="forensic-finding-type">${escapeHtml(f.typ || "")}</span>
+          <div class="forensic-finding-content">
+            <p class="forensic-finding-stelle">"${escapeHtml(f.stelle || "")}"</p>
+            <p class="forensic-finding-analyse">${escapeHtml(f.analyse || "")}</p>
+            ${f.fileName ? `<span class="forensic-pattern-docs">${escapeHtml(f.fileName)}</span>` : ""}
+          </div>
+          <span class="forensic-risk-badge ${riskClass(f.schweregrad)}">${escapeHtml(f.schweregrad || "")}</span>
+        </div>`;
+      }
+    }
+
+    // Cross-doc fazit
+    if (crossDoc.fazit && crossDoc.status === "ok") {
+      html += `<div class="forensic-fazit" style="margin-top:1.5rem;border-left-color:#c0392b"><strong>Kreuzanalyse-Fazit:</strong> ${escapeHtml(crossDoc.fazit)}</div>`;
+    }
+
+    resultsWrap.innerHTML = html;
+    resultsWrap.classList.remove("hidden");
+  }
+
+  scanBtn.addEventListener("click", async () => {
+    scanBtn.disabled = true;
+    resultsWrap.classList.add("hidden");
+    resultsWrap.innerHTML = "";
+
+    setProgress(5, "Forensische Analyse wird gestartet…");
+
+    try {
+      setProgress(15, "Einzeldokumente werden analysiert…");
+
+      const response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/forensic`, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token") || localStorage.getItem("token")}` }
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${response.status}`);
+      }
+
+      setProgress(90, "Ergebnisse werden aufbereitet…");
+
+      const data = await response.json();
+      setProgress(100, `Analyse abgeschlossen – ${data.analyzedCount || 0} Dateien gescannt`);
+
+      renderForensicResults(data);
+    } catch (err) {
+      setProgress(100, `Fehler: ${err.message}`);
+      if (resultsWrap) {
+        resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Forensische Analyse fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
+        resultsWrap.classList.remove("hidden");
+      }
+    } finally {
+      scanBtn.disabled = false;
+    }
+  });
+})();
+

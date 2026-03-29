@@ -5,7 +5,7 @@ const OpenAI = require("openai");
 const { Pool } = require("pg");
 const { createClient } = require("@supabase/supabase-js");
 const { requireAuth } = require("../middleware/auth");
-const { analyzeLegalDocument } = require("../services/analysisService");
+const { analyzeLegalDocument, analyzeDossierCrossDocument } = require("../services/analysisService");
 
 const router = express.Router();
 
@@ -3177,6 +3177,34 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
         }
 
         inserted.push(result.rows[0]);
+
+        // Fire-and-forget: auto-trigger forensic analysis for PDFs
+        if (String(file.mimetype || "").includes("pdf")) {
+          const docId = result.rows[0].id;
+          const objPath = objectPath;
+          setImmediate(async () => {
+            try {
+              const buf = await downloadStorageFile(caseId, objPath);
+              const pdfParse = getPdfParse();
+              const parsed = pdfParse ? await pdfParse(buf) : { text: "" };
+              const txt = String(parsed?.text || "");
+              const ocrTxt = shouldUsePdfOcrFallback(txt) ? await extractTextFromPdfWithOcr(buf) : "";
+              const finalText = pickBetterPdfText(txt, ocrTxt);
+              if (finalText && finalText.trim()) {
+                const forensic = await analyzeLegalDocument(finalText, {
+                  documentTitle: decodedOriginalName,
+                  documentType: "PDF"
+                });
+                forensic.documentId = docId;
+                forensic.fileName = decodedOriginalName;
+                await saveForensicAnalysis(docId, forensic);
+                console.log(`[forensic] Auto-analyzed: ${decodedOriginalName} → score ${forensic.score}`);
+              }
+            } catch (e) {
+              console.warn(`[forensic] Auto-analysis failed for ${decodedOriginalName}:`, e.message);
+            }
+          });
+        }
       }
 
       return res.status(201).json({ uploaded: inserted });
@@ -3692,24 +3720,65 @@ router.get("/:caseId/forensic", requireAuth, async (req, res) => {
     const kritischCount = allFindings.filter(f => f.schweregrad === "kritisch").length;
     const hochCount = allFindings.filter(f => f.schweregrad === "hoch").length;
 
+    // ── Cross-document contradiction analysis ──────────────────────
+    let crossDocResult = null;
+    if (analyzedCount >= 2) {
+      // Collect document texts for cross-analysis
+      const crossDocs = [];
+      for (const file of files) {
+        const mimeType = String(file.mime_type || "");
+        if (!mimeType.includes("pdf")) continue;
+        try {
+          const buf = await downloadStorageFile(caseId, file.stored_name);
+          const pdfParse = getPdfParse();
+          const parsed = pdfParse ? await pdfParse(buf) : { text: "" };
+          const txt = pickBetterPdfText(
+            String(parsed?.text || ""),
+            shouldUsePdfOcrFallback(String(parsed?.text || ""))
+              ? await extractTextFromPdfWithOcr(buf)
+              : ""
+          );
+          if (txt && txt.trim()) {
+            const storedForensic = await loadStoredForensic(file.id);
+            crossDocs.push({
+              fileName: file.original_name,
+              text: txt,
+              date: storedForensic?.authoredDate || "",
+              forensic: storedForensic
+            });
+          }
+        } catch (e) {
+          console.warn(`Cross-doc skip ${file.original_name}:`, e.message);
+        }
+      }
+      if (crossDocs.length >= 2) {
+        crossDocResult = await analyzeDossierCrossDocument(crossDocs);
+      }
+    }
+
     let gesamtRisiko = "niedrig";
-    if (avgScore >= 70 || kritischCount > 0) gesamtRisiko = "kritisch";
-    else if (avgScore >= 50 || hochCount >= 3) gesamtRisiko = "hoch";
-    else if (avgScore >= 25 || hochCount >= 1) gesamtRisiko = "mittel";
+    const crossScore = crossDocResult?.crossDocScore || 0;
+    const combinedScore = Math.round((avgScore + crossScore) / 2);
+    if (combinedScore >= 70 || kritischCount > 0) gesamtRisiko = "kritisch";
+    else if (combinedScore >= 50 || hochCount >= 3) gesamtRisiko = "hoch";
+    else if (combinedScore >= 25 || hochCount >= 1) gesamtRisiko = "mittel";
 
     return res.json({
       caseId,
       status: "ok",
       totalScore: avgScore,
+      crossDocScore: crossScore,
+      combinedScore,
       gesamtRisiko,
       fileCount: files.length,
       analyzedCount,
       findingsTotal: allFindings.length,
       topFindings: allFindings.slice(0, 15),
+      crossDoc: crossDocResult || null,
       files: fileResults,
       gesamtFazit: analyzedCount === 0
         ? "Keine Dateien konnten analysiert werden."
-        : `${analyzedCount} von ${files.length} Dateien forensisch analysiert. Durchschnittlicher Manipulationsrisiko-Score: ${avgScore}/100 (${gesamtRisiko}). ${allFindings.length} Auffaelligkeiten erkannt, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
+        : `${analyzedCount} von ${files.length} Dateien forensisch analysiert. Manipulations-Score: ${avgScore}/100. ${crossDocResult ? `Kreuzanalyse-Score: ${crossScore}/100 mit ${(crossDocResult.widersprueche || []).length} dokumentuebergreifenden Widerspruechen. ` : ""}${allFindings.length} Auffaelligkeiten erkannt, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
     });
 
   } catch (err) {
