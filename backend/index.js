@@ -13,6 +13,8 @@ const port = Number(process.env.PORT) || 8080;
 const host = "0.0.0.0";
 
 const allowedOrigins = [
+  "https://dmski.ch",
+  "https://www.dmski.ch",
   "https://dmski.aikmu.ch",
   "https://dmski.vercel.app",
   "http://localhost:5173",

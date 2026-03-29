@@ -20,7 +20,7 @@ function normalizeDatabaseUrl(rawUrl) {
 
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
 
-const LOGIN_URL = "https://dmski.aikmu.ch";
+const LOGIN_URL = "https://dmski.ch";
 const FROM_ADDRESS = `"DMSKI Plattform" <${process.env.SMTP_USER || "dmski@aikmu.ch"}>`;
 
 function createMailTransport() {
@@ -207,7 +207,7 @@ router.get("/me", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, email, role, first_name, last_name, function_label,
-              case_id, mobile, address, password_change_required
+              case_id, mobile, address, password_change_required, tos_accepted_at
        FROM users WHERE id = $1`,
       [req.user.sub]
     );
@@ -215,6 +215,19 @@ router.get("/me", requireAuth, async (req, res) => {
     res.json({ user: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: "Profilfehler" });
+  }
+});
+
+// POST /me/accept-tos – Record ToS acceptance timestamp
+router.post("/me/accept-tos", requireAuth, async (req, res) => {
+  try {
+    await pool.query(
+      "UPDATE users SET tos_accepted_at = NOW() WHERE id = $1",
+      [req.user.sub]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Fehler beim Speichern." });
   }
 });
 

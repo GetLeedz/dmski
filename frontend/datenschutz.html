@@ -20,7 +20,7 @@
       <h1>Datenschutz</h1>
       <p>
         In dieser Datenschutzerklärung erläutern wir, die DMSKI / GetLeedz GmbH (nachfolgend DMSKI, wir oder uns),
-        wie wir auf der Website <a href="https://dmski.aikmu.ch">dmski.aikmu.ch</a> Personendaten erheben und
+        wie wir auf der Website <a href="https://dmski.ch">dmski.ch</a> Personendaten erheben und
         sonst bearbeiten. Das ist keine abschliessende Beschreibung; allenfalls regeln andere
         Datenschutzerklärungen oder allgemeine Geschäftsbedingungen, Teilnahmebedingungen und ähnliche
         Dokumente spezifische Sachverhalte. Unter Personendaten werden alle Angaben verstanden, die sich auf
@@ -49,31 +49,16 @@
         dabei erhoben werden, ergibt sich jeweils aus den abgefragten Angaben.
       </p>
 
-      <h2>2. Cookies / Tracking und andere Technologien</h2>
+      <h2>2. Cookies und Sitzungsspeicherung</h2>
       <p>
-        Wir können auf unseren Websites typischerweise «Cookies» und vergleichbare Techniken einsetzen, mit
-        denen Ihr Browser oder Ihr Gerät identifiziert werden kann. Ein Cookie ist eine kleine Datei, die an
-        Ihren Computer gesendet bzw. vom verwendeten Webbrowser automatisch auf Ihrem Computer oder mobilen
-        Gerät gespeichert wird, wenn Sie unsere Website besuchen. Wenn Sie diese Website erneut aufrufen,
-        können wir Sie so wiedererkennen, selbst wenn wir nicht wissen, wer Sie sind.
+        DMSKI verwendet ausschliesslich technisch notwendige Sitzungsdaten (sessionStorage) zur
+        Authentifizierung. Es werden keine Tracking-Cookies, keine Analyse-Dienste von Drittanbietern
+        und kein Google Analytics eingesetzt. Die Plattform kann nicht ohne Authentifizierung genutzt werden.
       </p>
       <p>
-        Neben Cookies, die lediglich während einer Sitzung benutzt und nach Ihrem Website-Besuch gelöscht
-        werden («Session Cookies»), können Cookies auch benutzt werden, um Nutzereinstellungen und andere
-        Informationen über eine bestimmte Zeit zu speichern («permanente Cookies»). Sie können Ihren Browser
-        so einstellen, dass er Cookies zurückweist, nur für eine Sitzung speichert oder sonst vorzeitig
-        löscht. Wenn Sie Cookies sperren, kann es sein, dass gewisse Funktionalitäten nicht mehr
-        funktionieren.
-      </p>
-      <p>
-        Wir setzen auf unseren Websites mitunter Google Analytics oder vergleichbare Dienste ein. Hierzu werden
-        ebenfalls permanente Cookies benutzt, die der Dienstleister setzt. Der Dienstleister erhält von uns
-        keine Personendaten und kann Ihre Nutzung der Website verfolgen. Uns teilt der Dienstleister lediglich
-        mit, wie unsere jeweilige Website genutzt wird.
-      </p>
-      <p>
-        Mit der Nutzung unserer Websites stimmen Sie dem Einsatz dieser Techniken zu. Wollen Sie dies nicht,
-        dann müssen Sie Ihren Browser entsprechend einstellen.
+        Wählen Sie beim Login «Angemeldet bleiben», wird Ihr Authentifizierungs-Token im lokalen Speicher
+        des Browsers abgelegt (localStorage). Dieser bleibt bis zur expliziten Abmeldung erhalten.
+        Sie können diesen jederzeit durch Abmelden oder über die Browsereinstellungen löschen.
       </p>
 
       <h2>3. Dauer der Aufbewahrung von Personendaten</h2>
@@ -159,22 +144,9 @@
       <p>Gültig ab 20.03.2026</p>
     </section>
 
-    <footer class="dashboard-footer">
-      <span>Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</span>
-      <span class="footer-sep">·</span>
-      <a href="/impressum.html">Impressum</a>
-      <span class="footer-sep">·</span>
-      <a href="/datenschutz.html">Datenschutz</a>
-      <span class="footer-sep">·</span>
-      <a href="/">Login</a>
-    </footer>
+    <div id="site-footer"></div>
   </main>
 
-  <script>
-    const yearEl = document.getElementById("copyrightYear");
-    if (yearEl) {
-      yearEl.textContent = String(new Date().getFullYear());
-    }
-  </script>
+  <script src="footer.js"></script>
 </body>
 </html>

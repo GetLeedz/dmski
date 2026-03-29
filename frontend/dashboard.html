@@ -256,15 +256,36 @@
       </div>
     </section>
 
-    <footer class="dashboard-footer">
-      <span>Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</span>
-      <span class="footer-sep">·</span>
-      <a href="/impressum.html">Impressum</a>
-      <span class="footer-sep">·</span>
-      <a href="/datenschutz.html">Datenschutz</a>
-    </footer>
+    <div id="site-footer"></div>
   </main>
 
+  <!-- ── ToS Popup ── -->
+  <div id="tosModal" style="display:none;position:fixed;inset:0;background:rgba(10,30,35,.7);z-index:9999;align-items:center;justify-content:center;padding:1rem;" aria-modal="true" role="dialog" aria-labelledby="tosTitle">
+    <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:2rem 2.2rem 1.75rem;box-shadow:0 24px 64px rgba(0,0,0,.22);font-family:inherit;">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.1rem;">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#116b73,#0d5760);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <h2 id="tosTitle" style="font-size:1.05rem;font-weight:700;color:#0d2e33;margin:0;">Nutzungsbedingungen</h2>
+      </div>
+      <p style="color:#4a6672;font-size:.875rem;line-height:1.65;margin:0 0 1rem;">
+        Willkommen auf DMSKI. Bevor Sie fortfahren, bitten wir Sie, unsere
+        <a href="/nutzungsbedingungen.html" target="_blank" style="color:#116b73;font-weight:600;">Nutzungsbedingungen</a>
+        und unsere <a href="/datenschutz.html" target="_blank" style="color:#116b73;font-weight:600;">Datenschutzerklärung</a> zu lesen und zu akzeptieren.
+      </p>
+      <p style="color:#4a6672;font-size:.82rem;line-height:1.55;margin:0 0 1.5rem;background:#f4f7f8;border-radius:8px;padding:.75rem 1rem;">
+        Ihre Daten werden in der Schweiz (Zürich) gespeichert. KI-Analysen nutzen OpenAI ohne Training-Opt-in.
+        Die Plattform ist ausschliesslich für berechtigte Benutzer zugänglich.
+      </p>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;">
+        <button id="tosDenyBtn" type="button" style="padding:.55rem 1.2rem;border:1.5px solid #cbd5da;border-radius:8px;background:#fff;color:#4a6672;font-size:.875rem;cursor:pointer;font-family:inherit;">Ablehnen & Logout</button>
+        <button id="tosAcceptBtn" type="button" style="padding:.55rem 1.4rem;border:none;border-radius:8px;background:linear-gradient(135deg,#116b73,#0d5760);color:#fff;font-size:.875rem;font-weight:600;cursor:pointer;font-family:inherit;">Zustimmen & Fortfahren</button>
+      </div>
+    </div>
+  </div>
+
   <script src="dashboard.js"></script>
+  <script src="footer.js"></script>
+  <script src="tos.js"></script>
 </body>
 </html>

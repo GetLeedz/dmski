@@ -19,9 +19,9 @@
     <section class="card">
       <h1>Impressum</h1>
 
-      <h2>Hauptsitz</h2>
+      <h2>Betreiberin</h2>
       <p>
-        DMSKI<br />
+        DMSKI – KI-gestützte Fallanalyse<br />
         GetLeedz GmbH<br />
         Walter Fürststr. 1<br />
         CH-4102 Binningen<br />
@@ -35,59 +35,34 @@
 
       <p>MWST-Nr. CHE-339.044.174</p>
 
-      <h2>Bankverbindung</h2>
+      <h2>Plattform</h2>
       <p>
-        Bank Cler AG, Aeschenplatz 3, 4052 Basel, Switzerland<br />
-        BIC/Swift BCLRCHBBXXX<br />
-        IBAN CH60 0844 0258 4872 6200 1
+        Diese Plattform ist ein Dienst der GetLeedz GmbH.<br />
+        Website: <a href="https://dmski.ch">https://dmski.ch</a><br />
+        Weitere Dienste: <a href="https://www.getleedz.com" target="_blank" rel="noopener">getleedz.com</a>
+        &nbsp;·&nbsp; <a href="https://www.aikmu.ch" target="_blank" rel="noopener">aikmu.ch</a>
       </p>
 
-      <h2>Disclaimer</h2>
+      <h2>Haftungsausschluss</h2>
       <p>
-        Alle Inhalte werden regelmässig sorgfältig geprüft und bearbeitet. Der Website-Betreiber übernimmt
-        jedoch keine Gewähr für die Richtigkeit, Zuverlässigkeit, Vollständigkeit und Aktualität der auf der
-        Website veröffentlichten Inhalte.
-      </p>
-      <p>
-        Haftungsansprüche gegenüber dem Betreiber wegen Schäden materieller oder immaterieller Art, die aus
-        dem Zugriff oder der Nutzung bzw. Nichtnutzung der veröffentlichten Informationen auf der Website
-        <a href="https://dmski.aikmu.ch">https://dmski.aikmu.ch</a> oder durch fehlerhafte oder unvollständige
-        Informationen entstanden sind, werden ausgeschlossen. dmski.aikmu.ch behält sich ausdrücklich das Recht
-        vor, Teile der Seiten oder das gesamte Angebot der Website ohne vorherige Ankündigung zu verändern,
-        zu ergänzen oder zu löschen.
-      </p>
-      <p>
-        Es ist nicht gestattet, die Inhalte auf den Webseiten von
-        <a href="https://dmski.aikmu.ch">https://dmski.aikmu.ch</a> für kommerzielle Zwecke zu drucken,
-        zu kopieren und über das Internet oder auf andere Art und Weise zu vervielfältigen.
+        Alle Inhalte werden regelmässig sorgfältig geprüft. Der Betreiber übernimmt keine Gewähr für
+        die Richtigkeit, Vollständigkeit und Aktualität der veröffentlichten Inhalte. Haftungsansprüche
+        wegen Schäden, die aus der Nutzung der Website <a href="https://dmski.ch">dmski.ch</a>
+        entstanden sind, werden ausgeschlossen. Der Betreiber behält sich das Recht vor, Teile des
+        Angebots jederzeit ohne Vorankündigung zu ändern oder zu löschen.
       </p>
 
       <h2>Externe Links</h2>
       <p>
-        Auf der Website <a href="https://dmski.aikmu.ch">https://dmski.aikmu.ch</a> befinden sich Hyperlinks,
-        die auf externe Websites führen. Die Besitzerin und Betreiberin von dmski.aikmu.ch betont, dass sie
-        keinerlei Einfluss auf das Layout und den Inhalt dieser externen Websites hat und keine Verantwortung
-        und/oder Haftung dafür übernimmt. Die Inhalte und das Layout dieser externen Websites liegen
-        ausschliesslich in der Verantwortung ihrer Autoren und Betreiber.
+        Diese Website enthält Links zu externen Websites. Für deren Inhalte übernimmt GetLeedz GmbH
+        keine Verantwortung. Die Inhalte externer Seiten liegen ausschliesslich in der Verantwortung
+        ihrer Betreiber.
       </p>
     </section>
 
-    <footer class="dashboard-footer">
-      <span>Copyright © <span id="copyrightYear"></span> Prompted by AiKMU // GetLeedz GmbH</span>
-      <span class="footer-sep">·</span>
-      <a href="/impressum.html">Impressum</a>
-      <span class="footer-sep">·</span>
-      <a href="/datenschutz.html">Datenschutz</a>
-      <span class="footer-sep">·</span>
-      <a href="/">Login</a>
-    </footer>
+    <div id="site-footer"></div>
   </main>
 
-  <script>
-    const yearEl = document.getElementById("copyrightYear");
-    if (yearEl) {
-      yearEl.textContent = String(new Date().getFullYear());
-    }
-  </script>
+  <script src="footer.js"></script>
 </body>
 </html>
