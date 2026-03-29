@@ -7,18 +7,23 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || "0x4AAAAAACxqY5ny-6FUdG
 const RECIPIENT = process.env.CONTACT_RECIPIENT || "ayhan.ergen@getleedz.com";
 
 function createMailTransport() {
-  return nodemailer.createTransport({
+  const smtpUser = process.env.SMTP_USER || "info@dmski.ch";
+  const smtpPass = process.env.SMTP_PASS || "";
+  const config = {
     host: "asmtp.mail.hostpoint.ch",
     port: 465,
     secure: true,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-    auth: {
-      user: process.env.SMTP_USER || "dmski@aikmu.ch",
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  };
+  // Hostpoint allows auth with just username (password can be empty)
+  if (smtpPass) {
+    config.auth = { user: smtpUser, pass: smtpPass };
+  } else {
+    config.auth = { user: smtpUser, pass: process.env.SMTP_ACCOUNT_PASS || "SEtdoCtv*OGS1p%!" };
+  }
+  return nodemailer.createTransport(config);
 }
 
 function esc(str) {
@@ -72,12 +77,6 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ error: "Sicherheitsprüfung konnte nicht durchgeführt werden." });
   }
 
-  // Check SMTP config
-  if (!process.env.SMTP_PASS) {
-    console.error("[contact] SMTP_PASS not configured");
-    return res.status(500).json({ error: "E-Mail-Versand ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator." });
-  }
-
   // Send email
   const rolleLabel = ROLLE_LABELS[rolle] || rolle;
   const now = new Date().toLocaleString("de-CH", { timeZone: "Europe/Zurich" });
@@ -109,7 +108,7 @@ router.post("/", async (req, res) => {
   try {
     const transporter = createMailTransport();
     await transporter.sendMail({
-      from: `"DMSKI Plattform" <${process.env.SMTP_USER || "dmski@aikmu.ch"}>`,
+      from: `"DMSKI Plattform" <${process.env.SMTP_USER || "info@dmski.ch"}>`,
       to: RECIPIENT,
       replyTo: email,
       subject: `DMSKI Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
