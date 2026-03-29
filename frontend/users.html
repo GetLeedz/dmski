@@ -167,6 +167,53 @@
     .badge--kunde { background:rgba(197,160,89,.12);color:#96700a;border:1px solid rgba(197,160,89,.25); }
     .badge--team  { background:rgba(26,43,60,.08);color:#1A2B3C;border:1px solid rgba(26,43,60,.15); }
 
+    /* View button */
+    .ib--view { color:#1A2B3C; }
+    .ib--view:hover { background:rgba(26,43,60,.08); }
+
+    /* Profile View Modal */
+    .pv-overlay {
+      display:none; position:fixed; inset:0; z-index:9999;
+      background:rgba(10,14,23,.5); backdrop-filter:blur(4px);
+      place-items:center;
+    }
+    .pv-overlay.open { display:grid; }
+    .pv-card {
+      background:#fff; border-radius:16px; padding:2rem 2.2rem;
+      max-width:500px; width:calc(100% - 2rem); position:relative;
+      box-shadow:0 16px 48px rgba(0,0,0,.15);
+      animation: pvIn 200ms ease;
+    }
+    @keyframes pvIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .pv-close {
+      position:absolute; top:1rem; right:1.2rem; border:0; background:0;
+      font-size:1.5rem; color:#8a96a3; cursor:pointer; line-height:1;
+    }
+    .pv-close:hover { color:#1A2B3C; }
+    .pv-header {
+      display:flex; align-items:center; gap:1rem;
+      padding-bottom:1.2rem; margin-bottom:1.2rem;
+      border-bottom:1px solid #e8edf2;
+    }
+    .pv-avatar {
+      width:3.2rem; height:3.2rem; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.2rem; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .pv-name { margin:0; font-size:1.1rem; font-weight:700; color:#1A2B3C; }
+    .pv-email { margin:.15rem 0 0; font-size:.82rem; color:#6b7b8a; }
+    .pv-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:.7rem .9rem;
+    }
+    .pv-field { display:flex; flex-direction:column; gap:.1rem; }
+    .pv-full { grid-column:1/-1; }
+    .pv-label {
+      font-size:.6rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:rgba(26,43,60,.4);
+    }
+    .pv-value { font-size:.88rem; font-weight:500; color:#1A2B3C; }
+    @media(max-width:480px) { .pv-grid { grid-template-columns:1fr; } }
+
     /* Icon action buttons */
     .ib {
       display:inline-flex;align-items:center;justify-content:center;

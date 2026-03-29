@@ -154,6 +154,13 @@ function renderList(rows) {
         const roleClass = u.role === "collaborator" ? "badge badge--team" : "badge badge--kunde";
         const roleLabel = u.role === "collaborator" ? "Team" : "Kunde";
 
+        const viewBtn = `
+            <button class="ib ib--view" onclick="openProfileView('${u.id}')" title="Profil ansehen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+            </button>`;
+
         const adminActions = isAdmin ? `
             <button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladung senden">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;" stroke-linecap="round" stroke-linejoin="round">
@@ -184,7 +191,7 @@ function renderList(rows) {
                 </div>
                 ${u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : ""}
                 <span class="${roleClass}">${roleLabel}</span>
-                <div class="u-actions">${adminActions}</div>
+                <div class="u-actions">${viewBtn}${adminActions}</div>
             </div>`;
     }).join("");
 }
@@ -418,6 +425,56 @@ document.querySelectorAll('input[name="edit-beziehung"]').forEach(r => {
     r.addEventListener("change", toggleCaseGroup);
 });
 
+function openProfileView(id) {
+    const u = allUsers.find(user => String(user.id) === String(id));
+    if (!u) return;
+
+    const name = [u.academicTitle, u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
+    const initials = (u.firstName || u.email || "?")[0].toUpperCase();
+    const sal = u.salutation || "";
+    const roleLabel = u.role === "collaborator" ? "Team" : "Kunde";
+    const caseName = u.caseId ? (allCases.find(c => String(c.id) === String(u.caseId))?.name || u.caseId) : "–";
+
+    // Build profile view modal
+    let modal = byId("profileViewModal");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "profileViewModal";
+        modal.className = "pv-overlay";
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="pv-card">
+            <button class="pv-close" onclick="closeProfileView()">&times;</button>
+            <div class="pv-header">
+                <div class="pv-avatar ${u.role === "collaborator" ? "u-av--f" : "u-av--k"}">${esc(initials)}</div>
+                <div>
+                    <h3 class="pv-name">${sal ? esc(sal) + " " : ""}${esc(name)}</h3>
+                    <p class="pv-email">${esc(u.email)}</p>
+                </div>
+            </div>
+            <div class="pv-grid">
+                <div class="pv-field"><span class="pv-label">Anrede</span><span class="pv-value">${esc(sal || "–")}</span></div>
+                <div class="pv-field"><span class="pv-label">Titel</span><span class="pv-value">${esc(u.academicTitle || "–")}</span></div>
+                <div class="pv-field"><span class="pv-label">Vorname</span><span class="pv-value">${esc(u.firstName || "–")}</span></div>
+                <div class="pv-field"><span class="pv-label">Nachname</span><span class="pv-value">${esc(u.lastName || "–")}</span></div>
+                <div class="pv-field"><span class="pv-label">E-Mail</span><span class="pv-value">${esc(u.email)}</span></div>
+                <div class="pv-field"><span class="pv-label">Telefon</span><span class="pv-value">${esc(u.mobile || "–")}</span></div>
+                <div class="pv-field"><span class="pv-label">Funktion</span><span class="pv-value">${u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : "–"}</span></div>
+                <div class="pv-field"><span class="pv-label">Beziehung</span><span class="pv-value"><span class="badge ${u.role === "collaborator" ? "badge--team" : "badge--kunde"}">${esc(roleLabel)}</span></span></div>
+                <div class="pv-field pv-full"><span class="pv-label">Zugewiesener Fall</span><span class="pv-value">${esc(caseName)}</span></div>
+            </div>
+        </div>`;
+    modal.classList.add("open");
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeProfileView(); });
+}
+
+function closeProfileView() {
+    const modal = byId("profileViewModal");
+    if (modal) modal.classList.remove("open");
+}
+
 function closeModal() {
     byId("userModal").classList.remove("open");
     showModalMsg("", "");
@@ -433,15 +490,16 @@ function esc(v) {
         .replace(/'/g, "&#039;");
 }
 
+let allCases = [];
 async function loadCasesForModal() {
     const sel = byId("edit-case");
     if (!sel) return;
     try {
         const res = await fetch(`${API}/cases`, { headers: authHdr(), credentials: "include" });
         const data = await res.json();
-        const cases = data.cases || data || [];
-        sel.innerHTML = `<option value="">Keinem Fall zugewiesen</option>` + 
-            cases.map(c => `<option value="${c.id}">${esc(c.case_name || c.title)}</option>`).join("");
+        allCases = (data.cases || data || []).map(c => ({ id: String(c.id), name: c.case_name || c.title || String(c.id) }));
+        sel.innerHTML = `<option value="">Keinem Fall zugewiesen</option>` +
+            allCases.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
     } catch (e) { console.error("Cases load error", e); }
 }
 
