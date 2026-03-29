@@ -12,7 +12,7 @@ function normalizeDatabaseUrl(rawUrl) {
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || "0x4AAAAAACxqY5ny-6FUdG1wJsiPPTAUhjQ";
-const RECIPIENT = process.env.CONTACT_RECIPIENT || "ayhan.ergen@getleedz.com";
+const RECIPIENT = process.env.CONTACT_RECIPIENT || "info@dmski.ch";
 
 function esc(str) {
   return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -124,7 +124,7 @@ router.post("/", async (req, res) => {
 
       const resend = new Resend(resendKey);
       await resend.emails.send({
-        from: "DMSKI Forensik-System <onboarding@resend.dev>",
+        from: "DMSKI Forensik-System <info@dmski.ch>",
         to: [RECIPIENT],
         replyTo: email,
         subject: `Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,
