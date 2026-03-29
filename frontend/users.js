@@ -151,8 +151,8 @@ function renderList(rows) {
     el.innerHTML = rows.map((u) => {
         const name = [u.academicTitle, u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
         const initials = (u.firstName || u.email || "?")[0].toUpperCase();
-        const roleClass = u.role === "collaborator" ? "badge badge--f" : "badge badge--k";
-        const roleLabel = u.role === "collaborator" ? "Fachperson" : "Kunde";
+        const roleClass = u.role === "collaborator" ? "badge badge--team" : "badge badge--kunde";
+        const roleLabel = u.role === "collaborator" ? "Team" : "Kunde";
 
         const adminActions = isAdmin ? `
             <button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladung senden">
@@ -280,11 +280,12 @@ async function handleSave() {
 
     const funktionValue = byId("edit-funktion").value.trim();
     const caseValue = byId("edit-case").value || null;
-    const isKunde = funktionValue === "Kunde/Kundin";
+    const beziehung = (document.querySelector('input[name="edit-beziehung"]:checked') || {}).value || "customer";
+    const isKunde = beziehung === "customer";
 
-    // Fall zuweisen ist mandatory für alle ausser Kunden
+    // Fall zuweisen ist mandatory für Team, nicht für Kunden
     if (!isKunde && !caseValue) {
-        showModalMsg("Bitte weisen Sie einen Fall zu (nur Kunden benötigen keine Zuweisung).", "err");
+        showModalMsg("Team-Mitglieder müssen einem Fall zugewiesen werden.", "err");
         return;
     }
 
@@ -295,6 +296,7 @@ async function handleSave() {
         last_name: byId("edit-nachname").value.trim(),
         email: byId("edit-email").value.trim(),
         mobile: byId("edit-mobile").value.trim(),
+        role: beziehung,
         function_label: funktionValue,
         case_id: isKunde ? null : caseValue,
     };
@@ -363,6 +365,7 @@ function openEditModal(id) {
     modalMode = "edit";
     currentEditId = id;
     document.querySelectorAll('input[name="edit-anrede"]').forEach(r => { r.checked = r.value === (u.salutation || ""); });
+    document.querySelectorAll('input[name="edit-beziehung"]').forEach(r => { r.checked = r.value === (u.role || "customer"); });
     byId("edit-titel").value = u.academicTitle || "";
     byId("edit-vorname").value = u.firstName;
     byId("edit-nachname").value = u.lastName;
@@ -404,21 +407,16 @@ function openAddModal() {
 }
 
 function toggleCaseGroup() {
-    const fn = byId("edit-funktion")?.value || "";
+    const beziehung = (document.querySelector('input[name="edit-beziehung"]:checked') || {}).value || "";
     const caseGroup = byId("mCaseGroup");
     if (!caseGroup) return;
-    if (fn === "Kunde/Kundin") {
-        caseGroup.style.display = "none";
-    } else {
-        caseGroup.style.display = "";
-    }
+    caseGroup.style.display = beziehung === "customer" ? "none" : "";
 }
 
-// Toggle Fall zuweisen on Funktion change
-const funktionSelect = byId("edit-funktion");
-if (funktionSelect) {
-    funktionSelect.addEventListener("change", toggleCaseGroup);
-}
+// Toggle Fall zuweisen on Beziehung change
+document.querySelectorAll('input[name="edit-beziehung"]').forEach(r => {
+    r.addEventListener("change", toggleCaseGroup);
+});
 
 function closeModal() {
     byId("userModal").classList.remove("open");

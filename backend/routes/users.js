@@ -340,7 +340,7 @@ router.post("/:adminId/users", requireAuth, requireAdmin, async (req, res) => {
 
 // PATCH /:userId – Benutzer bearbeiten
 router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
-  const { salutation, academic_title, first_name, last_name, email, mobile, function_label, case_id, password } = req.body;
+  const { salutation, academic_title, first_name, last_name, email, mobile, function_label, case_id, password, role: newRole } = req.body;
   try {
     let result;
     if (password) {
@@ -348,17 +348,21 @@ router.patch("/:userId", requireAuth, requireAdminOrSelf("userId"), async (req, 
         return res.status(400).json({ error: "Passwort entspricht nicht den Anforderungen (min. 10 Zeichen, Gross-/Kleinbuchstaben, Zahl, Sonderzeichen)." });
       }
       const password_hash = await bcrypt.hash(password, 12);
+      const effectiveRole = (newRole === "customer" || newRole === "collaborator") ? newRole : undefined;
       result = await pool.query(
         `UPDATE users SET salutation=$1, academic_title=$2, first_name=$3, last_name=$4, email=$5, mobile=$6, function_label=$7,
                 case_id=$8, password_hash=$9, password_change_required=true
-         WHERE id=$10
+                ${effectiveRole ? `, role='${effectiveRole}'` : ""}
+         WHERE id=$10 AND role != 'admin'
          RETURNING id, email, role, salutation, academic_title, first_name, last_name`,
         [salutation || null, academic_title || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, password_hash, req.params.userId]
       );
     } else {
+      const effectiveRole = (newRole === "customer" || newRole === "collaborator") ? newRole : undefined;
       result = await pool.query(
         `UPDATE users SET salutation=$1, academic_title=$2, first_name=$3, last_name=$4, email=$5, mobile=$6, function_label=$7, case_id=$8
-         WHERE id=$9
+                ${effectiveRole ? `, role='${effectiveRole}'` : ""}
+         WHERE id=$9 AND role != 'admin'
          RETURNING id, email, role, salutation, academic_title, first_name, last_name`,
         [salutation || null, academic_title || null, first_name || null, last_name || null, email, mobile || null, function_label || null, case_id || null, req.params.userId]
       );

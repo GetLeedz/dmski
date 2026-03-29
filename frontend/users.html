@@ -162,8 +162,10 @@
     }
     .badge--k  { background:#d1fae5;color:#065f46; }
     .badge--f  { background:#ede9fe;color:#5b21b6; }
-    .badge--fn { background:#e0f2fe;color:#0369a1; }
+    .badge--fn { background:rgba(26,43,60,.06);color:#1A2B3C;border:1px solid rgba(26,43,60,.12); }
     .badge--ca { background:#fef3c7;color:#92400e; }
+    .badge--kunde { background:rgba(197,160,89,.12);color:#96700a;border:1px solid rgba(197,160,89,.25); }
+    .badge--team  { background:rgba(26,43,60,.08);color:#1A2B3C;border:1px solid rgba(26,43,60,.15); }
 
     /* Icon action buttons */
     .ib {
@@ -629,12 +631,26 @@
         <div class="modal-section" id="mFachSection">
           <p class="modal-section-title">Funktion & Fall</p>
 
+          <!-- Beziehung: Kunde oder Team -->
+          <div class="fg mb">
+            <label class="fl">Beziehung</label>
+            <div class="anrede-radios">
+              <label class="anrede-radio">
+                <input type="radio" name="edit-beziehung" value="customer" />
+                <span>Kunde</span>
+              </label>
+              <label class="anrede-radio">
+                <input type="radio" name="edit-beziehung" value="collaborator" />
+                <span>Team</span>
+              </label>
+            </div>
+          </div>
+
           <!-- Funktion: dropdown -->
           <div class="fg mb" id="mFnGroup">
-            <label class="fl" for="edit-funktion">Funktion / Rolle</label>
+            <label class="fl" for="edit-funktion">Funktion</label>
             <select id="edit-funktion" class="fi fi-sel">
-              <option value="">Bitte wählen …</option>
-              <option value="Kunde/Kundin">Kunde / Kundin</option>
+              <option value="">Keine Funktion</option>
               <option value="Gutachter/in">Gutachter/in</option>
               <option value="Therapeut/in">Therapeut/in</option>
               <option value="Anwalt / Anwältin">Anwalt / Anwältin</option>
