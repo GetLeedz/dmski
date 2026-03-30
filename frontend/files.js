@@ -1071,7 +1071,6 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
       <tr class="akteure-row">
         <td class="akteure-col-name">${escapeHtml(displayName)}</td>
         <td class="akteure-col-role">${escapeHtml(roleLabel)}</td>
-        <td class="akteure-col-dot"><span class="akteure-sentiment-dot is-${sentiment}" title="${escapeHtml(getSentimentLabel(sentiment))}"></span></td>
       </tr>
     `;
   }).join("");
@@ -1081,25 +1080,17 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
       <div class="tactic-section-number">5</div>
       <div class="tactic-section-content">
         <p class="tactic-section-title">Involvierte Personen & Funktion</p>
-        <p class="tactic-section-subtitle">Alle im Dossier erkannten Personen mit Rolle und Sentiment-Einordnung</p>
-        <div class="akteure-legend" style="margin-bottom:.6rem">
-          <span class="akteure-legend-item"><span class="akteure-legend-dot is-positive"></span>Positiv</span>
-          <span class="akteure-legend-item"><span class="akteure-legend-dot is-negative"></span>Negativ</span>
-          <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
-          <span class="akteure-legend-item"><span class="akteure-legend-dot is-unknown"></span>Keine Daten</span>
-        </div>
+        <p class="tactic-section-subtitle">Alle im Dossier erkannten Personen mit Rolle</p>
         <div class="akteure-table-container">
           <table class="akteure-personen">
             <colgroup>
               <col class="col-name" />
               <col class="col-funktion" />
-              <col class="col-sentiment" />
             </colgroup>
             <thead>
               <tr>
                 <th>Name, Vorname</th>
                 <th>Funktion</th>
-                <th>Sentiment</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>

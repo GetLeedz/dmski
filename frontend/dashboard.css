@@ -4664,9 +4664,8 @@ table.akteure-personen {
   font-family: var(--font, "Inter"), system-ui, sans-serif;
 }
 
-table.akteure-personen col.col-name      { width: 40%; }
-table.akteure-personen col.col-funktion  { width: 40%; }
-table.akteure-personen col.col-sentiment { width: 20%; }
+table.akteure-personen col.col-name      { width: 50%; }
+table.akteure-personen col.col-funktion  { width: 50%; }
 
 table.akteure-personen thead {
   background: var(--navy, #1A2B3C);
@@ -4691,9 +4690,6 @@ table.akteure-personen th {
   text-overflow: ellipsis;
 }
 
-table.akteure-personen th:last-child {
-  text-align: center;
-}
 
 table.akteure-personen td {
   padding: 0.85rem 1.1rem;
@@ -4706,7 +4702,6 @@ table.akteure-personen td {
 
 table.akteure-personen td:first-child { font-weight: 700; color: #0f2b36; }
 table.akteure-personen td:nth-child(2) { color: #4a6a7a; }
-table.akteure-personen td:last-child { text-align: center; }
 table.akteure-personen tr:last-child td { border-bottom: none; }
 
 
