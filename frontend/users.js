@@ -206,16 +206,19 @@ function showConfirm(text, onOk) {
     const okBtn = byId("confirmOkBtn");
     const cancelBtn = byId("confirmCancelBtn");
 
+    // Clone and replace buttons to remove ALL previous event listeners.
+    // This prevents stacked handlers from multiple showConfirm() calls.
+    const freshOk = okBtn.cloneNode(true);
+    const freshCancel = cancelBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(freshOk, okBtn);
+    cancelBtn.parentNode.replaceChild(freshCancel, cancelBtn);
+
     function cleanup() {
         modal.classList.remove("open");
-        okBtn.removeEventListener("click", handleOk);
-        cancelBtn.removeEventListener("click", handleCancel);
     }
-    function handleOk() { cleanup(); onOk(); }
-    function handleCancel() { cleanup(); }
 
-    okBtn.addEventListener("click", handleOk);
-    cancelBtn.addEventListener("click", handleCancel);
+    freshOk.addEventListener("click", () => { cleanup(); onOk(); });
+    freshCancel.addEventListener("click", cleanup);
 }
 
 async function sendInvite(targetUserId) {
