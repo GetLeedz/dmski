@@ -4716,8 +4716,8 @@ select.case-edit-input {
 }
 
 .akteure-table thead {
-  background: var(--navy);
-  border-bottom: 2px solid var(--gold);
+  background: rgba(26,43,60,0.04);
+  border-bottom: 2px solid rgba(197,160,89,0.3);
 }
 
 .akteure-table th {
@@ -4725,7 +4725,7 @@ select.case-edit-input {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #F8F9FA;
+  color: var(--navy);
   text-transform: uppercase;
   text-align: left;
   background: transparent;

@@ -1089,16 +1089,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
 
   if (unique.length === 0) {
     return `
-      <div class="akteure-box">
-        <div class="akteure-head-simple">
-          <p class="akteure-title-simple">Personen</p>
-          <div class="akteure-legend">
-            <span class="akteure-legend-item"><span class="akteure-legend-dot is-positive"></span>Positiv</span>
-            <span class="akteure-legend-item"><span class="akteure-legend-dot is-negative"></span>Negativ</span>
-            <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
-          </div>
+      <div class="akteure-box tactic-section">
+        <div class="tactic-section-number">5</div>
+        <div class="tactic-section-content">
+          <p class="tactic-section-title">Involvierte Personen & Funktion</p>
+          <p class="tactic-section-subtitle">Alle im Dossier erkannten Personen</p>
+          <p class="akteure-empty">Noch keine Personen extrahiert. Werden mit jedem weiteren File erg\u00e4nzt.</p>
         </div>
-        <p class="akteure-empty">Noch keine Personen extrahiert. Werden mit jedem weiteren File erg\u00e4nzt.</p>
       </div>
     `;
   }
@@ -1129,26 +1126,30 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   }).join("");
 
   return `
-    <div class="akteure-box">
-      <div class="akteure-head-simple">
-        <p class="akteure-title-simple">Personen</p>
-        <div class="akteure-legend">
+    <div class="akteure-box tactic-section">
+      <div class="tactic-section-number">5</div>
+      <div class="tactic-section-content">
+        <p class="tactic-section-title">Involvierte Personen & Funktion</p>
+        <p class="tactic-section-subtitle">Alle im Dossier erkannten Personen mit Rolle und Sentiment-Einordnung</p>
+        <div class="akteure-legend" style="margin-bottom:.6rem">
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-positive"></span>Positiv</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-negative"></span>Negativ</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-unknown"></span>Keine Daten</span>
         </div>
+        <div class="tactic-table-wrap">
+          <table class="akteure-table">
+            <thead>
+              <tr>
+                <th>Name, Vorname</th>
+                <th>Funktion</th>
+                <th>Sentiment</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       </div>
-      <table class="akteure-table">
-        <thead>
-          <tr>
-            <th>Name, Vorname</th>
-            <th>Funktion</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
     </div>
   `;
 }
@@ -2782,11 +2783,10 @@ async function loadRowAnalysis(file, options = {}) {
         </div>
       </div>
 
-      <!-- 5. Involvierte Personen -->
+      <!-- Involvierte Personen & Funktion -->
       ${people.length > 0 ? `
       <div class="qa-mod-persons-section">
         <div class="qa-mod-section-header">
-          <span class="qa-mod-section-number">5</span>
           <span class="qa-mod-section-title">Involvierte Personen & Funktion</span>
         </div>
         <div class="qa-mod-persons-grid">${people.map(p => `<div class="qa-mod-person-card"><span class="qa-mod-person-icon">
