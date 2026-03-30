@@ -3687,14 +3687,16 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       return res.json(withAnalysisRuntimeMeta(enriched));
     }
 
+    // Preserve existing metadata (especially video date) on refresh
+    const existingAnalysis = await loadStoredDocumentAnalysis(file.id);
     const unsupported = {
       status: "empty",
-      title: "",
-      author: "",
-      authoredDate: "",
-      people: [],
-      disadvantagedPerson: "",
-      message: "Analyse f├╝r diesen Dateityp nicht verf├╝gbar."
+      title: existingAnalysis?.title || "",
+      author: existingAnalysis?.author || "",
+      authoredDate: existingAnalysis?.authoredDate || "",
+      people: existingAnalysis?.people || [],
+      disadvantagedPerson: existingAnalysis?.disadvantagedPerson || "",
+      message: "Analyse f\u00fcr diesen Dateityp nicht verf\u00fcgbar."
     };
     await saveDocumentAnalysis(file.id, unsupported);
     return res.json(withAnalysisRuntimeMeta(unsupported));
