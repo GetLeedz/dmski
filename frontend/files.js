@@ -727,16 +727,14 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
     }
   }
 
-  // ── 3. Opposing party → always negative ─────────────────────────────────────
+  // ── 3. Children → positive (before opposing party check) ─────────────────────
+  // Children may share the opposing party's surname but are not the opposing party.
+  if (affil.includes("kind") && !affil.includes("kinderanw")) return "positive";
+
+  // ── 4. Opposing party → always negative ─────────────────────────────────────
   const oppFirstWord = (oppNorm.split(/[\s,]+/)[0] || "").toLowerCase();
   if (oppFirstWord && nameNorm.includes(oppFirstWord) && oppFirstWord.length > 2) {
     return "negative";
-  }
-
-  // ── 4. Known-role hardcodes ──────────────────────────────────────────────────
-  // Children → positive (victims, same side as protected person in custody matters)
-  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) {
-    return "positive";
   }
   // Opposing party's lawyer → negative
   if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) { return "negative"; }
@@ -744,8 +742,6 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
   if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) { return "neutral"; }
 
   // ── 5. Affiliation heuristics ────────────────────────────────────────────────
-  // Children
-  if (affil.includes("kind") && !affil.includes("kinderanw")) return "positive";
   // Lawyers on the protected person's side
   if (affil.includes("anwalt") || affil.includes("anwältin") || affil.includes("rechtsvertr")) return "positive";
   // Beistand / Berufsbeistand: derive from whether overall dossier shows more

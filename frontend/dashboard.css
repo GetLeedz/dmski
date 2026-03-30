@@ -4719,14 +4719,17 @@ table.akteure-personen {
   border-collapse: collapse;
 }
 
-table.akteure-personen col.col-name      { width: 40%; }
-table.akteure-personen col.col-funktion  { width: 40%; }
+table.akteure-personen col.col-name      { width: 35%; }
+table.akteure-personen col.col-funktion  { width: 45%; }
 table.akteure-personen col.col-sentiment { width: 20%; }
 
 table.akteure-personen thead {
   background: var(--navy, #1A2B3C);
   border-bottom: 3px solid var(--gold, #C5A059);
 }
+
+table.akteure-personen thead th:first-child { border-top-left-radius: 10px; }
+table.akteure-personen thead th:last-child  { border-top-right-radius: 10px; }
 
 table.akteure-personen th {
   padding: 0.8rem 1rem;
