@@ -4707,8 +4707,6 @@ select.case-edit-input {
 /* Tabular persons layout */
 /* Akteure table – reuses .tactic-table, overrides grid + container */
 .akteure-table-container {
-  max-width: 780px;
-  margin: 0 auto;
   border-radius: 10px;
   border: 1px solid rgba(26,43,60,0.14);
   overflow: hidden;
@@ -4716,7 +4714,7 @@ select.case-edit-input {
 
 .akteure-grid thead tr,
 .akteure-grid tbody tr {
-  grid-template-columns: 1.8fr 2.2fr 5rem;
+  grid-template-columns: 2fr 2.5fr 3rem;
 }
 
 .akteure-col-name { font-weight: 700; }
