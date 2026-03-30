@@ -4705,24 +4705,39 @@ select.case-edit-input {
 }
 
 /* Tabular persons layout */
+/* Akteure table – CSS Grid layout (same pattern as tactic-table) */
 .akteure-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
-  table-layout: auto;
+  font-size: 0.78rem;
+  display: block;
+  font-family: var(--font, "Inter"), system-ui, sans-serif;
 }
 
-.akteure-table thead tr {
-  border-bottom: none;
-}
+.akteure-table col { display: none; }
 
 .akteure-table thead {
+  display: block;
+  width: 100%;
   background: rgba(26,43,60,0.04);
   border-bottom: 2px solid rgba(197,160,89,0.3);
 }
 
+.akteure-table tbody {
+  display: block;
+  width: 100%;
+}
+
+.akteure-table thead tr,
+.akteure-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.6fr 4.5rem;
+  align-items: center;
+  width: 100%;
+}
+
 .akteure-table th {
-  padding: 0.65rem 0.8rem;
+  padding: 0.6rem 0.8rem;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -4735,16 +4750,16 @@ select.case-edit-input {
 }
 
 .akteure-table th:last-child {
-  width: 4.5rem;
   text-align: center;
 }
 
 .akteure-row td {
-  padding: 0.6rem 0.8rem;
-  border-bottom: 1px solid rgba(26,43,60,0.06);
-  vertical-align: middle;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid rgba(26,43,60,0.05);
   background: transparent;
   color: #1a3540;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .akteure-row:last-child td {
@@ -4752,21 +4767,19 @@ select.case-edit-input {
 }
 
 .akteure-col-name {
-  font-weight: 700;
-  font-size: 0.83rem;
+  font-weight: 600;
+  font-size: 0.8rem;
   color: #0f2b36;
-  white-space: nowrap;
 }
 
 .akteure-col-role {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: #4a6a7a;
   font-weight: 500;
 }
 
 .akteure-col-dot {
   text-align: center;
-  width: 4.5rem;
 }
 
 /* Big rounded sentiment dot */
