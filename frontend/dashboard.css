@@ -203,6 +203,49 @@ body.has-sidebar .page {
   }
 }
 
+/* ── Page Hero (injected by nav.js) ── */
+.page-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-hero-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26,43,60,.08);
+  border-radius: 0.6rem;
+  color: var(--navy);
+}
+
+.page-hero-icon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.page-hero-text h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.page-hero-text p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
 /* ── Hide old topbar (replaced by sidebar) ── */
 .topbar { display: none !important; }
 
