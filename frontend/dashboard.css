@@ -4259,6 +4259,14 @@ select.case-edit-input {
   color: var(--navy);
 }
 
+.qa-mod-person-role {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: rgba(26,43,60,0.45);
+  padding-left: 0.25rem;
+  border-left: 1px solid rgba(26,43,60,0.12);
+}
+
 /* Verdict */
 .qa-mod-verdict {
   padding: 0.75rem 0.9rem;

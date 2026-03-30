@@ -1951,20 +1951,18 @@ function isLikelyValidPersonLabel(value) {
 
 function collectAnalysisPeople(analysis) {
   const people = Array.isArray(analysis?.people) ? analysis.people : [];
-  const unique = [];
+  const seen = new Set();
+  const result = [];
 
   for (const entry of people) {
     const name = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
-    if (!name) {
-      continue;
-    }
-    if (unique.includes(name)) {
-      continue;
-    }
-    unique.push(name);
+    if (!name || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    const role = normalizeTitleText(entry?.affiliation || entry?.rolle || entry?.role || "");
+    result.push({ name, role });
   }
 
-  return unique.slice(0, 16);
+  return result.slice(0, 16);
 }
 
 function normalizePeople(people) {
@@ -2682,7 +2680,7 @@ async function loadRowAnalysis(file, options = {}) {
   const date = swissAuthoredDate || "Unbekannt";
   const senderInstitution = analysis.senderInstitution || "Unbekannt";
   const impactAssessment = analysis.impactAssessment || "";
-  const peopleValue = people.length > 0 ? people.join(" · ") : "Keine";
+  const peopleValue = people.length > 0 ? people.map(p => p.name).join(" · ") : "Keine";
   const verdict = deriveDocumentVerdict(analysis);
   const evidenceCount = countEvidenceSnippets(evidence);
 
@@ -2789,11 +2787,11 @@ async function loadRowAnalysis(file, options = {}) {
       <div class="qa-mod-persons-section">
         <div class="qa-mod-section-header">
           <span class="qa-mod-section-number">5</span>
-          <span class="qa-mod-section-title">Involvierte Personen</span>
+          <span class="qa-mod-section-title">Involvierte Personen & Funktion</span>
         </div>
         <div class="qa-mod-persons-grid">${people.map(p => `<div class="qa-mod-person-card"><span class="qa-mod-person-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>
-          </span><span class="qa-mod-person-name">${escapeHtml(p)}</span></div>`).join("")}</div>
+          </span><span class="qa-mod-person-name">${escapeHtml(p.name)}</span>${p.role ? `<span class="qa-mod-person-role">${escapeHtml(p.role)}</span>` : ""}</div>`).join("")}</div>
       </div>` : ""}
     </div>
   `;
