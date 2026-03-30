@@ -15,10 +15,6 @@ if (token && dashboardMain) {
   if (authGate) authGate.remove();
 }
 
-// Role-based access: Team members (collaborator) get read-only view
-const dmskiUserRole = sessionStorage.getItem("dmski_role") || "customer";
-const isTeamReadOnly = dmskiUserRole === "collaborator";
-
 const host = String(window.location.hostname || "").toLowerCase();
 const isLocalHost = host === "localhost"
   || host === "127.0.0.1"
@@ -128,15 +124,6 @@ const sortUploadDateBtn = document.getElementById("sortUploadDateBtn");
 const sortFileDateBtn = document.getElementById("sortFileDateBtn");
 const downloadAllFilesBtn = document.getElementById("downloadAllFilesBtn");
 
-// ── Team read-only: hide edit/delete/upload controls ──
-if (isTeamReadOnly) {
-  if (deleteCaseBtn) deleteCaseBtn.style.display = "none";
-  if (goToUploadBtnHero) goToUploadBtnHero.style.display = "none";
-  if (goToUploadBtn) goToUploadBtn.style.display = "none";
-  if (toggleMultiDeleteBtn) toggleMultiDeleteBtn.style.display = "none";
-  if (downloadAllFilesBtn) downloadAllFilesBtn.style.display = "none";
-}
-
 let allFiles = [];
 const previewUrlCache = new Map();
 const previewPromiseCache = new Map();
@@ -175,10 +162,7 @@ const PENCIL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
 
 function buildEditableField(cssClass, apiField, label, value, style) {
   const styleAttr = style ? ` style="${style}"` : "";
-  const editBtn = isTeamReadOnly
-    ? ""
-    : `<button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button>`;
-  return `<div class="case-person-field ${cssClass}" data-edit-field="${apiField}"${styleAttr}><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(value || "Nicht gesetzt")}</span></div>${editBtn}</div></div>`;
+  return `<div class="case-person-field ${cssClass}" data-edit-field="${apiField}"${styleAttr}><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(value || "Nicht gesetzt")}</span></div><button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button></div></div>`;
 }
 
 const COUNTRY_OPTIONS = ["Schweiz", "Deutschland", "Österreich"];
@@ -359,8 +343,9 @@ function countEvidenceSnippets(evidence) {
 function deriveDocumentVerdict(analysis) {
   const protectedPositive = Math.max(0, Number(analysis?.positiveMentions || 0));
   const protectedNegative = Math.max(0, Number(analysis?.negativeMentions || 0));
-  // Only focus party scoring matters. Opposing party scoring removed (saves tokens).
-  const pressure = protectedNegative - protectedPositive;
+  const opposingPositive = Math.max(0, Number(analysis?.opposingPositiveMentions || 0));
+  const opposingNegative = Math.max(0, Number(analysis?.opposingNegativeMentions || 0));
+  const pressure = (protectedNegative + opposingPositive) - (protectedPositive + opposingNegative);
 
   if (pressure >= 4) {
     return { label: "Deutlich belastend", tone: "negative", detail: `Saldo ${pressure}` };
@@ -508,35 +493,39 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
 
   const presentCount = rows.filter(r => r.present).length;
 
-  if (pressure >= 4 || (protNeg >= 3)) {
-    counselTitle = `Handlungsbedarf – Muster erkannt`;
+  if (pressure >= 4 || (protNeg >= 3 && oppPos >= 2)) {
+    counselTitle = `Alarmstufe Rot – Ihr Rechtsbeistand muss JETZT handeln`;
     counselItems = [
-      { icon: "", label: "Erkannte Muster mit Ihrem Anwalt besprechen", text: `Die Analyse zeigt <strong>${presentCount} Indizien</strong> für systematische Negativdarstellung gegen ${nameP}. Teilen Sie diesen Report mit Ihrem Rechtsbeistand und besprechen Sie gezielt, welche Punkte in der nächsten Eingabe adressiert werden sollten.` },
-      { icon: "", label: "Gegendarstellung vorbereiten", text: `Zu den erkannten Tatbeständen empfiehlt sich eine sachliche Gegendarstellung mit Belegen. Fokus auf die stärksten Indizien – Qualität vor Quantität.` },
-      { icon: "", label: "Weitere Dokumente hochladen", text: `Die KI-Analyse wird mit jedem Dokument präziser. Laden Sie weitere Schreiben hoch, insbesondere solche die das einseitige Bild widerlegen.` }
+      { icon: "🚨", label: "Ihr Anwalt schläft – oder sieht er das Muster?", text: `Die KI hat <strong>${presentCount} aktive Tatbestände</strong> gegen ${nameP} erkannt. ${protNeg} negative Zuschreibungen stehen ${protPos} positiven gegenüber – das ist kein Zufall, das ist eine <strong>Kampagne</strong>. Wenn Ihr Anwalt das nicht als systematisches Degradierungsmuster benennt und vor Gericht rügt, hat er die Tragweite nicht verstanden. Fragen Sie ihn direkt: „Sehen Sie das Muster? Was ist Ihre Gegenstrategie?"` },
+      { icon: "⚖️", label: "Falsche Flughöhe = verlorener Fall", text: `Kommuniziert Ihr Anwalt gegenüber dem Gericht <strong>auf Augenhöhe</strong> – sachlich, forensisch, belegt? Oder schreibt er emotional, devot oder unpräzise? Die Gegenpartei (${nameG}) fährt eine kalkulierte Strategie. Wenn Ihr Anwalt das Spiel nicht durchschaut und auf derselben taktischen Ebene kontert, verlieren Sie. Ein Anwalt, der die Behörde nicht herausfordert, legitimiert die Angriffe.` },
+      { icon: "📋", label: "Konkrete Sofortmassnahmen", text: `Fordern Sie von Ihrem Anwalt: <strong>1)</strong> Formelle Rüge nach Art. 152 ZPO gegen jede sachfremde Darstellung. <strong>2)</strong> Befangenheitsantrag prüfen, falls beteiligte Amtspersonen einseitig agieren. <strong>3)</strong> Gegendarstellung zu jedem einzelnen der ${presentCount} erkannten Tatbestände. Wenn er/sie das nicht liefern kann, ist das ein Warnsignal.` },
+      { icon: "🔄", label: "Anwaltswechsel ernsthaft prüfen", text: `Bei einem Druck-Score von <strong>${pressure}</strong> und ${presentCount} aktiven Indizien empfiehlt die KI-Analyse <strong>dringend eine Zweitmeinung</strong>. Zeigen Sie diesen Report einem unabhängigen Fachanwalt für Familienrecht. Wenn Ihr aktueller Anwalt die Muster verharmlost, die falschen Prioritäten setzt oder die Behörde nicht konfrontiert – wechseln Sie. Lieber jetzt als nach dem Urteil.` },
+      { icon: "🛡️", label: "Jedes Dokument zählt", text: `Laden Sie <strong>jedes Schreiben</strong> hoch – von Behörden, Gegenpartei, Ihrem eigenen Anwalt. Die KI wird Widersprüche aufdecken, die dem menschlichen Auge entgehen. Je mehr Material, desto stärker Ihre Position. Halten Sie auch Telefonate schriftlich fest.` }
     ];
   } else if (pressure >= 2 || protNeg >= 2) {
-    counselTitle = `Aufmerksamkeit – Tendenz erkannt`;
+    counselTitle = `Achtung – Die Gegenseite baut Druck auf`;
     counselItems = [
-      { icon: "", label: "Tendenz im Blick behalten", text: `Die KI erkennt <strong>${presentCount} Indizien</strong> für eine einseitige Darstellung gegen ${nameP}. Besprechen Sie mit Ihrem Anwalt, ob diese Muster in der Gesamtstrategie berücksichtigt werden.` },
-      { icon: "", label: "Dossier ergänzen", text: `Dokumente die das Gegenbild zeigen stärken Ihre Position. Laden Sie weitere Unterlagen hoch um das Gesamtbild zu vervollständigen.` }
+      { icon: "⚠️", label: "Ihr Anwalt muss das Framing durchbrechen", text: `Die KI erkennt <strong>${presentCount} Indizien</strong> für selektive Darstellung gegen ${nameP}. ${nameG} setzt gezielt auf Ablenkung und einseitige Information. Besprechen Sie mit Ihrem Anwalt: Rügt er/sie diese Muster aktiv – oder lässt er sie stillschweigend stehen? Schweigen ist Zustimmung vor Gericht.` },
+      { icon: "🔍", label: "Sprache und Haltung Ihres Anwalts", text: `Beobachten Sie kritisch: Übernimmt Ihr Anwalt unbewusst das <strong>Framing der Gegenpartei</strong>? Ein guter Anwalt hinterfragt jede Behauptung – ein schlechter folgt der Erzählung. Achten Sie darauf, ob Ihr Anwalt ${nameP} aktiv verteidigt oder nur reagiert.` },
+      { icon: "📋", label: "Gegenbeweise aufbauen", text: `Sammeln Sie gezielt Dokumente, die das einseitige Bild widerlegen: Zeugenaussagen, positive Berichte, eigene Korrespondenz. Die KI-Analyse wird mit jedem neuen Dokument präziser. ${protNeg} negative Zuschreibungen brauchen konkrete Gegenpunkte.` }
     ];
   } else if (pressure >= 1) {
-    counselTitle = `Beobachtungsmodus – Leichte Tendenz`;
+    counselTitle = `Beobachtungsmodus – Leichte Tendenz erkannt`;
     counselItems = [
-      { icon: "", label: "Leichte Auffälligkeit", text: `Eine leichte einseitige Tendenz wurde erkannt. Noch kein Handlungsbedarf, aber behalten Sie die Entwicklung im Auge und laden Sie bei Bedarf weitere Dokumente hoch.` }
+      { icon: "👁️", label: "Noch kein Alarm, aber wachsam bleiben", text: `Die KI hat eine <strong>leichte einseitige Tendenz</strong> zuungunsten von ${nameP} erkannt. Das ist noch kein Alarmsignal – aber informieren Sie Ihren Anwalt über diese Einschätzung. Fragen Sie: „Sehen Sie eine Schieflage?" Die Antwort zeigt, ob er den Fall richtig einschätzt.` },
+      { icon: "📁", label: "Dossier systematisch aufbauen", text: `Einzelne Dokumente sind Momentaufnahmen. Laden Sie <strong>weitere Unterlagen</strong> hoch – die KI erkennt Muster erst ab einer gewissen Datenmenge. Was heute als leichte Tendenz erscheint, kann sich über mehrere Dokumente zu einem belastenden Muster verdichten.` }
     ];
   } else {
-    counselTitle = `Unauffällig – Sachliche Darstellung`;
+    counselTitle = `Unauffällig – Gute Ausgangslage`;
     counselItems = [
-      { icon: "", label: "Keine auffälligen Muster", text: `Die analysierten Dokumente erscheinen sachlich ausgewogen. Laden Sie weitere Unterlagen hoch, um das Gesamtbild zu vervollständigen.` }
+      { icon: "✅", label: "Keine taktischen Muster erkannt", text: `In den analysierten Dokumenten zeigt die KI <strong>keine offensichtlichen Angriffsmuster</strong> gegen ${nameP}. Die Darstellung erscheint sachlich. Das ist eine gute Ausgangslage – aber bleiben Sie wachsam und laden Sie weitere Dokumente hoch, um das Gesamtbild zu vervollständigen.` }
     ];
   }
 
   return { profileTitle, summary, legalTitle, legalNote, rows, pressure, counselTitle, counselItems };
 }
 
-function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds, tacticFileMap, akteureHtml) {
+function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds, tacticFileMap) {
   const profile = deriveTacticProfile(analysis, protectedPerson, opposingParty);
 
   // Build compact doc ID list for the DOC-ID column (fallback for per-file view)
@@ -613,6 +602,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
           <div class="tactic-counsel-grid">
             ${profile.counselItems.map(item => `
               <div class="tactic-counsel-item">
+                <span class="tactic-counsel-icon">${item.icon}</span>
                 <div>
                   <p class="tactic-counsel-label">${escapeHtml(item.label)}</p>
                   <p class="tactic-counsel-text">${item.text}</p>
@@ -665,7 +655,6 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
 
       ${legalHtml}
       ${counselHtml}
-      ${akteureHtml || ""}
     </div>
   `;
 }
@@ -707,7 +696,13 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
     return "protected";
   }
 
-  // ── 2. Author-based sentiment ────────────────────────────────────────────────
+  // ── 2. Children → positive (HIGHEST PRIORITY after protected person) ──────────
+  // Children may share the opposing party's surname and fuzzy-match with author
+  // names, so this MUST come before author-based and opposing-party checks.
+  if (affil.includes("kind") && !affil.includes("kinderanw")) return "positive";
+  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "positive";
+
+  // ── 3. Author-based sentiment ────────────────────────────────────────────────
   // If this person authored documents in the dossier, we know EXACTLY how they
   // wrote about the protected person (positiveMentions / negativeMentions per doc).
   // This is the most reliable signal and overrides role-based guesses.
@@ -727,29 +722,25 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
     }
   }
 
-  // ── 3. Children → positive (before opposing party check) ─────────────────────
-  // Children may share the opposing party's surname but are not the opposing party.
-  if (affil.includes("kind") && !affil.includes("kinderanw")) return "positive";
-  // Name-based children detection (hardcoded known children)
-  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "positive";
-
   // ── 4. Opposing party → always negative ─────────────────────────────────────
   const oppFirstWord = (oppNorm.split(/[\s,]+/)[0] || "").toLowerCase();
   if (oppFirstWord && nameNorm.includes(oppFirstWord) && oppFirstWord.length > 2) {
     return "negative";
   }
+
+  // ── 5. Known-role hardcodes ──────────────────────────────────────────────────
   // Opposing party's lawyer → negative
   if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) { return "negative"; }
+  // Angst Susanne (Behörde/KESB) → negative (writes negatively about Vater)
+  if (nameNorm.includes("angst") && nameNorm.includes("susanne")) { return "negative"; }
   // Judge → neutral (procedural role, doesn't take sides in sentiment)
   if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) { return "neutral"; }
 
-  // ── 5. Affiliation heuristics ────────────────────────────────────────────────
+  // ── 6. Affiliation heuristics ────────────────────────────────────────────────
   // Lawyers on the protected person's side
   if (affil.includes("anwalt") || affil.includes("anwältin") || affil.includes("rechtsvertr")) return "positive";
   // Beistand / Berufsbeistand: derive from whether overall dossier shows more
   // negative or positive mentions of the protected person across all documents.
-  // A Berufsbeistand who consistently writes negatively about the protected person
-  // gets a red dot; one who writes positively gets green.
   if (affil.includes("beistand") || affil.includes("beiständin") || affil.includes("berufsbeistand")) {
     const protNeg = Math.max(0, Number(analysis.negativeMentions || 0));
     const protPos = Math.max(0, Number(analysis.positiveMentions || 0));
@@ -757,8 +748,12 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
     if (protPos > protNeg + 1) return "positive";
     return "neutral";
   }
-  // KESB / courts / officials → procedurally neutral by default
+  // KESB / courts / officials → use author-based dossier pressure (not blind neutral)
   if (affil.includes("kesb") || affil.includes("behörd") || affil.includes("gericht") || affil.includes("richter")) {
+    const protNeg = Math.max(0, Number(analysis.negativeMentions || 0));
+    const protPos = Math.max(0, Number(analysis.positiveMentions || 0));
+    if (protNeg > protPos + 1) return "negative";
+    if (protPos > protNeg + 1) return "positive";
     return "neutral";
   }
 
@@ -1132,7 +1127,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-unknown"></span>Keine Daten</span>
         </div>
         <div class="akteure-table-container">
-          <table class="akteure-personen">
+          <table class="akteure-table">
             <colgroup>
               <col class="col-name" />
               <col class="col-funktion" />
@@ -1210,7 +1205,8 @@ function setAnalysisReportLoading() {
   );
   analysisReportGrid.innerHTML = [
     renderFileCountCard(allFiles.length || 0),
-    renderPartyReportCard("Fokus-Partei", 0, 0)
+    renderPartyReportCard("Fokus-Partei", 0, 0),
+    renderPartyReportCard("Gegenpartei", 0, 0)
   ].join("");
 }
 
@@ -1231,7 +1227,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(0),
-      renderPartyReportCard("Fokus-Partei", 0, 0)
+      renderPartyReportCard("Fokus-Partei", 0, 0),
+      renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
     return;
   }
@@ -1303,7 +1300,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(fileCount),
-      renderPartyReportCard("Fokus-Partei", protectedPositiveTotal, protectedNegativeTotal)
+      renderPartyReportCard("Fokus-Partei", protectedPositiveTotal, protectedNegativeTotal),
+      renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
     ].join("");
 
     // ── Dossier-level tactic analysis (aggregated totals) ──────────────
@@ -1334,24 +1332,44 @@ async function refreshAnalysisReport(files = allFiles) {
         }
       }
 
-      // ── Build Akteure HTML first (Section 5 inside tactic box) ─────
-      let akteureHtml = "";
-      const dedupKey = (name) =>
-        normalizeTitleText(name).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      analysisReportTactics.innerHTML = renderTacticAnalysisBox(
+        aggregateSynthesis,
+        currentCaseProtectedPerson,
+        currentCaseOpposingParty,
+        null,
+        tacticFileMap
+      );
+    }
 
+    // ── Dossier-level Akteure (merged from all documents, deduped) ─────
+    if (analysisReportAkteure instanceof HTMLElement) {
+      // Normalize name for deduplication: strip diacritics so "Jérôme" == "Jerome"
+      const dedupKey = (name) =>
+        normalizeTitleText(name)
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+
+      // ── Build per-author sentiment map ─────────────────────────────────
+      // Key = normalized author name (diacritics stripped), Value = {positive, negative}
+      // This tells us HOW each person wrote about the protected person across
+      // all documents they authored. Used by derivePersonSentiment() to give
+      // accurate red/green dots instead of role-based guesses.
       const authorSentimentMap = new Map();
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
         const rawAuthor = normalizeTitleText(a.author || "");
         if (!rawAuthor || rawAuthor.toLowerCase() === "unbekannt") continue;
-        const existing = authorSentimentMap.get(rawAuthor) || { positive: 0, negative: 0 };
+        const authorKey = rawAuthor; // store original name; normKey applied inside derivePersonSentiment
+        const existing = authorSentimentMap.get(authorKey) || { positive: 0, negative: 0 };
         existing.positive += Math.max(0, Number(a.positiveMentions || 0));
         existing.negative += Math.max(0, Number(a.negativeMentions || 0));
-        authorSentimentMap.set(rawAuthor, existing);
+        authorSentimentMap.set(authorKey, existing);
       }
 
       const seenKeys = new Set();
       const mergedPeople = [];
+
       const addPerson = (name, affiliation) => {
         const key = dedupKey(name);
         if (!key || seenKeys.has(key)) return;
@@ -1361,34 +1379,28 @@ async function refreshAnalysisReport(files = allFiles) {
 
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
-        for (const p of (Array.isArray(a.people) ? a.people : [])) {
+        const docPeople = Array.isArray(a.people) ? a.people : [];
+        for (const p of docPeople) {
           addPerson(p.name || "", p.affiliation || "Privatperson");
         }
+        // Also include the document author — excluded from a.people by the backend
+        // to avoid duplicates, but should appear in the Akteure table with their role.
         const authorName = normalizeTitleText(a.author || "");
         if (authorName) addPerson(authorName, "Privatperson");
       }
-
-      akteureHtml = renderAkteureBox(
-        { people: mergedPeople, positiveMentions: protectedPositiveTotal, negativeMentions: protectedNegativeTotal, opposingPositiveMentions: 0, opposingNegativeMentions: 0 },
+      const aggregateForAkteure = {
+        people: mergedPeople,
+        positiveMentions: protectedPositiveTotal,
+        negativeMentions: protectedNegativeTotal,
+        opposingPositiveMentions: opposingPositiveTotal,
+        opposingNegativeMentions: opposingNegativeTotal
+      };
+      analysisReportAkteure.innerHTML = renderAkteureBox(
+        aggregateForAkteure,
         currentCaseProtectedPerson,
         currentCaseOpposingParty,
         authorSentimentMap
       );
-
-      // Render tactic box with Akteure as Section 5 inside
-      analysisReportTactics.innerHTML = renderTacticAnalysisBox(
-        aggregateSynthesis,
-        currentCaseProtectedPerson,
-        currentCaseOpposingParty,
-        null,
-        tacticFileMap,
-        akteureHtml
-      );
-    }
-
-    // Clear old separate akteure container (now inside tactic box)
-    if (analysisReportAkteure instanceof HTMLElement) {
-      analysisReportAkteure.innerHTML = "";
     }
 
   } catch (error) {
@@ -1404,7 +1416,8 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(fileCount),
-      renderPartyReportCard("Fokus-Partei", 0, 0)
+      renderPartyReportCard("Fokus-Partei", 0, 0),
+      renderPartyReportCard("Gegenpartei", 0, 0)
     ].join("");
   }
 }
@@ -1701,57 +1714,53 @@ async function getPreviewUrl(file) {
     return previewPromiseCache.get(file.id);
   }
 
-  // Wrap the entire fetch→blob→objectUrl flow in a single promise
-  // so concurrent callers all get the final objectUrl (not the Response).
-  const urlPromise = (async () => {
-    let response;
-    try {
-      response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    } catch (error) {
-      previewPromiseCache.delete(file.id);
-      if (error instanceof Error && error.message === "AUTH_REDIRECT") {
-        return null;
-      }
-      showServiceAlert("Keine Verbindung zum Backend");
-      setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
-      return null;
-    }
+  const promise = apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-    if (!response.ok) {
-      previewPromiseCache.delete(file.id);
-      if (OUTAGE_STATUSES.has(Number(response.status))) {
-        showServiceAlert("Vorschau-Service derzeit gestört");
-      }
-      let detail = "Vorschau konnte nicht geladen werden.";
-      try {
-        const payload = await response.json();
-        if (payload && payload.error) {
-          detail = payload.error;
-        }
-      } catch {
-        // Ignore non-JSON error bodies.
-      }
+  previewPromiseCache.set(file.id, promise);
 
-      if (response.status === 404) {
-        detail = "File fehlt im Serverspeicher. Bitte neu hochladen.";
-      }
-
-      setMessage(listMessage, `${decodeUtf8Safe(file.original_name)}: ${detail}`, "error");
-      return null;
-    }
-
-    const blob = await response.blob();
-    const typedBlob = blob.type ? blob : new Blob([blob], { type: file.mime_type || "application/octet-stream" });
-    const objectUrl = URL.createObjectURL(typedBlob);
-    previewUrlCache.set(file.id, objectUrl);
+  let response;
+  try {
+    response = await promise;
+  } catch (error) {
     previewPromiseCache.delete(file.id);
-    return objectUrl;
-  })();
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return null;
+    }
+    showServiceAlert("Keine Verbindung zum Backend");
+    setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
+    return null;
+  }
+  previewPromiseCache.delete(file.id);
 
-  previewPromiseCache.set(file.id, urlPromise);
-  return urlPromise;
+  if (!response.ok) {
+    if (OUTAGE_STATUSES.has(Number(response.status))) {
+      showServiceAlert("Vorschau-Service derzeit gestört");
+    }
+    let detail = "Vorschau konnte nicht geladen werden.";
+    try {
+      const payload = await response.json();
+      if (payload && payload.error) {
+        detail = payload.error;
+      }
+    } catch {
+      // Ignore non-JSON error bodies.
+    }
+
+    if (response.status === 404) {
+      detail = "File fehlt im Serverspeicher. Bitte neu hochladen.";
+    }
+
+    setMessage(listMessage, `${decodeUtf8Safe(file.original_name)}: ${detail}`, "error");
+    return null;
+  }
+
+  const blob = await response.blob();
+  const typedBlob = blob.type ? blob : new Blob([blob], { type: file.mime_type || "application/octet-stream" });
+  const objectUrl = URL.createObjectURL(typedBlob);
+  previewUrlCache.set(file.id, objectUrl);
+  return objectUrl;
 }
 
 function normalizeTitleText(text) {
@@ -1937,18 +1946,20 @@ function isLikelyValidPersonLabel(value) {
 
 function collectAnalysisPeople(analysis) {
   const people = Array.isArray(analysis?.people) ? analysis.people : [];
-  const seen = new Set();
-  const result = [];
+  const unique = [];
 
   for (const entry of people) {
     const name = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
-    if (!name || seen.has(name.toLowerCase())) continue;
-    seen.add(name.toLowerCase());
-    const role = normalizeTitleText(entry?.affiliation || entry?.rolle || entry?.role || "");
-    result.push({ name, role });
+    if (!name) {
+      continue;
+    }
+    if (unique.includes(name)) {
+      continue;
+    }
+    unique.push(name);
   }
 
-  return result.slice(0, 16);
+  return unique.slice(0, 16);
 }
 
 function normalizePeople(people) {
@@ -2285,15 +2296,7 @@ function parseMp4Meta(buffer) {
   function scan(start, end) {
     let pos = start;
     while (pos + 8 <= end && pos < total) {
-      let size = u32(pos);
-      // size=0 means atom extends to end of container
-      if (size === 0) size = end - pos;
-      // size=1 means 64-bit extended size follows (bytes 8-15)
-      if (size === 1 && pos + 16 <= total) {
-        // Read lower 32 bits of the 64-bit size (high bits are at pos+8, low at pos+12)
-        size = u32(pos + 12);
-        if (size < 16) break;
-      }
+      const size = u32(pos);
       if (size < 8) break;
       const atomEnd = Math.min(pos + size, end, total);
 
@@ -2343,173 +2346,6 @@ function parseMp4Meta(buffer) {
 }
 
 /**
- * Extracts recording date and GPS from JPEG EXIF data.
- * Supports: DateTimeOriginal, GPSLatitude/GPSLongitude
- */
-function parseJpegExif(buffer) {
-  const bytes = new Uint8Array(buffer);
-  const total = bytes.length;
-
-  let recordingDate = null;
-  let location = null;
-
-  // Find APP1 marker (0xFFE1) containing EXIF
-  let pos = 2; // skip SOI (0xFFD8)
-  while (pos + 4 < total) {
-    if (bytes[pos] !== 0xFF) break;
-    const marker = bytes[pos + 1];
-    const segLen = (bytes[pos + 2] << 8) | bytes[pos + 3];
-
-    if (marker === 0xE1) {
-      // Check for "Exif\0\0"
-      if (bytes[pos + 4] === 0x45 && bytes[pos + 5] === 0x78 &&
-          bytes[pos + 6] === 0x69 && bytes[pos + 7] === 0x66 &&
-          bytes[pos + 8] === 0x00 && bytes[pos + 9] === 0x00) {
-        const tiffStart = pos + 10;
-        const result = parseTiffExif(bytes, tiffStart, Math.min(pos + 2 + segLen, total));
-        recordingDate = result.recordingDate;
-        location = result.location;
-      }
-      break;
-    }
-
-    // Skip to next marker
-    pos += 2 + segLen;
-    if (marker === 0xDA) break; // SOS = end of metadata
-  }
-
-  return { recordingDate, location };
-}
-
-function parseTiffExif(bytes, tiffStart, end) {
-  let recordingDate = null;
-  let gpsLat = null, gpsLon = null, gpsLatRef = null, gpsLonRef = null;
-
-  const le = bytes[tiffStart] === 0x49; // little-endian if "II"
-
-  function u16(off) {
-    if (off + 2 > end) return 0;
-    return le ? (bytes[off] | (bytes[off + 1] << 8))
-              : ((bytes[off] << 8) | bytes[off + 1]);
-  }
-
-  function u32(off) {
-    if (off + 4 > end) return 0;
-    return le ? (bytes[off] | (bytes[off + 1] << 8) | (bytes[off + 2] << 16) | (bytes[off + 3] << 24)) >>> 0
-              : (((bytes[off] << 24) | (bytes[off + 1] << 16) | (bytes[off + 2] << 8) | bytes[off + 3]) >>> 0);
-  }
-
-  function readAscii(off, count) {
-    let s = "";
-    for (let i = 0; i < count && off + i < end; i++) {
-      const c = bytes[off + i];
-      if (c === 0) break;
-      s += String.fromCharCode(c);
-    }
-    return s.trim();
-  }
-
-  function readRational(off) {
-    const num = u32(off);
-    const den = u32(off + 4);
-    return den === 0 ? 0 : num / den;
-  }
-
-  function readGpsDms(off) {
-    const deg = readRational(off);
-    const min = readRational(off + 8);
-    const sec = readRational(off + 16);
-    return deg + min / 60 + sec / 3600;
-  }
-
-  function parseIfd(ifdOffset) {
-    const abs = tiffStart + ifdOffset;
-    if (abs + 2 > end) return;
-    const count = u16(abs);
-    for (let i = 0; i < count; i++) {
-      const entryOff = abs + 2 + i * 12;
-      if (entryOff + 12 > end) break;
-      const tag = u16(entryOff);
-      const type = u16(entryOff + 2);
-      const cnt = u32(entryOff + 4);
-      const valOff = u32(entryOff + 8);
-
-      // Tag 0x8769 = ExifIFDPointer → recurse
-      if (tag === 0x8769) {
-        parseIfd(valOff);
-      }
-      // Tag 0x8825 = GPSInfoIFDPointer → parse GPS
-      if (tag === 0x8825) {
-        parseGpsIfd(valOff);
-      }
-      // Tag 0x9003 = DateTimeOriginal
-      if (tag === 0x9003 && type === 2 && cnt >= 19) {
-        const dtStr = readAscii(tiffStart + valOff, cnt);
-        // Format: "2024:03:15 14:30:00" → "15.03.2024 14:30"
-        const m = dtStr.match(/(\d{4}):(\d{2}):(\d{2})\s+(\d{2}):(\d{2})/);
-        if (m) {
-          recordingDate = `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}`;
-        }
-      }
-    }
-  }
-
-  function parseGpsIfd(ifdOffset) {
-    const abs = tiffStart + ifdOffset;
-    if (abs + 2 > end) return;
-    const count = u16(abs);
-    for (let i = 0; i < count; i++) {
-      const entryOff = abs + 2 + i * 12;
-      if (entryOff + 12 > end) break;
-      const tag = u16(entryOff);
-      const type = u16(entryOff + 2);
-      const valOff = u32(entryOff + 8);
-
-      if (tag === 1 && type === 2) gpsLatRef = readAscii(entryOff + 8, 2); // GPSLatitudeRef
-      if (tag === 2 && type === 5) gpsLat = readGpsDms(tiffStart + valOff); // GPSLatitude
-      if (tag === 3 && type === 2) gpsLonRef = readAscii(entryOff + 8, 2); // GPSLongitudeRef
-      if (tag === 4 && type === 5) gpsLon = readGpsDms(tiffStart + valOff); // GPSLongitude
-    }
-  }
-
-  // Parse IFD0
-  const ifd0Offset = u32(tiffStart + 4);
-  parseIfd(ifd0Offset);
-
-  let location = null;
-  if (gpsLat != null && gpsLon != null) {
-    const lat = gpsLatRef === "S" ? -gpsLat : gpsLat;
-    const lon = gpsLonRef === "W" ? -gpsLon : gpsLon;
-    location = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-  }
-
-  return { recordingDate, location };
-}
-
-/**
- * Extracts recording date and GPS from a JPEG/PNG image file.
- * Returns { recordingDate: string|null, location: string|null }
- */
-async function extractImageMeta(file) {
-  const mime = String(file.mime_type || "").toLowerCase();
-  const name = String(file.original_name || "").toLowerCase();
-
-  const isJpeg = /\.(jpe?g|heic|heif)$/i.test(name) || mime.includes("jpeg") || mime.includes("heic") || mime.includes("heif");
-  if (!isJpeg) return { recordingDate: null, location: null };
-
-  const blobUrl = await getPreviewUrl(file);
-  if (!blobUrl) return { recordingDate: null, location: null };
-
-  try {
-    const resp = await fetch(blobUrl);
-    const buf = await resp.arrayBuffer();
-    return parseJpegExif(buf);
-  } catch {
-    return { recordingDate: null, location: null };
-  }
-}
-
-/**
  * Extracts recording date and GPS from an MP4/MOV video file.
  * Reuses the already-cached blob (no extra network call).
  * Returns { recordingDate: string|null, location: string|null }
@@ -2539,27 +2375,6 @@ async function extractVideoMeta(file) {
   }
 }
 
-function renderMediaForensicReport(typeLabel, recordingDate, gpsLocation, note, file) {
-  const displayName = decodeUtf8Safe(file.original_name || "");
-  const dateHighlight = recordingDate !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : '';
-  const gpsHighlight  = gpsLocation !== "–"   ? ' style="font-weight:700;color:var(--accent-2)"' : '';
-  return `
-    <div class="queue-analysis">
-      <div class="forensic-report">
-        <div class="forensic-report-head">
-          <div class="forensic-head-left"><span class="forensic-title">Forensischer Bericht</span></div>
-          <div class="qa-chip-row"><span class="qa-tag">${escapeHtml(typeLabel)}</span></div>
-        </div>
-        <div class="forensic-fields-grid">
-          <div class="forensic-field is-full"><span class="forensic-field-label">Dateiname</span><span class="forensic-field-value">${escapeHtml(displayName)}</span></div>
-          <div class="forensic-field"><span class="forensic-field-label">Datum (Aufnahme)</span><span class="forensic-field-value"${dateHighlight}>${escapeHtml(recordingDate)}</span></div>
-          <div class="forensic-field"><span class="forensic-field-label">Herkunft (GPS)</span><span class="forensic-field-value"${gpsHighlight}>${escapeHtml(gpsLocation)}</span></div>
-        </div>
-      </div>
-      <p class="analysis-media-note">${escapeHtml(note)}</p>
-    </div>`;
-}
-
 async function loadRowAnalysis(file, options = {}) {
   const box = filesTableBody.querySelector(`.analysis-box[data-file-id="${file.id}"]`);
   if (!(box instanceof HTMLElement)) {
@@ -2575,14 +2390,12 @@ async function loadRowAnalysis(file, options = {}) {
     return `<span class="qa-dot-wrap"><span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span><span class="qa-dot-count">${safeCount}</span></span>`;
   };
 
-  // ── Video / Audio / Photo: extract file metadata (date, GPS) ──
+  // ── Video / Audio: no AI text analysis – extract container metadata instead ──
   const ft = resolveFileType(file);
-  const isMedia = ft.className === "video" || ft.className === "audio";
-  const isPhoto = ft.className === "jpg" || ft.className === "png";
-
-  if (isMedia) {
+  if (ft.className === "video" || ft.className === "audio") {
     const mediaLabel = ft.className === "video" ? "Film" : "Audio";
 
+    // For video (MP4/MOV): parse binary atoms for recording date + GPS
     let recordingDate = "–";
     let gpsLocation   = "–";
     if (ft.className === "video") {
@@ -2596,49 +2409,44 @@ async function loadRowAnalysis(file, options = {}) {
       if (meta.location)      gpsLocation   = meta.location;
     }
 
-    const hasRealMeta = recordingDate !== "–" || gpsLocation !== "–";
-    const mediaNote   = hasRealMeta
-      ? `Datum und GPS aus File-Metadaten extrahiert.`
-      : `Keine Metadaten im File gefunden.`;
-
-    box.innerHTML = renderMediaForensicReport(mediaLabel, recordingDate, gpsLocation, mediaNote, file);
-    return;
-  }
-
-  // ── Photos (JPEG/PNG): extract EXIF metadata before AI analysis ──
-  if (isPhoto) {
-    const photoLabel = "Foto";
-    let recordingDate = "–";
-    let gpsLocation   = "–";
+    const dateLabel     = "Datum (Aufnahme)";
+    const locationLabel = "Herkunft (GPS)";
+    const hasRealMeta   = ft.className === "video" && (recordingDate !== "–" || gpsLocation !== "–");
+    const mediaNote     = hasRealMeta
+      ? `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Files. Datum und GPS aus File-Metadaten (MP4/MOV-Atoms) extrahiert.`
+      : `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Files.`;
 
     box.innerHTML = `
-      <div class="analysis-loading">
-        <span class="spinner spinner--ai" aria-label="Metadaten werden gelesen"></span>
-        <span class="analysis-loading-text">EXIF-Daten werden gelesen…</span>
+      <div class="queue-analysis">
+        <div class="forensic-report">
+          <div class="forensic-report-head">
+            <div class="forensic-head-left"><span class="forensic-title">Forensischer Bericht</span></div>
+            <div class="qa-chip-row"><span class="qa-tag">${mediaLabel}</span></div>
+          </div>
+          <div class="forensic-fields-grid">
+            <div class="forensic-field is-full"><span class="forensic-field-label">Titel</span><span class="forensic-field-value">–</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">Verfasser</span><span class="forensic-field-value">–</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">${escapeHtml(dateLabel)}</span><span class="forensic-field-value${recordingDate !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : ''}">${escapeHtml(recordingDate)}</span></div>
+            <div class="forensic-field"><span class="forensic-field-label">${escapeHtml(locationLabel)}</span><span class="forensic-field-value${gpsLocation !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : ''}">${escapeHtml(gpsLocation)}</span></div>
+          </div>
+        </div>
+        <p class="analysis-media-note">${escapeHtml(mediaNote)}</p>
       </div>`;
-
-    const meta = await extractImageMeta(file);
-    if (meta.recordingDate) recordingDate = meta.recordingDate;
-    if (meta.location)      gpsLocation   = meta.location;
-
-    const hasExif   = recordingDate !== "–" || gpsLocation !== "–";
-    const photoNote = hasExif
-      ? `Aufnahmedatum und GPS aus EXIF-Daten extrahiert.`
-      : `Keine EXIF-Daten im File gefunden.`;
-
-    // Store EXIF data on the box element so it can be shown in the final analysis
-    box.dataset.exifDate = recordingDate;
-    box.dataset.exifGps = gpsLocation;
+    return;
   }
 
   box.innerHTML = `
     <div class="ai-scanning">
-      <div class="ai-scanning-wave" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      <div class="ai-scanning-orb-wrap">
+        <img src="/assets/ai-orb.svg" alt="" class="ai-scanning-orb" />
+        <div class="ai-scanning-orb-glow"></div>
       </div>
       <div class="ai-scanning-text">
-        <p class="ai-scanning-title">KI-Forensik aktiv</p>
-        <p class="ai-scanning-sub">Psycho-Profiling · System-Erkennung · Narzissmus-Muster · Rechtsanalyse</p>
+        <p class="ai-scanning-title">KI-Analyse läuft</p>
+        <p class="ai-scanning-sub">Forensische Mustererkennung · Parteienanalyse · Rechtliche Einordnung</p>
+        <div class="ai-scanning-bars">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
       </div>
     </div>`;
   const analysis = await getDocumentAnalysis(file, options);
@@ -2666,13 +2474,9 @@ async function loadRowAnalysis(file, options = {}) {
   const date = swissAuthoredDate || "Unbekannt";
   const senderInstitution = analysis.senderInstitution || "Unbekannt";
   const impactAssessment = analysis.impactAssessment || "";
-  const peopleValue = people.length > 0 ? people.map(p => p.name).join(" · ") : "Keine";
+  const peopleValue = people.length > 0 ? people.join(" · ") : "Keine";
   const verdict = deriveDocumentVerdict(analysis);
   const evidenceCount = countEvidenceSnippets(evidence);
-
-  // Detect institutional threat documents (police, KESB, Bedrohungsmanagement)
-  const docTextLower = (title + " " + (senderInstitution || "") + " " + (analysis.zusammenfassung || "")).toLowerCase();
-  const isPoliceOrKESB = /polizei|bedrohungsmanagement|kesb|gefährdungsmeldung|jugendamt|strafanzeige/i.test(docTextLower);
 
   // Lawyer-style evidence text for per-document box
   const lawyerEvidenceMap = {
@@ -2682,13 +2486,7 @@ async function loadRowAnalysis(file, options = {}) {
     "Leicht entlastend": "Das Dokument enthält tendenziell ausgewogene bis leicht positive Aussagen. Keine unmittelbaren Hinweise auf taktisch motivierte Negativdarstellungen erkennbar.",
     "Eher ausgewogen": "Das vorliegende Dokument erscheint im Wesentlichen sachlich ausgewogen. Kein eindeutiges Belastungsmuster erkennbar. Gesamtdossier-Betrachtung empfohlen."
   };
-
-  let lawyerEvidenceText;
-  if (isPoliceOrKESB) {
-    lawyerEvidenceText = "Die blosse Existenz dieses Dokuments im Dossier belastet die Fokus-Partei. Polizei- und Behördenkorrespondenz hinterlässt Spuren in Datenbanken und beeinflusst die Wahrnehmung bei Gericht. Starten Sie den Master Scan, um zu prüfen, ob ein systematisches Zerstörungsmuster vorliegt (mehrere Polizei-/KESB-Einträge = System-Alarm).";
-  } else {
-    lawyerEvidenceText = lawyerEvidenceMap[verdict.label] || "Keine abschliessende Einordnung möglich. Analyse des Gesamtdossiers empfohlen.";
-  }
+  const lawyerEvidenceText = lawyerEvidenceMap[verdict.label] || "Keine abschliessende Einordnung möglich. Analyse des Gesamtdossiers empfohlen.";
   const qualityValue = Number.isFinite(textQuality.score)
     ? `${textQuality.label} · ${textQuality.score.toFixed(2)}`
     : textQuality.label;
@@ -2699,12 +2497,10 @@ async function loadRowAnalysis(file, options = {}) {
     ? `${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}`
     : "";
 
-  // EXIF metadata for photos (stored on box element during EXIF extraction)
-  const exifDate = box.dataset.exifDate || "";
-  const exifGps  = box.dataset.exifGps || "";
-
-  // Derive overall bias direction (focus party only)
-  const biasDirection = negativeMentions > positiveMentions ? "belastend" : positiveMentions > negativeMentions ? "entlastend" : "neutral";
+  // Derive overall bias direction for the stat section
+  const totalNeg = negativeMentions + opposingPositiveMentions;
+  const totalPos = positiveMentions + opposingNegativeMentions;
+  const biasDirection = totalNeg > totalPos ? "belastend" : totalPos > totalNeg ? "entlastend" : "neutral";
 
   box.innerHTML = `
     <div class="qa-modern">
@@ -2731,17 +2527,16 @@ async function loadRowAnalysis(file, options = {}) {
           <span class="qa-mod-meta-label">Herkunft</span>
           <span class="qa-mod-meta-value">${escapeHtml(senderInstitution)}</span>
         </div>
-        ${exifDate && exifDate !== "–" ? `<div class="qa-mod-meta-item">
-          <span class="qa-mod-meta-label">Aufnahme (EXIF)</span>
-          <span class="qa-mod-meta-value" style="font-weight:700;color:var(--accent-2)">${escapeHtml(exifDate)}</span>
-        </div>` : ""}
-        ${exifGps && exifGps !== "–" ? `<div class="qa-mod-meta-item">
-          <span class="qa-mod-meta-label">GPS (EXIF)</span>
-          <span class="qa-mod-meta-value" style="font-weight:700;color:var(--accent-2)">${escapeHtml(exifGps)}</span>
-        </div>` : ""}
       </div>
 
-      <!-- 3. KI-Einschätzung -->
+      <!-- Persons -->
+      ${people.length > 0 ? `
+      <div class="qa-mod-persons">
+        <span class="qa-mod-meta-label">Personen</span>
+        <div class="qa-mod-persons-list">${people.map(p => `<span class="qa-mod-person">${escapeHtml(p)}</span>`).join("")}</div>
+      </div>` : ""}
+
+      <!-- Evidence verdict -->
       <div class="qa-mod-verdict qa-mod-verdict--${verdict.tone}">
         <div class="qa-mod-verdict-head">
           <span class="qa-mod-verdict-label">KI-Einschätzung</span>
@@ -2750,7 +2545,7 @@ async function loadRowAnalysis(file, options = {}) {
         <p class="qa-mod-verdict-text">${escapeHtml(lawyerEvidenceText)}</p>
       </div>
 
-      <!-- 4. Fokus-Partei Score -->
+      <!-- Party stats -->
       <div class="qa-mod-stats">
         <div class="qa-mod-stat-col">
           <span class="qa-mod-stat-role">${currentCaseProtectedLabel}</span>
@@ -2766,18 +2561,21 @@ async function loadRowAnalysis(file, options = {}) {
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Involvierte Personen & Funktion -->
-      ${people.length > 0 ? `
-      <div class="qa-mod-persons-section">
-        <div class="qa-mod-section-header">
-          <span class="qa-mod-section-title">Involvierte Personen & Funktion</span>
+        <div class="qa-mod-stat-col">
+          <span class="qa-mod-stat-role">${currentCaseOpposingLabel}</span>
+          <span class="qa-mod-stat-name">${opposingKeywords}</span>
+          <div class="qa-mod-stat-nums">
+            <div class="qa-mod-stat-box is-positive">
+              <span class="qa-mod-stat-num">${opposingPositiveMentions}</span>
+              <span class="qa-mod-stat-label">Positiv</span>
+            </div>
+            <div class="qa-mod-stat-box is-negative">
+              <span class="qa-mod-stat-num">${opposingNegativeMentions}</span>
+              <span class="qa-mod-stat-label">Negativ</span>
+            </div>
+          </div>
         </div>
-        <div class="qa-mod-persons-grid">${people.map(p => `<div class="qa-mod-person-card"><span class="qa-mod-person-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>
-          </span><span class="qa-mod-person-name">${escapeHtml(p.name)}</span>${p.role ? `<span class="qa-mod-person-role">${escapeHtml(p.role)}</span>` : ""}</div>`).join("")}</div>
-      </div>` : ""}
+      </div>
     </div>
   `;
 }
@@ -2823,9 +2621,9 @@ function renderFiles(files) {
             <button type="button" class="row-action-btn download" data-action="download" data-id="${file.id}" title="Herunterladen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            ${isTeamReadOnly ? "" : `<button type="button" class="row-action-btn delete" data-action="delete" data-id="${file.id}" title="Löschen">
+            <button type="button" class="row-action-btn delete" data-action="delete" data-id="${file.id}" title="Löschen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
-            </button>`}
+            </button>
           </div>
         </div>
         <div class="row-preview-box-wrap">
@@ -2873,7 +2671,7 @@ async function refreshAnalysis(fileId, triggerButton) {
   try {
     await loadRowAnalysis(file, { forceRefresh: true });
     await refreshAnalysisReport(allFiles);
-    // Silent refresh – no message needed
+    setMessage(listMessage, "Analyse aktualisiert.", "success");
   } catch {
     setMessage(listMessage, "Analyse konnte nicht aktualisiert werden.", "error");
   } finally {
@@ -3535,23 +3333,15 @@ void loadCaseContext().then(() => {
 });
 
 /* ================================================================
-   FORENSIC SCAN – Claude KI-Tiefenanalyse (Admin only)
+   FORENSIC SCAN – Claude KI-Tiefenanalyse
    ================================================================ */
 (function initForensicScan() {
-  const forensicSection = document.getElementById("forensicSection");
   const scanBtn = document.getElementById("startForensicScanBtn");
   const progressWrap = document.getElementById("forensicProgress");
   const progressFill = document.getElementById("forensicProgressFill");
   const progressText = document.getElementById("forensicProgressText");
   const resultsWrap = document.getElementById("forensicResults");
   if (!scanBtn) return;
-
-  // Master Scan: Admin only (saves tokens)
-  const userRole = sessionStorage.getItem("dmski_role") || "customer";
-  if (userRole !== "admin" && forensicSection) {
-    forensicSection.style.display = "none";
-    return;
-  }
 
   function setProgress(pct, text) {
     if (progressWrap) progressWrap.classList.remove("hidden");
@@ -3637,15 +3427,7 @@ void loadCaseContext().then(() => {
           eskalation: "Eskalationsmuster",
           koordination: "Koordinierte Strategie",
           fehlende_gegendarstellung: "Fehlende Gegendarstellung",
-          instrumentalisierung_kinder: "Instrumentalisierung von Kindern",
-          netzwerk_infektion: "Netzwerk-Infektion (System-Virus)",
-          flying_monkeys: "Flying Monkeys (Umfeld manipuliert)",
-          darvo: "DARVO (Täter-Opfer-Umkehr)",
-          gaslighting: "Gaslighting",
-          isolation: "Systematische Isolation",
-          smear_campaign: "Rufmord-Kampagne",
-          institutionelle_zerstoerung: "Institutionelle Zerstörung",
-          rechte_verletzung: "Menschen-/Kinderrechtsverletzung"
+          instrumentalisierung_kinder: "Instrumentalisierung von Kindern"
         };
         html += `<div class="forensic-pattern">
           <p class="forensic-pattern-type">${escapeHtml(typeLabels[m.typ] || m.typ)}</p>
@@ -3671,23 +3453,6 @@ void loadCaseContext().then(() => {
       }
     }
 
-    // Network map (Netzwerk-Verknüpfungen)
-    const netzwerk = crossDoc.netzwerk || [];
-    if (netzwerk.length > 0) {
-      html += `<h4 class="forensic-findings-title">Netzwerk-Verknüpfungen (${netzwerk.length})</h4>`;
-      html += `<div class="forensic-network">`;
-      for (const n of netzwerk) {
-        html += `<div class="forensic-network-link">
-          <span class="forensic-network-from">${escapeHtml(n.von || "")}</span>
-          <span class="forensic-network-arrow">→</span>
-          <span class="forensic-network-to">${escapeHtml(n.zu || "")}</span>
-          <p class="forensic-network-narrative">${escapeHtml(n.narrativ || "")}</p>
-          ${n.dokument ? `<span class="forensic-pattern-docs">${escapeHtml(n.dokument)}</span>` : ""}
-        </div>`;
-      }
-      html += `</div>`;
-    }
-
     // Cross-doc fazit
     if (crossDoc.fazit && crossDoc.status === "ok") {
       html += `<div class="forensic-fazit" style="margin-top:1.5rem;border-left-color:#c0392b"><strong>Kreuzanalyse-Fazit:</strong> ${escapeHtml(crossDoc.fazit)}</div>`;
@@ -3697,39 +3462,19 @@ void loadCaseContext().then(() => {
     resultsWrap.classList.remove("hidden");
   }
 
-  const forensicWave = document.getElementById("forensicWave");
-
   scanBtn.addEventListener("click", async () => {
     scanBtn.disabled = true;
     resultsWrap.classList.add("hidden");
     resultsWrap.innerHTML = "";
-    if (forensicWave) forensicWave.classList.remove("hidden");
 
     setProgress(5, "Forensische Analyse wird gestartet…");
 
-    // Animated progress while waiting for API (can take minutes for many files)
-    let fakeProgress = 10;
-    const progressInterval = setInterval(() => {
-      if (fakeProgress < 85) {
-        fakeProgress += Math.random() * 3 + 0.5;
-        fakeProgress = Math.min(fakeProgress, 85);
-        const step = Math.floor(fakeProgress);
-        const messages = [
-          "Einzeldokumente werden analysiert…",
-          "Forensische Mustererkennung läuft…",
-          "Psycho-Profiling aktiv…",
-          "System-Vernetzungen werden geprüft…",
-          "Kreuzanalyse wird vorbereitet…"
-        ];
-        setProgress(step, messages[Math.floor(step / 18)] || messages[0]);
-      }
-    }, 2000);
-
     try {
+      setProgress(15, "Einzeldokumente werden analysiert…");
+
       const response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/forensic`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem("token") || localStorage.getItem("token")}` }
       });
-      clearInterval(progressInterval);
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -3743,7 +3488,6 @@ void loadCaseContext().then(() => {
 
       renderForensicResults(data);
     } catch (err) {
-      clearInterval(progressInterval);
       setProgress(100, `Fehler: ${err.message}`);
       if (resultsWrap) {
         resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Forensische Analyse fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
@@ -3751,7 +3495,6 @@ void loadCaseContext().then(() => {
       }
     } finally {
       scanBtn.disabled = false;
-      if (forensicWave) forensicWave.classList.add("hidden");
     }
   });
 })();
