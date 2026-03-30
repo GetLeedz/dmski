@@ -1085,7 +1085,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
 
   if (unique.length === 0) {
     return `
-      <div class="akteure-box tactic-section">
+      <div class="tactic-section">
         <div class="tactic-section-number">5</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">Involvierte Personen & Funktion</p>
@@ -1122,7 +1122,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   }).join("");
 
   return `
-    <div class="akteure-box tactic-section">
+    <div class="tactic-section">
       <div class="tactic-section-number">5</div>
       <div class="tactic-section-content">
         <p class="tactic-section-title">Involvierte Personen & Funktion</p>
@@ -1133,7 +1133,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-neutral"></span>Neutral</span>
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-unknown"></span>Keine Daten</span>
         </div>
-        <div class="tactic-table-wrap">
+        <div class="akteure-table-container">
           <table class="tactic-table akteure-grid">
             <thead>
               <tr>
