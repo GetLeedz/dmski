@@ -2869,7 +2869,7 @@ async function refreshAnalysis(fileId, triggerButton) {
   try {
     await loadRowAnalysis(file, { forceRefresh: true });
     await refreshAnalysisReport(allFiles);
-    setMessage(listMessage, "Analyse aktualisiert.", "success");
+    // Silent refresh – no message needed
   } catch {
     setMessage(listMessage, "Analyse konnte nicht aktualisiert werden.", "error");
   } finally {
@@ -3693,10 +3693,13 @@ void loadCaseContext().then(() => {
     resultsWrap.classList.remove("hidden");
   }
 
+  const forensicWave = document.getElementById("forensicWave");
+
   scanBtn.addEventListener("click", async () => {
     scanBtn.disabled = true;
     resultsWrap.classList.add("hidden");
     resultsWrap.innerHTML = "";
+    if (forensicWave) forensicWave.classList.remove("hidden");
 
     setProgress(5, "Forensische Analyse wird gestartet…");
 
@@ -3744,6 +3747,7 @@ void loadCaseContext().then(() => {
       }
     } finally {
       scanBtn.disabled = false;
+      if (forensicWave) forensicWave.classList.add("hidden");
     }
   });
 })();
