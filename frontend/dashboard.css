@@ -203,47 +203,54 @@ body.has-sidebar .page {
   }
 }
 
-/* ── Page Hero (injected by nav.js) ── */
+/* ── Page Hero Banner (injected by nav.js) ── */
 .page-hero {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 1.1rem;
+  padding: 1.2rem 1.6rem;
+  margin-bottom: 1.8rem;
+  background: linear-gradient(135deg, var(--navy, #1A2B3C) 0%, #243b50 100%);
+  border-radius: 12px;
+  border-bottom: 3px solid var(--gold, #C5A059);
+  box-shadow: 0 2px 12px rgba(26,43,60,.12);
 }
 
 .page-hero-icon {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.6rem;
+  height: 2.6rem;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(26,43,60,.08);
-  border-radius: 0.6rem;
-  color: var(--navy);
+  background: rgba(255,255,255,.1);
+  border-radius: 10px;
+  border: 1px solid rgba(197,160,89,.25);
 }
 
 .page-hero-icon svg {
   width: 1.3rem;
   height: 1.3rem;
   fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
+  stroke: var(--gold, #C5A059);
+  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .page-hero-text h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--navy);
+  color: #F8F9FA;
+  letter-spacing: -0.01em;
 }
 
 .page-hero-text p {
-  margin: 0.15rem 0 0;
-  font-size: 0.8rem;
-  color: var(--ink-muted);
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,.55);
+  font-weight: 400;
 }
 
 /* ── Hide old topbar (replaced by sidebar) ── */
