@@ -10,12 +10,11 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Top header bar -->
   <header class="top-bar">
-    <a href="/" class="top-bar-logo">
-      <img src="assets/logo-dmski.png" alt="DMSKI" />
+    <a href="/" class="top-bar-logo" aria-label="Zur Startseite">
+      <img src="assets/logo-dmski_slogan_white.png" alt="DMSKI - Fakten. Muster. Beweise." />
     </a>
-    <a href="/zugang.html" class="top-bar-login">Zugang anfragen</a>
+    <a href="/zugang.html" class="top-bar-cta">Zugang anfragen</a>
   </header>
 
   <main class="page">
@@ -67,11 +66,17 @@
         <p id="message" class="message" role="status" aria-live="polite"></p>
       </form>
     </section>
+    <footer class="site-footer">
+      <span>&copy; <span id="copyrightYear"></span> DMSKI Scrutor</span>
+      <span class="footer-dot">&middot;</span>
+      <a href="/impressum.html">Impressum</a>
+      <span class="footer-dot">&middot;</span>
+      <a href="/datenschutz.html">Datenschutz</a>
+      <span class="footer-dot">&middot;</span>
+      <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>
+    </footer>
   </main>
 
-  <div id="site-footer"></div>
-
   <script src="script.js"></script>
-  <script src="footer.js"></script>
 </body>
 </html>
