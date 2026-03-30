@@ -4707,6 +4707,7 @@ select.case-edit-input {
 /* Tabular persons layout */
 .akteure-table {
   width: 100%;
+  max-width: 700px;
   border-collapse: collapse;
   font-size: 0.82rem;
 }
@@ -5234,8 +5235,9 @@ select.case-edit-input {
 /* ── Compact dossier-level tactic table (top report area) ── */
 #analysisReportTactics .tactic-analysis-box {
   margin-top: 0.55rem;
-  padding: 0.8rem 1rem;
+  padding: 0.8rem 0;
   gap: 0.55rem;
+  max-width: 900px;
 }
 
 #analysisReportTactics .tactic-analysis-eyebrow {
