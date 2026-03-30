@@ -1289,8 +1289,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(fileCount),
-      renderPartyReportCard("Fokus-Partei", protectedPositiveTotal, protectedNegativeTotal),
-      renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
+      renderPartyReportCard("Fokus-Partei", protectedPositiveTotal, protectedNegativeTotal)
     ].join("");
 
     // ── Dossier-level tactic analysis (aggregated totals) ──────────────

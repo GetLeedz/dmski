@@ -3330,8 +3330,11 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   const authorIsOpposingParty = opposingIdentity.aliases.some(a => authorNorm.includes(a.toLowerCase()));
 
   if (isLawyerDoc && !authorIsOpposingParty) {
-    // Lawyer of focus party: negatives are citations, not criticism.
-    // Reset negative to 0 – the lawyer is an ally, not an attacker.
+    // Lawyer of focus party: no scoring at all.
+    // Positives are the lawyer arguing FOR the client (biased by definition).
+    // Negatives are the lawyer citing opposing claims (not actual criticism).
+    // Both distort the result → zero out everything.
+    output.positiveMentions = 0;
     output.negativeMentions = 0;
   }
 
