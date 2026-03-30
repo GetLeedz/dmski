@@ -416,9 +416,83 @@ function shouldUsePdfOcrFallback(value) {
   return suspiciousTokens >= 8 || quality < 0.84;
 }
 
+/**
+ * Detects and removes duplicate pages from extracted PDF text.
+ * PDFs sometimes contain repeated pages (scanned twice, copied pages).
+ * Duplicate content inflates AI scoring and wastes tokens.
+ *
+ * Strategy: Split text into page-sized blocks, fingerprint each,
+ * remove blocks whose fingerprint matches an earlier block.
+ */
+function deduplicatePdfPages(text) {
+  if (!text || typeof text !== "string") return text;
+
+  // Split by form-feed (common page delimiter in pdf-parse output)
+  // or by double-newline + page-like breaks
+  let pages = text.split(/\f/);
+
+  // If no form-feeds, try splitting by common page break patterns
+  if (pages.length <= 1) {
+    pages = text.split(/\n{3,}/);
+  }
+
+  // Only deduplicate if we have multiple segments
+  if (pages.length <= 1) return text;
+
+  const seen = new Set();
+  const unique = [];
+
+  for (const page of pages) {
+    const trimmed = page.trim();
+    if (!trimmed) continue;
+
+    // Create a fingerprint: lowercase, collapse whitespace, take first 200 + last 200 chars
+    const normalized = trimmed.toLowerCase().replace(/\s+/g, " ");
+
+    // Skip very short segments (headers, page numbers)
+    if (normalized.length < 50) {
+      unique.push(page);
+      continue;
+    }
+
+    // Fingerprint: first 200 + last 200 chars (handles minor OCR differences)
+    const fp = normalized.slice(0, 200) + "||" + normalized.slice(-200);
+
+    if (seen.has(fp)) {
+      // Duplicate page detected – skip it
+      continue;
+    }
+
+    // Also check for high similarity (>90% overlap) with existing pages
+    let isDuplicate = false;
+    for (const existingFp of seen) {
+      if (existingFp.length > 0 && fp.length > 0) {
+        // Quick check: if first 100 chars match, likely duplicate
+        const fpStart = fp.slice(0, 100);
+        const existStart = existingFp.slice(0, 100);
+        if (fpStart === existStart) {
+          isDuplicate = true;
+          break;
+        }
+      }
+    }
+
+    if (isDuplicate) continue;
+
+    seen.add(fp);
+    unique.push(page);
+  }
+
+  return unique.join("\n\n");
+}
+
 function pickBetterPdfText(primaryText, ocrText) {
-  const normalizedPrimary = normalizeExtractedDocumentText(primaryText);
-  const normalizedOcr = normalizeExtractedDocumentText(ocrText);
+  // Deduplicate pages BEFORE normalization (form-feeds are lost after normalize)
+  const dedupedPrimary = deduplicatePdfPages(String(primaryText || ""));
+  const dedupedOcr = deduplicatePdfPages(String(ocrText || ""));
+
+  const normalizedPrimary = normalizeExtractedDocumentText(dedupedPrimary);
+  const normalizedOcr = normalizeExtractedDocumentText(dedupedOcr);
   if (!normalizedOcr) {
     return normalizedPrimary;
   }
