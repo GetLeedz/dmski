@@ -2633,16 +2633,12 @@ async function loadRowAnalysis(file, options = {}) {
 
   box.innerHTML = `
     <div class="ai-scanning">
-      <div class="ai-scanning-orb-wrap">
-        <img src="/assets/ki-brain.png" alt="" class="ai-scanning-orb" />
-        <div class="ai-scanning-orb-glow"></div>
+      <div class="ai-scanning-wave" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
       <div class="ai-scanning-text">
         <p class="ai-scanning-title">KI-Forensik aktiv</p>
         <p class="ai-scanning-sub">Psycho-Profiling · System-Erkennung · Narzissmus-Muster · Rechtsanalyse</p>
-        <div class="ai-scanning-bars">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
       </div>
     </div>`;
   const analysis = await getDocumentAnalysis(file, options);
@@ -3704,12 +3700,29 @@ void loadCaseContext().then(() => {
 
     setProgress(5, "Forensische Analyse wird gestartet…");
 
-    try {
-      setProgress(15, "Einzeldokumente werden analysiert…");
+    // Animated progress while waiting for API (can take minutes for many files)
+    let fakeProgress = 10;
+    const progressInterval = setInterval(() => {
+      if (fakeProgress < 85) {
+        fakeProgress += Math.random() * 3 + 0.5;
+        fakeProgress = Math.min(fakeProgress, 85);
+        const step = Math.floor(fakeProgress);
+        const messages = [
+          "Einzeldokumente werden analysiert…",
+          "Forensische Mustererkennung läuft…",
+          "Psycho-Profiling aktiv…",
+          "System-Vernetzungen werden geprüft…",
+          "Kreuzanalyse wird vorbereitet…"
+        ];
+        setProgress(step, messages[Math.floor(step / 18)] || messages[0]);
+      }
+    }, 2000);
 
+    try {
       const response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/forensic`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem("token") || localStorage.getItem("token")}` }
       });
+      clearInterval(progressInterval);
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -3723,6 +3736,7 @@ void loadCaseContext().then(() => {
 
       renderForensicResults(data);
     } catch (err) {
+      clearInterval(progressInterval);
       setProgress(100, `Fehler: ${err.message}`);
       if (resultsWrap) {
         resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Forensische Analyse fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
