@@ -57,6 +57,54 @@
   const placeholder = document.getElementById("site-nav");
   if (placeholder) placeholder.remove();
 
+  // ── Inject shared page-hero header ──
+  const pageHeaders = {
+    "/dashboard.html": {
+      title: "Dashboard",
+      sub: "Dossiers verwalten — Neuen Fall anlegen oder bestehendes Dossier öffnen",
+      icon: `<path d="M3 10.5L10 4l7 6.5"/><path d="M5 9v7h4v-4h2v4h4V9"/>`
+    },
+    "/files.html": {
+      title: "Dossier-Analyse",
+      sub: "Forensische Dokumentenanalyse — KI-gestützte Mustererkennung",
+      icon: `<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h4"/>`
+    },
+    "/users.html": {
+      title: "Benutzerverwaltung",
+      sub: "Alle Benutzer verwalten — Kunden & Fachpersonen",
+      icon: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>`
+    },
+    // profile.html has its own custom hero with avatar/badge – skip
+    "/upload.html": {
+      title: "File Upload",
+      sub: "Dokumente hochladen — automatische forensische Analyse",
+      icon: `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>`
+    }
+  };
+
+  const headerConfig = Object.entries(pageHeaders).find(([href]) => path.endsWith(href.replace(/^\//, "")));
+  if (headerConfig) {
+    const [, cfg] = headerConfig;
+    const mainEl = document.querySelector(".page") || document.querySelector("main");
+    if (mainEl) {
+      // Remove old hero elements (u-hero, welcome-strip, profile-hero)
+      const oldHeroes = mainEl.querySelectorAll(".u-hero, .welcome-strip, .profile-hero");
+      oldHeroes.forEach(el => el.remove());
+
+      const heroEl = document.createElement("div");
+      heroEl.className = "page-hero";
+      heroEl.innerHTML = `
+        <div class="page-hero-icon">
+          <svg viewBox="0 0 24 24">${cfg.icon}</svg>
+        </div>
+        <div class="page-hero-text">
+          <h1>${cfg.title}</h1>
+          <p>${cfg.sub}</p>
+        </div>`;
+      mainEl.insertBefore(heroEl, mainEl.firstChild);
+    }
+  }
+
   // Logout handler
   document.addEventListener("DOMContentLoaded", function () {
     const btn = document.getElementById("logoutBtn");
