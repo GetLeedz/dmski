@@ -4675,7 +4675,7 @@ table.akteure-personen thead {
 table.akteure-personen thead th:first-child { border-top-left-radius: 10px; }
 table.akteure-personen thead th:last-child  { border-top-right-radius: 10px; }
 
-table.akteure-personen th {
+table.akteure-personen thead th {
   padding: 0.85rem 1.1rem;
   font-size: 0.65rem;
   font-weight: 700;
@@ -4683,7 +4683,7 @@ table.akteure-personen th {
   text-transform: uppercase;
   color: #F8F9FA;
   text-align: left;
-  background: transparent;
+  background: transparent !important;
   border: none;
   white-space: nowrap;
   overflow: hidden;
