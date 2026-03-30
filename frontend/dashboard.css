@@ -6765,19 +6765,45 @@ body.printing .upload-hero-wrap { display: none !important; }
    FORENSIC SCAN SECTION
    ================================================================ */
 .forensic-section {
-  margin-top: 2rem;
-  padding: 1.5rem;
+  margin-top: 2.5rem;
+  padding: 2.2rem 2rem;
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(26,43,60,0.12);
-  background: #fff;
+  border: 1px solid rgba(26,43,60,0.1);
+  background: linear-gradient(160deg, #fafcff, #f4f7fc);
+  position: relative;
+  overflow: hidden;
+}
+
+.forensic-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--navy), var(--gold), var(--navy));
+  opacity: 0.7;
 }
 
 .forensic-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 2rem;
   flex-wrap: wrap;
+}
+
+.forensic-header-text {
+  flex: 1;
+  min-width: 280px;
+}
+
+.forensic-header-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .forensic-eyebrow {
@@ -6790,41 +6816,103 @@ body.printing .upload-hero-wrap { display: none !important; }
 }
 
 .forensic-title {
-  margin: 0.15rem 0 0;
+  margin: 0.2rem 0 0;
   font-family: "IBM Plex Serif", serif;
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: var(--navy);
 }
 
 .forensic-subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.82rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.84rem;
+  color: rgba(26,43,60,0.6);
+  line-height: 1.5;
+}
+
+.forensic-features {
+  margin: 0.8rem 0 0;
+  padding: 0 0 0 1.2rem;
+  list-style: none;
+}
+
+.forensic-features li {
+  position: relative;
+  padding-left: 0.2rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
   color: rgba(26,43,60,0.55);
+  line-height: 1.45;
+}
+
+.forensic-features li::before {
+  content: "›";
+  position: absolute;
+  left: -1rem;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* ── KI Wave Animation ── */
+.forensic-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 2.5rem;
+  padding: 0 0.5rem;
+}
+
+.forensic-wave span {
+  display: block;
+  width: 3px;
+  height: 0.5rem;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--gold), var(--navy));
+  animation: forensicWave 1.2s ease-in-out infinite;
+}
+
+.forensic-wave span:nth-child(1)  { animation-delay: 0s; }
+.forensic-wave span:nth-child(2)  { animation-delay: 0.1s; }
+.forensic-wave span:nth-child(3)  { animation-delay: 0.2s; }
+.forensic-wave span:nth-child(4)  { animation-delay: 0.3s; }
+.forensic-wave span:nth-child(5)  { animation-delay: 0.4s; }
+.forensic-wave span:nth-child(6)  { animation-delay: 0.5s; }
+.forensic-wave span:nth-child(7)  { animation-delay: 0.6s; }
+.forensic-wave span:nth-child(8)  { animation-delay: 0.5s; }
+.forensic-wave span:nth-child(9)  { animation-delay: 0.4s; }
+.forensic-wave span:nth-child(10) { animation-delay: 0.3s; }
+.forensic-wave span:nth-child(11) { animation-delay: 0.2s; }
+.forensic-wave span:nth-child(12) { animation-delay: 0.1s; }
+
+@keyframes forensicWave {
+  0%, 100% { height: 0.4rem; opacity: 0.4; }
+  50%      { height: 2rem; opacity: 1; }
 }
 
 .forensic-scan-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.85rem 2rem;
+  gap: 0.75rem;
+  padding: 1.1rem 2.4rem;
   border: none;
   border-radius: var(--radius-md);
-  background: linear-gradient(150deg, var(--navy), #243447);
+  background: linear-gradient(150deg, var(--navy), #1e3348);
   color: #F8F9FA;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
-  box-shadow: 0 4px 16px rgba(26,43,60,0.25);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 6px 20px rgba(26,43,60,0.3);
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .forensic-scan-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(26,43,60,0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(26,43,60,0.4);
 }
 
 .forensic-scan-btn:disabled {
@@ -6834,8 +6922,8 @@ body.printing .upload-hero-wrap { display: none !important; }
 }
 
 .forensic-scan-btn svg {
-  width: 1.3rem;
-  height: 1.3rem;
+  width: 1.5rem;
+  height: 1.5rem;
   stroke: var(--gold);
 }
 
@@ -7079,4 +7167,47 @@ body.printing .upload-hero-wrap { display: none !important; }
   font-size: 0.82rem;
   line-height: 1.5;
   color: var(--navy);
+}
+
+/* ── Netzwerk-Verknüpfungen ── */
+.forensic-network {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.forensic-network-link {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(192,57,43,0.15);
+  background: rgba(192,57,43,0.03);
+}
+
+.forensic-network-from,
+.forensic-network-to {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(26,43,60,0.06);
+}
+
+.forensic-network-arrow {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #c0392b;
+}
+
+.forensic-network-narrative {
+  width: 100%;
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(26,43,60,0.65);
+  line-height: 1.45;
+  font-style: italic;
 }

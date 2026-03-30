@@ -3417,7 +3417,15 @@ void loadCaseContext().then(() => {
           eskalation: "Eskalationsmuster",
           koordination: "Koordinierte Strategie",
           fehlende_gegendarstellung: "Fehlende Gegendarstellung",
-          instrumentalisierung_kinder: "Instrumentalisierung von Kindern"
+          instrumentalisierung_kinder: "Instrumentalisierung von Kindern",
+          netzwerk_infektion: "Netzwerk-Infektion (System-Virus)",
+          flying_monkeys: "Flying Monkeys (Umfeld manipuliert)",
+          darvo: "DARVO (Täter-Opfer-Umkehr)",
+          gaslighting: "Gaslighting",
+          isolation: "Systematische Isolation",
+          smear_campaign: "Rufmord-Kampagne",
+          institutionelle_zerstoerung: "Institutionelle Zerstörung",
+          rechte_verletzung: "Menschen-/Kinderrechtsverletzung"
         };
         html += `<div class="forensic-pattern">
           <p class="forensic-pattern-type">${escapeHtml(typeLabels[m.typ] || m.typ)}</p>
@@ -3441,6 +3449,23 @@ void loadCaseContext().then(() => {
           <span class="forensic-risk-badge ${riskClass(f.schweregrad)}">${escapeHtml(f.schweregrad || "")}</span>
         </div>`;
       }
+    }
+
+    // Network map (Netzwerk-Verknüpfungen)
+    const netzwerk = crossDoc.netzwerk || [];
+    if (netzwerk.length > 0) {
+      html += `<h4 class="forensic-findings-title">Netzwerk-Verknüpfungen (${netzwerk.length})</h4>`;
+      html += `<div class="forensic-network">`;
+      for (const n of netzwerk) {
+        html += `<div class="forensic-network-link">
+          <span class="forensic-network-from">${escapeHtml(n.von || "")}</span>
+          <span class="forensic-network-arrow">→</span>
+          <span class="forensic-network-to">${escapeHtml(n.zu || "")}</span>
+          <p class="forensic-network-narrative">${escapeHtml(n.narrativ || "")}</p>
+          ${n.dokument ? `<span class="forensic-pattern-docs">${escapeHtml(n.dokument)}</span>` : ""}
+        </div>`;
+      }
+      html += `</div>`;
     }
 
     // Cross-doc fazit
