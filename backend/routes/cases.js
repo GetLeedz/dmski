@@ -2007,9 +2007,11 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
           return null;
         }
         const rolle = normalizeWhitespace(entry?.rolle || "");
+        const sentiment = normalizeWhitespace(entry?.sentiment || "");
         return {
           name,
-          affiliation: rolle || "Privatperson"
+          affiliation: rolle || "Privatperson",
+          ...(sentiment && { sentiment })
         };
       })
       .filter(Boolean)
@@ -2298,7 +2300,13 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- Ignoriere neutrale Fakten, Adressen, reine Chronologie und Verfahrensgeschichte ohne Wertung.",
     "- Empfehlungen oder Rechtfertigungen zugunsten einer Partei zaehlen als positiv fuer diese Partei.",
     "- Zaehle Kinder als Personen im Dokument auf (Name, Vorname, Geburtsdatum wie im Text angegeben), aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
-    "- WICHTIG: Kinder MUESSEN die rolle 'Kind' erhalten. Auch wenn ein Kind den Nachnamen der Gegenpartei traegt, ist es KEIN Gegner. Beispiel: {\"name\": \"Timur Leo Schifferli\", \"rolle\": \"Kind\"}.",
+    "- WICHTIG: Kinder MUESSEN die rolle 'Kind' erhalten. Auch wenn ein Kind den Nachnamen der Gegenpartei traegt, ist es KEIN Gegner.",
+    "- SENTIMENT PRO PERSON (Pflichtfeld): Bestimme fuer JEDE Person in 'personen' ein 'sentiment'-Feld:",
+    "  'positiv' = Person unterstuetzt oder schreibt wohlwollend ueber die Fokus-Partei",
+    "  'negativ' = Person schreibt kritisch, belastend oder feindlich gegen die Fokus-Partei",
+    "  'neutral' = Person ist weder fuer noch gegen die Fokus-Partei (z.B. Richter, neutrale Fachperson)",
+    "  Kinder der Fokus-Partei oder gemeinsame Kinder erhalten immer 'neutral' (sie sind keine Partei).",
+    "  Der Verfasser/Autor: Bewerte anhand des Tons gegenueber der Fokus-Partei im Dokument.",
     "- POLIZEI/BEHOERDEN-KORRESPONDENZ: Wenn ein Dokument eine Polizeiantwort, Bedrohungsmanagement-Mitteilung oder KESB-Meldung ist, werte dies IMMER als Belastungsmuster – auch wenn 'keine strafbaren Handlungen' oder 'kein Einsatz' steht. Die Existenz solcher Dokumente im Dossier ist selbst der Beweis fuer systematische Attacken.",
     "  → Mindestens benachteiligte_person.negativ: 1 (Existenz schadet der Fokus-Partei in Datenbanken)",
     "  → Wenn Entlastung ('keine Straftat' etc.): zusaetzlich benachteiligte_person.positiv: 1",
@@ -2322,7 +2330,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '  "datum": "TT.MM.JJJJ oder wie im Dokument angegeben",',
     '  "absender": "",',
     '  "documentType": "Verfuegung|Brief|E-Mail|Gutachten|Bericht|Protokoll|Eingabe|Urteil|Superprovisorische Massnahme|Chat",',
-    '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind"}],',
+    '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind", "sentiment": "positiv|negativ|neutral"}],',
     '  "benachteiligte_person": {',
     '    "positiv": 0,',
     '    "negativ": 0',

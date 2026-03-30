@@ -696,20 +696,18 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
     return "protected";
   }
 
-  // ── 2. Children → positive (HIGHEST PRIORITY after protected person) ──────────
-  // Children may share the opposing party's surname and fuzzy-match with author
-  // names, so this MUST come before author-based and opposing-party checks.
-  if (affil.includes("kind") && !affil.includes("kinderanw")) return "positive";
-  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "positive";
+  // ── 2. KI-basiertes Sentiment (höchste Priorität) ────────────────────────────
+  // Die KI analysiert jedes Dokument und bestimmt pro Person ob sie für/gegen
+  // die Fokus-Partei ist. Dieses Feld hat Vorrang vor allen Heuristiken.
+  const personSentiment = normalizeTitleText(person.sentiment || "").toLowerCase();
+  if (personSentiment === "positiv" || personSentiment === "positive") return "positive";
+  if (personSentiment === "negativ" || personSentiment === "negative") return "negative";
+  if (personSentiment === "neutral") return "neutral";
 
-  // ── 3. Author-based sentiment ────────────────────────────────────────────────
-  // If this person authored documents in the dossier, we know EXACTLY how they
-  // wrote about the protected person (positiveMentions / negativeMentions per doc).
-  // This is the most reliable signal and overrides role-based guesses.
+  // ── 3. Author-based sentiment (Fallback wenn KI kein Sentiment liefert) ─────
   if (authorSentimentMap && authorSentimentMap.size > 0) {
     for (const [authorName, s] of authorSentimentMap.entries()) {
       const authorKey = normKey(authorName);
-      // Fuzzy: at least one significant word (>2 chars) in common
       const personParts = personKey.split(/\s+/).filter(w => w.length > 2);
       const authorParts = authorKey.split(/\s+/).filter(w => w.length > 2);
       const matched = personParts.some(p => authorParts.some(a => a === p || a.startsWith(p) || p.startsWith(a)));
@@ -722,52 +720,16 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
     }
   }
 
-  // ── 4. Opposing party → always negative ─────────────────────────────────────
+  // ── 4. Affiliation-based fallback ───────────────────────────────────────────
+  if (affil.includes("kind") && !affil.includes("kinderanw")) return "neutral";
+
   const oppFirstWord = (oppNorm.split(/[\s,]+/)[0] || "").toLowerCase();
   if (oppFirstWord && nameNorm.includes(oppFirstWord) && oppFirstWord.length > 2) {
     return "negative";
   }
 
-  // ── 5. Known-role hardcodes ──────────────────────────────────────────────────
-  // Opposing party's lawyer → negative
-  if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) { return "negative"; }
-  // Angst Susanne (Behörde/KESB) → negative (writes negatively about Vater)
-  if (nameNorm.includes("angst") && nameNorm.includes("susanne")) { return "negative"; }
-  // Judge → neutral (procedural role, doesn't take sides in sentiment)
-  if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) { return "neutral"; }
-
-  // ── 6. Affiliation heuristics ────────────────────────────────────────────────
-  // Lawyers on the protected person's side
-  if (affil.includes("anwalt") || affil.includes("anwältin") || affil.includes("rechtsvertr")) return "positive";
-  // Beistand / Berufsbeistand: derive from whether overall dossier shows more
-  // negative or positive mentions of the protected person across all documents.
-  if (affil.includes("beistand") || affil.includes("beiständin") || affil.includes("berufsbeistand")) {
-    const protNeg = Math.max(0, Number(analysis.negativeMentions || 0));
-    const protPos = Math.max(0, Number(analysis.positiveMentions || 0));
-    if (protNeg > protPos + 1) return "negative";
-    if (protPos > protNeg + 1) return "positive";
-    return "neutral";
-  }
-  // KESB / courts / officials → use author-based dossier pressure (not blind neutral)
-  if (affil.includes("kesb") || affil.includes("behörd") || affil.includes("gericht") || affil.includes("richter")) {
-    const protNeg = Math.max(0, Number(analysis.negativeMentions || 0));
-    const protPos = Math.max(0, Number(analysis.positiveMentions || 0));
-    if (protNeg > protPos + 1) return "negative";
-    if (protPos > protNeg + 1) return "positive";
-    return "neutral";
-  }
-
-  // ── 6. No meaningful affiliation → "unknown" (teal dot) ──────────────────────
-  // If the person has no known role, no author data, and no meaningful affiliation,
-  // we cannot determine sentiment. Show a teal "Keine Daten" dot instead of
-  // guessing from overall dossier pressure (which would be misleading).
-  const hasMeaningfulAffil = affil && affil !== "privatperson" && affil !== "" && affil !== "–";
-  if (!hasMeaningfulAffil) return "unknown";
-
-  // ── 7. Fallback: overall dossier pressure (only when affiliation is known) ───
-  const pressure = (Number(analysis.negativeMentions || 0) + Number(analysis.opposingPositiveMentions || 0))
-    - (Number(analysis.positiveMentions || 0) + Number(analysis.opposingNegativeMentions || 0));
-  return pressure > 1 ? "negative" : pressure < -1 ? "positive" : "neutral";
+  // ── 5. No data → unknown ───────────────────────────────────────────────────
+  return "unknown";
 }
 
 function getAffiliationLabel(affiliation) {
