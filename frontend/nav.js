@@ -3,6 +3,14 @@
   const role = sessionStorage.getItem("dmski_role") || localStorage.getItem("dmski_role") || "customer";
   const path = window.location.pathname;
 
+  // ── Enforce password change: redirect to profile if not already there ──
+  const mustChangePwd = sessionStorage.getItem("dmski_pwd_change") === "1";
+  const isProfilePage = path.endsWith("profile.html");
+  if (mustChangePwd && !isProfilePage) {
+    window.location.replace("/profile.html?mustchange=1");
+    return;
+  }
+
   function isActive(href) {
     return path === href || path.endsWith(href.replace(/^\//, ""));
   }

@@ -1167,8 +1167,7 @@ function setAnalysisReportLoading() {
   );
   analysisReportGrid.innerHTML = [
     renderFileCountCard(allFiles.length || 0),
-    renderPartyReportCard("Fokus-Partei", 0, 0),
-    renderPartyReportCard("Gegenpartei", 0, 0)
+    renderPartyReportCard("Fokus-Partei", 0, 0)
   ].join("");
 }
 
@@ -1189,8 +1188,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(0),
-      renderPartyReportCard("Fokus-Partei", 0, 0),
-      renderPartyReportCard("Gegenpartei", 0, 0)
+      renderPartyReportCard("Fokus-Partei", 0, 0)
     ].join("");
     return;
   }
@@ -1262,8 +1260,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(fileCount),
-      renderPartyReportCard("Fokus-Partei", protectedPositiveTotal, protectedNegativeTotal),
-      renderPartyReportCard("Gegenpartei", opposingPositiveTotal, opposingNegativeTotal)
+      renderPartyReportCard("Fokus-Partei", protectedPositiveTotal, protectedNegativeTotal)
     ].join("");
 
     // ── Dossier-level tactic analysis (aggregated totals) ──────────────
@@ -2519,20 +2516,6 @@ async function loadRowAnalysis(file, options = {}) {
             </div>
             <div class="qa-mod-stat-box is-negative">
               <span class="qa-mod-stat-num">${negativeMentions}</span>
-              <span class="qa-mod-stat-label">Negativ</span>
-            </div>
-          </div>
-        </div>
-        <div class="qa-mod-stat-col">
-          <span class="qa-mod-stat-role">${currentCaseOpposingLabel}</span>
-          <span class="qa-mod-stat-name">${opposingKeywords}</span>
-          <div class="qa-mod-stat-nums">
-            <div class="qa-mod-stat-box is-positive">
-              <span class="qa-mod-stat-num">${opposingPositiveMentions}</span>
-              <span class="qa-mod-stat-label">Positiv</span>
-            </div>
-            <div class="qa-mod-stat-box is-negative">
-              <span class="qa-mod-stat-num">${opposingNegativeMentions}</span>
               <span class="qa-mod-stat-label">Negativ</span>
             </div>
           </div>
