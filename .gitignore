@@ -34,3 +34,5 @@ DMSKI/
 
 # Backend compiled assets
 backend/assets/
+
+.vercel
