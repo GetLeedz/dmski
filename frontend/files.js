@@ -1089,7 +1089,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-unknown"></span>Keine Daten</span>
         </div>
         <div class="akteure-table-container">
-          <table class="akteure-table">
+          <table class="akteure-personen">
             <colgroup>
               <col class="col-name" />
               <col class="col-funktion" />

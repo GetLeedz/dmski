@@ -3490,7 +3490,7 @@ td {
     padding: 0.28rem 0.4rem !important;
     word-break: break-word !important;
   }
-  .akteure-table       { font-size: 0.72rem !important; }
+  table.akteure-personen { font-size: 0.72rem !important; }
   .tactic-analysis-body{ font-size: 0.73rem !important; line-height: 1.45 !important; }
   .party-split-num,
   .file-count-num      { font-size: 1.35rem !important; }
@@ -3566,7 +3566,7 @@ body.printing .tactic-table td {
   word-break: break-word !important;
 }
 
-body.printing .akteure-table        { font-size: 0.72rem !important; }
+body.printing table.akteure-personen { font-size: 0.72rem !important; }
 body.printing .tactic-analysis-body { font-size: 0.73rem !important; line-height: 1.45 !important; }
 
 body.printing .party-split-num,
