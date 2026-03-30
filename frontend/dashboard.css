@@ -5174,17 +5174,21 @@ table.akteure-personen tr:last-child td { border-bottom: none; }
 /* table-layout not needed – layout is now CSS Grid */
 
 /* Compact sections for dossier-level */
-#analysisReportTactics .tactic-section {
+#analysisReportTactics .tactic-section,
+#analysisReportAkteure .tactic-section {
   gap: 0.8rem;
   margin-bottom: 1.4rem;
 }
-#analysisReportTactics .tactic-section-number {
+#analysisReportTactics .tactic-section-number,
+#analysisReportAkteure .tactic-section-number {
   width: 1.5rem;
   height: 1.5rem;
   font-size: 0.65rem;
 }
-#analysisReportTactics .tactic-section-title { font-size: 0.88rem; }
-#analysisReportTactics .tactic-section-subtitle { font-size: 0.72rem; margin-bottom: 0.5rem; }
+#analysisReportTactics .tactic-section-title,
+#analysisReportAkteure .tactic-section-title { font-size: 0.88rem; }
+#analysisReportTactics .tactic-section-subtitle,
+#analysisReportAkteure .tactic-section-subtitle { font-size: 0.72rem; margin-bottom: 0.5rem; }
 #analysisReportTactics .tactic-report-header { margin-bottom: 1.2rem; padding-bottom: 0.8rem; }
 #analysisReportTactics .tactic-legal-text { font-size: 0.76rem; padding: 0.7rem 0.9rem; }
 #analysisReportTactics .tactic-counsel-item { padding: 0.6rem 0.8rem; }
