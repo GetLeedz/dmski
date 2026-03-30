@@ -4732,7 +4732,7 @@ table.akteure-personen thead th:first-child { border-top-left-radius: 10px; }
 table.akteure-personen thead th:last-child  { border-top-right-radius: 10px; }
 
 table.akteure-personen th {
-  padding: 0.8rem 1rem;
+  padding: 0.85rem 1.1rem;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -4740,14 +4740,18 @@ table.akteure-personen th {
   color: #F8F9FA;
   text-align: left;
   border: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 table.akteure-personen th:last-child { text-align: center; }
 
 table.akteure-personen td {
-  padding: 0.7rem 1rem;
+  padding: 0.85rem 1.1rem;
   border-bottom: 1px solid rgba(26,43,60,0.07);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
   color: #1a2b3c;
   vertical-align: middle;
 }

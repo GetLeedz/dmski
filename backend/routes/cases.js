@@ -839,6 +839,10 @@ function inferAffiliationForPerson(rawText, personName) {
     if (/\bvater\b/.test(line)) {
       return "Vater";
     }
+    // Children
+    if (/\bkind\b|\bsohn\b|\btochter\b|\bminderjährig/.test(line)) {
+      return "Kind";
+    }
     // Professional forensic/psychiatric roles
     if (/leiter\s+jugendforensik|leiterin\s+jugendforensik|jugendforensik/.test(line)) {
       return "Leiter Jugendforensik";
@@ -2294,6 +2298,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- Ignoriere neutrale Fakten, Adressen, reine Chronologie und Verfahrensgeschichte ohne Wertung.",
     "- Empfehlungen oder Rechtfertigungen zugunsten einer Partei zaehlen als positiv fuer diese Partei.",
     "- Zaehle Kinder als Personen im Dokument auf (Name, Vorname, Geburtsdatum wie im Text angegeben), aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
+    "- WICHTIG: Kinder MUESSEN die rolle 'Kind' erhalten. Auch wenn ein Kind den Nachnamen der Gegenpartei traegt, ist es KEIN Gegner. Beispiel: {\"name\": \"Timur Leo Schifferli\", \"rolle\": \"Kind\"}.",
     "- POLIZEI/BEHOERDEN-KORRESPONDENZ: Wenn ein Dokument eine Polizeiantwort, Bedrohungsmanagement-Mitteilung oder KESB-Meldung ist, werte dies IMMER als Belastungsmuster – auch wenn 'keine strafbaren Handlungen' oder 'kein Einsatz' steht. Die Existenz solcher Dokumente im Dossier ist selbst der Beweis fuer systematische Attacken.",
     "  → Mindestens benachteiligte_person.negativ: 1 (Existenz schadet der Fokus-Partei in Datenbanken)",
     "  → Wenn Entlastung ('keine Straftat' etc.): zusaetzlich benachteiligte_person.positiv: 1",

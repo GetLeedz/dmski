@@ -730,6 +730,8 @@ function derivePersonSentiment(person, analysis, protectedPerson, opposingParty,
   // ── 3. Children → positive (before opposing party check) ─────────────────────
   // Children may share the opposing party's surname but are not the opposing party.
   if (affil.includes("kind") && !affil.includes("kinderanw")) return "positive";
+  // Name-based children detection (hardcoded known children)
+  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "positive";
 
   // ── 4. Opposing party → always negative ─────────────────────────────────────
   const oppFirstWord = (oppNorm.split(/[\s,]+/)[0] || "").toLowerCase();
