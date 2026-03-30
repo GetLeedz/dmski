@@ -4719,8 +4719,8 @@ table.akteure-personen {
   border-collapse: collapse;
 }
 
-table.akteure-personen col.col-name      { width: 35%; }
-table.akteure-personen col.col-funktion  { width: 45%; }
+table.akteure-personen col.col-name      { width: 40%; }
+table.akteure-personen col.col-funktion  { width: 40%; }
 table.akteure-personen col.col-sentiment { width: 20%; }
 
 table.akteure-personen thead {
