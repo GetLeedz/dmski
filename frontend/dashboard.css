@@ -3602,6 +3602,24 @@ body.printing .analysis-report-grid {
 
 body.printing .tactic-table-wrap { overflow: hidden !important; }
 
+/* Prevent page breaks inside sections */
+body.printing .tactic-section,
+body.printing .tactic-counsel-item,
+body.printing .tactic-analysis-box,
+body.printing .tactic-legal-text,
+body.printing .analysis-report-card,
+body.printing .akteure-table-container,
+body.printing .tactic-table-wrap {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+/* Allow sections to start on new page if needed */
+body.printing .tactic-section {
+  break-before: auto;
+  page-break-before: auto;
+}
+
 body.printing .tactic-table thead tr,
 body.printing .tactic-table tbody tr {
   grid-template-columns: 1.5fr 0.7fr 1.7fr 0.9fr !important;

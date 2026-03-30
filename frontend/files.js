@@ -3015,7 +3015,7 @@ async function exportKiReportAsPdf() {
       backgroundColor: "#ffffff"
     },
     jsPDF:       { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak:   { mode: ["avoid-all", "css", "legacy"] }
+    pagebreak:   { mode: ["css", "legacy"], avoid: [".tactic-section", ".tactic-counsel-item", ".tactic-analysis-box", ".tactic-legal-text", ".akteure-table-container", ".analysis-report-card"] }
   };
 
   try {
