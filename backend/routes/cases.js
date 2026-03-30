@@ -223,16 +223,65 @@ function getPdfParse() {
 }
 
 function getOpenAiClient() {
+  // Legacy – kept for compatibility but Claude is now preferred
   const key = String(process.env.OPENAI_API_KEY || "").trim();
-  if (!key) {
-    return null;
-  }
-
-  if (!openAiClient) {
-    openAiClient = new OpenAI({ apiKey: key });
-  }
-
+  if (!key) return null;
+  if (!openAiClient) openAiClient = new OpenAI({ apiKey: key });
   return openAiClient;
+}
+
+// ── Claude API for all analyses (replaces OpenAI) ──
+const Anthropic = require("@anthropic-ai/sdk");
+let anthropicClient = null;
+
+function getAnthropicClient() {
+  const key = String(process.env.ANTHROPIC_API_KEY || "").trim();
+  if (!key) return null;
+  if (!anthropicClient) anthropicClient = new Anthropic({ apiKey: key });
+  return anthropicClient;
+}
+
+async function callClaudeText(systemPrompt, userContent, maxTokens = 2000) {
+  const client = getAnthropicClient();
+  if (!client) return null;
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: maxTokens,
+    temperature: 0,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userContent }]
+  });
+
+  return response?.content?.[0]?.text || "";
+}
+
+async function callClaudeVision(systemPrompt, userText, base64Image, mimeType, maxTokens = 1500) {
+  const client = getAnthropicClient();
+  if (!client) return null;
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: maxTokens,
+    temperature: 0,
+    system: systemPrompt,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "text", text: userText },
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mimeType || "image/png",
+            data: base64Image
+          }
+        }
+      ]
+    }]
+  });
+
+  return response?.content?.[0]?.text || "";
 }
 
 async function getPdfJsLib() {
@@ -2340,8 +2389,7 @@ function mapChatForensicJsonToAnalysis(parsed, fallback = {}) {
 }
 
 async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonName = "", opposingPartyName = "") {
-  const client = getOpenAiClient();
-  if (!client) {
+  if (!getAnthropicClient()) {
     return buildFallbackAnalysis(fallback);
   }
 
@@ -2364,32 +2412,23 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
     return buildFallbackAnalysis(fallback);
   }
 
-  try {
-    const response = await createChatCompletionWithFallback(client, {
-      temperature: 0,
-      max_tokens: 2000,
-      messages: [
-        {
-          role: "system",
-          content: buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName)
-        },
-        {
-          role: "user",
-          content: [
-            aiCandidateNames.length > 0
-              ? `Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
-              : "Potenzielle Namen aus Voranalyse: (keine)",
-            "",
-            "TEXT ZUM ANALYSIEREN:",
-            textSnippet
-          ].join("\n")
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
+  const userContent = [
+    aiCandidateNames.length > 0
+      ? `Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
+      : "Potenzielle Namen aus Voranalyse: (keine)",
+    "",
+    "TEXT ZUM ANALYSIEREN:",
+    textSnippet
+  ].join("\n");
 
-    const responseText = response?.choices?.[0]?.message?.content || "";
-    let parsed = extractJsonObject(responseText);
+  try {
+    const responseText = await callClaudeText(
+      buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName),
+      userContent,
+      2000
+    );
+
+    let parsed = extractJsonObject(responseText || "");
     let mapped = null;
 
     if (parsed && typeof parsed === "object") {
@@ -2400,52 +2439,26 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
       }
     }
 
-    const needsRetry = !parsed
-      || !hasStrictForensicShape(parsed)
-      || !hasUsableForensicResult(mapped);
-
-    if (!needsRetry) {
+    if (mapped && hasUsableForensicResult(mapped)) {
       return mapped;
     }
 
-    const retry = await createChatCompletionWithFallback(client, {
-      temperature: 0,
-      max_tokens: 2000,
-      messages: [
-        {
-          role: "system",
-          content: [
-            buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName),
-            "",
-            "KORREKTURHINWEIS:",
-            "Deine letzte Antwort war nicht schema-konform oder nicht ausreichend auswertbar.",
-            "Erzeuge jetzt NUR ein valides JSON gemass Schema.",
-            "Keine Erklaerung, keine Einleitung, keine Rueckfrage."
-          ].join("\n")
-        },
-        {
-          role: "user",
-          content: [
-            aiCandidateNames.length > 0
-              ? `Potenzielle Namen aus Voranalyse: ${aiCandidateNames.join(", ")}`
-              : "Potenzielle Namen aus Voranalyse: (keine)",
-            "",
-            "TEXT ZUM ANALYSIEREN:",
-            textSnippet
-          ].join("\n")
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
+    // Retry with correction hint
+    const retryText = await callClaudeText(
+      [
+        buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName),
+        "",
+        "KORREKTURHINWEIS: Erzeuge NUR valides JSON gemass Schema. Keine Erklaerung."
+      ].join("\n"),
+      userContent,
+      2000
+    );
 
-    const retryText = retry?.choices?.[0]?.message?.content || "";
-    const retryParsed = extractJsonObject(retryText);
+    const retryParsed = extractJsonObject(retryText || "");
     if (retryParsed && typeof retryParsed === "object") {
-      if (retryParsed?.benachteiligte_person || retryParsed?.gegenpartei || "benachteiligte_person_positiv" in retryParsed || retryParsed?.target_a || retryParsed?.target_b || retryParsed?.personen_auswertung || retryParsed?.auswertung || retryParsed?.statistik || retryParsed?.metadaten || retryParsed?.analyse_score) {
-        const retryMapped = mapBiasForensicJsonToAnalysis(retryParsed, fallback, textSnippet);
-        if (hasUsableForensicResult(retryMapped)) {
-          return retryMapped;
-        }
+      const retryMapped = mapBiasForensicJsonToAnalysis(retryParsed, fallback, textSnippet);
+      if (hasUsableForensicResult(retryMapped)) {
+        return retryMapped;
       }
     }
 
@@ -2459,8 +2472,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
 }
 
 async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = "", protectedPersonName = "", opposingPartyName = "") {
-  const client = getOpenAiClient();
-  if (!client) {
+  if (!getAnthropicClient()) {
     return {
       status: "needs-ocr",
       title: "",
@@ -2468,168 +2480,71 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       authoredDate: "",
       people: [],
       disadvantagedPerson: "",
-      message: "Bildtitel ben├Âtigt OCR oder KI-Analyse."
+      message: "ANTHROPIC_API_KEY nicht gesetzt."
     };
   }
 
   const base64 = fileBuffer.toString("base64");
-
-  // Only treat as chat if filename explicitly suggests messenger apps.
-  // "screenshot" alone is NOT a chat hint — screenshots of emails are common.
   const isChatHint = /whats?app|chat|nachricht|dialog|sms|signal|telegram/i.test(String(originalName || "").toLowerCase());
 
-  try {
-    const response = await createChatCompletionWithFallback(client, {
-      temperature: 0,
-      max_tokens: 1200,
-      messages: [
-        {
-          role: "system",
-          content: isChatHint
-            ? [
-              "Du bist ein forensischer Analyst fuer Dokumenten- und Kommunikationspruefung. Deine Aufgabe ist es, die Dynamik in diesem Dialog objektiv zu quantifizieren.",
-              "",
-              "1. ROLLEN-IDENTIFIKATION (VISUELLE LOGIK):",
-              "- PARTEI A (Links/Absender): Die Person oder Sprechblase auf der linken Seite.",
-              "- PARTEI B (Rechts/Empfaenger): Die Person oder Sprechblase auf der rechten Seite.",
-              "- Identifiziere die Klarnamen beider Parteien aus dem Textinhalt, falls vorhanden.",
-              "",
-              "2. QUANTITATIVE BEPUNKTUNG (SENTIMENT-CHECK):",
-              "Zaehle fuer jede Partei separat:",
-              "- POSITIVE HINWEISE (+): Sachlichkeit, Kooperationsbereitschaft, Lob, neutrale Information.",
-              "- NEGATIVE HINWEISE (-): Vorwuerfe, Beleidigungen, manipulative Unterstellungen, Drohungen, Rufschaedigung.",
-              "",
-              "3. FORENSISCHE MUSTERERKENNUNG:",
-              "Suche nach Anzeichen von Charakter-Assassination, einseitiger Aggression und Systembenachteiligung.",
-              "",
-              "4. OUTPUT-FORMAT (STRENGES JSON):",
-              "{",
-              "  \"beteiligte\": {",
-              "    \"links\": { \"name\": \"Name oder 'Unbekannt'\", \"rolle\": \"Partei A\" },",
-              "    \"rechts\": { \"name\": \"Name oder 'Unbekannt'\", \"rolle\": \"Partei B\" }",
-              "  },",
-              "  \"forensik_score\": {",
-              "    \"links\": { \"positiv_count\": 0, \"negativ_count\": 0, \"belege_negativ\": [] },",
-              "    \"rechts\": { \"positiv_count\": 0, \"negativ_count\": 0, \"belege_negativ\": [] }",
-              "  },",
-              "  \"analyse_fazit\": \"Zusammenfassung der Dynamik und Identifikation der benachteiligten/angegriffenen Person.\",",
-              "  \"benachteiligung_score\": \"Skala 1-10 (10 = extreme einseitige Benachteiligung)\"",
-              "}"
-            ].join("\n")
-            : [
-              "Du bist ein forensischer Dokumenten-Analyst. Lies das Bild GENAU und extrahiere NUR was SICHTBAR ist.",
-              "",
-              "STRIKTE REGEL: Erfinde NICHTS. Wenn etwas nicht im Bild steht, lasse das Feld leer.",
-              "",
-              "DOKUMENTTYP ERKENNEN:",
-              "- E-Mail-Header (Von/From, Gesendet/Sent, An/To, Betreff/Subject) → documentType = 'E-Mail'",
-              "- Briefkopf mit Adresse + Anrede → documentType = 'Brief'",
-              "- Amtliche Anordnung → documentType = 'Verfuegung'",
-              "- Gutachten/Expertise → documentType = 'Gutachten'",
-              "",
-              "E-MAIL ERKENNUNG (WICHTIG):",
-              "- 'Von:' oder 'From:' Zeile → verfasser (NUR Name, KEINE E-Mail-Adresse)",
-              "- 'Gesendet:' oder 'Sent:' oder 'Date:' → datum (das Sendedatum!)",
-              "- 'An:' oder 'To:' → Empfaenger als Person",
-              "- 'Betreff:' oder 'Subject:' → titel",
-              "- Organisation des Absenders (z.B. aus Signatur oder Domain) → absender",
-              "",
-              "PERSONEN:",
-              "- Liste NUR Personen auf die im Bild NAMENTLICH erwaehnt werden.",
-              "- Unterschrift nach 'Freundliche Gruesse': Name + Titel/Funktion = Verfasser.",
-              "- Empfaenger aus 'An:' oder Anrede 'Sehr geehrter Herr X' = Person.",
-              "- KEINE Personen erfinden die nicht im Bild stehen!",
-              "",
-              `KONTEXT: Fokus-Partei (benachteiligte Person) = [${focusKeywords}], Gegenpartei = [${referenceKeywords}].`,
-              "STRIKTE PERSONEN-REGEL: Diese Keywords/Namen dienen NUR der Sentiment-Zuordnung.",
-              "Fuege sie ABSOLUT NICHT als Personen hinzu, wenn sie nicht WOERTLICH im Bild als Name vorkommen!",
-              "Nur Personen, deren Name SICHTBAR im Bild geschrieben steht, duerfen in 'personen' erscheinen.",
-              "",
-              "POLIZEI/BEHOERDEN-DOKUMENTE (WICHTIG):",
-              "Wenn das Dokument von Polizei, Bedrohungsmanagement, KESB, Jugendamt oder einer aehnlichen Behoerde stammt:",
-              "- Die BLOSSE EXISTENZ eines solchen Dokuments im Dossier ist NEGATIV fuer die Fokus-Partei (mindestens negativ: 1)",
-              "- Auch wenn 'keine Fallerroeffnung', 'keine strafbaren Handlungen', 'kein Ergebnis' steht",
-              "- Jeder Polizeieinsatz/Bedrohungsmanagement-Eintrag hinterlaesst Spuren in Datenbanken",
-              "- Wenn das Ergebnis entlastend ist ('keine Straftat'), zaehle trotzdem negativ: 1 (Existenz schadet) aber positiv: 1 (Entlastung)",
-              "",
-              "VERFASSER-BIAS-REGEL (KRITISCH):",
-              "- Wenn der VERFASSER des Dokuments selbst die Fokus-Partei ist: Positive Aussagen ueber sich selbst NICHT zaehlen (Selbstlob verzerrt).",
-              "- Wenn der VERFASSER die Gegenpartei ist: Positive Aussagen ueber sich selbst NICHT zaehlen.",
-              "- NUR Aussagen UEBER DIE ANDERE PARTEI zaehlen fuer die Bewertung.",
-              "- Negative Aussagen der Gegenpartei ueber die Fokus-Partei zaehlen immer als negativ fuer die Fokus-Partei.",
-              "",
-              "JSON-SCHEMA (exakt einhalten):",
-              "{",
-              '  "titel": "Betreff oder Ueberschrift aus dem Bild",',
-              '  "verfasser": "Name des Absenders/Autors",',
-              '  "datum": "Sendedatum oder Dokumentdatum",',
-              '  "absender": "Organisation/Institution",',
-              '  "documentType": "E-Mail|Brief|Verfuegung|Gutachten|Bericht|Chat",',
-              '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion"}],',
-              '  "benachteiligte_person": {"positiv": 0, "negativ": 0},',
-              '  "zusammenfassung": "Max 2 Saetze"',
-              "}",
-              "",
-              "NUR JSON. Kein Markdown."
-            ].join("\n")
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: [
-                "Analysiere dieses Dokument-Bild und gib das JSON zurueck.",
-                "",
-                "KRITISCHE REGELN FUER BILD-ANALYSE:",
-                "",
-                "1. LIES NUR WAS IM BILD STEHT. Erfinde KEINE Personen, KEINE Daten, KEINE Inhalte.",
-                "   ABSOLUT VERBOTEN: Fokus-Partei oder Gegenpartei-Keywords als Personen hinzufuegen,",
-                "   wenn deren Namen NICHT WOERTLICH SICHTBAR im Bild geschrieben stehen!",
-                "   Die Keywords aus dem System-Prompt sind NUR fuer die Sentiment-Zuordnung da.",
-                "   Wenn du z.B. 'Ayhan' oder 'Alexandra' als Keyword kennst, aber der Name NICHT im Bild steht,",
-                "   dann darf diese Person NICHT in 'personen' erscheinen. NUR sichtbare Namen zaehlen!",
-                "",
-                "2. E-MAIL-ERKENNUNG: Wenn du Header siehst wie:",
-                "   'Von:', 'From:', 'Gesendet:', 'Sent:', 'An:', 'To:', 'Betreff:', 'Subject:'",
-                "   → documentType = 'E-Mail'",
-                "   → verfasser = Name aus 'Von:' Zeile (NUR der Name, keine E-Mail-Adresse)",
-                "   → datum = Datum aus 'Gesendet:' Zeile (z.B. '16. Mai 2024')",
-                "   → absender = Organisation (z.B. 'Polizei Basel-Landschaft')",
-                "   → Empfaenger aus 'An:' als Person mit rolle 'Empfaenger'",
-                "",
-                "3. UNTERSCHRIFT / GRUSSFORMEL: Nach 'Freundliche Gruesse' oder 'Mit freundlichen Gruessen'",
-                "   steht der Name des VERFASSERS, oft mit Titel und Organisation darunter.",
-                "   Beispiel: 'Beat Wittlin / Wachtmeister / Sachbearbeiter Bedrohungsmanagement'",
-                "   → verfasser = 'Beat Wittlin', rolle = 'Wachtmeister, Sachbearbeiter Bedrohungsmanagement'",
-                "",
-                "4. PERSONEN: Liste NUR Personen auf, deren Namen SICHTBAR im Bild stehen.",
-                "   Jede Person braucht eine 'rolle' (Absender, Empfaenger, erwaehnte Person, etc.).",
-                "",
-                "5. TITEL: Bei E-Mails = Betreff-Zeile. Bei Briefen = erste inhaltliche Ueberschrift."
-              ].join("\n")
-            },
-            {
-              type: "image_url",
-              image_url: { url: `data:${mimeType || "image/png"};base64,${base64}` }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
+  const focusAliases = parsePartyAliases(protectedPersonName);
+  const referenceAliases = parsePartyAliases(opposingPartyName);
+  const focusKeywords = focusAliases.aliases.length > 0 ? focusAliases.aliases.join(", ") : "(keine)";
+  const referenceKeywords = referenceAliases.aliases.length > 0 ? referenceAliases.aliases.join(", ") : "(keine)";
 
-    const responseText = response?.choices?.[0]?.message?.content || "";
-    const parsed = extractJsonObject(responseText);
+  const systemPrompt = isChatHint
+    ? [
+      "Du bist ein forensischer Analyst fuer Kommunikationspruefung.",
+      "Analysiere den Chat-Dialog und quantifiziere die Dynamik.",
+      "OUTPUT: Strenges JSON:",
+      "{",
+      '  "beteiligte": {',
+      '    "links": { "name": "Name", "rolle": "Partei A" },',
+      '    "rechts": { "name": "Name", "rolle": "Partei B" }',
+      "  },",
+      '  "forensik_score": {',
+      '    "links": { "positiv_count": 0, "negativ_count": 0, "belege_negativ": [] },',
+      '    "rechts": { "positiv_count": 0, "negativ_count": 0, "belege_negativ": [] }',
+      "  },",
+      '  "analyse_fazit": "Zusammenfassung",',
+      '  "benachteiligung_score": "1-10"',
+      "}",
+      "NUR JSON."
+    ].join("\n")
+    : [
+      "Du bist ein forensischer Dokumenten-Analyst. Lies das Bild GENAU und extrahiere NUR was SICHTBAR ist.",
+      "Erfinde NICHTS. Nur sichtbare Inhalte.",
+      "",
+      "DOKUMENTTYP: E-Mail (Von/An/Betreff Header), Brief (Briefkopf), Verfuegung, Gutachten, Bericht, Chat.",
+      "E-MAIL: Von: → verfasser (Name), Gesendet: → datum, An: → Person, Betreff: → titel, Signatur → absender.",
+      "PERSONEN: NUR Namen die SICHTBAR im Bild stehen. KEINE Fokus-/Gegenpartei-Keywords als Personen hinzufuegen!",
+      "",
+      `KONTEXT: Fokus-Partei = [${focusKeywords}], Gegenpartei = [${referenceKeywords}]. NUR fuer Sentiment, NICHT als Personen!`,
+      "",
+      "JSON-SCHEMA:",
+      "{",
+      '  "titel": "", "verfasser": "", "datum": "", "absender": "",',
+      '  "documentType": "E-Mail|Brief|Verfuegung|Gutachten|Bericht|Chat",',
+      '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion"}],',
+      '  "benachteiligte_person": {"positiv": 0, "negativ": 0},',
+      '  "zusammenfassung": "Max 2 Saetze"',
+      "}",
+      "NUR JSON. Kein Markdown."
+    ].join("\n");
+
+  const userText = [
+    "Analysiere dieses Dokument-Bild. NUR sichtbare Inhalte extrahieren.",
+    "KEINE Fokus-/Gegenpartei-Keywords als Personen hinzufuegen wenn nicht im Bild sichtbar!"
+  ].join("\n");
+
+  try {
+    const responseText = await callClaudeVision(systemPrompt, userText, base64, mimeType || "image/png", 1500);
+    const parsed = extractJsonObject(responseText || "");
 
     if (!parsed || typeof parsed !== "object") {
       return {
         status: "empty",
-        title: "",
-        author: "",
-        authoredDate: "",
-        people: [],
-        disadvantagedPerson: "",
+        title: "", author: "", authoredDate: "", people: [], disadvantagedPerson: "",
         message: "Kein klarer Inhalt im Bild erkannt."
       };
     }
@@ -2642,18 +2557,12 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
 
     const hasQuantitativeStats = Number(normalized.positiveMentions || 0) > 0
       || Number(normalized.negativeMentions || 0) > 0
-      || Number(normalized.opposingPositiveMentions || 0) > 0
-      || Number(normalized.opposingNegativeMentions || 0) > 0
       || Boolean(normalizeWhitespace(normalized.senderInstitution || ""));
 
     if (!hasQuantitativeStats && !normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
       return {
         status: "empty",
-        title: "",
-        author: "",
-        authoredDate: "",
-        people: [],
-        disadvantagedPerson: "",
+        title: "", author: "", authoredDate: "", people: [], disadvantagedPerson: "",
         message: normalized.message || "Kein klarer Inhalt im Bild erkannt."
       };
     }
@@ -2661,32 +2570,13 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
     return normalized;
   } catch (error) {
     const statusCode = Number(error?.status || 0);
-    const message = String(error?.message || "");
-
-    if (statusCode === 401 || /Missing scopes:|insufficient permissions/i.test(message)) {
-      return {
-        status: "needs-config",
-        title: "",
-        author: "",
-        authoredDate: "",
-        people: [],
-        disadvantagedPerson: "",
-        message: "OpenAI-Key erkannt, aber ohne ausreichende API-Scopes (model.request / api.responses.write)."
-      };
-    }
-
     if (statusCode === 429) {
       return {
         status: "needs-config",
-        title: "",
-        author: "",
-        authoredDate: "",
-        people: [],
-        disadvantagedPerson: "",
-        message: "OpenAI-Limit erreicht. Bitte sp├ñter erneut versuchen."
+        title: "", author: "", authoredDate: "", people: [], disadvantagedPerson: "",
+        message: "API-Limit erreicht. Bitte spaeter erneut versuchen."
       };
     }
-
     throw error;
   }
 }
