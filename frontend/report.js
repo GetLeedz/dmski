@@ -579,8 +579,7 @@ function renderReport(caseContext, entries) {
         <div class="report-summary-grid">
           ${renderSummaryCard("Files im Dossier", String(entries.length), analyzedEntries.length === entries.length ? "Vollständig erfasst" : `${analyzedEntries.length} analysiert`, "neutral")}
           ${renderSummaryCard("Fokus-Partei", formatPartySummaryValue(protectedPositiveTotal, protectedNegativeTotal), caseContext.protectedPerson || "Nicht gesetzt", derivePartySummaryTone(protectedPositiveTotal, protectedNegativeTotal))}
-          ${renderSummaryCard("Gegenpartei", formatPartySummaryValue(opposingPositiveTotal, opposingNegativeTotal), caseContext.opposingParty || "Nicht gesetzt", derivePartySummaryTone(opposingPositiveTotal, opposingNegativeTotal))}
-          ${renderSummaryCard("Gesamtbilanz", totalPositive === totalNegative ? "Neutral" : `${totalPositive - totalNegative > 0 ? "+" : ""}${totalPositive - totalNegative}`, ocrCount > 0 ? `${ocrCount} OCR-Fallback · ${evidenceCount} Belegstellen` : `${evidenceCount} Belegstellen`, totalPositive === totalNegative ? "neutral" : (totalPositive > totalNegative ? "positive" : "negative"))}
+          ${renderSummaryCard("Gesamtbilanz", protectedPositiveTotal === protectedNegativeTotal ? "Neutral" : `${protectedPositiveTotal - protectedNegativeTotal > 0 ? "+" : ""}${protectedPositiveTotal - protectedNegativeTotal}`, ocrCount > 0 ? `${ocrCount} OCR-Fallback · ${evidenceCount} Belegstellen` : `${evidenceCount} Belegstellen`, protectedPositiveTotal === protectedNegativeTotal ? "neutral" : (protectedPositiveTotal > protectedNegativeTotal ? "positive" : "negative"))}
         </div>
       </section>
 

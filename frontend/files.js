@@ -1194,8 +1194,7 @@ function setAnalysisReportLoading() {
   );
   analysisReportGrid.innerHTML = [
     renderFileCountCard(allFiles.length || 0),
-    renderPartyReportCard("Fokus-Partei", 0, 0),
-    renderPartyReportCard("Gegenpartei", 0, 0)
+    renderPartyReportCard("Fokus-Partei", 0, 0)
   ].join("");
 }
 
@@ -1216,8 +1215,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(0),
-      renderPartyReportCard("Fokus-Partei", 0, 0),
-      renderPartyReportCard("Gegenpartei", 0, 0)
+      renderPartyReportCard("Fokus-Partei", 0, 0)
     ].join("");
     return;
   }
@@ -1404,8 +1402,7 @@ async function refreshAnalysisReport(files = allFiles) {
     );
     analysisReportGrid.innerHTML = [
       renderFileCountCard(fileCount),
-      renderPartyReportCard("Fokus-Partei", 0, 0),
-      renderPartyReportCard("Gegenpartei", 0, 0)
+      renderPartyReportCard("Fokus-Partei", 0, 0)
     ].join("");
   }
 }
