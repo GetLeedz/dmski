@@ -2432,10 +2432,10 @@ async function loadRowAnalysis(file, options = {}) {
         <div class="ai-scanning-orb-glow"></div>
       </div>
       <div class="ai-scanning-text">
-        <p class="ai-scanning-title">KI-Analyse läuft</p>
-        <p class="ai-scanning-sub">Forensische Mustererkennung · Parteienanalyse · Rechtliche Einordnung</p>
+        <p class="ai-scanning-title">KI-Forensik aktiv</p>
+        <p class="ai-scanning-sub">Psycho-Profiling · System-Erkennung · Narzissmus-Muster · Rechtsanalyse</p>
         <div class="ai-scanning-bars">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
       </div>
     </div>`;
@@ -3323,15 +3323,23 @@ void loadCaseContext().then(() => {
 });
 
 /* ================================================================
-   FORENSIC SCAN – Claude KI-Tiefenanalyse
+   FORENSIC SCAN – Claude KI-Tiefenanalyse (Admin only)
    ================================================================ */
 (function initForensicScan() {
+  const forensicSection = document.getElementById("forensicSection");
   const scanBtn = document.getElementById("startForensicScanBtn");
   const progressWrap = document.getElementById("forensicProgress");
   const progressFill = document.getElementById("forensicProgressFill");
   const progressText = document.getElementById("forensicProgressText");
   const resultsWrap = document.getElementById("forensicResults");
   if (!scanBtn) return;
+
+  // Master Scan: Admin only (saves tokens)
+  const userRole = sessionStorage.getItem("dmski_role") || "customer";
+  if (userRole !== "admin" && forensicSection) {
+    forensicSection.style.display = "none";
+    return;
+  }
 
   function setProgress(pct, text) {
     if (progressWrap) progressWrap.classList.remove("hidden");
