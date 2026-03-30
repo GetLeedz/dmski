@@ -1134,7 +1134,12 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
           <span class="akteure-legend-item"><span class="akteure-legend-dot is-unknown"></span>Keine Daten</span>
         </div>
         <div class="akteure-table-container">
-          <table class="tactic-table akteure-grid">
+          <table class="akteure-grid">
+            <colgroup>
+              <col class="col-name" />
+              <col class="col-funktion" />
+              <col class="col-sentiment" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Name, Vorname</th>
