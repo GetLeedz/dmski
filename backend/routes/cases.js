@@ -3223,30 +3223,26 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     });
   }
 
-  // ── RULE 2: Police / Bedrohungsmanagement / KESB = negative for focus party ──
-  // The mere EXISTENCE of such documents in the dossier harms the focus party.
+  // ── RULE 2: Police / Bedrohungsmanagement / KESB documents ──
+  // Per-file: The EXISTENCE of such a document harms the focus party.
+  // This is a single-file assessment. The MASTER SCAN handles accumulation
+  // across multiple files (systematic destruction detection).
   const isPoliceDoc = /polizei|bedrohungsmanagement|polizeilich|strafanzeige|polizeibericht|polizeieinsatz/i.test(docText + " " + institutionLower);
   const isKESBDoc = /\bkesb\b|kindes.*schutz|gefaehrdungsmeldung|gefährdungsmeldung|jugendamt/i.test(docText + " " + institutionLower);
   const isInstitutionalThreat = isPoliceDoc || isKESBDoc;
 
   if (isInstitutionalThreat) {
-    // The mere EXISTENCE of police/KESB documents in a dossier is a weapon.
-    // Courts and social workers see "Bedrohungsmanagement", "Polizei" and feel FEAR.
-    // Even if nothing was found, the damage is done. This is systematic destruction.
-    //
-    // Scoring: Heavy negative weight because institutional trace harms for YEARS.
-    // Negativ 3: existence in dossier + database trace + psychological impact on court
-    output.negativeMentions = Math.max(Number(output.negativeMentions || 0), 3);
+    // Single file: Negativ 1 for focus party (this document exists in the dossier)
+    // The police is neutral – they are NOT the opposing party, so Gegenpartei stays 0.
+    // "Keine Falleröffnung" is not positive – it's just neutral. No positiv count.
+    // The SYSTEM pattern (multiple police files = systematic destruction) is detected
+    // by the MASTER SCAN, not here.
+    output.negativeMentions = Math.max(Number(output.negativeMentions || 0), 1);
 
-    // This is a system attack by the opposing party
-    output.opposingNegativeMentions = Math.max(Number(output.opposingNegativeMentions || 0), 3);
-
-    // Check if the document shows exoneration (no case opened, no crime found)
-    const isExonerating = /keine fallerroeffnung|keine falleröffnung|keine strafbare|kein straftat|keine strafbaren handlungen|kein ergebnis|nicht eingegangen|eingestellt/i.test(docText);
-    if (isExonerating) {
-      // Exoneration gives 1 positive (entlastend), but doesn't outweigh the damage
-      output.positiveMentions = Math.max(Number(output.positiveMentions || 0), 1);
-    }
+    // Do NOT count anything for Gegenpartei – police is a neutral third party.
+    // Do NOT count "keine Falleröffnung" as positive – neutral is not positive.
+    // Reset any AI-hallucinated positive counts for this type of document.
+    output.positiveMentions = 0;
   }
 
   // ── RULE 3: Author-bias elimination ──

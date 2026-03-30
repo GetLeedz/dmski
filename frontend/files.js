@@ -2675,6 +2675,10 @@ async function loadRowAnalysis(file, options = {}) {
   const verdict = deriveDocumentVerdict(analysis);
   const evidenceCount = countEvidenceSnippets(evidence);
 
+  // Detect institutional threat documents (police, KESB, Bedrohungsmanagement)
+  const docTextLower = (title + " " + (senderInstitution || "") + " " + (analysis.zusammenfassung || "")).toLowerCase();
+  const isPoliceOrKESB = /polizei|bedrohungsmanagement|kesb|gefährdungsmeldung|jugendamt|strafanzeige/i.test(docTextLower);
+
   // Lawyer-style evidence text for per-document box
   const lawyerEvidenceMap = {
     "Deutlich belastend": "Das vorliegende Dokument weist im Gesamtbild eine deutlich belastende Wirkung gegenüber der Fokus-Partei aus. Die Häufung negativer Aussagen ohne sachliche Notwendigkeit stellt aus anwaltlicher Sicht ein Indiz für eine gezielte Nachteilszufügung im Sinne von Art. 28 ZGB dar.",
@@ -2683,7 +2687,13 @@ async function loadRowAnalysis(file, options = {}) {
     "Leicht entlastend": "Das Dokument enthält tendenziell ausgewogene bis leicht positive Aussagen. Keine unmittelbaren Hinweise auf taktisch motivierte Negativdarstellungen erkennbar.",
     "Eher ausgewogen": "Das vorliegende Dokument erscheint im Wesentlichen sachlich ausgewogen. Kein eindeutiges Belastungsmuster erkennbar. Gesamtdossier-Betrachtung empfohlen."
   };
-  const lawyerEvidenceText = lawyerEvidenceMap[verdict.label] || "Keine abschliessende Einordnung möglich. Analyse des Gesamtdossiers empfohlen.";
+
+  let lawyerEvidenceText;
+  if (isPoliceOrKESB) {
+    lawyerEvidenceText = "Die blosse Existenz dieses Dokuments im Dossier belastet die Fokus-Partei. Polizei- und Behördenkorrespondenz hinterlässt Spuren in Datenbanken und beeinflusst die Wahrnehmung bei Gericht. Starten Sie den Master Scan, um zu prüfen, ob ein systematisches Zerstörungsmuster vorliegt (mehrere Polizei-/KESB-Einträge = System-Alarm).";
+  } else {
+    lawyerEvidenceText = lawyerEvidenceMap[verdict.label] || "Keine abschliessende Einordnung möglich. Analyse des Gesamtdossiers empfohlen.";
+  }
   const qualityValue = Number.isFinite(textQuality.score)
     ? `${textQuality.label} · ${textQuality.score.toFixed(2)}`
     : textQuality.label;
