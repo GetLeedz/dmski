@@ -2741,14 +2741,7 @@ async function loadRowAnalysis(file, options = {}) {
         </div>` : ""}
       </div>
 
-      <!-- Persons -->
-      ${people.length > 0 ? `
-      <div class="qa-mod-persons">
-        <span class="qa-mod-meta-label">Personen</span>
-        <div class="qa-mod-persons-list">${people.map(p => `<span class="qa-mod-person">${escapeHtml(p)}</span>`).join("")}</div>
-      </div>` : ""}
-
-      <!-- Evidence verdict -->
+      <!-- 3. KI-Einschätzung -->
       <div class="qa-mod-verdict qa-mod-verdict--${verdict.tone}">
         <div class="qa-mod-verdict-head">
           <span class="qa-mod-verdict-label">KI-Einschätzung</span>
@@ -2757,7 +2750,7 @@ async function loadRowAnalysis(file, options = {}) {
         <p class="qa-mod-verdict-text">${escapeHtml(lawyerEvidenceText)}</p>
       </div>
 
-      <!-- Fokus-Partei Score -->
+      <!-- 4. Fokus-Partei Score -->
       <div class="qa-mod-stats">
         <div class="qa-mod-stat-col">
           <span class="qa-mod-stat-role">${currentCaseProtectedLabel}</span>
@@ -2774,6 +2767,18 @@ async function loadRowAnalysis(file, options = {}) {
           </div>
         </div>
       </div>
+
+      <!-- 5. Involvierte Personen -->
+      ${people.length > 0 ? `
+      <div class="qa-mod-persons-section">
+        <div class="qa-mod-section-header">
+          <span class="qa-mod-section-number">5</span>
+          <span class="qa-mod-section-title">Involvierte Personen</span>
+        </div>
+        <div class="qa-mod-persons-grid">${people.map(p => `<div class="qa-mod-person-card"><span class="qa-mod-person-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>
+          </span><span class="qa-mod-person-name">${escapeHtml(p)}</span></div>`).join("")}</div>
+      </div>` : ""}
     </div>
   `;
 }
