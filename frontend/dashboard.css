@@ -4705,7 +4705,15 @@ select.case-edit-input {
 }
 
 /* Tabular persons layout */
-/* Akteure table – CSS Grid layout (same pattern as tactic-table) */
+/* Akteure table – identical structure to .tactic-table */
+.akteure-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(26,43,60,0.14);
+  background: rgba(255,255,255,0.9);
+  width: 100%;
+}
+
 .akteure-table {
   width: 100%;
   border-collapse: collapse;
@@ -4719,8 +4727,8 @@ select.case-edit-input {
 .akteure-table thead {
   display: block;
   width: 100%;
-  background: rgba(26,43,60,0.04);
-  border-bottom: 2px solid rgba(197,160,89,0.3);
+  background: var(--navy, #1A2B3C);
+  border-bottom: 3px solid var(--gold, #C5A059);
 }
 
 .akteure-table tbody {
@@ -4731,35 +4739,45 @@ select.case-edit-input {
 .akteure-table thead tr,
 .akteure-row {
   display: grid;
-  grid-template-columns: 1.4fr 1.6fr 4.5rem;
-  align-items: center;
+  grid-template-columns: 1.4fr 1.6fr 5.5rem;
+  align-items: stretch;
   width: 100%;
 }
 
-.akteure-table th {
-  padding: 0.6rem 0.8rem;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--navy);
-  text-transform: uppercase;
-  text-align: left;
+.akteure-table thead tr {
   background: transparent;
   border: none;
+}
+
+.akteure-table th {
+  padding: 0.85rem 1.1rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #F8F9FA;
+  border: none;
+  text-align: left;
+  background: transparent;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 
 .akteure-table th:last-child {
-  text-align: center;
+  justify-content: center;
 }
 
 .akteure-row td {
-  padding: 0.55rem 0.8rem;
-  border-bottom: 1px solid rgba(26,43,60,0.05);
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(26,43,60,0.07);
   background: transparent;
-  color: #1a3540;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #1a2b3c;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .akteure-row:last-child td {
@@ -4767,19 +4785,19 @@ select.case-edit-input {
 }
 
 .akteure-col-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.8rem;
   color: #0f2b36;
 }
 
 .akteure-col-role {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   color: #4a6a7a;
   font-weight: 500;
 }
 
 .akteure-col-dot {
-  text-align: center;
+  justify-content: center;
 }
 
 /* Big rounded sentiment dot */
