@@ -2190,9 +2190,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- ROT (+1 Negativ): Kritik, Vorwuerfe, Unterstellung von Defiziten, fehlende Kooperation, Unpuenktlichkeit, Durchsetzen eigener Interessen.",
     "- GRUEN (+1 Positiv): Lob, Bestaetigung von Kompetenz, Wohlwollen, Bemuehen, Kooperation, liebevoller Umgang.",
     "",
-    "B) FUER DIE GEGENPARTEI (REFERENZ-PERSON):",
-    "- GRUEN (+1 Positiv): Aufwertung, Rechtfertigung, Lob, Loesungsorientierung, Reflektion, gute Argumente, Stabilitaet, Empfehlung zugunsten dieser Partei.",
-    "- ROT (+1 Negativ): Kritik, Fehlverhalten, mangelnde Flexibilitaet, Verweigerung, Nichteinhalten von Abmachungen.",
+    "WICHTIG: Zaehle NUR fuer die Fokus-Partei. KEINE Zaehlung fuer die Gegenpartei (spart Tokens, irrelevant).",
     "",
     "### 2b. E-MAIL-ERKENNUNG:",
     "Wenn das Dokument E-Mail-Header enthaelt (z.B. 'Von:', 'From:', 'Gesendet:', 'Sent:', 'An:', 'To:', 'Betreff:', 'Subject:', 'CC:', 'BCC:'):",
@@ -2220,7 +2218,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "Die Gegenpartei kann die Fokus-Partei durch wiederholte institutionelle Attacken zerstoeren.",
     "Diese Muster sind STARK NEGATIV fuer die Gegenpartei und STARK NEGATIV fuer die Fokus-Partei (als Opfer):",
     "",
-    "POLIZEI-MUSTER (+3 Negativ fuer Gegenpartei pro Vorfall):",
+    "POLIZEI-MUSTER (Negativ fuer Fokus-Partei):",
     "- Wiederholte Polizeianzeigen, Polizeibesuche, Polizeieinsaetze gegen die Fokus-Partei",
     "- Anrufe bei der Polizei wegen angeblicher Bedrohung, Gewalt, Belästigung",
     "- Bedrohungsmanagement-Meldungen, Gefaehrdungsmeldungen an KESB",
@@ -2228,7 +2226,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "- Die BLOSSE EXISTENZ solcher Korrespondenz/Akten schadet der Person bei Gericht und Behoerden",
     "- Ergebnis 'keine Fallerroeffnung / keine strafbaren Handlungen' = ENTLASTUNG der Fokus-Partei (+2 Positiv)",
     "",
-    "INSTITUTIONELLE ATTACKEN (+2 Negativ fuer Gegenpartei):",
+    "INSTITUTIONELLE ATTACKEN (Negativ fuer Fokus-Partei):",
     "- Meldungen an KESB, Jugendamt, Schule mit unbelegten Vorwuerfen",
     "- Superprovisorische Massnahmen ohne ausreichende Beweislage",
     "- Anwaeltliche Eingaben mit sachfremden Persoenlichkeitsangriffen",
@@ -2252,19 +2250,14 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "  → Wenn Entlastung ('keine Straftat' etc.): zusaetzlich benachteiligte_person.positiv: 1",
     "",
     "### 3b. VERFASSER-BIAS-ELIMINIERUNG (KRITISCH):",
-    "Wenn der VERFASSER des Dokuments selbst eine der Parteien ist:",
-    "- Fokus-Partei ist Verfasser: Selbstlob (positive Aussagen ueber sich selbst) NICHT als positiv zaehlen.",
-    "  → Nur was Fokus-Partei UEBER DIE GEGENPARTEI schreibt, zaehlt fuer die Gegenpartei.",
-    "- Gegenpartei ist Verfasser: Selbstlob NICHT als positiv fuer Gegenpartei zaehlen.",
-    "  → Nur was Gegenpartei UEBER DIE FOKUS-PARTEI schreibt, zaehlt fuer die Fokus-Partei.",
-    "- GRUND: Eigene E-Mails und Briefe enthalten natuerlich positives ueber den Verfasser.",
-    "  Das wuerde die Ergebnisse verzerren. NUR Fremdaussagen (andere ueber die Partei) zaehlen.",
-    "- AUSNAHME: Neutrale Dritte (Behoerden, Gerichte, Gutachter) sind KEINE Parteien – ihre Aussagen zaehlen normal.",
+    "- Fokus-Partei ist Verfasser: Selbstlob NICHT als positiv zaehlen. Eigene Briefe verzerren sonst das Ergebnis.",
+    "- Gegenpartei ist Verfasser: Was sie NEGATIV ueber Fokus-Partei schreibt, zaehlt als Negativ fuer Fokus-Partei.",
+    "- Neutrale Dritte (Behoerden, Gerichte, Gutachter) zaehlen normal.",
     "",
     "### 4. OUTPUT-STRUKTUR:",
     "- TITEL, VERFASSER, DATUM, ABSENDER, PERSONEN, DOKUMENTTYP extrahieren.",
     "- ZUSAMMENFASSUNG: Beschreibe die psychologische Schieflage oder Ausgewogenheit in maximal 2 Saetzen.",
-    "- DARSTELLUNG: Am Ende nur die nackten Summen fuer Fokus-Person und Gegenpartei.",
+    "- DARSTELLUNG: Am Ende nur die nackten Summen fuer die Fokus-Person.",
     "- Wenn ein Wert 0 ist, bleibt er 0.",
     "- Gib fuer die API trotzdem NUR valides JSON gemaess Schema zurueck.",
     "",
@@ -2277,10 +2270,6 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '  "documentType": "Verfuegung|Brief|E-Mail|Gutachten|Bericht|Protokoll|Eingabe|Urteil|Superprovisorische Massnahme|Chat",',
     '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind"}],',
     '  "benachteiligte_person": {',
-    '    "positiv": 0,',
-    '    "negativ": 0',
-    '  },',
-    '  "gegenpartei": {',
     '    "positiv": 0,',
     '    "negativ": 0',
     '  },',
@@ -2578,7 +2567,6 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
               '  "documentType": "E-Mail|Brief|Verfuegung|Gutachten|Bericht|Chat",',
               '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion"}],',
               '  "benachteiligte_person": {"positiv": 0, "negativ": 0},',
-              '  "gegenpartei": {"positiv": 0, "negativ": 0},',
               '  "zusammenfassung": "Max 2 Saetze"',
               "}",
               "",
@@ -3320,14 +3308,10 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   }
 
   // ── RULE 3: Author-bias elimination ──
-  // If the document author IS a party, discount self-praise.
+  // If the document author IS the focus party, discount self-praise.
   const authorIsProtected = protectedIdentity.aliases.some(a => authorNorm.includes(a.toLowerCase()));
-  const authorIsOpposing = opposingIdentity.aliases.some(a => authorNorm.includes(a.toLowerCase()));
 
   if (authorIsProtected) {
-    // Focus party authored → their positive self-mentions don't count
-    // Keep negatives (self-critical is genuine), zero out inflated positives from self-praise
-    // Only reset if AI gave high positives with no negatives (clear self-praise signal)
     const pos = Number(output.positiveMentions || 0);
     const neg = Number(output.negativeMentions || 0);
     if (pos > 0 && neg === 0) {
@@ -3335,14 +3319,10 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     }
   }
 
-  if (authorIsOpposing) {
-    // Opposing party authored → their positive self-mentions don't count
-    const oppPos = Number(output.opposingPositiveMentions || 0);
-    const oppNeg = Number(output.opposingNegativeMentions || 0);
-    if (oppPos > 0 && oppNeg === 0) {
-      output.opposingPositiveMentions = 0;
-    }
-  }
+  // ── RULE 4: No opposing party scoring ──
+  // Only focus party scoring matters. Saves tokens, reduces noise, cleaner results.
+  output.opposingPositiveMentions = 0;
+  output.opposingNegativeMentions = 0;
 
   return output;
 }

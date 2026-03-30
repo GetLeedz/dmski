@@ -232,9 +232,7 @@ function normalizeImpactRanking(entries) {
 function deriveDocumentVerdict(analysis) {
   const protectedPositive = Math.max(0, Number(analysis?.positiveMentions || 0));
   const protectedNegative = Math.max(0, Number(analysis?.negativeMentions || 0));
-  const opposingPositive = Math.max(0, Number(analysis?.opposingPositiveMentions || 0));
-  const opposingNegative = Math.max(0, Number(analysis?.opposingNegativeMentions || 0));
-  const pressure = (protectedNegative + opposingPositive) - (protectedPositive + opposingNegative);
+  const pressure = protectedNegative - protectedPositive;
 
   if (pressure >= 4) {
     return { label: "Deutlich belastend", tone: "negative", detail: `Saldo ${pressure}` };
@@ -496,14 +494,7 @@ function renderDocumentCard(entry, index, context) {
               <div class="report-party-score-row"><span>Positiv</span><em class="is-positive">${escapeHtml(String(Math.max(0, Number(analysis.positiveMentions || 0))))}</em></div>
               <div class="report-party-score-row"><span>Negativ</span><em class="is-negative">${escapeHtml(String(Math.max(0, Number(analysis.negativeMentions || 0))))}</em></div>
             </article>
-            <article class="report-party-card">
-              <div class="report-party-title">
-                <strong>${escapeHtml(context.opposingLabel)}</strong>
-                <span>${escapeHtml(context.opposingKeywords || "Nicht gesetzt")}</span>
-              </div>
-              <div class="report-party-score-row"><span>Positiv</span><em class="is-positive">${escapeHtml(String(Math.max(0, Number(analysis.opposingPositiveMentions || 0))))}</em></div>
-              <div class="report-party-score-row"><span>Negativ</span><em class="is-negative">${escapeHtml(String(Math.max(0, Number(analysis.opposingNegativeMentions || 0))))}</em></div>
-            </article>
+            <!-- Gegenpartei scoring removed: only focus party matters -->
           </div>
         </div>
       </div>

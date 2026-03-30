@@ -343,9 +343,8 @@ function countEvidenceSnippets(evidence) {
 function deriveDocumentVerdict(analysis) {
   const protectedPositive = Math.max(0, Number(analysis?.positiveMentions || 0));
   const protectedNegative = Math.max(0, Number(analysis?.negativeMentions || 0));
-  const opposingPositive = Math.max(0, Number(analysis?.opposingPositiveMentions || 0));
-  const opposingNegative = Math.max(0, Number(analysis?.opposingNegativeMentions || 0));
-  const pressure = (protectedNegative + opposingPositive) - (protectedPositive + opposingNegative);
+  // Only focus party scoring matters. Opposing party scoring removed (saves tokens).
+  const pressure = protectedNegative - protectedPositive;
 
   if (pressure >= 4) {
     return { label: "Deutlich belastend", tone: "negative", detail: `Saldo ${pressure}` };
@@ -2708,10 +2707,8 @@ async function loadRowAnalysis(file, options = {}) {
   const exifDate = box.dataset.exifDate || "";
   const exifGps  = box.dataset.exifGps || "";
 
-  // Derive overall bias direction for the stat section
-  const totalNeg = negativeMentions + opposingPositiveMentions;
-  const totalPos = positiveMentions + opposingNegativeMentions;
-  const biasDirection = totalNeg > totalPos ? "belastend" : totalPos > totalNeg ? "entlastend" : "neutral";
+  // Derive overall bias direction (focus party only)
+  const biasDirection = negativeMentions > positiveMentions ? "belastend" : positiveMentions > negativeMentions ? "entlastend" : "neutral";
 
   box.innerHTML = `
     <div class="qa-modern">
@@ -2764,7 +2761,7 @@ async function loadRowAnalysis(file, options = {}) {
         <p class="qa-mod-verdict-text">${escapeHtml(lawyerEvidenceText)}</p>
       </div>
 
-      <!-- Party stats -->
+      <!-- Fokus-Partei Score -->
       <div class="qa-mod-stats">
         <div class="qa-mod-stat-col">
           <span class="qa-mod-stat-role">${currentCaseProtectedLabel}</span>
@@ -2776,20 +2773,6 @@ async function loadRowAnalysis(file, options = {}) {
             </div>
             <div class="qa-mod-stat-box is-negative">
               <span class="qa-mod-stat-num">${negativeMentions}</span>
-              <span class="qa-mod-stat-label">Negativ</span>
-            </div>
-          </div>
-        </div>
-        <div class="qa-mod-stat-col">
-          <span class="qa-mod-stat-role">${currentCaseOpposingLabel}</span>
-          <span class="qa-mod-stat-name">${opposingKeywords}</span>
-          <div class="qa-mod-stat-nums">
-            <div class="qa-mod-stat-box is-positive">
-              <span class="qa-mod-stat-num">${opposingPositiveMentions}</span>
-              <span class="qa-mod-stat-label">Positiv</span>
-            </div>
-            <div class="qa-mod-stat-box is-negative">
-              <span class="qa-mod-stat-num">${opposingNegativeMentions}</span>
               <span class="qa-mod-stat-label">Negativ</span>
             </div>
           </div>
