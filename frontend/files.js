@@ -15,6 +15,10 @@ if (token && dashboardMain) {
   if (authGate) authGate.remove();
 }
 
+// Role-based access: Team members (collaborator) get read-only view
+const dmskiUserRole = sessionStorage.getItem("dmski_role") || "customer";
+const isTeamReadOnly = dmskiUserRole === "collaborator";
+
 const host = String(window.location.hostname || "").toLowerCase();
 const isLocalHost = host === "localhost"
   || host === "127.0.0.1"
@@ -124,6 +128,15 @@ const sortUploadDateBtn = document.getElementById("sortUploadDateBtn");
 const sortFileDateBtn = document.getElementById("sortFileDateBtn");
 const downloadAllFilesBtn = document.getElementById("downloadAllFilesBtn");
 
+// ── Team read-only: hide edit/delete/upload controls ──
+if (isTeamReadOnly) {
+  if (deleteCaseBtn) deleteCaseBtn.style.display = "none";
+  if (goToUploadBtnHero) goToUploadBtnHero.style.display = "none";
+  if (goToUploadBtn) goToUploadBtn.style.display = "none";
+  if (toggleMultiDeleteBtn) toggleMultiDeleteBtn.style.display = "none";
+  if (downloadAllFilesBtn) downloadAllFilesBtn.style.display = "none";
+}
+
 let allFiles = [];
 const previewUrlCache = new Map();
 const previewPromiseCache = new Map();
@@ -162,7 +175,10 @@ const PENCIL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
 
 function buildEditableField(cssClass, apiField, label, value, style) {
   const styleAttr = style ? ` style="${style}"` : "";
-  return `<div class="case-person-field ${cssClass}" data-edit-field="${apiField}"${styleAttr}><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(value || "Nicht gesetzt")}</span></div><button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button></div></div>`;
+  const editBtn = isTeamReadOnly
+    ? ""
+    : `<button class="case-edit-btn" title="${escapeHtml(label)} bearbeiten" aria-label="${escapeHtml(label)} bearbeiten">${PENCIL_SVG}</button>`;
+  return `<div class="case-person-field ${cssClass}" data-edit-field="${apiField}"${styleAttr}><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">${escapeHtml(label)}</span><span class="case-person-value">${escapeHtml(value || "Nicht gesetzt")}</span></div>${editBtn}</div></div>`;
 }
 
 const COUNTRY_OPTIONS = ["Schweiz", "Deutschland", "Österreich"];
@@ -2824,9 +2840,9 @@ function renderFiles(files) {
             <button type="button" class="row-action-btn download" data-action="download" data-id="${file.id}" title="Herunterladen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button type="button" class="row-action-btn delete" data-action="delete" data-id="${file.id}" title="Löschen">
+            ${isTeamReadOnly ? "" : `<button type="button" class="row-action-btn delete" data-action="delete" data-id="${file.id}" title="Löschen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
-            </button>
+            </button>`}
           </div>
         </div>
         <div class="row-preview-box-wrap">
