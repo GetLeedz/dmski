@@ -2286,7 +2286,15 @@ function parseMp4Meta(buffer) {
   function scan(start, end) {
     let pos = start;
     while (pos + 8 <= end && pos < total) {
-      const size = u32(pos);
+      let size = u32(pos);
+      // size=0 means atom extends to end of container
+      if (size === 0) size = end - pos;
+      // size=1 means 64-bit extended size follows (bytes 8-15)
+      if (size === 1 && pos + 16 <= total) {
+        // Read lower 32 bits of the 64-bit size (high bits are at pos+8, low at pos+12)
+        size = u32(pos + 12);
+        if (size < 16) break;
+      }
       if (size < 8) break;
       const atomEnd = Math.min(pos + size, end, total);
 
@@ -2336,6 +2344,173 @@ function parseMp4Meta(buffer) {
 }
 
 /**
+ * Extracts recording date and GPS from JPEG EXIF data.
+ * Supports: DateTimeOriginal, GPSLatitude/GPSLongitude
+ */
+function parseJpegExif(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const total = bytes.length;
+
+  let recordingDate = null;
+  let location = null;
+
+  // Find APP1 marker (0xFFE1) containing EXIF
+  let pos = 2; // skip SOI (0xFFD8)
+  while (pos + 4 < total) {
+    if (bytes[pos] !== 0xFF) break;
+    const marker = bytes[pos + 1];
+    const segLen = (bytes[pos + 2] << 8) | bytes[pos + 3];
+
+    if (marker === 0xE1) {
+      // Check for "Exif\0\0"
+      if (bytes[pos + 4] === 0x45 && bytes[pos + 5] === 0x78 &&
+          bytes[pos + 6] === 0x69 && bytes[pos + 7] === 0x66 &&
+          bytes[pos + 8] === 0x00 && bytes[pos + 9] === 0x00) {
+        const tiffStart = pos + 10;
+        const result = parseTiffExif(bytes, tiffStart, Math.min(pos + 2 + segLen, total));
+        recordingDate = result.recordingDate;
+        location = result.location;
+      }
+      break;
+    }
+
+    // Skip to next marker
+    pos += 2 + segLen;
+    if (marker === 0xDA) break; // SOS = end of metadata
+  }
+
+  return { recordingDate, location };
+}
+
+function parseTiffExif(bytes, tiffStart, end) {
+  let recordingDate = null;
+  let gpsLat = null, gpsLon = null, gpsLatRef = null, gpsLonRef = null;
+
+  const le = bytes[tiffStart] === 0x49; // little-endian if "II"
+
+  function u16(off) {
+    if (off + 2 > end) return 0;
+    return le ? (bytes[off] | (bytes[off + 1] << 8))
+              : ((bytes[off] << 8) | bytes[off + 1]);
+  }
+
+  function u32(off) {
+    if (off + 4 > end) return 0;
+    return le ? (bytes[off] | (bytes[off + 1] << 8) | (bytes[off + 2] << 16) | (bytes[off + 3] << 24)) >>> 0
+              : (((bytes[off] << 24) | (bytes[off + 1] << 16) | (bytes[off + 2] << 8) | bytes[off + 3]) >>> 0);
+  }
+
+  function readAscii(off, count) {
+    let s = "";
+    for (let i = 0; i < count && off + i < end; i++) {
+      const c = bytes[off + i];
+      if (c === 0) break;
+      s += String.fromCharCode(c);
+    }
+    return s.trim();
+  }
+
+  function readRational(off) {
+    const num = u32(off);
+    const den = u32(off + 4);
+    return den === 0 ? 0 : num / den;
+  }
+
+  function readGpsDms(off) {
+    const deg = readRational(off);
+    const min = readRational(off + 8);
+    const sec = readRational(off + 16);
+    return deg + min / 60 + sec / 3600;
+  }
+
+  function parseIfd(ifdOffset) {
+    const abs = tiffStart + ifdOffset;
+    if (abs + 2 > end) return;
+    const count = u16(abs);
+    for (let i = 0; i < count; i++) {
+      const entryOff = abs + 2 + i * 12;
+      if (entryOff + 12 > end) break;
+      const tag = u16(entryOff);
+      const type = u16(entryOff + 2);
+      const cnt = u32(entryOff + 4);
+      const valOff = u32(entryOff + 8);
+
+      // Tag 0x8769 = ExifIFDPointer → recurse
+      if (tag === 0x8769) {
+        parseIfd(valOff);
+      }
+      // Tag 0x8825 = GPSInfoIFDPointer → parse GPS
+      if (tag === 0x8825) {
+        parseGpsIfd(valOff);
+      }
+      // Tag 0x9003 = DateTimeOriginal
+      if (tag === 0x9003 && type === 2 && cnt >= 19) {
+        const dtStr = readAscii(tiffStart + valOff, cnt);
+        // Format: "2024:03:15 14:30:00" → "15.03.2024 14:30"
+        const m = dtStr.match(/(\d{4}):(\d{2}):(\d{2})\s+(\d{2}):(\d{2})/);
+        if (m) {
+          recordingDate = `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}`;
+        }
+      }
+    }
+  }
+
+  function parseGpsIfd(ifdOffset) {
+    const abs = tiffStart + ifdOffset;
+    if (abs + 2 > end) return;
+    const count = u16(abs);
+    for (let i = 0; i < count; i++) {
+      const entryOff = abs + 2 + i * 12;
+      if (entryOff + 12 > end) break;
+      const tag = u16(entryOff);
+      const type = u16(entryOff + 2);
+      const valOff = u32(entryOff + 8);
+
+      if (tag === 1 && type === 2) gpsLatRef = readAscii(entryOff + 8, 2); // GPSLatitudeRef
+      if (tag === 2 && type === 5) gpsLat = readGpsDms(tiffStart + valOff); // GPSLatitude
+      if (tag === 3 && type === 2) gpsLonRef = readAscii(entryOff + 8, 2); // GPSLongitudeRef
+      if (tag === 4 && type === 5) gpsLon = readGpsDms(tiffStart + valOff); // GPSLongitude
+    }
+  }
+
+  // Parse IFD0
+  const ifd0Offset = u32(tiffStart + 4);
+  parseIfd(ifd0Offset);
+
+  let location = null;
+  if (gpsLat != null && gpsLon != null) {
+    const lat = gpsLatRef === "S" ? -gpsLat : gpsLat;
+    const lon = gpsLonRef === "W" ? -gpsLon : gpsLon;
+    location = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  }
+
+  return { recordingDate, location };
+}
+
+/**
+ * Extracts recording date and GPS from a JPEG/PNG image file.
+ * Returns { recordingDate: string|null, location: string|null }
+ */
+async function extractImageMeta(file) {
+  const mime = String(file.mime_type || "").toLowerCase();
+  const name = String(file.original_name || "").toLowerCase();
+
+  const isJpeg = /\.(jpe?g|heic|heif)$/i.test(name) || mime.includes("jpeg") || mime.includes("heic") || mime.includes("heif");
+  if (!isJpeg) return { recordingDate: null, location: null };
+
+  const blobUrl = await getPreviewUrl(file);
+  if (!blobUrl) return { recordingDate: null, location: null };
+
+  try {
+    const resp = await fetch(blobUrl);
+    const buf = await resp.arrayBuffer();
+    return parseJpegExif(buf);
+  } catch {
+    return { recordingDate: null, location: null };
+  }
+}
+
+/**
  * Extracts recording date and GPS from an MP4/MOV video file.
  * Reuses the already-cached blob (no extra network call).
  * Returns { recordingDate: string|null, location: string|null }
@@ -2365,6 +2540,27 @@ async function extractVideoMeta(file) {
   }
 }
 
+function renderMediaForensicReport(typeLabel, recordingDate, gpsLocation, note, file) {
+  const displayName = decodeUtf8Safe(file.original_name || "");
+  const dateHighlight = recordingDate !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : '';
+  const gpsHighlight  = gpsLocation !== "–"   ? ' style="font-weight:700;color:var(--accent-2)"' : '';
+  return `
+    <div class="queue-analysis">
+      <div class="forensic-report">
+        <div class="forensic-report-head">
+          <div class="forensic-head-left"><span class="forensic-title">Forensischer Bericht</span></div>
+          <div class="qa-chip-row"><span class="qa-tag">${escapeHtml(typeLabel)}</span></div>
+        </div>
+        <div class="forensic-fields-grid">
+          <div class="forensic-field is-full"><span class="forensic-field-label">Dateiname</span><span class="forensic-field-value">${escapeHtml(displayName)}</span></div>
+          <div class="forensic-field"><span class="forensic-field-label">Datum (Aufnahme)</span><span class="forensic-field-value"${dateHighlight}>${escapeHtml(recordingDate)}</span></div>
+          <div class="forensic-field"><span class="forensic-field-label">Herkunft (GPS)</span><span class="forensic-field-value"${gpsHighlight}>${escapeHtml(gpsLocation)}</span></div>
+        </div>
+      </div>
+      <p class="analysis-media-note">${escapeHtml(note)}</p>
+    </div>`;
+}
+
 async function loadRowAnalysis(file, options = {}) {
   const box = filesTableBody.querySelector(`.analysis-box[data-file-id="${file.id}"]`);
   if (!(box instanceof HTMLElement)) {
@@ -2380,12 +2576,14 @@ async function loadRowAnalysis(file, options = {}) {
     return `<span class="qa-dot-wrap"><span class="qa-dot-track" aria-label="${safeCount}">${Array.from({ length: safeCount }, () => `<span class="qa-dot ${cls}" aria-hidden="true"></span>`).join("")}</span><span class="qa-dot-count">${safeCount}</span></span>`;
   };
 
-  // ── Video / Audio: no AI text analysis – extract container metadata instead ──
+  // ── Video / Audio / Photo: extract file metadata (date, GPS) ──
   const ft = resolveFileType(file);
-  if (ft.className === "video" || ft.className === "audio") {
+  const isMedia = ft.className === "video" || ft.className === "audio";
+  const isPhoto = ft.className === "jpg" || ft.className === "png";
+
+  if (isMedia) {
     const mediaLabel = ft.className === "video" ? "Film" : "Audio";
 
-    // For video (MP4/MOV): parse binary atoms for recording date + GPS
     let recordingDate = "–";
     let gpsLocation   = "–";
     if (ft.className === "video") {
@@ -2399,30 +2597,39 @@ async function loadRowAnalysis(file, options = {}) {
       if (meta.location)      gpsLocation   = meta.location;
     }
 
-    const dateLabel     = "Datum (Aufnahme)";
-    const locationLabel = "Herkunft (GPS)";
-    const hasRealMeta   = ft.className === "video" && (recordingDate !== "–" || gpsLocation !== "–");
-    const mediaNote     = hasRealMeta
-      ? `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Files. Datum und GPS aus File-Metadaten (MP4/MOV-Atoms) extrahiert.`
-      : `KI-Textanalyse nicht verfügbar für ${mediaLabel}-Files.`;
+    const hasRealMeta = recordingDate !== "–" || gpsLocation !== "–";
+    const mediaNote   = hasRealMeta
+      ? `Datum und GPS aus File-Metadaten extrahiert.`
+      : `Keine Metadaten im File gefunden.`;
+
+    box.innerHTML = renderMediaForensicReport(mediaLabel, recordingDate, gpsLocation, mediaNote, file);
+    return;
+  }
+
+  // ── Photos (JPEG/PNG): extract EXIF metadata before AI analysis ──
+  if (isPhoto) {
+    const photoLabel = "Foto";
+    let recordingDate = "–";
+    let gpsLocation   = "–";
 
     box.innerHTML = `
-      <div class="queue-analysis">
-        <div class="forensic-report">
-          <div class="forensic-report-head">
-            <div class="forensic-head-left"><span class="forensic-title">Forensischer Bericht</span></div>
-            <div class="qa-chip-row"><span class="qa-tag">${mediaLabel}</span></div>
-          </div>
-          <div class="forensic-fields-grid">
-            <div class="forensic-field is-full"><span class="forensic-field-label">Titel</span><span class="forensic-field-value">–</span></div>
-            <div class="forensic-field"><span class="forensic-field-label">Verfasser</span><span class="forensic-field-value">–</span></div>
-            <div class="forensic-field"><span class="forensic-field-label">${escapeHtml(dateLabel)}</span><span class="forensic-field-value${recordingDate !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : ''}">${escapeHtml(recordingDate)}</span></div>
-            <div class="forensic-field"><span class="forensic-field-label">${escapeHtml(locationLabel)}</span><span class="forensic-field-value${gpsLocation !== "–" ? ' style="font-weight:700;color:var(--accent-2)"' : ''}">${escapeHtml(gpsLocation)}</span></div>
-          </div>
-        </div>
-        <p class="analysis-media-note">${escapeHtml(mediaNote)}</p>
+      <div class="analysis-loading">
+        <span class="spinner spinner--ai" aria-label="Metadaten werden gelesen"></span>
+        <span class="analysis-loading-text">EXIF-Daten werden gelesen…</span>
       </div>`;
-    return;
+
+    const meta = await extractImageMeta(file);
+    if (meta.recordingDate) recordingDate = meta.recordingDate;
+    if (meta.location)      gpsLocation   = meta.location;
+
+    const hasExif   = recordingDate !== "–" || gpsLocation !== "–";
+    const photoNote = hasExif
+      ? `Aufnahmedatum und GPS aus EXIF-Daten extrahiert.`
+      : `Keine EXIF-Daten im File gefunden.`;
+
+    // Store EXIF data on the box element so it can be shown in the final analysis
+    box.dataset.exifDate = recordingDate;
+    box.dataset.exifGps = gpsLocation;
   }
 
   box.innerHTML = `
@@ -2487,6 +2694,10 @@ async function loadRowAnalysis(file, options = {}) {
     ? `${analysisEngineVersion || "unbekannt"}${backendStartedAt ? ` · Instanz ${backendStartedAt}` : ""}`
     : "";
 
+  // EXIF metadata for photos (stored on box element during EXIF extraction)
+  const exifDate = box.dataset.exifDate || "";
+  const exifGps  = box.dataset.exifGps || "";
+
   // Derive overall bias direction for the stat section
   const totalNeg = negativeMentions + opposingPositiveMentions;
   const totalPos = positiveMentions + opposingNegativeMentions;
@@ -2517,6 +2728,14 @@ async function loadRowAnalysis(file, options = {}) {
           <span class="qa-mod-meta-label">Herkunft</span>
           <span class="qa-mod-meta-value">${escapeHtml(senderInstitution)}</span>
         </div>
+        ${exifDate && exifDate !== "–" ? `<div class="qa-mod-meta-item">
+          <span class="qa-mod-meta-label">Aufnahme (EXIF)</span>
+          <span class="qa-mod-meta-value" style="font-weight:700;color:var(--accent-2)">${escapeHtml(exifDate)}</span>
+        </div>` : ""}
+        ${exifGps && exifGps !== "–" ? `<div class="qa-mod-meta-item">
+          <span class="qa-mod-meta-label">GPS (EXIF)</span>
+          <span class="qa-mod-meta-value" style="font-weight:700;color:var(--accent-2)">${escapeHtml(exifGps)}</span>
+        </div>` : ""}
       </div>
 
       <!-- Persons -->
