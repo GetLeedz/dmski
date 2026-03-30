@@ -3189,6 +3189,91 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     output.senderInstitution = "Privat";
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  // DETERMINISTIC POST-PROCESSING RULES (override AI when needed)
+  // These rules run AFTER the AI and fix known blind spots reliably.
+  // ════════════════════════════════════════════════════════════════════
+
+  const docText = String(rawText || "").toLowerCase();
+  const institutionLower = normalizeWhitespace(output.senderInstitution || "").toLowerCase();
+  const authorNorm = normalizeWhitespace(output.author || "").toLowerCase();
+
+  // ── RULE 1: Filter out hallucinated persons ──
+  // Remove party keyword names from persons list if they don't appear in the document text.
+  if (output.people && output.people.length > 0) {
+    const allPartyAliases = [...protectedIdentity.aliases, ...opposingIdentity.aliases]
+      .map(a => a.toLowerCase());
+
+    output.people = output.people.filter(person => {
+      const personName = normalizeWhitespace(typeof person === "string" ? person : person?.name).toLowerCase();
+      if (!personName) return true;
+
+      // Check if this person's name matches any party alias
+      const isPartyAlias = allPartyAliases.some(alias => {
+        const aliasLower = alias.toLowerCase();
+        return personName.includes(aliasLower) || aliasLower.includes(personName);
+      });
+
+      // If it's a party alias, it must appear in the raw document text
+      if (isPartyAlias) {
+        return allPartyAliases.some(alias => docText.includes(alias.toLowerCase()));
+      }
+
+      return true; // Non-party persons keep
+    });
+  }
+
+  // ── RULE 2: Police / Bedrohungsmanagement / KESB = negative for focus party ──
+  // The mere EXISTENCE of such documents in the dossier harms the focus party.
+  const isPoliceDoc = /polizei|bedrohungsmanagement|polizeilich|strafanzeige|polizeibericht|polizeieinsatz/i.test(docText + " " + institutionLower);
+  const isKESBDoc = /\bkesb\b|kindes.*schutz|gefaehrdungsmeldung|gefährdungsmeldung|jugendamt/i.test(docText + " " + institutionLower);
+  const isInstitutionalThreat = isPoliceDoc || isKESBDoc;
+
+  if (isInstitutionalThreat) {
+    // The mere EXISTENCE of police/KESB documents in a dossier is a weapon.
+    // Courts and social workers see "Bedrohungsmanagement", "Polizei" and feel FEAR.
+    // Even if nothing was found, the damage is done. This is systematic destruction.
+    //
+    // Scoring: Heavy negative weight because institutional trace harms for YEARS.
+    // Negativ 3: existence in dossier + database trace + psychological impact on court
+    output.negativeMentions = Math.max(Number(output.negativeMentions || 0), 3);
+
+    // This is a system attack by the opposing party
+    output.opposingNegativeMentions = Math.max(Number(output.opposingNegativeMentions || 0), 3);
+
+    // Check if the document shows exoneration (no case opened, no crime found)
+    const isExonerating = /keine fallerroeffnung|keine falleröffnung|keine strafbare|kein straftat|keine strafbaren handlungen|kein ergebnis|nicht eingegangen|eingestellt/i.test(docText);
+    if (isExonerating) {
+      // Exoneration gives 1 positive (entlastend), but doesn't outweigh the damage
+      output.positiveMentions = Math.max(Number(output.positiveMentions || 0), 1);
+    }
+  }
+
+  // ── RULE 3: Author-bias elimination ──
+  // If the document author IS a party, discount self-praise.
+  const authorIsProtected = protectedIdentity.aliases.some(a => authorNorm.includes(a.toLowerCase()));
+  const authorIsOpposing = opposingIdentity.aliases.some(a => authorNorm.includes(a.toLowerCase()));
+
+  if (authorIsProtected) {
+    // Focus party authored → their positive self-mentions don't count
+    // Keep negatives (self-critical is genuine), zero out inflated positives from self-praise
+    // Only reset if AI gave high positives with no negatives (clear self-praise signal)
+    const pos = Number(output.positiveMentions || 0);
+    const neg = Number(output.negativeMentions || 0);
+    if (pos > 0 && neg === 0) {
+      output.positiveMentions = 0;
+    }
+  }
+
+  if (authorIsOpposing) {
+    // Opposing party authored → their positive self-mentions don't count
+    const oppPos = Number(output.opposingPositiveMentions || 0);
+    const oppNeg = Number(output.opposingNegativeMentions || 0);
+    if (oppPos > 0 && oppNeg === 0) {
+      output.opposingPositiveMentions = 0;
+    }
+  }
+
   return output;
 }
 
