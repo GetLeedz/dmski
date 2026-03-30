@@ -5238,20 +5238,6 @@ table.akteure-personen tr:last-child td { border-bottom: none; }
 #analysisReportTactics .tactic-section-subtitle,
 #analysisReportAkteure .tactic-section-subtitle { font-size: 0.72rem; margin-bottom: 0.5rem; }
 
-/* Section 5 heading: navy/gold bar matching table header */
-#analysisReportAkteure .tactic-section-content > .tactic-section-title {
-  background: var(--navy, #1A2B3C);
-  color: #F8F9FA;
-  padding: 0.7rem 1.1rem;
-  border-radius: 10px 10px 0 0;
-  border-bottom: 3px solid var(--gold, #C5A059);
-  margin: 0;
-  font-size: 0.88rem;
-  letter-spacing: 0.01em;
-}
-#analysisReportAkteure .tactic-section-content > .tactic-section-subtitle {
-  padding: 0.4rem 1.1rem 0.1rem;
-  margin: 0;
 }
 #analysisReportTactics .tactic-report-header { margin-bottom: 1.2rem; padding-bottom: 0.8rem; }
 #analysisReportTactics .tactic-legal-text { font-size: 0.76rem; padding: 0.7rem 0.9rem; }
