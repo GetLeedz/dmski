@@ -3286,11 +3286,11 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
   }
 
   // ── RULE 2: Police / Bedrohungsmanagement / KESB documents ──
-  // Per-file: The EXISTENCE of such a document harms the focus party.
-  // This is a single-file assessment. The MASTER SCAN handles accumulation
-  // across multiple files (systematic destruction detection).
-  const isPoliceDoc = /polizei|bedrohungsmanagement|polizeilich|strafanzeige|polizeibericht|polizeieinsatz/i.test(docText + " " + institutionLower);
-  const isKESBDoc = /\bkesb\b|kindes.*schutz|gefaehrdungsmeldung|gefährdungsmeldung|jugendamt/i.test(docText + " " + institutionLower);
+  // Only applies when the SENDER/AUTHOR is the institution, NOT when the
+  // institution is merely mentioned in the text (e.g. a lawyer writing TO KESB).
+  const senderAndAuthor = (institutionLower + " " + authorNorm).toLowerCase();
+  const isPoliceDoc = /polizei|bedrohungsmanagement|polizeilich|strafanzeige/i.test(senderAndAuthor);
+  const isKESBDoc = /\bkesb\b|kindes.*schutz/i.test(senderAndAuthor);
   const isInstitutionalThreat = isPoliceDoc || isKESBDoc;
 
   if (isInstitutionalThreat) {
