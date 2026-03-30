@@ -536,7 +536,7 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
   return { profileTitle, summary, legalTitle, legalNote, rows, pressure, counselTitle, counselItems };
 }
 
-function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds, tacticFileMap) {
+function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docIds, tacticFileMap, akteureHtml) {
   const profile = deriveTacticProfile(analysis, protectedPerson, opposingParty);
 
   // Build compact doc ID list for the DOC-ID column (fallback for per-file view)
@@ -665,6 +665,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
 
       ${legalHtml}
       ${counselHtml}
+      ${akteureHtml || ""}
     </div>
   `;
 }
@@ -1330,44 +1331,24 @@ async function refreshAnalysisReport(files = allFiles) {
         }
       }
 
-      analysisReportTactics.innerHTML = renderTacticAnalysisBox(
-        aggregateSynthesis,
-        currentCaseProtectedPerson,
-        currentCaseOpposingParty,
-        null,
-        tacticFileMap
-      );
-    }
-
-    // ── Dossier-level Akteure (merged from all documents, deduped) ─────
-    if (analysisReportAkteure instanceof HTMLElement) {
-      // Normalize name for deduplication: strip diacritics so "Jérôme" == "Jerome"
+      // ── Build Akteure HTML first (Section 5 inside tactic box) ─────
+      let akteureHtml = "";
       const dedupKey = (name) =>
-        normalizeTitleText(name)
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
+        normalizeTitleText(name).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-      // ── Build per-author sentiment map ─────────────────────────────────
-      // Key = normalized author name (diacritics stripped), Value = {positive, negative}
-      // This tells us HOW each person wrote about the protected person across
-      // all documents they authored. Used by derivePersonSentiment() to give
-      // accurate red/green dots instead of role-based guesses.
       const authorSentimentMap = new Map();
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
         const rawAuthor = normalizeTitleText(a.author || "");
         if (!rawAuthor || rawAuthor.toLowerCase() === "unbekannt") continue;
-        const authorKey = rawAuthor; // store original name; normKey applied inside derivePersonSentiment
-        const existing = authorSentimentMap.get(authorKey) || { positive: 0, negative: 0 };
+        const existing = authorSentimentMap.get(rawAuthor) || { positive: 0, negative: 0 };
         existing.positive += Math.max(0, Number(a.positiveMentions || 0));
         existing.negative += Math.max(0, Number(a.negativeMentions || 0));
-        authorSentimentMap.set(authorKey, existing);
+        authorSentimentMap.set(rawAuthor, existing);
       }
 
       const seenKeys = new Set();
       const mergedPeople = [];
-
       const addPerson = (name, affiliation) => {
         const key = dedupKey(name);
         if (!key || seenKeys.has(key)) return;
@@ -1377,28 +1358,34 @@ async function refreshAnalysisReport(files = allFiles) {
 
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
-        const docPeople = Array.isArray(a.people) ? a.people : [];
-        for (const p of docPeople) {
+        for (const p of (Array.isArray(a.people) ? a.people : [])) {
           addPerson(p.name || "", p.affiliation || "Privatperson");
         }
-        // Also include the document author — excluded from a.people by the backend
-        // to avoid duplicates, but should appear in the Akteure table with their role.
         const authorName = normalizeTitleText(a.author || "");
         if (authorName) addPerson(authorName, "Privatperson");
       }
-      const aggregateForAkteure = {
-        people: mergedPeople,
-        positiveMentions: protectedPositiveTotal,
-        negativeMentions: protectedNegativeTotal,
-        opposingPositiveMentions: opposingPositiveTotal,
-        opposingNegativeMentions: opposingNegativeTotal
-      };
-      analysisReportAkteure.innerHTML = renderAkteureBox(
-        aggregateForAkteure,
+
+      akteureHtml = renderAkteureBox(
+        { people: mergedPeople, positiveMentions: protectedPositiveTotal, negativeMentions: protectedNegativeTotal, opposingPositiveMentions: 0, opposingNegativeMentions: 0 },
         currentCaseProtectedPerson,
         currentCaseOpposingParty,
         authorSentimentMap
       );
+
+      // Render tactic box with Akteure as Section 5 inside
+      analysisReportTactics.innerHTML = renderTacticAnalysisBox(
+        aggregateSynthesis,
+        currentCaseProtectedPerson,
+        currentCaseOpposingParty,
+        null,
+        tacticFileMap,
+        akteureHtml
+      );
+    }
+
+    // Clear old separate akteure container (now inside tactic box)
+    if (analysisReportAkteure instanceof HTMLElement) {
+      analysisReportAkteure.innerHTML = "";
     }
 
   } catch (error) {
