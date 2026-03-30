@@ -4707,9 +4707,9 @@ select.case-edit-input {
 /* Tabular persons layout */
 .akteure-table {
   width: 100%;
-  max-width: 700px;
   border-collapse: collapse;
   font-size: 0.82rem;
+  table-layout: auto;
 }
 
 .akteure-table thead tr {
@@ -4735,7 +4735,7 @@ select.case-edit-input {
 }
 
 .akteure-table th:last-child {
-  width: 2.2rem;
+  width: 4.5rem;
   text-align: center;
 }
 
@@ -4766,7 +4766,7 @@ select.case-edit-input {
 
 .akteure-col-dot {
   text-align: center;
-  width: 2.2rem;
+  width: 4.5rem;
 }
 
 /* Big rounded sentiment dot */
