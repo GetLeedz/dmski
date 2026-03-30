@@ -465,6 +465,34 @@
       .profile-hero { flex-direction: column; text-align: center; gap: 1rem; padding: 1.5rem 1.25rem; }
       .profile-card-head, .profile-card-body { padding-left: 1.1rem; padding-right: 1.1rem; }
     }
+
+    /* Google Places Autocomplete styling */
+    .pac-container {
+      border-radius: 12px;
+      border: 1px solid rgba(26,43,60,.1);
+      box-shadow: 0 8px 32px rgba(26,43,60,.15);
+      font-family: "Inter", system-ui, sans-serif;
+      margin-top: 4px;
+      z-index: 9999;
+    }
+    .pac-item {
+      padding: .6rem .85rem;
+      font-size: .84rem;
+      color: #1A2B3C;
+      border-top: 1px solid rgba(26,43,60,.05);
+      cursor: pointer;
+      transition: background .12s ease;
+    }
+    .pac-item:first-child { border-top: none; }
+    .pac-item:hover, .pac-item-selected {
+      background: rgba(197,160,89,.08);
+    }
+    .pac-item-query {
+      font-weight: 600;
+      color: var(--navy, #1A2B3C);
+    }
+    .pac-icon { display: none; }
+    .pac-logo::after { display: none; }
   </style>
 </head>
 <body>
@@ -634,5 +662,32 @@
   <script src="nav.js"></script>
   <script src="profile.js"></script>
   <script src="footer.js"></script>
+  <script>
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries","places");e.set("key","AIzaSyDsxToZWvtjawOypJwQlK_YJ0KglonbKwk");e.set("v","weekly");e.set("language","de");e.set("region","CH");a.src=`https://maps.googleapis.com/${c}/maps/api/js?`+e;a.async=true;a.nonce=m.querySelector("script[nonce]")?.nonce||"";d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})();
+
+    async function initAddressAutocomplete() {
+      try {
+        const { Autocomplete } = await google.maps.importLibrary("places");
+        const input = document.getElementById("fieldAddress");
+        if (!input) return;
+
+        const autocomplete = new Autocomplete(input, {
+          types: ["address"],
+          componentRestrictions: { country: ["ch", "de", "at", "li"] },
+          fields: ["formatted_address"]
+        });
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (place && place.formatted_address) {
+            input.value = place.formatted_address;
+          }
+        });
+      } catch (e) {
+        console.warn("Google Places Autocomplete not available:", e.message);
+      }
+    }
+    initAddressAutocomplete();
+  </script>
 </body>
 </html>
