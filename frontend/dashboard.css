@@ -4705,100 +4705,15 @@ select.case-edit-input {
 }
 
 /* Tabular persons layout */
-/* Akteure table – identical structure to .tactic-table */
-.akteure-table-wrap {
-  overflow-x: auto;
-  border-radius: 10px;
-  border: 1px solid rgba(26,43,60,0.14);
-  background: rgba(255,255,255,0.9);
-  width: 100%;
-}
-
-.akteure-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.78rem;
-  display: block;
-  font-family: var(--font, "Inter"), system-ui, sans-serif;
-}
-
-.akteure-table col { display: none; }
-
-.akteure-table thead {
-  display: block;
-  width: 100%;
-  background: var(--navy, #1A2B3C);
-  border-bottom: 3px solid var(--gold, #C5A059);
-}
-
-.akteure-table tbody {
-  display: block;
-  width: 100%;
-}
-
-.akteure-table thead tr,
-.akteure-row {
-  display: grid;
+/* Akteure table – reuses .tactic-table, only overrides grid columns */
+.akteure-grid thead tr,
+.akteure-grid tbody tr {
   grid-template-columns: 1.4fr 1.6fr 5.5rem;
-  align-items: stretch;
-  width: 100%;
 }
 
-.akteure-table thead tr {
-  background: transparent;
-  border: none;
-}
-
-.akteure-table th {
-  padding: 0.85rem 1.1rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #F8F9FA;
-  border: none;
-  text-align: left;
-  background: transparent;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-}
-
-.akteure-table th:last-child {
-  justify-content: center;
-}
-
-.akteure-row td {
-  padding: 0.85rem 1.1rem;
-  border-bottom: 1px solid rgba(26,43,60,0.07);
-  background: transparent;
-  color: #1a2b3c;
-  font-size: 0.78rem;
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  word-break: break-word;
-}
-
-.akteure-row:last-child td {
-  border-bottom: none;
-}
-
-.akteure-col-name {
-  font-weight: 700;
-  font-size: 0.8rem;
-  color: #0f2b36;
-}
-
-.akteure-col-role {
-  font-size: 0.78rem;
-  color: #4a6a7a;
-  font-weight: 500;
-}
-
-.akteure-col-dot {
-  justify-content: center;
-}
+.akteure-col-name { font-weight: 700; }
+.akteure-col-role { color: #4a6a7a; }
+.akteure-col-dot  { justify-content: center; }
 
 /* Big rounded sentiment dot */
 .akteure-sentiment-dot {
