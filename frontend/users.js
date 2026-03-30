@@ -330,6 +330,16 @@ async function handleSave() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Speichern fehlgeschlagen.");
 
+        // Immediately update local data so the list reflects changes
+        // even if the subsequent loadUsers() uses a cached response.
+        if (!isAdd && currentEditId && data.user) {
+            const idx = allUsers.findIndex(u => u.id === currentEditId);
+            if (idx >= 0) {
+                allUsers[idx] = normalizeUser({ ...allUsers[idx], ...data.user, ...payload });
+                renderList(allUsers);
+            }
+        }
+
         await loadUsers();
         closeModal();
     } catch (err) {
