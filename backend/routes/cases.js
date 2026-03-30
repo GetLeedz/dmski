@@ -3319,6 +3319,22 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     }
   }
 
+  // ── RULE 3b: Focus party's own lawyer cannot be negative ──
+  // If the document author is the focus party's lawyer/legal representative,
+  // they write ON BEHALF of the focus party. Any "negative" the AI detects
+  // is likely the lawyer citing opposing claims or describing the situation,
+  // not actual criticism of their own client.
+  // Detect: author is a lawyer/Anwalt AND sender institution contains "Anwalt/Advokat/Kanzlei"
+  // OR the document is addressed to a court/KESB on behalf of the focus party.
+  const isLawyerDoc = /anw[aä]lt|advokat|kanzlei|rechtsanw|rechtsvertre/i.test(senderAndAuthor);
+  const authorIsOpposingParty = opposingIdentity.aliases.some(a => authorNorm.includes(a.toLowerCase()));
+
+  if (isLawyerDoc && !authorIsOpposingParty) {
+    // Lawyer of focus party: negatives are citations, not criticism.
+    // Reset negative to 0 – the lawyer is an ally, not an attacker.
+    output.negativeMentions = 0;
+  }
+
   // ── RULE 4: No opposing party scoring ──
   // Only focus party scoring matters. Saves tokens, reduces noise, cleaner results.
   output.opposingPositiveMentions = 0;
