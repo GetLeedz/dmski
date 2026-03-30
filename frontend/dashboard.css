@@ -93,8 +93,6 @@ h1, h2, h3, h4, .card-title, .step-title, .workflow-gutachter-title {
   display: block;
   height: 2.8rem;
   width: auto;
-  filter: brightness(0) invert(1);
-  opacity: 1;
 }
 
 .sb-tagline {

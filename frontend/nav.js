@@ -30,7 +30,7 @@
     <aside class="dmski-sidebar" id="dmski-sidebar" role="navigation" aria-label="Hauptnavigation">
       <div class="sb-logo-area">
         <a href="/dashboard.html" class="sb-brand">
-          <img src="/assets/logo-dmski.png" alt="DMSKI" class="sb-logo" />
+          <img src="/assets/logo-dmski_gold.png" alt="DMSKI" class="sb-logo" />
         </a>
         <p class="sb-tagline">Gerechtigkeit durch Mustererkennung.</p>
       </div>
