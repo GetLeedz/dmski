@@ -4439,4 +4439,26 @@ router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
   }
 });
 
+// Invalidate all stored analyses for a case (triggers re-analysis on next load)
+router.post("/:caseId/reanalyze", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM case_document_analysis
+       WHERE document_id IN (SELECT id FROM case_documents WHERE case_id = $1)`,
+      [caseId]
+    );
+    const deleted = result.rowCount || 0;
+    console.log(`[reanalyze] Invalidated ${deleted} analyses for case ${caseId}`);
+    return res.json({ ok: true, invalidated: deleted });
+  } catch (err) {
+    console.error("Reanalyze error:", err.message);
+    return res.status(500).json({ error: "Analysen konnten nicht zurückgesetzt werden." });
+  }
+});
+
 module.exports = router;

@@ -152,6 +152,7 @@ const dateToFilter = document.getElementById("dateToFilter");
 const sortUploadDateBtn = document.getElementById("sortUploadDateBtn");
 const sortFileDateBtn = document.getElementById("sortFileDateBtn");
 const downloadAllFilesBtn = document.getElementById("downloadAllFilesBtn");
+const reanalyzeAllBtn = document.getElementById("reanalyzeAllBtn");
 
 let allFiles = [];
 const previewUrlCache = new Map();
@@ -3076,6 +3077,44 @@ document.querySelectorAll(".fp-sort-btn[data-sort-field]").forEach(btn => {
 });
 
 downloadAllFilesBtn?.addEventListener("click", () => void downloadAllFilesAsPdf());
+
+reanalyzeAllBtn?.addEventListener("click", async () => {
+  const confirmed = await dmskiModal({
+    icon: "info",
+    title: "Alle Analysen neu starten?",
+    body: `<p>Alle ${allFiles.length} gespeicherten KI-Analysen werden gelöscht und mit der aktuellen Engine neu erstellt.</p>
+           <p style="margin-top:0.5rem">Dies kann einige Minuten dauern.</p>`,
+    confirmLabel: "Neu analysieren",
+    cancelLabel: "Abbrechen"
+  });
+  if (!confirmed) return;
+
+  reanalyzeAllBtn.disabled = true;
+  reanalyzeAllBtn.textContent = "Wird zurückgesetzt...";
+
+  try {
+    const res = await apiFetch(`${API_BASE}/cases/${currentCaseId}/reanalyze`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Fehler");
+
+    // Clear frontend caches
+    analysisCache.clear();
+    analysisPromiseCache.clear();
+
+    setMessage(listMessage, `${data.invalidated || 0} Analysen zurückgesetzt. Seite wird neu geladen...`, "success");
+    setTimeout(() => window.location.reload(), 1500);
+  } catch (err) {
+    if (err.message !== "AUTH_REDIRECT") {
+      setMessage(listMessage, err.message || "Fehler beim Zurücksetzen.", "error");
+    }
+  } finally {
+    reanalyzeAllBtn.disabled = false;
+    reanalyzeAllBtn.textContent = "Alle neu analysieren";
+  }
+});
 
 goToUploadBtnHero?.addEventListener("click", () => {
   window.location.href = "/upload.html";
