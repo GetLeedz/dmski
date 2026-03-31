@@ -2627,7 +2627,9 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
 
   try {
     const responseText = await callClaudeVision(systemPrompt, userText, base64, mimeType || "image/png", 2500);
+    console.log(`[vision-raw] Response for ${originalName}:`, (responseText || "").substring(0, 500));
     const parsed = extractJsonObject(responseText || "");
+    console.log(`[vision-parsed] Personen:`, JSON.stringify(parsed?.personen || []));
 
     if (!parsed || typeof parsed !== "object") {
       return {
@@ -3762,7 +3764,9 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     if (String(file.mime_type || "").startsWith("image/")) {
       const parties = await getCaseParties(caseId);
       const imageResult = await analyzeImageWithFallback(fileBuffer, file.mime_type, file.original_name, parties.protectedPersonName, parties.opposingPartyName);
+      console.log(`[image-analysis] People from Vision:`, JSON.stringify((imageResult?.people || []).map(p => p.name || p)));
       const focused = applyProtectedPersonFocus(imageResult, "", parties.protectedPersonName, parties.opposingPartyName);
+      console.log(`[image-analysis] People after focus:`, JSON.stringify((focused?.people || []).map(p => p.name || p)));
       const enriched = enrichAnalysisForReport(focused, {
         rawText: "",
         protectedAliases: parsePartyAliases(parties.protectedPersonName).aliases,
