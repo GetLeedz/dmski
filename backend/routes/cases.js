@@ -3706,7 +3706,14 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     if (!forceRefresh) {
       const stored = await loadStoredDocumentAnalysis(file.id);
       if (stored && typeof stored === "object") {
-        return res.json(withAnalysisRuntimeMeta(stored));
+        // Auto-refresh if the analysis was created by an older engine version
+        const storedVersion = stored.analysisEngineVersion || "";
+        const currentVersion = getAnalysisEngineVersion();
+        if (storedVersion && currentVersion !== "local" && storedVersion === currentVersion) {
+          return res.json(withAnalysisRuntimeMeta(stored));
+        }
+        // Version mismatch → re-analyze with current engine
+        console.log(`[auto-refresh] File ${file.id}: engine ${storedVersion} → ${currentVersion}`);
       }
       if (onlyStored) {
         return res.json(withAnalysisRuntimeMeta({
