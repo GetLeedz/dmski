@@ -1251,11 +1251,20 @@ function extractPeopleFromSalutation(rawText, blockedNames = new Set()) {
     .map((line) => normalizeWhitespace(line));
   const candidates = [];
 
-  const salutationRegex = /^Sehr\s+geehrte[rsn]?\s+(?:Frau|Herr)\s+(\p{Lu}[\p{Ll}\p{M}'-]{2,})/iu;
+  // Formal: "Sehr geehrte(r) Herr/Frau [Title] Name"
+  const formalRegex = /^Sehr\s+geehrte[rsn]?\s+(?:Frau|Herr)\s+((?:(?:Prof|Dr|med|lic|RA)\.?\s*)*\p{Lu}[\p{Ll}\p{M}'-]{2,}(?:\s+\p{Lu}[\p{Ll}\p{M}'-]{2,})*)/iu;
+  // Informal: "Hallo/Liebe(r)/Grüezi/Hi/Hey Name[,]"
+  const informalRegex = /^(?:Hallo|Liebe[rsn]?|Gr(?:ü|ue)(?:zi|ezi|ss|ße)|Hi|Hey|Guten\s+Tag)\s+(\p{Lu}[\p{Ll}\p{M}'-]{2,}(?:\s+\p{Lu}[\p{Ll}\p{M}'-]{2,})*)\s*[,!]?\s*$/iu;
+
   for (const line of lines) {
-    const match = line.match(salutationRegex);
-    if (match && match[1]) {
-      candidates.push({ name: match[1], allowSingleToken: true });
+    const formalMatch = line.match(formalRegex);
+    if (formalMatch && formalMatch[1]) {
+      candidates.push({ name: normalizeWhitespace(formalMatch[1]), allowSingleToken: true });
+      continue;
+    }
+    const informalMatch = line.match(informalRegex);
+    if (informalMatch && informalMatch[1]) {
+      candidates.push({ name: normalizeWhitespace(informalMatch[1]), allowSingleToken: true });
     }
   }
 
@@ -2732,10 +2741,10 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
         responseText || ""
       ].join(" ");
 
-      // Pattern A: "Sehr geehrte(r) Herr/Frau [Title] Name" → Empfaenger
-      const salutationRe = /Sehr\s+geehrte[rsn]?\s+(?:Frau|Herr)\s+((?:(?:Prof|Dr|med|lic|RA|Mag)\.?\s*)*\p{Lu}[\p{Ll}\p{M}'-]{2,}(?:\s+\p{Lu}[\p{Ll}\p{M}'-]{2,})*)/giu;
+      // Pattern A1: "Sehr geehrte(r) Herr/Frau [Title] Name" → Empfaenger
+      const formalRe = /Sehr\s+geehrte[rsn]?\s+(?:Frau|Herr)\s+((?:(?:Prof|Dr|med|lic|RA|Mag)\.?\s*)*\p{Lu}[\p{Ll}\p{M}'-]{2,}(?:\s+\p{Lu}[\p{Ll}\p{M}'-]{2,})*)/giu;
       let sm;
-      while ((sm = salutationRe.exec(fullText)) !== null) {
+      while ((sm = formalRe.exec(fullText)) !== null) {
         const raw = normalizeWhitespace(sm[1]).replace(/,?\s*geb\.?\s*\d[\d.\-/\s]*/gi, "").trim();
         const key = raw.toLowerCase();
         const stripped = raw.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim().toLowerCase();
@@ -2743,6 +2752,18 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
           seen.add(key);
           if (stripped) seen.add(stripped);
           additions.push({ name: raw, affiliation: "Empfänger", sentiment: "neutral" });
+        }
+      }
+
+      // Pattern A2: "Hallo/Liebe(r)/Hi/Hey Name" → Empfaenger (informal)
+      const informalRe = /(?:Hallo|Liebe[rsn]?|Gr(?:ü|ue)(?:zi|ezi|ss|ße)|Hi|Hey|Guten\s+Tag)\s+(\p{Lu}[\p{Ll}\p{M}'-]{2,}(?:\s+\p{Lu}[\p{Ll}\p{M}'-]{2,})*)\s*[,!]?/giu;
+      let im;
+      while ((im = informalRe.exec(fullText)) !== null) {
+        const raw = normalizeWhitespace(im[1]);
+        const key = raw.toLowerCase();
+        if (!seen.has(key) && raw.length >= 3) {
+          seen.add(key);
+          additions.push({ name: raw, affiliation: "Privatperson", sentiment: "neutral" });
         }
       }
 
