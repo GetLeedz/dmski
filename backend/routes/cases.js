@@ -3784,6 +3784,10 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
     if (!forceRefresh) {
       const stored = await loadStoredDocumentAnalysis(file.id);
       if (stored && typeof stored === "object") {
+        // For onlyStored requests (report view), always return cached data
+        if (onlyStored) {
+          return res.json(withAnalysisRuntimeMeta(stored));
+        }
         // Auto-refresh if the analysis was created by an older engine version
         const storedVersion = stored.analysisEngineVersion || "";
         const currentVersion = getAnalysisEngineVersion();
