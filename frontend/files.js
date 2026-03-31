@@ -1906,85 +1906,97 @@ function samePersonFuzzy(nameA, nameB) {
 
 function isLikelyValidPersonLabel(value) {
   const cleaned = normalizePersonName(value);
-  if (!cleaned || /\d/.test(cleaned)) {
-    return false;
-  }
+  if (!cleaned || cleaned.length < 2) return false;
 
-  const aliasSet = new Set(["kindsvater", "kindsmutter", "kindesvater", "kindesmutter"]);
-  const blockedWords = new Set([
-    // Articles, prepositions, conjunctions
-    "das", "die", "der", "ein", "eine", "und", "oder", "mit", "von", "zur", "zum", "den", "dem",
-    // Titles/salutations (not names)
-    "herr", "frau", "sehr", "geehrter", "geehrte", "lieber", "liebe",
-    // Document types & legal terms
-    "dokument", "schreiben", "bericht", "gutachten", "verfügung", "verfuegung", "protokoll",
-    "mitteilung", "brief", "antwort", "beschwerde", "verfahren", "antrag", "massnahme",
-    "ergebnis", "beschluss", "anordnung", "stellungnahme", "eingabe", "urteil", "entscheid",
-    "betreff", "einschreiben", "einleitung", "gegenstand", "beilage", "beilagen",
-    // Institutions & organizations
-    "ukbb", "kesb", "gericht", "spital", "kinderspital", "universitäts", "universität",
-    "sekretariat", "kanzlei", "amt", "behörde", "behoerde", "verwaltung", "polizei",
-    "schule", "kindergarten", "praxis", "klinik", "zentrum", "stiftung", "verein",
-    // Medical/therapy terms
-    "ergotherapie", "ergotherapeutisches", "ergotherapeutischen", "therapie", "therapiebericht",
-    "sozialkompetenztraining", "training", "gruppentraining", "behandlung", "diagnose",
-    "verordnung", "professioneller", "professionelle", "professionell",
-    // Administrative terms
-    "abteilung", "sozialamt", "sachbearbeiter", "sachbearbeiterin", "debitoren",
-    "kontoauszug", "alimente", "unterhaltszahlungen", "ausstehende",
-    // Time/date
-    "datum", "monat", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag",
-    // Descriptive words (not names)
-    "freundliche", "freundlichen", "positiver", "deutlich", "allgemeine", "allgemeiner",
-    "fortschritte", "ziele", "mitarbeit", "trainings", "information",
-    "zusammenfassung", "einordnung", "bewertung", "beurteilung",
-    "kantonales", "liestal", "zahlungsrueckstand", "gruesse", "grusse",
-    // Common non-name patterns
-    "kinder", "eltern", "mutter", "vater", "bruder", "schwester", "basel", "binningen"
-  ]);
+  // Must NOT contain digits, parentheses, @, URLs
+  if (/[\d()@/\\]/.test(cleaned)) return false;
+  if (/\.(ch|com|org|de|net|at)$/i.test(cleaned)) return false;
 
-  // Block institution patterns: contains parentheses, @, domain-like, or ends with typical suffixes
-  if (/[()@]/.test(cleaned) || /\.(ch|com|org|de|net)$/i.test(cleaned)) {
-    return false;
-  }
-  // Block if it looks like an institution (contains common institutional words)
-  const institutionPattern = /\b(gmbh|ag|sa|verein|stiftung|spital|klinik|praxis|schule|amt|behörde|behoerde|sekretariat|universität|universitäts|kantons|bezirks|kreis)\b/i;
-  if (institutionPattern.test(cleaned)) {
-    return false;
-  }
+  // Must NOT be longer than 50 chars (names are short)
+  if (cleaned.length > 50) return false;
 
   const words = cleaned.split(/\s+/).filter(Boolean);
-  if (words.length === 0 || words.length > 4) {
-    return false;
-  }
+  if (words.length === 0 || words.length > 4) return false;
 
-  const lower = cleaned.toLowerCase();
-  if (aliasSet.has(lower)) {
-    return true;
-  }
-
-  // Block any phrase containing a blocked word
-  for (const word of words) {
-    const lw = word.toLowerCase();
-    if (blockedWords.has(lw)) {
-      return false;
-    }
-  }
-
-  // Block possessives like "Timurs Fortschritte" — not a person name
-  if (words.some(w => /s$/i.test(w) && words.length === 2 && !/^[A-ZÄÖÜ]/.test(words[1]))) {
-    return false;
-  }
-
-  const capitalizedWord = /^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ’’-]{1,}$/;
-  // Allow titles: Dr, Prof, med, lic, RA (dots already stripped by normalizePersonName)
+  // Title abbreviations that can appear in names
   const titleAbbrev = new Set(["dr", "prof", "med", "lic", "ra", "mag", "dipl", "ing"]);
 
+  // A valid person name consists of capitalized words (Vorname Nachname)
+  // or title abbreviations (Dr, Prof, med)
+  const capitalizedWord = /^\p{Lu}[\p{Ll}\p{M}’\u2019-]+$/u;
+
+  // Single word: must be a capitalized proper name (>= 3 chars), not a common noun
   if (words.length === 1) {
-    return capitalizedWord.test(words[0]);
+    const w = words[0];
+    if (w.length < 3) return false;
+    if (!capitalizedWord.test(w)) return false;
+    // Block common German nouns that happen to be capitalized
+    const commonNouns = new Set([
+      "triangulation", "gaslighting", "projektion", "isolation", "instrumentalisierung",
+      "manipulation", "schuldzuweisung", "drohung", "kontrolle", "control", "coercive",
+      "darvo", "profiling", "narzissmus", "narzisst", "narzisstin",
+      "dokument", "bericht", "gutachten", "protokoll", "brief", "urteil", "eingabe",
+      "verfügung", "massnahme", "stellungnahme", "mitteilung", "beschluss", "anordnung",
+      "therapie", "ergotherapie", "behandlung", "diagnose", "training", "verordnung",
+      "sekretariat", "kanzlei", "verwaltung", "polizei", "gericht", "schule",
+      "fortschritte", "information", "bewertung", "beurteilung", "einordnung",
+      "zusammenfassung", "gegenstand", "beilage", "einleitung",
+      "eltern", "kinder", "mutter", "vater", "bruder", "schwester",
+      "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag"
+    ]);
+    return !commonNouns.has(w.toLowerCase());
   }
 
-  return words.every((word) => capitalizedWord.test(word) || titleAbbrev.has(word.toLowerCase()));
+  // Multi-word: every word must be a capitalized proper name or title abbreviation.
+  // Block phrases where ANY word is a known non-name (German nouns, psych terms, etc.)
+  const nonNameWords = new Set([
+    // Psychological / forensic terms
+    "durch", "triangulation", "coercive", "control", "instrumentalisiert", "instrumentalisierung",
+    "gaslighting", "projektion", "isolation", "manipulation", "schuldzuweisung", "drohung",
+    "narzissmus", "narzisst", "narzisstin", "darvo", "profiling", "kontrolle",
+    // Articles, prepositions (capitalized in German sentence start)
+    "das", "die", "der", "ein", "eine", "und", "oder", "mit", "für", "fuer",
+    "vom", "von", "zur", "zum", "den", "dem", "über", "ueber", "nach", "vor",
+    // Document/legal nouns
+    "dokument", "bericht", "gutachten", "protokoll", "brief", "urteil", "eingabe",
+    "verfügung", "verfuegung", "massnahme", "stellungnahme", "mitteilung", "beschluss",
+    "anordnung", "therapie", "ergotherapie", "ergotherapeutisches", "ergotherapeutischen",
+    "behandlung", "diagnose", "training", "sozialkompetenztraining", "gruppentraining",
+    "verordnung", "therapiebericht", "professioneller", "professionelle", "professionell",
+    // Institutions
+    "sekretariat", "kanzlei", "verwaltung", "polizei", "gericht", "schule", "spital",
+    "kinderspital", "klinik", "praxis", "kindergarten", "zentrum", "behörden", "behoerden",
+    "behörde", "behoerde", "ukbb", "kesb", "stiftung", "verein",
+    // Administrative/descriptive
+    "abteilung", "sozialamt", "sachbearbeiter", "sachbearbeiterin", "debitoren",
+    "fortschritte", "information", "bewertung", "beurteilung", "einordnung",
+    "zusammenfassung", "gegenstand", "beilage", "einleitung",
+    // Family/relation words (not names)
+    "eltern", "kinder", "mutter", "vater", "bruder", "schwester",
+    // Time
+    "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag",
+    // Salutations
+    "herr", "frau", "sehr", "geehrter", "geehrte", "lieber", "liebe", "hallo",
+    // Misc
+    "positiver", "deutlich", "allgemeine", "allgemeiner", "kantonales",
+    "freundliche", "freundlichen", "gruesse", "grusse",
+    "alimente", "unterhaltszahlungen", "ausstehende", "zahlungsrueckstand",
+    "kontoauszug", "datum", "monat", "ziele", "mitarbeit", "trainings"
+  ]);
+
+  let hasProperName = false;
+  for (const word of words) {
+    const lw = word.toLowerCase();
+    if (titleAbbrev.has(lw)) continue;
+    if (nonNameWords.has(lw)) return false;
+    if (capitalizedWord.test(word)) {
+      hasProperName = true;
+      continue;
+    }
+    return false;
+  }
+
+  return hasProperName;
 }
 
 // Resolve single-token names against case party aliases
@@ -2037,16 +2049,15 @@ function normalizePeople(people) {
 
   return people
     .map((entry) => {
-      if (typeof entry === "string") {
-        const name = normalizeTitleText(entry);
-        return name ? { name, affiliation: "Privatperson" } : null;
-      }
-
-      const name = normalizeTitleText(entry?.name || entry?.fullName || "");
-      const affiliation = normalizeTitleText(entry?.affiliation || "Privatperson");
-      if (!name) {
-        return null;
-      }
+      const raw = typeof entry === "string" ? entry : (entry?.name || entry?.fullName || "");
+      const name = normalizeTitleText(raw);
+      if (!name) return null;
+      // Only allow actual human names — filter out psychological terms,
+      // institutions, document titles that the KI may have put in the people array
+      if (!isLikelyValidPersonLabel(name)) return null;
+      const affiliation = normalizeTitleText(
+        typeof entry === "object" ? (entry?.affiliation || "Privatperson") : "Privatperson"
+      );
       return { name, affiliation: affiliation || "Privatperson" };
     })
     .filter(Boolean)
