@@ -1957,6 +1957,25 @@ function isLikelyValidPersonLabel(value) {
   return words.every((word) => capitalizedWord.test(word) || titleWord.test(word));
 }
 
+// Resolve single-token names against case party aliases
+// e.g. "Ayhan" → "Ayhan Ergen" if Fokus-Partei contains "Ayhan Ergen"
+function resolveNameFromParties(name) {
+  const parts = name.split(/\s+/);
+  if (parts.length !== 1) return name;
+  const token = parts[0].toLowerCase();
+  const allAliases = [
+    ...(currentCaseProtectedPerson || "").split(",").map(s => s.trim()).filter(Boolean),
+    ...(currentCaseOpposingParty || "").split(",").map(s => s.trim()).filter(Boolean)
+  ];
+  for (const alias of allAliases) {
+    const aliasParts = alias.split(/\s+/);
+    if (aliasParts.length >= 2 && aliasParts.some(p => p.toLowerCase() === token)) {
+      return alias;
+    }
+  }
+  return name;
+}
+
 function collectAnalysisPeople(analysis) {
   const people = Array.isArray(analysis?.people) ? analysis.people : [];
   const names = [];
@@ -1965,7 +1984,9 @@ function collectAnalysisPeople(analysis) {
     const raw = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
     if (!raw || raw.length < 3) continue;
     // Strip titles for display but validate the core name
-    const name = raw.replace(/^(Herr|Frau)\s+/i, "").trim();
+    let name = raw.replace(/^(Herr|Frau)\s+/i, "").trim();
+    // Resolve single first names against case parties
+    name = resolveNameFromParties(name);
     if (!isLikelyValidPersonLabel(name)) continue;
     if (names.some(n => n.toLowerCase() === name.toLowerCase())) continue;
     names.push(name);

@@ -3295,6 +3295,51 @@ async function getCaseParties(caseId) {
   }
 }
 
+// Resolve single-token names (e.g. "Ayhan") to full names (e.g. "Ayhan Ergen")
+// by matching against the case's known party aliases.
+function resolvePartialNames(people, protectedAliases = [], opposingAliases = []) {
+  if (!Array.isArray(people) || people.length === 0) return people;
+
+  // Build a lookup: first-name-token → full multi-word alias
+  const tokenToFull = new Map();
+  for (const alias of [...protectedAliases, ...opposingAliases]) {
+    const parts = normalizeWhitespace(alias).split(/\s+/);
+    if (parts.length >= 2) {
+      // Map each part to the full name: "Ayhan" → "Ayhan Ergen", "Ergen" → "Ayhan Ergen"
+      for (const part of parts) {
+        const key = part.toLowerCase();
+        // Only map if the part is a real name token (>= 3 chars, not a role keyword)
+        if (key.length >= 3 && !/^(vater|mutter|kind|kindsvater|kindsmutter|kindesvater|kindesmutter)$/.test(key)) {
+          // Prefer longer full name if multiple matches
+          const existing = tokenToFull.get(key);
+          if (!existing || alias.length > existing.length) {
+            tokenToFull.set(key, alias);
+          }
+        }
+      }
+    }
+  }
+
+  if (tokenToFull.size === 0) return people;
+
+  const resolvedKeys = new Set();
+  return people.map(p => {
+    const name = normalizeWhitespace(typeof p === "string" ? p : p?.name || "");
+    const parts = name.split(/\s+/);
+    // Only resolve single-token names
+    if (parts.length !== 1) return p;
+    const key = parts[0].toLowerCase();
+    const fullName = tokenToFull.get(key);
+    if (fullName && !resolvedKeys.has(fullName.toLowerCase())) {
+      resolvedKeys.add(fullName.toLowerCase());
+      console.log(`[name-resolve] "${name}" → "${fullName}"`);
+      if (typeof p === "string") return fullName;
+      return { ...p, name: fullName };
+    }
+    return p;
+  });
+}
+
 function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", opposingPartyName = "") {
   const protectedIdentity = parsePartyAliases(protectedPersonName);
   const opposingIdentity = parsePartyAliases(opposingPartyName);
@@ -3306,7 +3351,11 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
 
   const output = {
     ...analysis,
-    people: Array.isArray(analysis.people) ? [...analysis.people] : [],
+    people: resolvePartialNames(
+      Array.isArray(analysis.people) ? [...analysis.people] : [],
+      protectedIdentity.aliases,
+      opposingIdentity.aliases
+    ),
     impactRanking: Array.isArray(analysis.impactRanking) ? [...analysis.impactRanking] : []
   };
 
