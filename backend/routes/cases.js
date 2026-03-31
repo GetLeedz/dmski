@@ -2685,36 +2685,46 @@ async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "",
   const fileNameTitle = deriveTitleFromFileName(originalName);
   const isChatImage = /whats?app|chat|nachricht|dialog|sms|signal|telegram/i.test(String(originalName || "").toLowerCase());
 
-  // Strategy: For non-chat images (emails, letters, documents),
-  // ALWAYS prefer OCR → text analysis. The text analysis prompt
-  // handles structured data (dates, names, roles) much better
-  // than the vision model which tends to dump text into wrong fields.
+  // Strategy: Vision-First with Claude (handles skewed photos, handwriting,
+  // perspective distortion much better than Tesseract OCR).
+  // OCR is only used as fallback when vision model is unavailable.
 
-  if (!isChatImage) {
-    // OCR-first path for documents, emails, screenshots
+  if (!isChatImage && getAnthropicClient()) {
+    console.log(`[image-analysis] Using vision model for ${originalName}`);
+    try {
+      const imageResult = await extractTitleFromImageWithAi(fileBuffer, mimeType, originalName, protectedPersonName, opposingPartyName);
+      if (imageResult.status !== "needs-ocr" && imageResult.status !== "needs-config") {
+        return imageResult;
+      }
+    } catch (visionErr) {
+      console.warn(`[image-analysis] Vision failed for ${originalName}:`, visionErr.message);
+    }
+
+    // Vision failed — try OCR as fallback
+    console.log(`[image-analysis] Vision insufficient, trying OCR for ${originalName}`);
     try {
       const ocrText = await extractTextFromImageWithOcr(fileBuffer);
       if (ocrText && ocrText.trim().length > 30) {
         console.log(`[image-analysis] OCR extracted ${ocrText.length} chars from ${originalName}`);
         const fallback = buildHeuristicAnalysisFromText(ocrText, {});
-        if (getOpenAiClient()) {
-          const aiFromText = await analyzeTextWithAi(ocrText, fallback, protectedPersonName, opposingPartyName);
-          if (aiFromText.status === "ok") {
-            return aiFromText;
-          }
-        }
-        return buildFallbackAnalysis({
-          ...fallback,
-          title: fallback.title || fileNameTitle,
-          message: fallback.message || "Bildtext via OCR analysiert."
-        });
+        const aiFromText = await analyzeTextWithAi(ocrText, fallback, protectedPersonName, opposingPartyName);
+        if (aiFromText.status === "ok") return aiFromText;
+        return buildFallbackAnalysis({ ...fallback, title: fallback.title || fileNameTitle, message: "Bildtext via OCR analysiert." });
+      }
+    } catch (ocrErr) {
+      console.warn(`[image-analysis] OCR fallback failed for ${originalName}:`, ocrErr.message);
+    }
+  } else if (!isChatImage) {
+    // No Anthropic client — OCR only
+    try {
+      const ocrText = await extractTextFromImageWithOcr(fileBuffer);
+      if (ocrText && ocrText.trim().length > 30) {
+        const fallback = buildHeuristicAnalysisFromText(ocrText, {});
+        return buildFallbackAnalysis({ ...fallback, title: fallback.title || fileNameTitle, message: "Bildtext via OCR analysiert." });
       }
     } catch (ocrErr) {
       console.warn(`[image-analysis] OCR failed for ${originalName}:`, ocrErr.message);
     }
-
-    // OCR failed or insufficient text — fall through to vision model
-    console.log(`[image-analysis] OCR insufficient, trying vision model for ${originalName}`);
   }
 
   // Vision model path (chat images, or OCR-failed non-chat)

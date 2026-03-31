@@ -2392,7 +2392,7 @@ async function loadRowAnalysis(file, options = {}) {
   box.innerHTML = `
     <div class="ai-scanning">
       <div class="ai-scanning-orb-wrap">
-        <img src="/assets/ai-orb.svg" alt="" class="ai-scanning-orb" />
+        <img src="/assets/ki-brain.png" alt="" class="ai-scanning-orb" />
         <div class="ai-scanning-orb-glow"></div>
       </div>
       <div class="ai-scanning-text">
