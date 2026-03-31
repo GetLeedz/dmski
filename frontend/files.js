@@ -834,44 +834,38 @@ function deriveRoleLabel(person, protectedPerson, opposingParty) {
   const protNorm = normalizeTitleText(protectedPerson || "").toLowerCase();
   const oppNorm  = normalizeTitleText(opposingParty   || "").toLowerCase();
 
-  // 0. Hardcoded overrides for specific persons
-  if (nameNorm.includes("ergen") && nameNorm.includes("ayhan")) return "Vater";
-  // Alexandra Schifferli is the Kindsmutter (opposing party)
-  if (nameNorm.includes("schifferli") && nameNorm.includes("alexandra")) return "Mutter";
-  // Known children of the Schifferli family
-  if (nameNorm.includes("schifferli") && (nameNorm.includes("timur") || nameNorm.includes("nael"))) return "Kind";
-  // Weizenegger: Leiter Jugendforensik / Gutachter – NOT a child
-  if (nameNorm.includes("weizenegger")) return "Leiter Jugendforensik";
-  // Hardcoded role overrides for known persons
-  if (nameNorm.includes("perret")) return "Berufsbeistand";
-  if (nameNorm.includes("leopold") && nameNorm.includes("evelyne")) return "Beiständin";
-  // Riedo Pascal = Kinderanwalt (advokat für sich und die Kinder)
-  if (nameNorm.includes("riedo") && nameNorm.includes("pascal")) return "Kinderanwalt";
-  // Gabel Lisa Marie = Anwältin von Ayhan Ergen (protected person)
-  if (nameNorm.includes("gabel") && nameNorm.includes("lisa")) return "Anwältin (Ergen)";
-  if (nameNorm.includes("landi") && nameNorm.includes("annalisa")) return "Anwältin Gegenpartei";
-  if (nameNorm.includes("hofmann") && nameNorm.includes("roland")) return "Gerichtspräsident";
+  // 1. Check if this person matches the protected party (Fokus-Partei)
+  const protAliases = protNorm.split(/,/).map(s => s.trim()).filter(s => s.length > 2);
+  const isProtected = protAliases.some(alias => {
+    const words = alias.split(/\s+/).filter(w => w.length > 2);
+    return words.length > 0 && words.every(w => nameNorm.includes(w));
+  });
+  // Use the KI-assigned role for the protected person if available
+  if (isProtected) {
+    if (affil && affil !== "privatperson") return getAffiliationLabel(person.affiliation);
+    // Check if a role keyword is in the party definition
+    const roleKeywords = protAliases.find(a => /^(vater|mutter|kindsvater|kindsmutter|kind|partner|partnerin)$/i.test(a));
+    if (roleKeywords) return roleKeywords.charAt(0).toUpperCase() + roleKeywords.slice(1);
+    return "Fokus-Partei";
+  }
 
-  // 1. Is this the protected person?
-  const protWords = protNorm.split(/[\s,]+/).filter(w => w.length > 2);
-  if (protWords.length > 0 && protWords.every(w => nameNorm.includes(w))) return "Fokus-Partei";
+  // 2. Check if this person matches the opposing party (Gegenpartei)
+  const oppAliases = oppNorm.split(/,/).map(s => s.trim()).filter(s => s.length > 2);
+  const isOpposing = oppAliases.some(alias => {
+    const words = alias.split(/\s+/).filter(w => w.length > 2);
+    return words.length > 0 && words.every(w => nameNorm.includes(w));
+  });
+  if (isOpposing) {
+    if (affil && affil !== "privatperson") return getAffiliationLabel(person.affiliation);
+    const roleKeywords = oppAliases.find(a => /^(vater|mutter|kindsvater|kindsmutter|kind|partner|partnerin)$/i.test(a));
+    if (roleKeywords) return roleKeywords.charAt(0).toUpperCase() + roleKeywords.slice(1);
+    return "Gegenpartei";
+  }
 
-  // 2. Is this the exact opposing party?
-  const oppWords = oppNorm.split(/[\s,]+/).filter(w => w.length > 2);
-  if (oppWords.length > 0 && oppWords.every(w => nameNorm.includes(w))) return "Gegenpartei";
-
-  // 3. Use affiliation if it's meaningful
+  // 3. Use KI-assigned affiliation/role if meaningful
   if (affil && affil !== "privatperson") return getAffiliationLabel(person.affiliation);
 
-  // 4. Shares last name with opposing party but is NOT them → likely child
-  const oppFamilyName = oppNorm.split(/[\s,]+/).find(w => w.length > 2) || "";
-  if (oppFamilyName && nameNorm.includes(oppFamilyName)) return "Kind";
-
-  // 5. Shares last name with protected person but is NOT them → likely child
-  const protFamilyName = protNorm.split(/[\s,]+/).find(w => w.length > 2) || "";
-  if (protFamilyName && nameNorm.includes(protFamilyName)) return "Kind";
-
-  // 6. Fallback: function unknown to the AI
+  // 4. Fallback
   return "–";
 }
 
