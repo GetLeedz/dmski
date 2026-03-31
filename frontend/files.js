@@ -1331,16 +1331,21 @@ async function refreshAnalysisReport(files = allFiles) {
         mergedPeople.push({ name: normalizeTitleText(name), affiliation: affiliation || "Privatperson" });
       };
 
+      // Collect all authors so we can exclude them from the person list
+      const authorKeys = new Set();
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
-        const docPeople = Array.isArray(a.people) ? a.people : [];
-        for (const p of docPeople) {
+        const authorName = normalizeTitleText(a.author || "");
+        if (authorName) authorKeys.add(dedupKey(authorName));
+      }
+
+      for (const a of analyses) {
+        if (!a || a.status === "auth-redirect") continue;
+        for (const p of (Array.isArray(a.people) ? a.people : [])) {
+          const key = dedupKey(p.name || "");
+          if (authorKeys.has(key)) continue; // skip author from person list
           addPerson(p.name || "", p.affiliation || "Privatperson");
         }
-        // Also include the document author — excluded from a.people by the backend
-        // to avoid duplicates, but should appear in the Akteure table with their role.
-        const authorName = normalizeTitleText(a.author || "");
-        if (authorName) addPerson(authorName, "Privatperson");
       }
       const aggregateForAkteure = {
         people: mergedPeople,
@@ -1710,7 +1715,12 @@ async function getPreviewUrl(file) {
     return null;
   }
 
-  const blob = await response.blob();
+  let blob;
+  try {
+    blob = await response.blob();
+  } catch {
+    return null;
+  }
   const typedBlob = blob.type ? blob : new Blob([blob], { type: file.mime_type || "application/octet-stream" });
   const objectUrl = URL.createObjectURL(typedBlob);
   previewUrlCache.set(file.id, objectUrl);

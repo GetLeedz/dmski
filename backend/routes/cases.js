@@ -1908,23 +1908,8 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
 
   const normalizedPeople = normalizePeopleDetailed(mergedPeople, rawText, new Set(), correctedAuthor);
 
-  // Re-include the author if they hold a recognisable functional role
-  // (normalizePeopleDetailed excludes the author to avoid duplicates, but a
-  // Berufsbeistand/Anwalt/Gerichtspräsident writing the document SHOULD appear in the
-  // Akteure list with their function shown in the UI).
-  const strippedAuthor = correctedAuthor.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim();
-  if (correctedAuthor && (looksLikePersonName(correctedAuthor) || looksLikePersonName(strippedAuthor))) {
-    const authorKeyLower = correctedAuthor.toLowerCase();
-    const alreadyInList = normalizedPeople.some(
-      (p) => normalizeWhitespace(p.name).toLowerCase() === authorKeyLower
-    );
-    if (!alreadyInList) {
-      const authorAffil = inferAffiliationForPerson(rawText, correctedAuthor);
-      if (authorAffil !== "Privatperson") {
-        normalizedPeople.push({ name: correctedAuthor, affiliation: authorAffil });
-      }
-    }
-  }
+  // Author is intentionally excluded from the person list – the UI already
+  // shows the author in its own VERFASSER field.
 
   const explicitDisadvantaged = normalizeWhitespace(disadvantagedPerson);
   const computedDisadvantaged = explicitDisadvantaged || extractDisadvantagedPerson(rawText, normalizedPeople, correctedAuthor);
