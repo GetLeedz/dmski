@@ -572,13 +572,6 @@ function renderAnalysisInQueueRow(fileKey, payload) {
             <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(negativeMentions, "negative")}</div>
           </div>
         </div>
-        <div class="qa-person-col">
-          <div class="qa-person-col-label"><span class="qa-person-role">${escapeHtml(currentCaseOpposingLabel)}</span><span class="qa-person-keywords">${escapeHtml(opposingKeywords)}</span></div>
-          <div class="qa-badge-rows">
-            <div class="qa-badge-row"><span class="qa-badge-row-label is-positive">Positiv</span>${renderMentionBars(opposingPositiveMentions, "positive")}</div>
-            <div class="qa-badge-row"><span class="qa-badge-row-label is-negative">Negativ</span>${renderMentionBars(opposingNegativeMentions, "negative")}</div>
-          </div>
-        </div>
       </div>
     </div>
   `;
