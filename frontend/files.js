@@ -2390,18 +2390,14 @@ async function loadRowAnalysis(file, options = {}) {
   }
 
   box.innerHTML = `
-    <div class="ai-scanning">
-      <div class="ai-scanning-orb-wrap">
-        <img src="/assets/ki-brain.png" alt="" class="ai-scanning-orb" />
-        <div class="ai-scanning-orb-glow"></div>
+    <div class="ai-scanning-gold">
+      <div class="ai-gold-bars">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
-      <div class="ai-scanning-text">
-        <p class="ai-scanning-title">KI-Analyse läuft</p>
-        <p class="ai-scanning-sub">Forensische Mustererkennung · Parteienanalyse · Rechtliche Einordnung</p>
-        <div class="ai-scanning-bars">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
-      </div>
+      <p class="ai-gold-title">KI-Analyse läuft</p>
+      <p class="ai-gold-sub">Forensische Mustererkennung · Parteienanalyse · Rechtliche Einordnung</p>
     </div>`;
   const analysis = await getDocumentAnalysis(file, options);
   if (analysis.status === "auth-redirect") {
