@@ -1101,11 +1101,9 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   const rows = sorted.map(person => {
     const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
     const displayName = formatNameFirstLast(person.name);
-    const affil = normalizeTitleText(person.affiliation || "");
     return `
       <tr class="akteure-row">
         <td class="akteure-col-name">${escapeHtml(displayName)}</td>
-        <td class="akteure-col-affil">${escapeHtml(affil)}</td>
         <td class="akteure-col-role">${escapeHtml(roleLabel)}</td>
       </tr>
     `;
@@ -1121,13 +1119,11 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
           <table class="akteure-personen">
             <colgroup>
               <col class="col-name" />
-              <col class="col-affil" />
               <col class="col-rolle" />
             </colgroup>
             <thead>
               <tr>
                 <th>Person</th>
-                <th>Zugehörigkeit</th>
                 <th>Funktion</th>
               </tr>
             </thead>
@@ -1922,19 +1918,46 @@ function isLikelyValidPersonLabel(value) {
 
   const aliasSet = new Set(["kindsvater", "kindsmutter", "kindesvater", "kindesmutter"]);
   const blockedWords = new Set([
-    "abteilung", "freundliche", "gruesse", "grusse", "datum", "monat", "kantonales", "sozialamt",
-    "unterhaltszahlungen", "ausstehende", "liestal", "sachbearbeiter", "sachbearbeiterin", "kinder",
-    "debitoren", "kontoauszug", "alimente", "montag", "dienstag", "mittwoch", "donnerstag", "freitag",
-    "samstag", "sonntag", "herr", "frau", "beilage", "beilagen", "zahlungsrueckstand",
-    "das", "die", "der", "ein", "eine", "und", "oder", "mit", "von", "zur", "zum",
+    // Articles, prepositions, conjunctions
+    "das", "die", "der", "ein", "eine", "und", "oder", "mit", "von", "zur", "zum", "den", "dem",
+    // Titles/salutations (not names)
+    "herr", "frau", "sehr", "geehrter", "geehrte", "lieber", "liebe",
+    // Document types & legal terms
     "dokument", "schreiben", "bericht", "gutachten", "verfügung", "verfuegung", "protokoll",
     "mitteilung", "brief", "antwort", "beschwerde", "verfahren", "antrag", "massnahme",
     "ergebnis", "beschluss", "anordnung", "stellungnahme", "eingabe", "urteil", "entscheid",
-    "betreff", "einschreiben", "einleitung", "gegenstand", "fortschritte", "training",
-    "sozialkompetenztraining", "ergotherapeutisches", "ergotherapie", "therapie", "behandlung",
-    "gruppentraining", "allgemeine", "information", "diagnose", "verordnung", "ziele",
-    "mitarbeit", "trainings", "positiver", "deutlich", "sehr", "geehrter", "geehrte"
+    "betreff", "einschreiben", "einleitung", "gegenstand", "beilage", "beilagen",
+    // Institutions & organizations
+    "ukbb", "kesb", "gericht", "spital", "kinderspital", "universitäts", "universität",
+    "sekretariat", "kanzlei", "amt", "behörde", "behoerde", "verwaltung", "polizei",
+    "schule", "kindergarten", "praxis", "klinik", "zentrum", "stiftung", "verein",
+    // Medical/therapy terms
+    "ergotherapie", "ergotherapeutisches", "ergotherapeutischen", "therapie", "therapiebericht",
+    "sozialkompetenztraining", "training", "gruppentraining", "behandlung", "diagnose",
+    "verordnung", "professioneller", "professionelle", "professionell",
+    // Administrative terms
+    "abteilung", "sozialamt", "sachbearbeiter", "sachbearbeiterin", "debitoren",
+    "kontoauszug", "alimente", "unterhaltszahlungen", "ausstehende",
+    // Time/date
+    "datum", "monat", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag",
+    // Descriptive words (not names)
+    "freundliche", "freundlichen", "positiver", "deutlich", "allgemeine", "allgemeiner",
+    "fortschritte", "ziele", "mitarbeit", "trainings", "information",
+    "zusammenfassung", "einordnung", "bewertung", "beurteilung",
+    "kantonales", "liestal", "zahlungsrueckstand", "gruesse", "grusse",
+    // Common non-name patterns
+    "kinder", "eltern", "mutter", "vater", "bruder", "schwester", "basel", "binningen"
   ]);
+
+  // Block institution patterns: contains parentheses, @, domain-like, or ends with typical suffixes
+  if (/[()@]/.test(cleaned) || /\.(ch|com|org|de|net)$/i.test(cleaned)) {
+    return false;
+  }
+  // Block if it looks like an institution (contains common institutional words)
+  const institutionPattern = /\b(gmbh|ag|sa|verein|stiftung|spital|klinik|praxis|schule|amt|behörde|behoerde|sekretariat|universität|universitäts|kantons|bezirks|kreis)\b/i;
+  if (institutionPattern.test(cleaned)) {
+    return false;
+  }
 
   const words = cleaned.split(/\s+/).filter(Boolean);
   if (words.length === 0 || words.length > 4) {

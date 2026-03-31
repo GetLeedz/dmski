@@ -675,11 +675,28 @@ function looksLikePersonName(value) {
     "zusammenfassung",
     "einordnung",
     "bewertung",
-    "beurteilung"
+    "beurteilung",
+    "professioneller",
+    "professionelle",
+    "professionell",
+    "sekretariat",
+    "spital",
+    "kinderspital",
+    "klinik",
+    "praxis",
+    "kindergarten",
+    "ukbb",
+    "universitäts",
+    "universität"
   ];
 
   const lower = cleaned.toLowerCase();
   if (forbidden.some((item) => lower.includes(item))) {
+    return false;
+  }
+
+  // Block institution patterns (parentheses, email domains)
+  if (/[()@]/.test(cleaned) || /\.(ch|com|org|de|net)$/i.test(cleaned)) {
     return false;
   }
 
