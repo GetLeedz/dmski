@@ -1912,7 +1912,15 @@ function isLikelyValidPersonLabel(value) {
     "abteilung", "freundliche", "gruesse", "grusse", "datum", "monat", "kantonales", "sozialamt",
     "unterhaltszahlungen", "ausstehende", "liestal", "sachbearbeiter", "sachbearbeiterin", "kinder",
     "debitoren", "kontoauszug", "alimente", "montag", "dienstag", "mittwoch", "donnerstag", "freitag",
-    "samstag", "sonntag", "herr", "frau", "beilage", "beilagen", "zahlungsrueckstand"
+    "samstag", "sonntag", "herr", "frau", "beilage", "beilagen", "zahlungsrueckstand",
+    "das", "die", "der", "ein", "eine", "und", "oder", "mit", "von", "zur", "zum",
+    "dokument", "schreiben", "bericht", "gutachten", "verfügung", "verfuegung", "protokoll",
+    "mitteilung", "brief", "antwort", "beschwerde", "verfahren", "antrag", "massnahme",
+    "ergebnis", "beschluss", "anordnung", "stellungnahme", "eingabe", "urteil", "entscheid",
+    "betreff", "einschreiben", "einleitung", "gegenstand", "fortschritte", "training",
+    "sozialkompetenztraining", "ergotherapeutisches", "ergotherapie", "therapie", "behandlung",
+    "gruppentraining", "allgemeine", "information", "diagnose", "verordnung", "ziele",
+    "mitarbeit", "trainings", "positiver", "deutlich", "sehr", "geehrter", "geehrte"
   ]);
 
   const words = cleaned.split(/\s+/).filter(Boolean);
@@ -1925,6 +1933,7 @@ function isLikelyValidPersonLabel(value) {
     return true;
   }
 
+  // Block any phrase containing a blocked word
   for (const word of words) {
     const lw = word.toLowerCase();
     if (blockedWords.has(lw)) {
@@ -1932,13 +1941,20 @@ function isLikelyValidPersonLabel(value) {
     }
   }
 
-  const capitalizedWord = /^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,}$/;
+  // Block possessives like "Timurs Fortschritte" — not a person name
+  if (words.some(w => /s$/i.test(w) && words.length === 2 && !/^[A-ZÄÖÜ]/.test(words[1]))) {
+    return false;
+  }
+
+  const capitalizedWord = /^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ’’-]{1,}$/;
+  // Allow titles: Dr., Prof., med., lic.
+  const titleWord = /^[A-Za-z]{2,5}\.$/;
 
   if (words.length === 1) {
     return capitalizedWord.test(words[0]);
   }
 
-  return words.every((word) => capitalizedWord.test(word));
+  return words.every((word) => capitalizedWord.test(word) || titleWord.test(word));
 }
 
 function collectAnalysisPeople(analysis) {
@@ -1946,8 +1962,11 @@ function collectAnalysisPeople(analysis) {
   const names = [];
 
   for (const entry of people) {
-    const name = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
-    if (!name || name.length < 3) continue;
+    const raw = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
+    if (!raw || raw.length < 3) continue;
+    // Strip titles for display but validate the core name
+    const name = raw.replace(/^(Herr|Frau)\s+/i, "").trim();
+    if (!isLikelyValidPersonLabel(name)) continue;
     if (names.some(n => n.toLowerCase() === name.toLowerCase())) continue;
     names.push(name);
   }

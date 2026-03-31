@@ -657,7 +657,25 @@ function looksLikePersonName(value) {
     "mitteilung",
     "einleitung",
     "gegenstand",
-    "stellungnahme"
+    "stellungnahme",
+    "fortschritte",
+    "training",
+    "sozialkompetenztraining",
+    "ergotherapeutisches",
+    "ergotherapie",
+    "therapie",
+    "behandlung",
+    "gruppentraining",
+    "information",
+    "diagnose",
+    "verordnung",
+    "positiver",
+    "deutlich",
+    "allgemeine",
+    "zusammenfassung",
+    "einordnung",
+    "bewertung",
+    "beurteilung"
   ];
 
   const lower = cleaned.toLowerCase();
@@ -675,6 +693,12 @@ function looksLikePersonName(value) {
     .filter(Boolean);
 
   if (parts.length < 2 || parts.length > 4) {
+    return false;
+  }
+
+  // Block possessive phrases like "Timurs Fortschritte" — first word ends in 's'
+  // and second word is a common noun (starts uppercase in German but isn't a surname)
+  if (parts.length === 2 && /s$/i.test(parts[0]) && forbidden.some(f => parts[1].toLowerCase().includes(f))) {
     return false;
   }
 
