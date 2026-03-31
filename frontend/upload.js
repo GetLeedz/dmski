@@ -157,6 +157,12 @@ const uploadQueue = document.getElementById("uploadQueue");
 const activeCaseBanner = document.getElementById("activeCaseBanner");
 const workspaceHint = document.getElementById("workspaceHint");
 const goToListBtn = document.getElementById("goToListBtn");
+const cancelUploadBtn = document.getElementById("cancelUploadBtn");
+
+cancelUploadBtn?.addEventListener("click", () => {
+  cancelUpload();
+  cancelUploadBtn.hidden = true;
+});
 const logoutBtn = document.getElementById("logoutBtn");
 const copyrightYearEl = document.getElementById("copyrightYear");
 
@@ -290,7 +296,7 @@ function renderPendingFiles() {
       </div>
       <div class="progress"><div class="progress-bar"></div></div>
     `;
-    uploadQueue.appendChild(row);
+    uploadQueue.prepend(row);
   }
 }
 
@@ -441,13 +447,36 @@ function getFilesFromClipboardEvent(event) {
   return files;
 }
 
+let activeXhr = null;
+let uploadCancelled = false;
+
+function cancelUpload() {
+  uploadCancelled = true;
+  if (activeXhr) {
+    activeXhr.abort();
+    activeXhr = null;
+  }
+  pendingFiles = [];
+  isUploading = false;
+  setMessage(uploadMessage, "Upload abgebrochen.", "error");
+  // Mark pending rows as cancelled
+  uploadQueue.querySelectorAll(".queue-item.uploading").forEach(row => {
+    const state = row.querySelector(".queue-state");
+    if (state) state.textContent = "Abgebrochen";
+    row.classList.remove("uploading");
+    row.classList.add("error");
+  });
+}
+
 function uploadSingleFile(file) {
   return new Promise((resolve, reject) => {
+    if (uploadCancelled) { reject(new Error("CANCELLED")); return; }
     const fileKey = getFileKey(file);
     const body = new FormData();
     body.append("files", file);
 
     const xhr = new XMLHttpRequest();
+    activeXhr = xhr;
     xhr.open("POST", `${API_BASE}/cases/${currentCaseId}/files`);
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
@@ -457,7 +486,14 @@ function uploadSingleFile(file) {
       updateQueueProgress(fileKey, percent, "Lädt...", "uploading");
     };
 
+    xhr.onabort = () => {
+      activeXhr = null;
+      updateQueueProgress(fileKey, 0, "Abgebrochen", "error");
+      reject(new Error("CANCELLED"));
+    };
+
     xhr.onload = () => {
+      activeXhr = null;
       if (xhr.status >= 200 && xhr.status < 300) {
         let uploaded = null;
         try {
@@ -634,11 +670,14 @@ async function startUpload() {
   }
 
   isUploading = true;
+  uploadCancelled = false;
+  if (cancelUploadBtn) cancelUploadBtn.hidden = false;
   const filesToUpload = [...pendingFiles];
   pendingFiles = [];
 
   let successCount = 0;
   for (const file of filesToUpload) {
+    if (uploadCancelled) break;
     try {
       const uploadedMeta = await uploadSingleFile(file);
       const fileKey = getFileKey(file);
@@ -649,6 +688,9 @@ async function startUpload() {
       }
       successCount += 1;
     } catch (error) {
+      if (error instanceof Error && error.message === "CANCELLED") {
+        break;
+      }
       if (error instanceof Error && error.message === "AUTH_REDIRECT") {
         isUploading = false;
         return;
@@ -659,10 +701,15 @@ async function startUpload() {
     }
   }
 
-  totalUploadedCount += successCount;
-  setMessage(uploadMessage, `${totalUploadedCount} File(s) erfolgreich hochgeladen.`, "success");
+  if (uploadCancelled) {
+    if (successCount > 0) setMessage(uploadMessage, `${successCount} File(s) hochgeladen, Rest abgebrochen.`, "error");
+  } else {
+    totalUploadedCount += successCount;
+    setMessage(uploadMessage, `${totalUploadedCount} File(s) erfolgreich hochgeladen.`, "success");
+  }
   fileInput.value = "";
   isUploading = false;
+  if (cancelUploadBtn) cancelUploadBtn.hidden = true;
 
   if (pendingFiles.length > 0) {
     startUpload();
