@@ -2490,14 +2490,14 @@ async function loadRowAnalysis(file, options = {}) {
         <div class="qa-mod-persons-list">${people.map(p => `<span class="qa-mod-person">${escapeHtml(p)}</span>`).join("")}</div>
       </div>` : ""}
 
-      <!-- Evidence verdict -->
-      <div class="qa-mod-verdict qa-mod-verdict--${verdict.tone}">
+      <!-- Fazit -->
+      ${impactAssessment ? `<div class="qa-mod-verdict qa-mod-verdict--${verdict.tone}">
         <div class="qa-mod-verdict-head">
           <span class="qa-mod-verdict-label">Fazit</span>
           <span class="qa-mod-verdict-badge qa-mod-verdict-badge--${verdict.tone}">${escapeHtml(verdict.label)}</span>
         </div>
-        <p class="qa-mod-verdict-text">${escapeHtml(lawyerEvidenceText)}</p>
-      </div>
+        <p class="qa-mod-verdict-text">${escapeHtml(impactAssessment)}</p>
+      </div>` : ""}
 
       <!-- Party stats -->
       <div class="qa-mod-stats">
