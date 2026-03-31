@@ -1087,7 +1087,8 @@ function extractPeopleFromStructuredRows(rawText, blockedNames = new Set()) {
   const text = String(rawText || "");
   const names = [];
 
-  const surnameFirstWithMeta = text.matchAll(/\b([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})\s+([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,})\s*,\s*\d{2,}(?:\s*,\s*\d{2}\.\d{2}\.\d{4})?/gu);
+  // Match "Surname Firstname, age[, DD.MM.YYYY]" or "Surname Firstname, geb. DD.MM.YYYY[, m/f/w]"
+  const surnameFirstWithMeta = text.matchAll(/\b([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ’’-]{1,})\s+([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ’’-]{1,})\s*,\s*(?:geb\.?\s*)?\d{2,}(?:[.\-/]\d{2,})*(?:\s*,\s*[mfw]\b)?/giu);
   for (const match of surnameFirstWithMeta) {
     names.push(`${match[2]} ${match[1]}`);
   }
@@ -2646,23 +2647,25 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       };
     }
 
-    // ── Fallback: extract people from verfasser + summary if KI missed them ──
+    // ── Fallback: extract people from summary/title if KI missed them ──
+    // NOTE: Verfasser is NOT added here – the UI already shows the author in
+    // its own VERFASSER field.
     if (!normalized.people || normalized.people.length === 0) {
       const fallbackPeople = [];
-      // Add verfasser as person
-      if (normalized.author && looksLikePersonName(normalized.author)) {
-        fallbackPeople.push({ name: normalized.author, affiliation: inferAffiliationForPerson("", normalized.author) || "Verfasser" });
-      }
-      // Extract names from zusammenfassung/impactAssessment
-      const summaryText = normalized.impactAssessment || "";
+      const authorKey = normalizeWhitespace(normalized.author || "").toLowerCase();
+      const seen = new Set();
+      // Extract names from title + zusammenfassung/impactAssessment
+      const searchTexts = [normalized.title || "", normalized.impactAssessment || ""];
       const namePattern = /\b([A-ZÄÖÜ][a-zäöüéèêàáâ'-]+(?:\s+[A-ZÄÖÜ][a-zäöüéèêàáâ'-]+)+)\b/g;
-      let nameMatch;
-      const seen = new Set(fallbackPeople.map(p => p.name.toLowerCase()));
-      while ((nameMatch = namePattern.exec(summaryText)) !== null) {
-        const candidate = nameMatch[1].trim();
-        if (candidate.length >= 4 && !seen.has(candidate.toLowerCase()) && looksLikePersonName(candidate)) {
-          seen.add(candidate.toLowerCase());
-          fallbackPeople.push({ name: candidate, affiliation: "Privatperson" });
+      for (const searchText of searchTexts) {
+        let nameMatch;
+        while ((nameMatch = namePattern.exec(searchText)) !== null) {
+          const candidate = nameMatch[1].trim();
+          const candidateKey = candidate.toLowerCase();
+          if (candidate.length >= 4 && !seen.has(candidateKey) && candidateKey !== authorKey && looksLikePersonName(candidate)) {
+            seen.add(candidateKey);
+            fallbackPeople.push({ name: candidate, affiliation: inferAffiliationForPerson("", candidate) || "Privatperson" });
+          }
         }
       }
       if (fallbackPeople.length > 0) {
@@ -3178,9 +3181,16 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
 
   // Only re-normalize if we have rawText (PDF/text analysis).
   // For image analysis (rawText empty), people are already normalized by the Vision pipeline.
+  const authorKey = normalizeWhitespace(output.author || "").toLowerCase();
   const normalizedPeople = rawText
     ? normalizePeopleDetailed(output.people, rawText, new Set(), output.author || "")
-    : output.people.filter(p => p && (typeof p === "string" ? p.trim() : p.name?.trim()));
+    : output.people.filter(p => {
+        if (!p) return false;
+        const name = (typeof p === "string" ? p : p.name || "").trim();
+        if (!name) return false;
+        // Exclude author from people list – UI shows VERFASSER separately
+        return normalizeWhitespace(name).toLowerCase() !== authorKey;
+      });
   const existing = new Map();
   for (const item of output.impactRanking) {
     const key = normalizeWhitespace(item?.name).toLowerCase();
