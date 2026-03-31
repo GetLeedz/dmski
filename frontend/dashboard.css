@@ -387,6 +387,17 @@ body.has-sidebar .page {
   background: #c04040;
 }
 
+.dmski-modal-btn.is-danger-outline {
+  background: transparent;
+  color: #d55353;
+  border: 1px solid rgba(213, 83, 83, 0.3);
+}
+
+.dmski-modal-btn.is-danger-outline:hover {
+  background: rgba(213, 83, 83, 0.08);
+  border-color: rgba(213, 83, 83, 0.5);
+}
+
 /* ── Hide old topbar (replaced by sidebar) ── */
 .topbar { display: none !important; }
 

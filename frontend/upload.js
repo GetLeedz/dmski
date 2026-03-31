@@ -28,12 +28,14 @@ const isLocalHost = host === "localhost"
 const API_BASE = "https://lively-reverence-production-def3.up.railway.app/api";
 
 // ── Modern Modal System (replaces window.alert / window.confirm) ──
-function dmskiModal({ icon = "warn", title, body, confirmLabel = "OK", cancelLabel, confirmClass = "is-primary" }) {
+// Returns: "confirm" | "cancel" | "abort" (or true/false for simple modals)
+function dmskiModal({ icon = "warn", title, body, confirmLabel = "OK", cancelLabel, abortLabel, confirmClass = "is-primary" }) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
     overlay.className = "dmski-modal-overlay";
     const iconHtml = icon === "warn" ? "⚠️" : icon === "error" ? "❌" : icon === "info" ? "ℹ️" : icon === "success" ? "✅" : icon;
     const iconClass = icon === "warn" ? "is-warn" : icon === "error" ? "is-error" : "is-info";
+    const abortBtn = abortLabel ? `<button class="dmski-modal-btn is-danger-outline" data-action="abort">${abortLabel}</button>` : "";
     const cancelBtn = cancelLabel ? `<button class="dmski-modal-btn is-secondary" data-action="cancel">${cancelLabel}</button>` : "";
     overlay.innerHTML = `
       <div class="dmski-modal">
@@ -41,15 +43,19 @@ function dmskiModal({ icon = "warn", title, body, confirmLabel = "OK", cancelLab
         <p class="dmski-modal-title">${title}</p>
         <div class="dmski-modal-body">${body}</div>
         <div class="dmski-modal-actions">
+          ${abortBtn}
           ${cancelBtn}
           <button class="dmski-modal-btn ${confirmClass}" data-action="confirm">${confirmLabel}</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
+    const hasThreeActions = abortLabel && cancelLabel;
     overlay.addEventListener("click", (e) => {
       const action = e.target.closest("[data-action]")?.dataset.action;
-      if (action === "confirm") { overlay.remove(); resolve(true); }
-      else if (action === "cancel") { overlay.remove(); resolve(false); }
+      if (!action) return;
+      overlay.remove();
+      if (hasThreeActions) { resolve(action); }
+      else { resolve(action === "confirm"); }
     });
     overlay.querySelector("[data-action=confirm]").focus();
   });
@@ -352,21 +358,27 @@ async function addPendingFiles(newFiles) {
     }
   }
 
-  // Handle duplicates with modern modal
+  // Handle duplicates with modern 3-button modal
   for (const f of duplicates) {
     const name = decodeUtf8Safe(f.name);
-    const replace = await dmskiModal({
+    const action = await dmskiModal({
       icon: "warn",
       title: "Datei existiert bereits",
-      body: `<strong>${name}</strong> ist bereits im Dossier vorhanden.<br>Möchten Sie die bestehende Datei ersetzen?`,
+      body: `<strong>${name}</strong> ist bereits im Dossier vorhanden.`,
       confirmLabel: "Ersetzen",
       cancelLabel: "Überspringen",
+      abortLabel: "Abbrechen",
       confirmClass: "is-gold"
     });
-    if (replace) {
+    if (action === "confirm") {
       fresh.push(f);
       existingKeys.add(getFileKey(f));
+    } else if (action === "abort") {
+      // Cancel entire upload
+      setMessage(uploadMessage, "Upload abgebrochen.", "error");
+      return;
     }
+    // "cancel" = skip this file, continue with next
   }
 
   for (const f of fresh) {
