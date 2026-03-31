@@ -2020,18 +2020,23 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   // When AI returned persons, do NOT re-run heuristics (they add garbage).
   const effectiveRawText = mappedPeople.length > 0 ? "" : rawText;
 
+  // Extract positive/negative from benachteiligte_person object (Vision prompt format)
+  const bp = src.benachteiligte_person || {};
+  const posFromBp = Number(bp.positiv || bp.positive || 0);
+  const negFromBp = Number(bp.negativ || bp.negative || 0);
+
   return buildFallbackAnalysis({
-    title: src.dokument_titel || src.title || fallback.title,
+    title: src.titel || src.dokument_titel || src.title || fallback.title,
     author: src.verfasser || src.author || fallback.author,
-    documentType: src.dokument_typ || src.documentType || fallback.documentType || "",
-    authoredDate: src.datum_verfassung || src.authoredDate || fallback.authoredDate,
+    documentType: src.documentType || src.dokument_typ || fallback.documentType || "",
+    authoredDate: src.datum || src.datum_verfassung || src.authoredDate || fallback.authoredDate,
     people: mappedPeople.length > 0 ? mappedPeople : fallback.people,
     disadvantagedPerson: src.disadvantagedPerson || fallback.disadvantagedPerson,
-    senderInstitution: src.herkunft || src.senderInstitution || fallback.senderInstitution,
-    impactAssessment: src.bewertung_kurz || src.impactAssessment || fallback.impactAssessment,
+    senderInstitution: src.absender || src.herkunft || src.senderInstitution || fallback.senderInstitution,
+    impactAssessment: src.zusammenfassung || src.bewertung_kurz || src.impactAssessment || fallback.impactAssessment,
     impactRanking: Array.isArray(src.impactRanking) && src.impactRanking.length > 0 ? src.impactRanking : fallback.impactRanking,
-    positiveMentions: src.positiveMentions ?? fallback.positiveMentions ?? 0,
-    negativeMentions: src.negativeMentions ?? fallback.negativeMentions ?? 0,
+    positiveMentions: src.positiveMentions ?? (posFromBp || fallback.positiveMentions) ?? 0,
+    negativeMentions: src.negativeMentions ?? (negFromBp || fallback.negativeMentions) ?? 0,
     opposingPositiveMentions: src.opposingPositiveMentions ?? fallback.opposingPositiveMentions ?? 0,
     opposingNegativeMentions: src.opposingNegativeMentions ?? fallback.opposingNegativeMentions ?? 0,
     rawText: effectiveRawText,
@@ -2599,11 +2604,13 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
         ? mapBiasForensicJsonToAnalysis(parsed, {}, "")
         : mapSwissForensicJsonToAnalysis(parsed, {}, "");
 
-    const hasQuantitativeStats = Number(normalized.positiveMentions || 0) > 0
+    const hasAnyContent = normalized.title || normalized.author || normalized.authoredDate
+      || normalized.senderInstitution || normalized.impactAssessment
+      || Number(normalized.positiveMentions || 0) > 0
       || Number(normalized.negativeMentions || 0) > 0
-      || Boolean(normalizeWhitespace(normalized.senderInstitution || ""));
+      || (normalized.people && normalized.people.length > 0);
 
-    if (!hasQuantitativeStats && !normalized.title && !normalized.author && !normalized.authoredDate && normalized.people.length === 0) {
+    if (!hasAnyContent) {
       return {
         status: "empty",
         title: "", author: "", authoredDate: "", people: [], disadvantagedPerson: "",
