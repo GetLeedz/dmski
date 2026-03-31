@@ -68,6 +68,35 @@ async function apiFetch(input, init) {
   throw new Error("AUTH_REDIRECT");
 }
 
+// ── Modern Modal System (replaces window.alert / window.confirm) ──
+function dmskiModal({ icon = "warn", title, body, confirmLabel = "OK", cancelLabel, confirmClass = "is-primary" }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "dmski-modal-overlay";
+    const iconHtml = icon === "warn" ? "⚠️" : icon === "error" ? "❌" : icon === "info" ? "ℹ️" : icon === "success" ? "✅" : icon === "delete" ? "🗑️" : icon;
+    const iconClass = icon === "warn" || icon === "delete" ? "is-warn" : icon === "error" ? "is-error" : "is-info";
+    const cancelBtn = cancelLabel ? `<button class="dmski-modal-btn is-secondary" data-action="cancel">${cancelLabel}</button>` : "";
+    overlay.innerHTML = `
+      <div class="dmski-modal">
+        <div class="dmski-modal-icon ${iconClass}">${iconHtml}</div>
+        <p class="dmski-modal-title">${title}</p>
+        <div class="dmski-modal-body">${body}</div>
+        <div class="dmski-modal-actions">
+          ${cancelBtn}
+          <button class="dmski-modal-btn ${confirmClass}" data-action="confirm">${confirmLabel}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => {
+      const action = e.target.closest("[data-action]")?.dataset.action;
+      if (!action) return;
+      overlay.remove();
+      resolve(action === "confirm");
+    });
+    overlay.querySelector("[data-action=confirm]").focus();
+  });
+}
+
 function showServiceAlert(detail) {
   if (!serviceAlertEl) {
     serviceAlertEl = document.createElement("div");
@@ -2826,8 +2855,36 @@ async function loadCaseContext() {
 }
 
 async function deleteCurrentCase() {
+  // Only admin can delete a case
+  if (currentUserRole !== "admin") {
+    await dmskiModal({
+      icon: "error",
+      title: "Keine Berechtigung",
+      body: "Nur Administratoren können einen Fall komplett löschen.",
+      confirmLabel: "Verstanden"
+    });
+    return;
+  }
+
   const descriptor = currentCaseName || `Fall ${currentCaseId}`;
-  const confirmed = window.confirm(`Bist du sicher, dass du "${descriptor}" inklusive aller Files l\u00f6schen willst?`);
+  const fileCount = allFiles.length;
+
+  const confirmed = await dmskiModal({
+    icon: "delete",
+    title: "Fall unwiderruflich löschen?",
+    body: `<p><strong>${escapeHtml(descriptor)}</strong> (${escapeHtml(currentCaseId)}) wird komplett gelöscht.</p>
+           <p style="margin-top:0.5rem;color:#c0392b">Dies umfasst:</p>
+           <ul style="margin:0.3rem 0 0 1.2rem;color:#c0392b">
+             <li>${fileCount} File${fileCount === 1 ? "" : "s"} im Storage</li>
+             <li>Alle KI-Analysen und Forensik-Daten</li>
+             <li>Alle Fall-Metadaten</li>
+           </ul>
+           <p style="margin-top:0.7rem;font-weight:600">Diese Aktion kann nicht rückgängig gemacht werden.</p>`,
+    confirmLabel: "Endgültig löschen",
+    cancelLabel: "Abbrechen",
+    confirmClass: "is-danger"
+  });
+
   if (!confirmed) {
     return;
   }

@@ -3605,12 +3605,40 @@ router.delete("/:caseId", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
   }
 
+  // Only admin can delete a case
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Nur Administratoren können Fälle löschen." });
+  }
+
   try {
+    // 1. Get all files for this case to clean up storage
+    const filesResult = await pool.query(
+      "SELECT stored_name FROM case_documents WHERE case_id = $1",
+      [caseId]
+    );
+
+    // 2. Delete files from Supabase Storage
+    const bucket = getStorageBucket();
+    if (bucket && filesResult.rows.length > 0) {
+      const storagePaths = filesResult.rows.map(r => r.stored_name).filter(Boolean);
+      if (storagePaths.length > 0) {
+        const { error: storageError } = await bucket.remove(storagePaths);
+        if (storageError) {
+          console.warn(`[case-delete] Storage cleanup warning for ${caseId}:`, storageError.message);
+          // Continue with DB delete even if storage fails
+        } else {
+          console.log(`[case-delete] Removed ${storagePaths.length} files from storage for case ${caseId}`);
+        }
+      }
+    }
+
+    // 3. Delete case (CASCADE removes case_documents + case_document_analysis)
     const result = await pool.query("DELETE FROM cases WHERE id = $1 RETURNING id", [caseId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Fall nicht gefunden." });
     }
-    return res.json({ ok: true, caseId });
+    console.log(`[case-delete] Case ${caseId} deleted by user ${req.user?.id} (${filesResult.rows.length} files)`);
+    return res.json({ ok: true, caseId, deletedFiles: filesResult.rows.length });
   } catch (err) {
     console.error("Delete case error:", err.message);
     return res.status(500).json({ error: "Fall konnte nicht gelöscht werden." });
