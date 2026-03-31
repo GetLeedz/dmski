@@ -991,7 +991,7 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
   const seen = new Set();
   const list = [];
   const blocked = blockedNames instanceof Set ? blockedNames : new Set();
-  // Exclude author from person list — Verfasser is shown in its own UI field.
+  // Exclude author from person list — Verfasser shown in own UI field.
   const authorKey = normalizeWhitespace(authorName).toLowerCase();
   const strippedAuthorKey = authorKey.replace(/^(prof\.?\s*)?(dr\.?\s*(med\.?\s*)?)?/i, "").trim();
 
@@ -1032,8 +1032,7 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
 
     const key = normalized.toLowerCase();
     const strippedKey = normalized.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim().toLowerCase();
-    const isAuthor = (authorKey && (key === authorKey || strippedKey === strippedAuthorKey))
-      || (strippedAuthorKey && strippedAuthorKey.length >= 3 && (key.endsWith(strippedAuthorKey) || strippedKey === strippedAuthorKey));
+    const isAuthor = authorKey && (key === authorKey || (strippedAuthorKey.length >= 3 && strippedKey === strippedAuthorKey));
     if (blocked.has(key) || isAuthor || seen.has(key)) {
       continue;
     }
@@ -2761,6 +2760,13 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "",
       "WICHTIG: verfasser = wer das Dokument GESCHRIEBEN/UNTERSCHRIEBEN hat.",
       "Der Empfaenger (z.B. 'Sehr geehrter Herr X') ist NICHT der Verfasser!",
+      "",
+      "VERFASSER-REGEL BEI BEHOERDEN/INSTITUTIONEN:",
+      "Wenn das Dokument von einer Behoerde stammt (KESB, Gericht, Amt, Spital, Schule):",
+      "  - verfasser = die INSTITUTION (z.B. 'KESB Leimental'), NICHT das Behördenmitglied",
+      "  - Das Behördenmitglied (z.B. 'Susanne Angst, Behördenmitglied') → in personen-Liste",
+      "  - absender = die Institution (gleich wie verfasser bei Behoerden)",
+      "Nur bei privaten Briefen/E-Mails: verfasser = die schreibende Person.",
       "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
     ].join("\n");
 
