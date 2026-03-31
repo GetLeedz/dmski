@@ -647,7 +647,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
                 <tr>
                   <th>Tatbestand / Methode</th>
                   <th>Evidenz</th>
-                  <th>KI-Einschätzung</th>
+                  <th>Fazit</th>
                   <th>File Nummer</th>
                 </tr>
               </thead>
@@ -2493,7 +2493,7 @@ async function loadRowAnalysis(file, options = {}) {
       <!-- Evidence verdict -->
       <div class="qa-mod-verdict qa-mod-verdict--${verdict.tone}">
         <div class="qa-mod-verdict-head">
-          <span class="qa-mod-verdict-label">KI-Einschätzung</span>
+          <span class="qa-mod-verdict-label">Fazit</span>
           <span class="qa-mod-verdict-badge qa-mod-verdict-badge--${verdict.tone}">${escapeHtml(verdict.label)}</span>
         </div>
         <p class="qa-mod-verdict-text">${escapeHtml(lawyerEvidenceText)}</p>
