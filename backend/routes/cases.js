@@ -916,8 +916,10 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
     normalized = normalized.replace(/^(Herr|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "");
     // Strip birth dates, gender markers, and trailing metadata from names
     normalized = normalized.replace(/,?\s*geb\.?\s*\d[\d.\-/\s]*/gi, "").replace(/,?\s*\b[mfw]\s*$/i, "").trim();
-    // Strip titles like "Dr. med." "Prof." from the name for validation (keep in output)
-    const nameForValidation = normalized.replace(/^(Dr\.?\s*(med\.?)?|Prof\.?\s*(Dr\.?)?)\s*/i, "").trim();
+    // Strip academic/medical titles for cleaner name
+    const strippedName = normalized.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim();
+    // Use stripped name if it still has content, otherwise keep original
+    const nameForValidation = strippedName.length >= 3 ? strippedName : normalized;
 
     if (!normalized || normalized.length < 3) {
       continue;
@@ -927,7 +929,13 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
       continue;
     }
 
-    if (!looksLikePersonName(nameForValidation) && !looksLikePersonName(normalized) && !isAliasPerson(normalized)) {
+    // Accept if stripped name looks like person name, OR single capitalized surname
+    const isValidName = looksLikePersonName(nameForValidation)
+      || looksLikePersonName(normalized)
+      || isAliasPerson(normalized)
+      || /^\p{Lu}[\p{Ll}\p{M}'-]{2,}$/u.test(nameForValidation);
+
+    if (!isValidName) {
       const singleTokenPattern = /^\p{Lu}[\p{Ll}\p{M}'-]{2,}$/u;
       if (!(allowSingleToken && singleTokenPattern.test(normalized))) {
         continue;
@@ -3142,10 +3150,17 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
     : false;
   if (shouldFlagProtected) {
     output.disadvantagedPerson = protectedName;
-    output.impactAssessment = "Person benachteiligt";
+    // Only set generic assessment if KI didn't provide a real Fazit
+    if (!output.impactAssessment || output.impactAssessment.length < 10) {
+      output.impactAssessment = "Person benachteiligt";
+    }
   }
 
-  const normalizedPeople = normalizePeopleDetailed(output.people, rawText, new Set(), output.author || "");
+  // Only re-normalize if we have rawText (PDF/text analysis).
+  // For image analysis (rawText empty), people are already normalized by the Vision pipeline.
+  const normalizedPeople = rawText
+    ? normalizePeopleDetailed(output.people, rawText, new Set(), output.author || "")
+    : output.people.filter(p => p && (typeof p === "string" ? p.trim() : p.name?.trim()));
   const existing = new Map();
   for (const item of output.impactRanking) {
     const key = normalizeWhitespace(item?.name).toLowerCase();
