@@ -914,6 +914,10 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
 
     let normalized = normalizeWhitespace(inputName).replace(/[;,]+$/g, "");
     normalized = normalized.replace(/^(Herr|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "");
+    // Strip birth dates, gender markers, and trailing metadata from names
+    normalized = normalized.replace(/,?\s*geb\.?\s*\d[\d.\-/\s]*/gi, "").replace(/,?\s*\b[mfw]\s*$/i, "").trim();
+    // Strip titles like "Dr. med." "Prof." from the name for validation (keep in output)
+    const nameForValidation = normalized.replace(/^(Dr\.?\s*(med\.?)?|Prof\.?\s*(Dr\.?)?)\s*/i, "").trim();
 
     if (!normalized || normalized.length < 3) {
       continue;
@@ -923,7 +927,7 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
       continue;
     }
 
-    if (!looksLikePersonName(normalized) && !isAliasPerson(normalized)) {
+    if (!looksLikePersonName(nameForValidation) && !looksLikePersonName(normalized) && !isAliasPerson(normalized)) {
       const singleTokenPattern = /^\p{Lu}[\p{Ll}\p{M}'-]{2,}$/u;
       if (!(allowSingleToken && singleTokenPattern.test(normalized))) {
         continue;
@@ -935,10 +939,12 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
       continue;
     }
 
+    const inputSentiment = typeof value === "object" && value ? value.sentiment : "";
     seen.add(key);
     list.push({
       name: normalized,
-      affiliation: normalizeAffiliation(inputAffiliation || inferAffiliationForPerson(rawText, normalized))
+      affiliation: normalizeAffiliation(inputAffiliation || inferAffiliationForPerson(rawText, normalized)),
+      ...(inputSentiment && { sentiment: inputSentiment })
     });
   }
 
