@@ -1900,20 +1900,21 @@ function isLikelyValidPersonLabel(value) {
 
 function collectAnalysisPeople(analysis) {
   const people = Array.isArray(analysis?.people) ? analysis.people : [];
-  const unique = [];
+  const names = [];
 
   for (const entry of people) {
     const name = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
-    if (!name) {
-      continue;
-    }
-    if (unique.includes(name)) {
-      continue;
-    }
-    unique.push(name);
+    if (!name || name.length < 3) continue;
+    if (names.some(n => n.toLowerCase() === name.toLowerCase())) continue;
+    names.push(name);
   }
 
-  return unique.slice(0, 16);
+  // Deduplicate: "Timur" → "Timur Leo Schifferli" (keep longer form)
+  const deduped = names.filter((name, i) => {
+    return !names.some((other, j) => j !== i && other.length > name.length && other.toLowerCase().includes(name.toLowerCase()));
+  });
+
+  return deduped.slice(0, 16);
 }
 
 function normalizePeople(people) {
@@ -2411,35 +2412,36 @@ async function loadRowAnalysis(file, options = {}) {
   // Fallback: extract people from author + summary if KI missed them
   if (people.length === 0) {
     const fallback = [];
-    const seen = new Set();
     // Add author as person
     const auth = normalizeTitleText(analysis.author || "");
-    if (auth && auth !== "Unbekannt" && /[A-ZÄÖÜ]/.test(auth)) {
+    if (auth && auth !== "Unbekannt" && auth.split(/\s+/).length >= 2 && /^[A-ZÄÖÜ]/.test(auth)) {
       fallback.push(auth);
-      seen.add(auth.toLowerCase());
     }
     // Extract "Vorname Nachname" patterns from Fazit
     const summary = analysis.impactAssessment || "";
-    const nameRe = /\b([A-ZÄÖÜ][a-zäöüéèêàáâ'-]+(?:\s+[A-ZÄÖÜ][a-zäöüéèêàáâ'-]+)+)\b/g;
+    const nameRe = /\b([A-ZÄÖÜ][a-zäöüéèêàáâ'-]+\s+[A-ZÄÖÜ][a-zäöüéèêàáâ'-]+(?:\s+[A-ZÄÖÜ][a-zäöüéèêàáâ'-]+)?)\b/g;
+    const stopWords = /^(Das |Die |Der |Ein |Zur |Dem |Den |Sehr |Alle |Beide |Keine |Kein |Mehr |Nicht |Positiv|Negativ|Deutlich|Forensi|Dokument|Bericht|Eltern|Fokus|Gegen|Kinder)/;
     let m;
     while ((m = nameRe.exec(summary)) !== null) {
       const n = m[1].trim();
-      if (n.length >= 4 && !seen.has(n.toLowerCase()) && !/^(Das Dokument|Die Eltern|Die KI|Der Bericht|Die Fokus|Das Kind|Die Gegenpartei)/.test(n)) {
+      if (n.length >= 5 && !stopWords.test(n)) {
         fallback.push(n);
-        seen.add(n.toLowerCase());
       }
     }
-    // Extract single known names (Timur, Ayhan etc.) from summary
-    const singleNames = summary.match(/\b(Timur|Ayhan|Alexandra|Nael)\b/g);
-    if (singleNames) {
-      for (const sn of singleNames) {
-        if (!seen.has(sn.toLowerCase())) {
-          fallback.push(sn);
-          seen.add(sn.toLowerCase());
-        }
-      }
-    }
-    if (fallback.length > 0) people = fallback;
+    // Deduplicate: "Timur" is substring of "Timur Schifferli" → keep only full name
+    // "Alexandra" is substring of "Alexandra Schifferli" → keep only full name
+    const deduped = fallback.filter((name, i) => {
+      return !fallback.some((other, j) => j !== i && other.length > name.length && other.toLowerCase().includes(name.toLowerCase()));
+    });
+    // Remove exact duplicates (case-insensitive)
+    const seen = new Set();
+    const unique = deduped.filter(n => {
+      const key = n.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (unique.length > 0) people = unique;
   }
   const resolvedDocType = resolveDocumentTypeLabel(analysis.documentType, file);
   const swissAuthoredDate = formatSwissAnalysisDate(analysis.authoredDate);
