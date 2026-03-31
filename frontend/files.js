@@ -2424,6 +2424,7 @@ async function loadRowAnalysis(file, options = {}) {
   const date = swissAuthoredDate || "Unbekannt";
   const senderInstitution = analysis.senderInstitution || "Unbekannt";
   const impactAssessment = analysis.impactAssessment || "";
+  const manipulationsmuster = Array.isArray(analysis.manipulationsmuster) ? analysis.manipulationsmuster.filter(m => m && m.typ) : [];
   const peopleValue = people.length > 0 ? people.join(" · ") : "Keine";
   const verdict = deriveDocumentVerdict(analysis);
   const evidenceCount = countEvidenceSnippets(evidence);
@@ -2493,6 +2494,20 @@ async function loadRowAnalysis(file, options = {}) {
           <span class="qa-mod-verdict-badge qa-mod-verdict-badge--${verdict.tone}">${escapeHtml(verdict.label)}</span>
         </div>
         <p class="qa-mod-verdict-text">${escapeHtml(impactAssessment)}</p>
+      </div>` : ""}
+
+      <!-- Manipulationsmuster -->
+      ${manipulationsmuster.length > 0 ? `
+      <div class="qa-mod-manipulation">
+        <span class="qa-mod-manipulation-title">Erkannte Manipulationsmuster</span>
+        <div class="qa-mod-manipulation-list">
+          ${manipulationsmuster.map(m => `
+            <div class="qa-mod-manipulation-item">
+              <span class="qa-mod-manipulation-badge">${escapeHtml(m.typ.replace(/_/g, " "))}</span>
+              <span class="qa-mod-manipulation-beleg">„${escapeHtml(m.beleg || "")}"</span>
+            </div>
+          `).join("")}
+        </div>
       </div>` : ""}
 
       <!-- Party stats -->

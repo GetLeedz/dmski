@@ -1876,7 +1876,7 @@ function parsePdfMetadataDate(value) {
   return `${day}.${month}.${year}`;
 }
 
-function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], positiveMentions = 0, negativeMentions = 0, opposingPositiveMentions = 0, opposingNegativeMentions = 0, rawText = "", message = "", textQuality = null, evidence = null, methodology = "" }) {
+function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", documentType = "", people = [], disadvantagedPerson = "", senderInstitution = "", impactAssessment = "", impactRanking = [], positiveMentions = 0, negativeMentions = 0, opposingPositiveMentions = 0, opposingNegativeMentions = 0, rawText = "", message = "", textQuality = null, evidence = null, methodology = "", manipulationsmuster = [] }) {
   const normalizedAuthor = normalizeWhitespace(author);
   const normalizedTitle = normalizeWhitespace(title);
 
@@ -1961,6 +1961,7 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
     negativeMentions: Number(negativeMentions) || 0,
     opposingPositiveMentions: Number(opposingPositiveMentions) || 0,
     opposingNegativeMentions: Number(opposingNegativeMentions) || 0,
+    manipulationsmuster: Array.isArray(manipulationsmuster) ? manipulationsmuster.filter(m => m && m.typ) : [],
     message: normalizeWhitespace(message),
     textQuality: normalizeTextQualityMeta(textQuality),
     evidence: normalizeEvidenceBundle(evidence),
@@ -2046,6 +2047,7 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     opposingPositiveMentions: src.opposingPositiveMentions ?? fallback.opposingPositiveMentions ?? 0,
     opposingNegativeMentions: src.opposingNegativeMentions ?? fallback.opposingNegativeMentions ?? 0,
     rawText: effectiveRawText,
+    manipulationsmuster: Array.isArray(src.manipulationsmuster) ? src.manipulationsmuster : [],
     message: src.benachteiligung_indiz || src.message || fallback.message
   });
 }
@@ -2322,7 +2324,22 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "  → Mindestens benachteiligte_person.negativ: 1 (Existenz schadet der Fokus-Partei in Datenbanken)",
     "  → Wenn Entlastung ('keine Straftat' etc.): zusaetzlich benachteiligte_person.positiv: 1",
     "",
-    "### 3b. VERFASSER-BIAS-ELIMINIERUNG (KRITISCH):",
+    "### 3b. MANIPULATIONS- UND NARZISSMUS-ERKENNUNG (DMSKI-Checkliste):",
+    "Scanne den Text auf folgende 10 Indikatoren. Fuer JEDEN erkannten Indikator: gib den Typ und ein konkretes Zitat/Beleg aus dem Text an.",
+    "NUR melden wenn TATSAECHLICH im Text erkennbar – keine Vermutungen!",
+    "",
+    "1. GASLIGHTING: Verdrehen von Fakten, um die Gegenseite als 'verwirrt' oder 'psychisch labil' darzustellen.",
+    "2. PROJEKTION: Beschuldigungen, die eigentlich auf den Absender zutreffen (Taeter-Opfer-Umkehr / DARVO).",
+    "3. ISOLATIONSTAKTIK: Versuche, die Fokus-Partei von Familie (Bruder, Eltern) oder Helfern zu trennen.",
+    "4. MACHTMISSBRAUCH_GELD: Verstecken von Vermoegen oder manipulative Unterhaltsforderungen.",
+    "5. TRIANGULATION: Einbeziehung Dritter (fliegende Affen), um Druck aufzubauen.",
+    "6. AD_HOMINEM: Charakterangriffe und Abwertungen statt sachlicher Argumente.",
+    "7. EMPATHIELOSIGKEIT: Kuehle, objektifizierende Sprache ueber Kinder oder nahe Angehoerige.",
+    "8. SABOTAGE: Gezieltes Blockieren von gerichtlichen oder medizinischen Massnahmen.",
+    "9. ABSOLUTE_SPRACHE: Exzessive Nutzung von 'immer', 'nie', 'voellig', um Grauzonen zu eliminieren.",
+    "10. WORTSALAT: Komplizierte, kreisende Formulierungen, die vom eigentlichen Kern ablenken.",
+    "",
+    "### 3c. VERFASSER-BIAS-ELIMINIERUNG (KRITISCH):",
     "- Fokus-Partei ist Verfasser: Selbstlob NICHT als positiv zaehlen. Eigene Briefe verzerren sonst das Ergebnis.",
     "- Gegenpartei ist Verfasser: Was sie NEGATIV ueber Fokus-Partei schreibt, zaehlt als Negativ fuer Fokus-Partei.",
     "- Neutrale Dritte (Behoerden, Gerichte, Gutachter) zaehlen normal.",
@@ -2346,9 +2363,11 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '    "positiv": 0,',
     '    "negativ": 0',
     '  },',
-    '  "zusammenfassung": "Max 2 Saetze"',
+    '  "zusammenfassung": "Max 2 Saetze",',
+    '  "manipulationsmuster": [{"typ": "GASLIGHTING|PROJEKTION|ISOLATIONSTAKTIK|MACHTMISSBRAUCH_GELD|TRIANGULATION|AD_HOMINEM|EMPATHIELOSIGKEIT|SABOTAGE|ABSOLUTE_SPRACHE|WORTSALAT", "beleg": "Zitat oder Paraphrase aus dem Text"}]',
     "}",
     "",
+    "WICHTIG: 'manipulationsmuster' ist ein Array. Nur erkannte Muster auffuehren. Leeres Array [] wenn keine erkannt.",
     "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
   ].join("\n");
 }

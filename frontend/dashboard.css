@@ -3143,8 +3143,59 @@ td {
 /* ================================================================
    AI SCANNING – Premium loading state
    ================================================================ */
+/* ── Manipulationsmuster (per-file detection) ── */
+.qa-mod-manipulation {
+  margin-top: 0.8rem;
+  padding: 0.8rem 1rem;
+  background: rgba(213, 83, 83, 0.04);
+  border-left: 3px solid #d55353;
+  border-radius: 0 8px 8px 0;
+}
+
+.qa-mod-manipulation-title {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #d55353;
+  margin-bottom: 0.5rem;
+}
+
+.qa-mod-manipulation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.qa-mod-manipulation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.qa-mod-manipulation-badge {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  background: rgba(213, 83, 83, 0.1);
+  color: #b03a2a;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.qa-mod-manipulation-beleg {
+  color: #4a5e6a;
+  font-style: italic;
+}
+
 /* ================================================================
-   AI SCANNING – Neon Orb with particle blob
+   AI SCANNING – Gold Equalizer
    ================================================================ */
 /* ── Gold Equalizer KI Loading ── */
 .ai-scanning-gold {
