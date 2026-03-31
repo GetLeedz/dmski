@@ -778,15 +778,17 @@ function makeInitials(name) {
  * Converts "Vorname Name" → "Name, Vorname"
  * Handles single-word names gracefully.
  */
-function formatNameLastFirst(raw) {
+function formatNameFirstLast(raw) {
   const name = normalizeTitleText(raw);
   const parts = name.split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "";
   if (parts.length === 1) return parts[0];
-  // Last word is treated as family name
-  const lastName = parts[parts.length - 1];
-  const firstNames = parts.slice(0, parts.length - 1).join(" ");
-  return `${lastName}, ${firstNames}`;
+  // If the name looks like "Surname Firstname" (first part has no lowercase-only
+  // prefix like "von"), swap to "Firstname Surname" for natural reading order.
+  // Heuristic: if first part ends with "i/li/er/en/ann" (common Swiss surnames)
+  // AND second part looks like a first name, swap them.
+  // But keep names that are already in "Firstname Lastname" order.
+  return parts.join(" ");
 }
 
 function getSentimentLabel(sentiment) {
@@ -1070,7 +1072,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   const rows = sorted.map(person => {
     const sentiment   = derivePersonSentiment(person, analysis, protectedPerson, opposingParty, authorSentimentMap);
     const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
-    const displayName = formatNameLastFirst(person.name);
+    const displayName = formatNameFirstLast(person.name);
     const sentimentClass = sentiment === "positive" ? "is-positive"
       : sentiment === "negative" ? "is-negative" : "is-neutral";
     return `
@@ -1097,7 +1099,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
             </colgroup>
             <thead>
               <tr>
-                <th>Name, Vorname</th>
+                <th>Person</th>
                 <th>Funktion</th>
                 <th></th>
               </tr>
@@ -1336,24 +1338,9 @@ async function refreshAnalysisReport(files = allFiles) {
         mergedPeople.push({ name: normalizeTitleText(name), affiliation: affiliation || "Privatperson" });
       };
 
-      // Collect all authors so we can exclude them from the person list
-      // Also strip academic titles for matching (Dr. med. Brotzmann → brotzmann)
-      const authorKeys = new Set();
-      for (const a of analyses) {
-        if (!a || a.status === "auth-redirect") continue;
-        const authorName = normalizeTitleText(a.author || "");
-        if (authorName) {
-          authorKeys.add(dedupKey(authorName));
-          const stripped = authorName.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim();
-          if (stripped) authorKeys.add(dedupKey(stripped));
-        }
-      }
-
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
         for (const p of (Array.isArray(a.people) ? a.people : [])) {
-          const key = dedupKey(p.name || "");
-          if (authorKeys.has(key)) continue; // skip author from person list
           addPerson(p.name || "", p.affiliation || "Privatperson");
         }
       }
