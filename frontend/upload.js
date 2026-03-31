@@ -578,9 +578,34 @@ function renderAnalysisInQueueRow(fileKey, payload) {
   const backendStartedAt = String(payload?.backendStartedAt || "").trim();
   const protectedKeywords = currentCaseProtectedKeywords || "Nicht gesetzt";
   const opposingKeywords = currentCaseOpposingKeywords || "Nicht gesetzt";
-  const people = Array.isArray(payload?.people)
+  // Extract people names, exclude author, resolve partial names
+  const rawPeople = Array.isArray(payload?.people)
     ? payload.people.map((p) => String(p?.name || p || "").trim()).filter(Boolean)
     : [];
+  const authorLower = (author || "").toLowerCase();
+  const strippedAuthor = authorLower.replace(/^(prof\.?\s*)?(dr\.?\s*(med\.?\s*)?)?/i, "").trim();
+  const partyAliases = [
+    ...(currentCaseProtectedKeywords || "").split(",").map(s => s.trim()).filter(Boolean),
+    ...(currentCaseOpposingKeywords || "").split(",").map(s => s.trim()).filter(Boolean)
+  ];
+  const people = rawPeople
+    .map(name => {
+      // Resolve single first names against case parties
+      if (name.split(/\s+/).length === 1 && name.length >= 3) {
+        const token = name.toLowerCase();
+        for (const alias of partyAliases) {
+          if (alias.split(/\s+/).length >= 2 && alias.toLowerCase().split(/\s+/).some(w => w === token)) {
+            return alias;
+          }
+        }
+      }
+      return name;
+    })
+    .filter(name => {
+      const key = name.toLowerCase();
+      return key !== authorLower && (strippedAuthor.length < 3 || key !== strippedAuthor);
+    })
+    .filter((name, i, arr) => arr.findIndex(n => n.toLowerCase() === name.toLowerCase()) === i);
 
   if (!docType && !title && !author && !date && !senderInstitution && !impactAssessment && people.length === 0) {
     return;
