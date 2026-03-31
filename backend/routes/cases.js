@@ -110,14 +110,18 @@ const allowedMimeTypes = new Set([
   "audio/x-wav",
   "audio/aac",
   "audio/ogg",
-  "audio/webm"
+  "audio/webm",
+  // E-Mails
+  "application/vnd.ms-outlook",
+  "message/rfc822"
 ]);
 
 const allowedExtensions = new Set([
   "pdf","doc","docx","xls","xlsx","ppt","pptx","txt","csv",
   "jpg","jpeg","png","tiff","tif","webp","heic","heif","gif","bmp",
   "mov","mp4","avi","mkv","webm","3gp","m4v","wmv","flv","ts","mts","m2ts",
-  "mp3","m4a","wav","aac","ogg","flac","wma","opus","m4b"
+  "mp3","m4a","wav","aac","ogg","flac","wma","opus","m4b",
+  "msg","eml"
 ]);
 
 const upload = multer({
