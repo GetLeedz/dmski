@@ -32,12 +32,6 @@
     logout:    `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10H3M7 6l-4 4 4 4"/><path d="M10 3h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-5"/></svg>`,
   };
 
-  const hasCase = /^\d{6}$/.test(String(sessionStorage.getItem("currentCaseId") || "").trim());
-
-  const caseBlock = hasCase
-    ? `<span class="sb-section">Fall</span>${sbLink("/files.html", "Fall-Analyse", icons.analysis)}${sbLink("/upload.html", "File Upload", icons.upload)}`
-    : "";
-
   const adminBlock = role === "admin"
     ? `<span class="sb-section">Verwaltung</span>${sbLink("/users.html", "Benutzer", icons.users)}`
     : "";
@@ -54,7 +48,6 @@
       <nav class="sb-nav">
         <span class="sb-section">Plattform</span>
         ${sbLink("/dashboard.html", "Dashboard", icons.dashboard)}
-        ${caseBlock}
         ${adminBlock}
         ${sbLink("/profile.html", "Mein Profil", icons.profile)}
       </nav>

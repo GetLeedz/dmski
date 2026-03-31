@@ -6649,6 +6649,30 @@ select.toolbar-input {
   margin-bottom: 1.4rem;
   flex-wrap: wrap;
 }
+
+.upload-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  background: var(--navy, #1A2B3C);
+  color: #F8F9FA;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.upload-back-btn:hover {
+  background: #243b50;
+}
+
+.upload-back-btn svg {
+  flex-shrink: 0;
+}
 .upload-card-title {
   font-size: 1.2rem;
   font-weight: 700;
