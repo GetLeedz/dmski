@@ -1071,10 +1071,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
     const sentiment   = derivePersonSentiment(person, analysis, protectedPerson, opposingParty, authorSentimentMap);
     const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
     const displayName = formatNameLastFirst(person.name);
+    const sentimentClass = sentiment === "positive" ? "is-positive"
+      : sentiment === "negative" ? "is-negative" : "is-neutral";
     return `
       <tr class="akteure-row">
         <td class="akteure-col-name">${escapeHtml(displayName)}</td>
         <td class="akteure-col-role">${escapeHtml(roleLabel)}</td>
+        <td class="akteure-col-sentiment"><span class="akteure-sentiment-dot ${sentimentClass}"></span></td>
       </tr>
     `;
   }).join("");
@@ -1090,11 +1093,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
             <colgroup>
               <col class="col-name" />
               <col class="col-funktion" />
+              <col class="col-sentiment" />
             </colgroup>
             <thead>
               <tr>
                 <th>Name, Vorname</th>
                 <th>Funktion</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -1673,58 +1678,63 @@ async function getPreviewUrl(file) {
     return previewPromiseCache.get(file.id);
   }
 
-  const promise = apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  previewPromiseCache.set(file.id, promise);
-
-  let response;
-  try {
-    response = await promise;
-  } catch (error) {
-    previewPromiseCache.delete(file.id);
-    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+  // Wrap the entire fetch→blob→objectUrl flow in a single promise
+  // so concurrent callers all get the final objectUrl (not the Response).
+  const urlPromise = (async () => {
+    let response;
+    try {
+      response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/files/${file.id}/preview`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      previewPromiseCache.delete(file.id);
+      if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+        return null;
+      }
+      showServiceAlert("Keine Verbindung zum Backend");
+      setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
       return null;
     }
-    showServiceAlert("Keine Verbindung zum Backend");
-    setMessage(listMessage, "Backend nicht erreichbar. Bitte später erneut versuchen.", "error");
-    return null;
-  }
-  previewPromiseCache.delete(file.id);
 
-  if (!response.ok) {
-    if (OUTAGE_STATUSES.has(Number(response.status))) {
-      showServiceAlert("Vorschau-Service derzeit gestört");
-    }
-    let detail = "Vorschau konnte nicht geladen werden.";
-    try {
-      const payload = await response.json();
-      if (payload && payload.error) {
-        detail = payload.error;
+    if (!response.ok) {
+      previewPromiseCache.delete(file.id);
+      if (OUTAGE_STATUSES.has(Number(response.status))) {
+        showServiceAlert("Vorschau-Service derzeit gestört");
       }
+      let detail = "Vorschau konnte nicht geladen werden.";
+      try {
+        const payload = await response.json();
+        if (payload && payload.error) {
+          detail = payload.error;
+        }
+      } catch {
+        // Ignore non-JSON error bodies.
+      }
+
+      if (response.status === 404) {
+        detail = "File fehlt im Serverspeicher. Bitte neu hochladen.";
+      }
+
+      setMessage(listMessage, `${decodeUtf8Safe(file.original_name)}: ${detail}`, "error");
+      return null;
+    }
+
+    let blob;
+    try {
+      blob = await response.blob();
     } catch {
-      // Ignore non-JSON error bodies.
+      previewPromiseCache.delete(file.id);
+      return null;
     }
+    const typedBlob = blob.type ? blob : new Blob([blob], { type: file.mime_type || "application/octet-stream" });
+    const objectUrl = URL.createObjectURL(typedBlob);
+    previewUrlCache.set(file.id, objectUrl);
+    previewPromiseCache.delete(file.id);
+    return objectUrl;
+  })();
 
-    if (response.status === 404) {
-      detail = "File fehlt im Serverspeicher. Bitte neu hochladen.";
-    }
-
-    setMessage(listMessage, `${decodeUtf8Safe(file.original_name)}: ${detail}`, "error");
-    return null;
-  }
-
-  let blob;
-  try {
-    blob = await response.blob();
-  } catch {
-    return null;
-  }
-  const typedBlob = blob.type ? blob : new Blob([blob], { type: file.mime_type || "application/octet-stream" });
-  const objectUrl = URL.createObjectURL(typedBlob);
-  previewUrlCache.set(file.id, objectUrl);
-  return objectUrl;
+  previewPromiseCache.set(file.id, urlPromise);
+  return urlPromise;
 }
 
 function normalizeTitleText(text) {
