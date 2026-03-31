@@ -1337,11 +1337,16 @@ async function refreshAnalysisReport(files = allFiles) {
       };
 
       // Collect all authors so we can exclude them from the person list
+      // Also strip academic titles for matching (Dr. med. Brotzmann → brotzmann)
       const authorKeys = new Set();
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
         const authorName = normalizeTitleText(a.author || "");
-        if (authorName) authorKeys.add(dedupKey(authorName));
+        if (authorName) {
+          authorKeys.add(dedupKey(authorName));
+          const stripped = authorName.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim();
+          if (stripped) authorKeys.add(dedupKey(stripped));
+        }
       }
 
       for (const a of analyses) {

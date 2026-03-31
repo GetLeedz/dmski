@@ -907,6 +907,8 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
   const list = [];
   const blocked = blockedNames instanceof Set ? blockedNames : new Set();
   const authorKey = normalizeWhitespace(authorName).toLowerCase();
+  // Also match author without academic titles (e.g. "Dr. med. Brotzmann" → "brotzmann")
+  const strippedAuthorKey = authorKey.replace(/^(prof\.?\s*)?(dr\.?\s*(med\.?\s*)?)?/i, "").trim();
 
   for (const value of Array.isArray(values) ? values : []) {
     const inputName = typeof value === "string" ? value : value?.name;
@@ -944,7 +946,9 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
     }
 
     const key = normalized.toLowerCase();
-    if (blocked.has(key) || key === authorKey || seen.has(key)) {
+    const isAuthor = key === authorKey || key === strippedAuthorKey
+      || (strippedAuthorKey && key.endsWith(strippedAuthorKey));
+    if (blocked.has(key) || isAuthor || seen.has(key)) {
       continue;
     }
 
@@ -2647,25 +2651,43 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       };
     }
 
-    // ── Fallback: extract people from summary/title if KI missed them ──
-    // NOTE: Verfasser is NOT added here – the UI already shows the author in
-    // its own VERFASSER field.
+    // ── Fallback: extract people from full response if KI missed them ──
+    // NOTE: Verfasser is NOT added here – the UI already shows the author
+    // in its own VERFASSER field.
     if (!normalized.people || normalized.people.length === 0) {
       const fallbackPeople = [];
       const authorKey = normalizeWhitespace(normalized.author || "").toLowerCase();
+      const strippedAuthorKey = authorKey.replace(/^(prof\.?\s*)?(dr\.?\s*(med\.?\s*)?)?/i, "").trim();
       const seen = new Set();
-      // Extract names from title + zusammenfassung/impactAssessment
-      const searchTexts = [normalized.title || "", normalized.impactAssessment || ""];
+      // Search title, zusammenfassung, AND the raw Claude response for names
+      const searchTexts = [
+        normalized.title || "",
+        normalized.impactAssessment || "",
+        responseText || ""
+      ];
       const namePattern = /\b([A-ZÄÖÜ][a-zäöüéèêàáâ'-]+(?:\s+[A-ZÄÖÜ][a-zäöüéèêàáâ'-]+)+)\b/g;
       for (const searchText of searchTexts) {
         let nameMatch;
         while ((nameMatch = namePattern.exec(searchText)) !== null) {
           const candidate = nameMatch[1].trim();
           const candidateKey = candidate.toLowerCase();
-          if (candidate.length >= 4 && !seen.has(candidateKey) && candidateKey !== authorKey && looksLikePersonName(candidate)) {
+          if (candidate.length >= 4
+            && !seen.has(candidateKey)
+            && candidateKey !== authorKey
+            && candidateKey !== strippedAuthorKey
+            && looksLikePersonName(candidate)) {
             seen.add(candidateKey);
-            fallbackPeople.push({ name: candidate, affiliation: inferAffiliationForPerson("", candidate) || "Privatperson" });
+            fallbackPeople.push({ name: candidate, affiliation: inferAffiliationForPerson(responseText || "", candidate) || "Privatperson" });
           }
+        }
+      }
+      // Also try structured row pattern (e.g. "Schifferli Timur, geb. 27.03.2013")
+      const structuredNames = extractPeopleFromStructuredRows(responseText || "", new Set());
+      for (const sName of structuredNames) {
+        const sKey = (typeof sName === "string" ? sName : sName.name || "").toLowerCase();
+        if (sKey && !seen.has(sKey) && sKey !== authorKey && sKey !== strippedAuthorKey) {
+          seen.add(sKey);
+          fallbackPeople.push({ name: typeof sName === "string" ? sName : sName.name, affiliation: "Privatperson" });
         }
       }
       if (fallbackPeople.length > 0) {
