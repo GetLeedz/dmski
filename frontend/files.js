@@ -2406,9 +2406,11 @@ async function loadRowAnalysis(file, options = {}) {
   }
 
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
-  console.log("[DEBUG-PEOPLE] analysis.people:", JSON.stringify(analysis.people));
   const people = collectAnalysisPeople(analysis);
-  console.log("[DEBUG-PEOPLE] after collect:", JSON.stringify(people));
+  if (people.length === 0 && analysis.people && analysis.people.length > 0) {
+    console.warn(`[PEOPLE-BUG] File ${file.id}: analysis has ${analysis.people.length} people but collectAnalysisPeople returned 0`, analysis.people);
+  }
+  console.log(`[PEOPLE] File ${file.id} (${file.original_name}): ${people.length} persons`, people);
   const resolvedDocType = resolveDocumentTypeLabel(analysis.documentType, file);
   const swissAuthoredDate = formatSwissAnalysisDate(analysis.authoredDate);
   const positiveMentions = Math.max(0, Number(analysis.positiveMentions || 0));
