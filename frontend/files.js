@@ -2406,7 +2406,9 @@ async function loadRowAnalysis(file, options = {}) {
   }
 
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
+  console.log("[DEBUG-PEOPLE] analysis.people:", JSON.stringify(analysis.people));
   const people = collectAnalysisPeople(analysis);
+  console.log("[DEBUG-PEOPLE] after collect:", JSON.stringify(people));
   const resolvedDocType = resolveDocumentTypeLabel(analysis.documentType, file);
   const swissAuthoredDate = formatSwissAnalysisDate(analysis.authoredDate);
   const positiveMentions = Math.max(0, Number(analysis.positiveMentions || 0));
