@@ -31,6 +31,22 @@ const OUTAGE_STATUSES = new Set([502, 503, 504]);
 let serviceAlertEl = null;
 let authRedirectStarted = false;
 
+// ── Duplicate detection: load existing filenames from case ──
+let existingFileNames = new Set();
+async function loadExistingFileNames() {
+  try {
+    const res = await fetch(`${API_BASE}/cases/${currentCaseId}/files`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const files = Array.isArray(data) ? data : (Array.isArray(data.files) ? data.files : []);
+      existingFileNames = new Set(files.map(f => (f.original_name || "").toLowerCase().trim()));
+    }
+  } catch { /* ignore */ }
+}
+loadExistingFileNames();
+
 function buildLoginRedirectMessage(detail) {
   const normalized = String(detail || "").trim().toLowerCase();
   if (normalized.includes("nicht autorisiert")) {
@@ -293,12 +309,33 @@ function setRowUploadedFileId(fileKey, fileId) {
 function addPendingFiles(newFiles) {
   const { accepted, rejected } = splitAcceptedFiles(newFiles);
   const existingKeys = new Set(pendingFiles.map((f) => getFileKey(f)));
+
+  const duplicates = [];
+  const fresh = [];
+
   for (const f of accepted) {
     const key = getFileKey(f);
-    if (!existingKeys.has(key)) {
-      pendingFiles.push(f);
+    if (existingKeys.has(key)) continue;
+    if (existingFileNames.has((f.name || "").toLowerCase().trim())) {
+      duplicates.push(f);
+    } else {
+      fresh.push(f);
       existingKeys.add(key);
     }
+  }
+
+  // Handle duplicates: ask user to replace or skip
+  for (const f of duplicates) {
+    const name = decodeUtf8Safe(f.name);
+    const replace = window.confirm(`„${name}" existiert bereits im Dossier.\n\nErsetzen?  OK = Ersetzen  |  Abbrechen = Überspringen`);
+    if (replace) {
+      fresh.push(f);
+      existingKeys.add(getFileKey(f));
+    }
+  }
+
+  for (const f of fresh) {
+    pendingFiles.push(f);
   }
 
   if (rejected.length > 0) {
@@ -563,6 +600,7 @@ async function startUpload() {
       const fileKey = getFileKey(file);
       if (uploadedMeta?.id) {
         setRowUploadedFileId(fileKey, uploadedMeta.id);
+        existingFileNames.add((uploadedMeta.original_name || file.name).toLowerCase().trim());
         await triggerRealtimeAnalysis(uploadedMeta.id, uploadedMeta.original_name || file.name, fileKey);
       }
       successCount += 1;
