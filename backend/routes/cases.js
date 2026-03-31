@@ -4054,6 +4054,125 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
       return res.json(withAnalysisRuntimeMeta(enriched));
     }
 
+    // ── E-Mail files (.eml / .msg) — extract text and analyze ──
+    const mimeType = String(file.mime_type || "").toLowerCase();
+    const ext = String(file.original_name || "").toLowerCase().split(".").pop() || "";
+    if (ext === "eml" || ext === "msg" || mimeType === "message/rfc822" || mimeType === "application/vnd.ms-outlook") {
+      try {
+        const parties = await getCaseParties(caseId);
+        let emailText = "";
+        let emailMeta = {};
+
+        if (ext === "eml" || mimeType === "message/rfc822") {
+          // Parse EML (RFC 822) — plain text extraction
+          const raw = fileBuffer.toString("utf-8");
+          // Extract headers
+          const headerEnd = raw.indexOf("\r\n\r\n") !== -1 ? raw.indexOf("\r\n\r\n") : raw.indexOf("\n\n");
+          const headers = headerEnd > 0 ? raw.substring(0, headerEnd) : "";
+          const body = headerEnd > 0 ? raw.substring(headerEnd + (raw[headerEnd + 1] === "\n" ? 2 : 4)) : raw;
+
+          const getHeader = (name) => {
+            const re = new RegExp(`^${name}:\\s*(.+?)$`, "mi");
+            const m = headers.match(re);
+            return m ? m[1].trim() : "";
+          };
+
+          emailMeta = {
+            from: getHeader("From"),
+            to: getHeader("To"),
+            subject: getHeader("Subject"),
+            date: getHeader("Date")
+          };
+
+          // Strip HTML tags if body is HTML, keep plain text
+          let textBody = body;
+          // Check for multipart — extract text/plain part
+          const boundaryMatch = headers.match(/boundary="?([^";\r\n]+)"?/i);
+          if (boundaryMatch) {
+            const boundary = boundaryMatch[1];
+            const parts = body.split("--" + boundary);
+            for (const part of parts) {
+              if (/content-type:\s*text\/plain/i.test(part)) {
+                const partBody = part.substring(part.indexOf("\n\n") + 2);
+                textBody = partBody;
+                break;
+              }
+            }
+          }
+          // Strip remaining HTML
+          textBody = textBody.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+          // Decode quoted-printable
+          textBody = textBody.replace(/=\r?\n/g, "").replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+          // Decode UTF-8 encoded words in headers
+          for (const key of Object.keys(emailMeta)) {
+            emailMeta[key] = emailMeta[key].replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, encoding, text) => {
+              if (encoding.toUpperCase() === "B") return Buffer.from(text, "base64").toString("utf-8");
+              return text.replace(/=([0-9A-Fa-f]{2})/g, (__, hex) => String.fromCharCode(parseInt(hex, 16))).replace(/_/g, " ");
+            });
+          }
+
+          emailText = [
+            emailMeta.from ? `Von: ${emailMeta.from}` : "",
+            emailMeta.to ? `An: ${emailMeta.to}` : "",
+            emailMeta.date ? `Datum: ${emailMeta.date}` : "",
+            emailMeta.subject ? `Betreff: ${emailMeta.subject}` : "",
+            "",
+            normalizeWhitespace(textBody)
+          ].filter(Boolean).join("\n");
+        } else {
+          // .msg files — treat as binary, extract what we can
+          const raw = fileBuffer.toString("utf-8");
+          emailText = raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, " ");
+          emailText = normalizeWhitespace(emailText);
+        }
+
+        if (emailText.length < 20) {
+          const empty = {
+            status: "empty",
+            title: emailMeta.subject || "",
+            author: emailMeta.from || "",
+            authoredDate: "",
+            people: [],
+            disadvantagedPerson: "",
+            message: "E-Mail-Inhalt konnte nicht gelesen werden."
+          };
+          await saveDocumentAnalysis(file.id, empty);
+          return res.json(withAnalysisRuntimeMeta(empty));
+        }
+
+        console.log(`[email-analysis] Extracted ${emailText.length} chars from ${file.original_name}`);
+        const fallback = buildHeuristicAnalysisFromText(emailText, {});
+        const aiResult = await analyzeTextWithAi(emailText, fallback, parties.protectedPersonName, parties.opposingPartyName);
+        const focused = applyProtectedPersonFocus(aiResult, emailText, parties.protectedPersonName, parties.opposingPartyName);
+        const enriched = enrichAnalysisForReport(focused, {
+          rawText: emailText,
+          protectedAliases: parsePartyAliases(parties.protectedPersonName).aliases,
+          opposingAliases: parsePartyAliases(parties.opposingPartyName).aliases,
+          textQuality: buildTextQualityMeta(emailText, {
+            sourceType: "E-Mail",
+            extractionMethod: ext === "eml" ? "EML-Parser" : "MSG-Extraktion",
+            ocrUsed: false
+          }),
+          methodology: "E-Mail-Textanalyse mit parteibezogener Positiv-/Negativzählung."
+        });
+        await saveDocumentAnalysis(file.id, enriched);
+        return res.json(withAnalysisRuntimeMeta(enriched));
+      } catch (emailErr) {
+        console.error("Email parse error:", emailErr.message);
+        const fallbackResult = {
+          status: "error",
+          title: "",
+          author: "",
+          authoredDate: "",
+          people: [],
+          disadvantagedPerson: "",
+          message: "E-Mail konnte nicht analysiert werden: " + emailErr.message
+        };
+        await saveDocumentAnalysis(file.id, fallbackResult);
+        return res.json(withAnalysisRuntimeMeta(fallbackResult));
+      }
+    }
+
     // Preserve existing metadata (especially video date) on refresh
     const existingAnalysis = await loadStoredDocumentAnalysis(file.id);
     const unsupported = {
