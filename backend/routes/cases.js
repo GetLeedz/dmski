@@ -2538,7 +2538,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "{",
       '  "titel": "", "verfasser": "", "datum": "", "absender": "",',
       '  "documentType": "E-Mail|Brief|Verfuegung|Gutachten|Bericht|Chat",',
-      '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion"}],',
+      '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion", "sentiment": "positiv|negativ|neutral"}],',
       '  "benachteiligte_person": {"positiv": 0, "negativ": 0},',
       '  "zusammenfassung": "Max 2 Saetze"',
       "}",
@@ -2546,8 +2546,12 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
     ].join("\n");
 
   const userText = [
-    "Analysiere dieses Dokument-Bild. NUR sichtbare Inhalte extrahieren.",
-    "KEINE Fokus-/Gegenpartei-Keywords als Personen hinzufuegen wenn nicht im Bild sichtbar!"
+    `Analysiere dieses Bild. Dateiname: "${originalName}".`,
+    "Falls es ein Dokument ist: Extrahiere Titel, Verfasser, Datum, Personen.",
+    "Falls es ein Foto ist: Beschreibe kurz was zu sehen ist in der Zusammenfassung.",
+    "Nutze den Dateinamen als Hinweis fuer Kontext (z.B. erwaehnte Personen).",
+    "Personen die im Dateinamen oder im Bild erkennbar sind, in personen auffuehren.",
+    "KEINE Fokus-/Gegenpartei-Keywords als Personen hinzufuegen wenn nicht im Bild oder Dateinamen sichtbar!"
   ].join("\n");
 
   try {
