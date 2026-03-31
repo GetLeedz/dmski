@@ -2525,37 +2525,64 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "NUR JSON."
     ].join("\n")
     : [
-      "Du bist ein forensischer Dokumenten-Analyst. Lies das Bild GENAU und extrahiere NUR was SICHTBAR ist.",
-      "Erfinde NICHTS. Nur sichtbare Inhalte.",
+      "Du bist ein forensischer Dokumenten-Analyst fuer Familienrecht.",
+      "Deine Aufgabe: Lies das Bild VOLLSTAENDIG, auch wenn es schraeg fotografiert ist.",
+      "Lies JEDEN sichtbaren Text Zeile fuer Zeile. Erfinde NICHTS.",
       "",
-      "DOKUMENTTYP: E-Mail (Von/An/Betreff Header), Brief (Briefkopf), Verfuegung, Gutachten, Bericht, Chat.",
-      "E-MAIL: Von: → verfasser (Name), Gesendet: → datum, An: → Person, Betreff: → titel, Signatur → absender.",
-      "PERSONEN: NUR Namen die SICHTBAR im Bild stehen. KEINE Fokus-/Gegenpartei-Keywords als Personen hinzufuegen!",
+      "### DOKUMENTERKENNUNG:",
+      "- Briefkopf/Logo → absender (z.B. 'UKBB Ergotherapie', 'KESB Leimental')",
+      "- Datum im Text → datum (TT.MM.JJJJ)",
+      "- Ueberschrift/Betreff → titel",
+      "- Unterzeichner/Ersteller → verfasser",
+      "- Dokumenttyp: Bericht, Brief, E-Mail, Verfuegung, Gutachten, Protokoll, Eingabe, Urteil, Chat",
       "",
-      `KONTEXT: Fokus-Partei = [${focusKeywords}], Gegenpartei = [${referenceKeywords}]. NUR fuer Sentiment, NICHT als Personen!`,
+      "### PERSONEN:",
+      "- Extrahiere ALLE Personen die NAMENTLICH im Text vorkommen (Vorname Nachname).",
+      "- Bestimme die Rolle jeder Person aus dem Kontext (z.B. Kind, Ergotherapeut, Arzt, Mutter, Vater, Beistand).",
+      "- KEINE Fokus-/Gegenpartei-Keywords als Personen hinzufuegen wenn nicht im Text sichtbar!",
+      "- Auch Empfaenger (z.B. 'Sehr geehrter Herr Dr. med. Brotzmann') als Person auffuehren.",
       "",
-      "JSON-SCHEMA:",
+      "### SENTIMENT PRO PERSON:",
+      "- 'positiv' = Person wird im Dokument wohlwollend/unterstuetzend gegenueber der Fokus-Partei dargestellt",
+      "- 'negativ' = Person schreibt kritisch/belastend gegen die Fokus-Partei",
+      "- 'neutral' = Kinder, neutrale Fachpersonen, Empfaenger ohne Wertung",
+      "",
+      "### FORENSISCHE ZAEHLUNG:",
+      `- FOKUS-PARTEI = [${focusKeywords}]`,
+      `- GEGENPARTEI = [${referenceKeywords}]`,
+      "- Zaehle positive Aussagen ueber die Fokus-Partei: Lob, Kooperation, Fortschritte, gute Elternarbeit → benachteiligte_person.positiv",
+      "- Zaehle negative Aussagen: Kritik, Defizite, Vorwuerfe, mangelnde Kooperation → benachteiligte_person.negativ",
+      "- Beispiel: 'Die Eltern nahmen an beiden Elternabenden teil' = positiv (+1)",
+      "- Beispiel: 'Timur konnte seine Ziele erreichen' = positiv (+1) fuer Eltern wenn Fokus-Partei = Vater/Mutter",
+      "",
+      "### ZUSAMMENFASSUNG (FAZIT):",
+      "- Schreibe 2-3 Saetze: Was ist der Kerninhalt? Welche Relevanz fuer die Fokus-Partei?",
+      "- Bewerte ob das Dokument die Fokus-Partei eher unterstuetzt oder belastet.",
+      "",
+      "### JSON-SCHEMA (exakt einhalten):",
       "{",
-      '  "titel": "", "verfasser": "", "datum": "", "absender": "",',
-      '  "documentType": "E-Mail|Brief|Verfuegung|Gutachten|Bericht|Chat",',
+      '  "titel": "Dokumenttitel oder Betreff",',
+      '  "verfasser": "Name des Verfassers/Unterzeichners",',
+      '  "datum": "TT.MM.JJJJ",',
+      '  "absender": "Institution/Organisation",',
+      '  "documentType": "Bericht|Brief|E-Mail|Verfuegung|Gutachten|Protokoll|Eingabe|Urteil|Chat",',
       '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion", "sentiment": "positiv|negativ|neutral"}],',
       '  "benachteiligte_person": {"positiv": 0, "negativ": 0},',
-      '  "zusammenfassung": "Max 2 Saetze"',
+      '  "zusammenfassung": "2-3 Saetze Fazit mit forensischer Einordnung"',
       "}",
-      "NUR JSON. Kein Markdown."
+      "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
     ].join("\n");
 
   const userText = [
-    `Analysiere dieses Bild. Dateiname: "${originalName}".`,
-    "Falls es ein Dokument ist: Extrahiere Titel, Verfasser, Datum, Personen.",
-    "Falls es ein Foto ist: Beschreibe kurz was zu sehen ist in der Zusammenfassung.",
-    "Nutze den Dateinamen als Hinweis fuer Kontext (z.B. erwaehnte Personen).",
-    "Personen die im Dateinamen oder im Bild erkennbar sind, in personen auffuehren.",
-    "KEINE Fokus-/Gegenpartei-Keywords als Personen hinzufuegen wenn nicht im Bild oder Dateinamen sichtbar!"
+    `Analysiere dieses Dokument-Bild gruendlich. Dateiname: "${originalName}".`,
+    "Lies den GESAMTEN sichtbaren Text, auch wenn das Bild schraeg oder perspektivisch verzerrt ist.",
+    "Extrahiere Titel, Verfasser, Datum, Institution, alle Personen mit Rollen.",
+    "Zaehle positive und negative Aussagen ueber die Fokus-Partei.",
+    "Schreibe ein aussagekraeftiges Fazit (zusammenfassung)."
   ].join("\n");
 
   try {
-    const responseText = await callClaudeVision(systemPrompt, userText, base64, mimeType || "image/png", 1500);
+    const responseText = await callClaudeVision(systemPrompt, userText, base64, mimeType || "image/png", 2500);
     const parsed = extractJsonObject(responseText || "");
 
     if (!parsed || typeof parsed !== "object") {
