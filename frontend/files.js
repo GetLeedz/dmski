@@ -2107,6 +2107,10 @@ function updateModalZoom(value) {
 }
 
 function closePreviewModal() {
+  // Move focus out before hiding to avoid aria-hidden focus warning
+  if (previewModal.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
   previewModal.classList.add("hidden");
   previewModal.setAttribute("aria-hidden", "true");
   previewModalViewport.innerHTML = "";
