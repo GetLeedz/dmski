@@ -1099,16 +1099,14 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   });
 
   const rows = sorted.map(person => {
-    const sentiment   = derivePersonSentiment(person, analysis, protectedPerson, opposingParty, authorSentimentMap);
     const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
     const displayName = formatNameFirstLast(person.name);
-    const sentimentClass = sentiment === "positive" ? "is-positive"
-      : sentiment === "negative" ? "is-negative" : "is-neutral";
+    const affil = normalizeTitleText(person.affiliation || "");
     return `
       <tr class="akteure-row">
         <td class="akteure-col-name">${escapeHtml(displayName)}</td>
+        <td class="akteure-col-affil">${escapeHtml(affil)}</td>
         <td class="akteure-col-role">${escapeHtml(roleLabel)}</td>
-        <td class="akteure-col-sentiment"><span class="akteure-sentiment-dot ${sentimentClass}"></span></td>
       </tr>
     `;
   }).join("");
@@ -1123,14 +1121,14 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
           <table class="akteure-personen">
             <colgroup>
               <col class="col-name" />
-              <col class="col-funktion" />
-              <col class="col-sentiment" />
+              <col class="col-affil" />
+              <col class="col-rolle" />
             </colgroup>
             <thead>
               <tr>
                 <th>Person</th>
+                <th>Zugehörigkeit</th>
                 <th>Funktion</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -1367,9 +1365,24 @@ async function refreshAnalysisReport(files = allFiles) {
         mergedPeople.push({ name: normalizeTitleText(name), affiliation: affiliation || "Privatperson" });
       };
 
+      // Collect all authors so we can exclude them from the person list
+      // (Verfasser is shown in its own field — no duplication needed)
+      const authorKeys = new Set();
+      for (const a of analyses) {
+        if (!a || a.status === "auth-redirect") continue;
+        const authorName = normalizeTitleText(a.author || "");
+        if (authorName && authorName.toLowerCase() !== "unbekannt") {
+          authorKeys.add(dedupKey(authorName));
+          const stripped = authorName.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim();
+          if (stripped) authorKeys.add(dedupKey(stripped));
+        }
+      }
+
       for (const a of analyses) {
         if (!a || a.status === "auth-redirect") continue;
         for (const p of (Array.isArray(a.people) ? a.people : [])) {
+          const key = dedupKey(p.name || "");
+          if (authorKeys.has(key)) continue;
           addPerson(p.name || "", p.affiliation || "Privatperson");
         }
       }

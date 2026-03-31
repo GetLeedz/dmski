@@ -4828,9 +4828,9 @@ table.akteure-personen {
   font-family: var(--font, "Inter"), system-ui, sans-serif;
 }
 
-table.akteure-personen col.col-name      { width: 25%; }
-table.akteure-personen col.col-funktion  { width: 55%; }
-table.akteure-personen col.col-sentiment { width: 20%; }
+table.akteure-personen col.col-name   { width: 40%; }
+table.akteure-personen col.col-affil  { width: 40%; }
+table.akteure-personen col.col-rolle  { width: 20%; }
 
 table.akteure-personen thead {
   background: var(--navy, #1A2B3C);

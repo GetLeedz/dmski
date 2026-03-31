@@ -962,9 +962,9 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
   const seen = new Set();
   const list = [];
   const blocked = blockedNames instanceof Set ? blockedNames : new Set();
-  // NOTE: Author is NOT excluded from the person list. The KI can
-  // misclassify the recipient as author, which would hide legitimate people.
-  // The UI shows the VERFASSER field separately – duplicates are acceptable.
+  // Exclude author from person list — Verfasser is shown in its own UI field.
+  const authorKey = normalizeWhitespace(authorName).toLowerCase();
+  const strippedAuthorKey = authorKey.replace(/^(prof\.?\s*)?(dr\.?\s*(med\.?\s*)?)?/i, "").trim();
 
   for (const value of Array.isArray(values) ? values : []) {
     const inputName = typeof value === "string" ? value : value?.name;
@@ -1002,7 +1002,10 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
     }
 
     const key = normalized.toLowerCase();
-    if (blocked.has(key) || seen.has(key)) {
+    const strippedKey = normalized.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim().toLowerCase();
+    const isAuthor = (authorKey && (key === authorKey || strippedKey === strippedAuthorKey))
+      || (strippedAuthorKey && strippedAuthorKey.length >= 3 && (key.endsWith(strippedAuthorKey) || strippedKey === strippedAuthorKey));
+    if (blocked.has(key) || isAuthor || seen.has(key)) {
       continue;
     }
 
@@ -1974,7 +1977,7 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
     ...extractPeopleFromStructuredRows(rawText, new Set())
   ];
 
-  const normalizedPeople = normalizePeopleDetailed(mergedPeople, rawText, new Set(), "");
+  const normalizedPeople = normalizePeopleDetailed(mergedPeople, rawText, new Set(), correctedAuthor);
 
   const explicitDisadvantaged = normalizeWhitespace(disadvantagedPerson);
   const computedDisadvantaged = explicitDisadvantaged || extractDisadvantagedPerson(rawText, normalizedPeople, correctedAuthor);
@@ -2662,19 +2665,44 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "- Zaehle positive Aussagen ueber die Fokus-Partei → benachteiligte_person.positiv",
       "- Zaehle negative Aussagen → benachteiligte_person.negativ",
       "",
-      "### SCHRITT 5 – MANIPULATIONSMUSTER (Narzissmus-Profiling):",
-      "Pruefe ob das Dokument narzisstische Manipulationsmuster enthaelt:",
-      "- DARVO: Deny, Attack, Reverse Victim & Offender (Taeter stellt sich als Opfer dar)",
-      "- Gaslighting: Realitaetsverzerrung, Vorwuerfe ohne Belege, Verdrehung von Tatsachen",
-      "- Triangulation: Behoerden/Dritte werden instrumentalisiert gegen die andere Partei",
-      "- Isolation: Systematisches Abschneiden von Kontakten/Ressourcen",
-      "- Schuldzuweisung: Alles ist die Schuld der anderen Person, keine Selbstreflexion",
-      "- Drohung: Rechtliche Schritte, Behoerdeneinschaltung als Druckmittel",
-      "Wenn Muster erkannt: Beschreibe sie konkret mit Zitat aus dem Text.",
+      "### SCHRITT 5 – PSYCHOLOGISCHE MANIPULATION (FBI-Profiling + Narzissmus-Analyse):",
+      "Analysiere das Dokument mit FBI Behavioral Analysis und klinischer Narzissmus-Diagnostik.",
+      "Pruefe auf diese Manipulationsmuster:",
       "",
-      "### SCHRITT 6 – ZUSAMMENFASSUNG:",
-      "2-3 Saetze: Kerninhalt + Relevanz fuer die Fokus-Partei.",
-      "Wenn Manipulationsmuster erkannt: Benenne sie explizit im Fazit.",
+      "DARVO (Deny-Attack-Reverse Victim/Offender):",
+      "- Verfasser leugnet eigenes Fehlverhalten, greift die andere Partei an,",
+      "  stellt sich selbst als Opfer dar. Klassisches Taeter-Opfer-Umkehr-Muster.",
+      "",
+      "GASLIGHTING:",
+      "- Verdrehung von Tatsachen, Leugnung dokumentierter Ereignisse,",
+      "  Unterstellung von Wahrnehmungsstoerungen beim Gegenueber.",
+      "",
+      "TRIANGULATION:",
+      "- Instrumentalisierung von Behoerden, Kindern oder Dritten als Waffe",
+      "  gegen die andere Partei. Einschaltung von Institutionen als Druckmittel.",
+      "",
+      "PROJEKTION:",
+      "- Eigenes Fehlverhalten wird dem anderen vorgeworfen.",
+      "  'Du zahlst nicht' (obwohl man selbst blockiert). 'Du eskalierst' (waehrend man droht).",
+      "",
+      "SCHULDZUWEISUNG / Blame-Shifting:",
+      "- Alles ist die Schuld der anderen Person. Null Selbstreflexion.",
+      "  'Deswegen sind die Behoerden jetzt zustaendig' = Drohung + Schuldzuweisung.",
+      "",
+      "DROHUNG / Coercive Control:",
+      "- Rechtliche Schritte, Behoerdeneinschaltung, finanzielle Drohungen als Machtmittel.",
+      "",
+      "Wenn Muster erkannt: Beschreibe sie konkret mit ZITAT aus dem Text.",
+      "Benenne das Muster beim Namen und erklaere die psychologische Dynamik.",
+      "",
+      "### SCHRITT 6 – ZUSAMMENFASSUNG (Forensisches Fazit):",
+      "3-5 Saetze mit klinischer Praezision:",
+      "1. Was ist der Kerninhalt des Dokuments?",
+      "2. Welche Manipulationsmuster wurden erkannt? Benenne sie EXPLIZIT.",
+      "3. Wie wirkt sich das Dokument auf die Fokus-Partei aus?",
+      "Wenn Manipulation erkannt: Beschreibe die psychologische Dynamik konkret.",
+      "Beispiel: 'Alexandra Schifferli zeigt klassisches DARVO-Muster: Sie wirft Ayhan vor...",
+      "waehrend sie selbst die Einigung blockiert. Dies ist typisch fuer narzisstische Projektion.'",
       "",
       "### JSON-SCHEMA (exakt einhalten):",
       "{",
@@ -3406,12 +3434,18 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
 
   // Only re-normalize if we have rawText (PDF/text analysis).
   // For image analysis (rawText empty), people are already normalized by the Vision pipeline.
+  const authorForFilter = normalizeWhitespace(output.author || "");
   const normalizedPeople = rawText
-    ? normalizePeopleDetailed(output.people, rawText, new Set(), "")
+    ? normalizePeopleDetailed(output.people, rawText, new Set(), authorForFilter)
     : output.people.filter(p => {
         if (!p) return false;
-        const name = (typeof p === "string" ? p : p.name || "").trim();
-        return !!name;
+        const name = normalizeWhitespace(typeof p === "string" ? p : p.name || "");
+        if (!name) return false;
+        // Exclude author from people list
+        const nameKey = name.toLowerCase();
+        const authorKey = authorForFilter.toLowerCase();
+        const strippedAuthor = authorKey.replace(/^(prof\.?\s*)?(dr\.?\s*(med\.?\s*)?)?/i, "").trim();
+        return nameKey !== authorKey && nameKey !== strippedAuthor;
       });
   const existing = new Map();
   for (const item of output.impactRanking) {
