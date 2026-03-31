@@ -1947,14 +1947,14 @@ function isLikelyValidPersonLabel(value) {
   }
 
   const capitalizedWord = /^[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ’’-]{1,}$/;
-  // Allow titles: Dr., Prof., med., lic.
-  const titleWord = /^[A-Za-z]{2,5}\.$/;
+  // Allow titles: Dr, Prof, med, lic, RA (dots already stripped by normalizePersonName)
+  const titleAbbrev = new Set(["dr", "prof", "med", "lic", "ra", "mag", "dipl", "ing"]);
 
   if (words.length === 1) {
     return capitalizedWord.test(words[0]);
   }
 
-  return words.every((word) => capitalizedWord.test(word) || titleWord.test(word));
+  return words.every((word) => capitalizedWord.test(word) || titleAbbrev.has(word.toLowerCase()));
 }
 
 // Resolve single-token names against case party aliases
