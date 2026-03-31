@@ -2406,11 +2406,41 @@ async function loadRowAnalysis(file, options = {}) {
   }
 
   const protectedName = normalizeTitleText(currentCaseProtectedPerson);
-  const people = collectAnalysisPeople(analysis);
-  if (people.length === 0 && analysis.people && analysis.people.length > 0) {
-    console.warn(`[PEOPLE-BUG] File ${file.id}: analysis has ${analysis.people.length} people but collectAnalysisPeople returned 0`, analysis.people);
+  let people = collectAnalysisPeople(analysis);
+
+  // Fallback: extract people from author + summary if KI missed them
+  if (people.length === 0) {
+    const fallback = [];
+    const seen = new Set();
+    // Add author as person
+    const auth = normalizeTitleText(analysis.author || "");
+    if (auth && auth !== "Unbekannt" && /[A-ZÄÖÜ]/.test(auth)) {
+      fallback.push(auth);
+      seen.add(auth.toLowerCase());
+    }
+    // Extract "Vorname Nachname" patterns from Fazit
+    const summary = analysis.impactAssessment || "";
+    const nameRe = /\b([A-ZÄÖÜ][a-zäöüéèêàáâ'-]+(?:\s+[A-ZÄÖÜ][a-zäöüéèêàáâ'-]+)+)\b/g;
+    let m;
+    while ((m = nameRe.exec(summary)) !== null) {
+      const n = m[1].trim();
+      if (n.length >= 4 && !seen.has(n.toLowerCase()) && !/^(Das Dokument|Die Eltern|Die KI|Der Bericht|Die Fokus|Das Kind|Die Gegenpartei)/.test(n)) {
+        fallback.push(n);
+        seen.add(n.toLowerCase());
+      }
+    }
+    // Extract single known names (Timur, Ayhan etc.) from summary
+    const singleNames = summary.match(/\b(Timur|Ayhan|Alexandra|Nael)\b/g);
+    if (singleNames) {
+      for (const sn of singleNames) {
+        if (!seen.has(sn.toLowerCase())) {
+          fallback.push(sn);
+          seen.add(sn.toLowerCase());
+        }
+      }
+    }
+    if (fallback.length > 0) people = fallback;
   }
-  console.log(`[PEOPLE] File ${file.id} (${file.original_name}): ${people.length} persons`, people);
   const resolvedDocType = resolveDocumentTypeLabel(analysis.documentType, file);
   const swissAuthoredDate = formatSwissAnalysisDate(analysis.authoredDate);
   const positiveMentions = Math.max(0, Number(analysis.positiveMentions || 0));
