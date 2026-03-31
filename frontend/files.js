@@ -2006,6 +2006,7 @@ async function getDocumentAnalysis(file, options = {}) {
         negativeMentions: Number.isFinite(Number(payload.negativeMentions)) ? Number(payload.negativeMentions) : 0,
         opposingPositiveMentions: Number.isFinite(Number(payload.opposingPositiveMentions)) ? Number(payload.opposingPositiveMentions) : 0,
         opposingNegativeMentions: Number.isFinite(Number(payload.opposingNegativeMentions)) ? Number(payload.opposingNegativeMentions) : 0,
+        manipulationsmuster: Array.isArray(payload.manipulationsmuster) ? payload.manipulationsmuster : [],
         message: normalizeTitleText(payload.message),
         analysisEngineVersion: normalizeTitleText(payload.analysisEngineVersion),
         backendStartedAt: normalizeTitleText(payload.backendStartedAt),
