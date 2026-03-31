@@ -646,7 +646,8 @@ function looksLikePersonName(value) {
     return false;
   }
 
-  return parts.every((part) => /^(?:\p{Lu}[\p{Ll}\p{M}'-]+|\p{Lu}[\p{Ll}\p{M}'-]*\.)$/u.test(part));
+  // Allow lowercase abbreviations like "med.", "von", "de" in names
+  return parts.every((part) => /^(?:\p{Lu}[\p{Ll}\p{M}'-]+|\p{Lu}[\p{Ll}\p{M}'-]*\.|\p{Ll}{2,4}\.)$/u.test(part));
 }
 
 function isAliasPerson(value) {
@@ -1911,7 +1912,8 @@ function buildFallbackAnalysis({ title = "", author = "", authoredDate = "", doc
   // (normalizePeopleDetailed excludes the author to avoid duplicates, but a
   // Berufsbeistand/Anwalt/Gerichtspräsident writing the document SHOULD appear in the
   // Akteure list with their function shown in the UI).
-  if (correctedAuthor && looksLikePersonName(correctedAuthor)) {
+  const strippedAuthor = correctedAuthor.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim();
+  if (correctedAuthor && (looksLikePersonName(correctedAuthor) || looksLikePersonName(strippedAuthor))) {
     const authorKeyLower = correctedAuthor.toLowerCase();
     const alreadyInList = normalizedPeople.some(
       (p) => normalizeWhitespace(p.name).toLowerCase() === authorKeyLower
@@ -2657,6 +2659,31 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
         title: "", author: "", authoredDate: "", people: [], disadvantagedPerson: "",
         message: normalized.message || "Kein klarer Inhalt im Bild erkannt."
       };
+    }
+
+    // ── Fallback: extract people from verfasser + summary if KI missed them ──
+    if (!normalized.people || normalized.people.length === 0) {
+      const fallbackPeople = [];
+      // Add verfasser as person
+      if (normalized.author && looksLikePersonName(normalized.author)) {
+        fallbackPeople.push({ name: normalized.author, affiliation: inferAffiliationForPerson("", normalized.author) || "Verfasser" });
+      }
+      // Extract names from zusammenfassung/impactAssessment
+      const summaryText = normalized.impactAssessment || "";
+      const namePattern = /\b([A-ZÄÖÜ][a-zäöüéèêàáâ'-]+(?:\s+[A-ZÄÖÜ][a-zäöüéèêàáâ'-]+)+)\b/g;
+      let nameMatch;
+      const seen = new Set(fallbackPeople.map(p => p.name.toLowerCase()));
+      while ((nameMatch = namePattern.exec(summaryText)) !== null) {
+        const candidate = nameMatch[1].trim();
+        if (candidate.length >= 4 && !seen.has(candidate.toLowerCase()) && looksLikePersonName(candidate)) {
+          seen.add(candidate.toLowerCase());
+          fallbackPeople.push({ name: candidate, affiliation: "Privatperson" });
+        }
+      }
+      if (fallbackPeople.length > 0) {
+        console.log(`[vision-fallback] Extracted ${fallbackPeople.length} people from metadata:`, fallbackPeople.map(p => p.name));
+        normalized.people = fallbackPeople;
+      }
     }
 
     return normalized;
