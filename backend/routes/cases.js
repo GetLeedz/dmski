@@ -2652,29 +2652,37 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "E) TEXTKÖRPER: Namentlich genannte Personen mit Kontext → Personen",
       "F) UNTERZEICHNER: Unterschrift, Ersteller → verfasser",
       "",
-      "### SCHRITT 2 – PERSONEN-EXTRAKTION (NER):",
-      "Extrahiere JEDE namentlich genannte Person. Pruefe JEDE Zone:",
+      "### SCHRITT 2 – PERSONEN-EXTRAKTION:",
       "",
-      "MUSTER A – Empfaenger/Anrede:",
-      "- 'Sehr geehrter Herr Dr. med. Muster' → {name: 'Dr. med. Muster', rolle: 'Empfaenger'}",
-      "- Adressblock: Name nach Titel (Dr./Prof./lic./RA) extrahieren",
+      "KRITISCHE REGEL: Das Array 'personen' enthaelt AUSSCHLIESSLICH Eigennamen",
+      "von echten Menschen. Nutze dein semantisches Verstaendnis:",
       "",
-      "MUSTER B – Dokumentgegenstand:",
-      "- Person UEBER DIE das Dokument handelt (Patient, Kind, Betroffener)",
-      "- Keywords: 'geb.', 'geboren', 'PID', 'FID', 'Diagnose', 'Patient'",
-      "- 'Nachname Vorname, geb. TT.MM.JJJJ, m/f' → {name: 'Vorname Nachname', rolle: 'Kind'}",
-      "- WICHTIG: NUR den Namen ohne Geburtsdatum/Geschlecht!",
+      "WAS IST EIN EIGENNAME? → Vorname und/oder Nachname eines Menschen.",
+      "  Richtig: 'Alexandra Schifferli', 'Ayhan Ergen', 'Dr. med. Brotzmann', 'Timur'",
+      "  Falsch:  'Triangulation', 'Coercive Control', 'UKBB Ergotherapie', 'Das Dokument'",
       "",
-      "MUSTER C – Kontextuelle Erwaehnung:",
-      "- 'Timur wurde fuer das Training angemeldet' → Timur ist bereits erfasst",
-      "- 'Die Eltern nahmen teil' → Wenn Elternnamen bekannt, als Person erfassen",
-      "- Unterzeichner, Sachbearbeiter, Therapeuten namentlich erfassen",
+      "WO FINDEST DU NAMEN?",
+      "  - Anrede: 'Hallo Ayhan,' → Ayhan ist eine Person",
+      "  - Adressblock: 'An: ergen@bluewin.ch, Alexandra Schifferli'",
+      "  - Betreffzeile mit Name: 'Schifferli Timur, geb. 27.03.2013'",
+      "  - Unterschrift: 'Alexandra' am Ende = Verfasser",
+      "  - Im Text namentlich erwaehnt: 'Timur nahm an allen Sitzungen teil'",
       "",
-      "PFLICHT: Die personen-Liste muss MINDESTENS den Dokumentgegenstand UND",
-      "den Empfaenger enthalten, wenn diese im Text sichtbar sind!",
-      "NUR echte Menschennamen! KEINE Institutionen, Abteilungen, Themen, Dokumenttitel.",
-      "Falsch: 'UKBB Ergotherapie' | Richtig: nur den Menschen, nicht die Organisation.",
-      `Bestimme die Rolle korrekt: Wenn Person zur FOKUS-PARTEI [${focusKeywords}] gehoert, nutze Rolle aus dem Kontext (Vater/Mutter/Kind).`,
+      "WAS GEHOERT NICHT IN PERSONEN?",
+      "  - Psychologische Begriffe (Triangulation, Gaslighting, DARVO, etc.) → gehoeren in 'manipulationsmuster'",
+      "  - Institutionen (UKBB, KESB, Gericht) → gehoeren in 'absender'",
+      "  - Dokumenttitel → gehoeren in 'titel'",
+      "  - Rollen ohne Namen (die Mutter, der Vater) → NUR wenn der Name bekannt ist",
+      "",
+      "NAMENSFORMAT: {name: 'Vorname Nachname', rolle: 'Funktion aus dem Kontext'}",
+      "  - Kein Geburtsdatum im Namen, kein Geschlecht, keine Institution",
+      "  - rolle = was die Person IST: Vater, Mutter, Kind, Arzt, Anwalt, Empfaenger, etc.",
+      `  - Wenn Person zur FOKUS-PARTEI [${focusKeywords}] gehoert: Rolle aus Kontext (z.B. Vater)`,
+      `  - Wenn Person zur GEGENPARTEI [${referenceKeywords}] gehoert: Rolle aus Kontext (z.B. Mutter)`,
+      "",
+      "PFLICHT: Extrahiere ALLE namentlich genannten Personen im Dokument.",
+      "Auch die Person UEBER DIE geschrieben wird (Patient/Kind/Betroffener).",
+      "Auch Personen aus informellen Anreden ('Hallo Ayhan' → Ayhan).",
       "",
       "### SCHRITT 3 – SENTIMENT PRO PERSON:",
       "- 'positiv' = unterstuetzend gegenueber der Fokus-Partei",
@@ -2786,118 +2794,25 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       };
     }
 
-    // ── NER Post-Processor: enrich/extract people from full response ──
-    // Runs ALWAYS (not just when people is empty) to catch what KI missed.
-    {
-      const existing = Array.isArray(normalized.people) ? normalized.people : [];
-      const seen = new Set(existing.map(p => normalizeWhitespace(p.name || "").toLowerCase()));
-      // Also index stripped versions for fuzzy dedup (Dr. med. Brotzmann ↔ Brotzmann)
-      for (const p of existing) {
-        const stripped = normalizeWhitespace(p.name || "").replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim().toLowerCase();
-        if (stripped) seen.add(stripped);
-      }
-      const additions = [];
-      const fullText = [
-        normalized.title || "",
-        normalized.impactAssessment || "",
-        responseText || ""
-      ].join(" ");
-
-      // Pattern A1: "Sehr geehrte(r) Herr/Frau [Title] Name" → Empfaenger
-      const formalRe = /Sehr\s+geehrte[rsn]?\s+(?:Frau|Herr)\s+((?:(?:Prof|Dr|med|lic|RA|Mag)\.?\s*)*\p{Lu}[\p{Ll}\p{M}'-]{2,}(?:\s+\p{Lu}[\p{Ll}\p{M}'-]{2,})*)/giu;
-      let sm;
-      while ((sm = formalRe.exec(fullText)) !== null) {
-        const raw = normalizeWhitespace(sm[1]).replace(/,?\s*geb\.?\s*\d[\d.\-/\s]*/gi, "").trim();
-        const key = raw.toLowerCase();
-        const stripped = raw.replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim().toLowerCase();
-        if (!seen.has(key) && !seen.has(stripped) && raw.length >= 3) {
-          seen.add(key);
-          if (stripped) seen.add(stripped);
-          additions.push({ name: raw, affiliation: "Empfänger", sentiment: "neutral" });
-        }
-      }
-
-      // Pattern A2: "Hallo/Liebe(r)/Hi/Hey Name" → Empfaenger (informal)
-      const informalRe = /(?:Hallo|Liebe[rsn]?|Gr(?:ü|ue)(?:zi|ezi|ss|ße)|Hi|Hey|Guten\s+Tag)\s+(\p{Lu}[\p{Ll}\p{M}'-]{2,}(?:\s+\p{Lu}[\p{Ll}\p{M}'-]{2,})*)\s*[,!]?/giu;
-      let im;
-      while ((im = informalRe.exec(fullText)) !== null) {
-        const raw = normalizeWhitespace(im[1]);
-        const key = raw.toLowerCase();
-        if (!seen.has(key) && raw.length >= 3) {
-          seen.add(key);
-          additions.push({ name: raw, affiliation: "Privatperson", sentiment: "neutral" });
-        }
-      }
-
-      // Pattern B: "Name, geb. DD.MM.YYYY" → Dokumentgegenstand
-      const gebRe = /\b(\p{Lu}[\p{Ll}\p{M}'-]+\s+\p{Lu}[\p{Ll}\p{M}'-]+)\s*,\s*geb\.?\s*\d{2}[.\-/]\d{2}[.\-/]\d{4}/giu;
-      let gm;
-      while ((gm = gebRe.exec(fullText)) !== null) {
-        const raw = normalizeWhitespace(gm[1]);
-        const key = raw.toLowerCase();
-        if (!seen.has(key) && raw.length >= 4) {
-          seen.add(key);
-          additions.push({ name: raw, affiliation: "Privatperson", sentiment: "neutral" });
-        }
-      }
-
-      // Pattern C: General "Firstname Lastname" from response text
-      const nameRe = /\b(\p{Lu}[\p{Ll}\p{M}'-]+\s+\p{Lu}[\p{Ll}\p{M}'-]+)\b/gu;
-      let nm;
-      while ((nm = nameRe.exec(fullText)) !== null) {
-        const raw = normalizeWhitespace(nm[1]);
-        const key = raw.toLowerCase();
-        if (!seen.has(key) && raw.length >= 4 && looksLikePersonName(raw)) {
-          seen.add(key);
-          additions.push({ name: raw, affiliation: inferAffiliationForPerson(fullText, raw) || "Privatperson" });
-        }
-      }
-
-      // Pattern D: Structured rows (e.g. "Schifferli Timur, geb. 27.03.2013")
-      const structuredNames = extractPeopleFromStructuredRows(fullText, new Set());
-      for (const sName of structuredNames) {
-        const name = typeof sName === "string" ? sName : sName.name || "";
-        const key = name.toLowerCase();
-        if (key && !seen.has(key)) {
-          seen.add(key);
-          additions.push({ name, affiliation: "Privatperson" });
-        }
-      }
-
-      if (additions.length > 0) {
-        console.log(`[vision-ner] Enriched with ${additions.length} people:`, additions.map(p => p.name));
-        normalized.people = [...existing, ...additions];
-      }
-    }
-
-    // ── Fuzzy dedup: merge "Dr. Brotzmann" + "Dr. med. Brotzmann" ──
-    if (normalized.people && normalized.people.length > 1) {
-      const deduped = [];
-      const usedIndices = new Set();
-      for (let i = 0; i < normalized.people.length; i++) {
-        if (usedIndices.has(i)) continue;
-        let best = normalized.people[i];
-        const bestStripped = normalizeWhitespace(best.name || "").replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim().toLowerCase();
-        for (let j = i + 1; j < normalized.people.length; j++) {
-          if (usedIndices.has(j)) continue;
-          const other = normalized.people[j];
-          const otherStripped = normalizeWhitespace(other.name || "").replace(/^(Prof\.?\s*)?(Dr\.?\s*(med\.?\s*)?)?/i, "").trim().toLowerCase();
-          // Fuzzy match: same surname after stripping titles
-          if (bestStripped && otherStripped && (bestStripped === otherStripped || bestStripped.endsWith(otherStripped) || otherStripped.endsWith(bestStripped))) {
-            usedIndices.add(j);
-            // Keep the longer/more complete name
-            if ((other.name || "").length > (best.name || "").length) {
-              best = { ...best, name: other.name };
-            }
-            // Keep non-Privatperson affiliation
-            if (best.affiliation === "Privatperson" && other.affiliation !== "Privatperson") {
-              best.affiliation = other.affiliation;
-            }
-          }
-        }
-        deduped.push(best);
-      }
-      normalized.people = deduped;
+    // ── Clean LLM output: strip metadata from names, dedup ──
+    if (Array.isArray(normalized.people)) {
+      normalized.people = normalized.people
+        .map(p => {
+          let name = normalizeWhitespace(p.name || "");
+          // Strip birth dates/gender that LLM may have left in the name
+          name = name.replace(/,?\s*geb\.?\s*\d[\d.\-/\s]*/gi, "").replace(/,?\s*\b[mfw]\s*$/i, "").trim();
+          if (!name) return null;
+          return { ...p, name };
+        })
+        .filter(Boolean);
+      // Simple dedup by lowercase name
+      const seen = new Set();
+      normalized.people = normalized.people.filter(p => {
+        const key = normalizeWhitespace(p.name).toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     }
 
     return normalized;

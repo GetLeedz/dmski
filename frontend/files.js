@@ -1904,99 +1904,14 @@ function samePersonFuzzy(nameA, nameB) {
   return wordsA.every((w, i) => levenshtein(w, wordsB[i]) <= 1);
 }
 
+// Minimal sanity check — the LLM does the real person extraction.
+// This only catches obviously broken entries (empty, digits, URLs).
 function isLikelyValidPersonLabel(value) {
-  const cleaned = normalizePersonName(value);
+  const cleaned = normalizeTitleText(value);
   if (!cleaned || cleaned.length < 2) return false;
-
-  // Must NOT contain digits, parentheses, @, URLs
-  if (/[\d()@/\\]/.test(cleaned)) return false;
-  if (/\.(ch|com|org|de|net|at)$/i.test(cleaned)) return false;
-
-  // Must NOT be longer than 50 chars (names are short)
-  if (cleaned.length > 50) return false;
-
-  const words = cleaned.split(/\s+/).filter(Boolean);
-  if (words.length === 0 || words.length > 4) return false;
-
-  // Title abbreviations that can appear in names
-  const titleAbbrev = new Set(["dr", "prof", "med", "lic", "ra", "mag", "dipl", "ing"]);
-
-  // A valid person name consists of capitalized words (Vorname Nachname)
-  // or title abbreviations (Dr, Prof, med)
-  const capitalizedWord = /^\p{Lu}[\p{Ll}\p{M}’\u2019-]+$/u;
-
-  // Single word: must be a capitalized proper name (>= 3 chars), not a common noun
-  if (words.length === 1) {
-    const w = words[0];
-    if (w.length < 3) return false;
-    if (!capitalizedWord.test(w)) return false;
-    // Block common German nouns that happen to be capitalized
-    const commonNouns = new Set([
-      "triangulation", "gaslighting", "projektion", "isolation", "instrumentalisierung",
-      "manipulation", "schuldzuweisung", "drohung", "kontrolle", "control", "coercive",
-      "darvo", "profiling", "narzissmus", "narzisst", "narzisstin",
-      "dokument", "bericht", "gutachten", "protokoll", "brief", "urteil", "eingabe",
-      "verfügung", "massnahme", "stellungnahme", "mitteilung", "beschluss", "anordnung",
-      "therapie", "ergotherapie", "behandlung", "diagnose", "training", "verordnung",
-      "sekretariat", "kanzlei", "verwaltung", "polizei", "gericht", "schule",
-      "fortschritte", "information", "bewertung", "beurteilung", "einordnung",
-      "zusammenfassung", "gegenstand", "beilage", "einleitung",
-      "eltern", "kinder", "mutter", "vater", "bruder", "schwester",
-      "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag"
-    ]);
-    return !commonNouns.has(w.toLowerCase());
-  }
-
-  // Multi-word: every word must be a capitalized proper name or title abbreviation.
-  // Block phrases where ANY word is a known non-name (German nouns, psych terms, etc.)
-  const nonNameWords = new Set([
-    // Psychological / forensic terms
-    "durch", "triangulation", "coercive", "control", "instrumentalisiert", "instrumentalisierung",
-    "gaslighting", "projektion", "isolation", "manipulation", "schuldzuweisung", "drohung",
-    "narzissmus", "narzisst", "narzisstin", "darvo", "profiling", "kontrolle",
-    // Articles, prepositions (capitalized in German sentence start)
-    "das", "die", "der", "ein", "eine", "und", "oder", "mit", "für", "fuer",
-    "vom", "von", "zur", "zum", "den", "dem", "über", "ueber", "nach", "vor",
-    // Document/legal nouns
-    "dokument", "bericht", "gutachten", "protokoll", "brief", "urteil", "eingabe",
-    "verfügung", "verfuegung", "massnahme", "stellungnahme", "mitteilung", "beschluss",
-    "anordnung", "therapie", "ergotherapie", "ergotherapeutisches", "ergotherapeutischen",
-    "behandlung", "diagnose", "training", "sozialkompetenztraining", "gruppentraining",
-    "verordnung", "therapiebericht", "professioneller", "professionelle", "professionell",
-    // Institutions
-    "sekretariat", "kanzlei", "verwaltung", "polizei", "gericht", "schule", "spital",
-    "kinderspital", "klinik", "praxis", "kindergarten", "zentrum", "behörden", "behoerden",
-    "behörde", "behoerde", "ukbb", "kesb", "stiftung", "verein",
-    // Administrative/descriptive
-    "abteilung", "sozialamt", "sachbearbeiter", "sachbearbeiterin", "debitoren",
-    "fortschritte", "information", "bewertung", "beurteilung", "einordnung",
-    "zusammenfassung", "gegenstand", "beilage", "einleitung",
-    // Family/relation words (not names)
-    "eltern", "kinder", "mutter", "vater", "bruder", "schwester",
-    // Time
-    "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag",
-    // Salutations
-    "herr", "frau", "sehr", "geehrter", "geehrte", "lieber", "liebe", "hallo",
-    // Misc
-    "positiver", "deutlich", "allgemeine", "allgemeiner", "kantonales",
-    "freundliche", "freundlichen", "gruesse", "grusse",
-    "alimente", "unterhaltszahlungen", "ausstehende", "zahlungsrueckstand",
-    "kontoauszug", "datum", "monat", "ziele", "mitarbeit", "trainings"
-  ]);
-
-  let hasProperName = false;
-  for (const word of words) {
-    const lw = word.toLowerCase();
-    if (titleAbbrev.has(lw)) continue;
-    if (nonNameWords.has(lw)) return false;
-    if (capitalizedWord.test(word)) {
-      hasProperName = true;
-      continue;
-    }
-    return false;
-  }
-
-  return hasProperName;
+  if (/[@/\\]/.test(cleaned)) return false;
+  if (/^\d+$/.test(cleaned)) return false;
+  return true;
 }
 
 // Resolve single-token names against case party aliases
@@ -2024,17 +1939,15 @@ function collectAnalysisPeople(analysis) {
 
   for (const entry of people) {
     const raw = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
-    if (!raw || raw.length < 3) continue;
-    // Strip titles for display but validate the core name
+    if (!raw || raw.length < 2) continue;
     let name = raw.replace(/^(Herr|Frau)\s+/i, "").trim();
-    // Resolve single first names against case parties
+    // Resolve single first names against case parties (e.g. "Ayhan" → "Ayhan Ergen")
     name = resolveNameFromParties(name);
-    if (!isLikelyValidPersonLabel(name)) continue;
     if (names.some(n => n.toLowerCase() === name.toLowerCase())) continue;
     names.push(name);
   }
 
-  // Deduplicate: "Timur" → "Timur Leo Schifferli" (keep longer form)
+  // Deduplicate: "Timur" → "Timur Schifferli" (keep longer form)
   const deduped = names.filter((name, i) => {
     return !names.some((other, j) => j !== i && other.length > name.length && other.toLowerCase().includes(name.toLowerCase()));
   });
@@ -2043,25 +1956,19 @@ function collectAnalysisPeople(analysis) {
 }
 
 function normalizePeople(people) {
-  if (!Array.isArray(people)) {
-    return [];
-  }
-
+  if (!Array.isArray(people)) return [];
   return people
     .map((entry) => {
       const raw = typeof entry === "string" ? entry : (entry?.name || entry?.fullName || "");
       const name = normalizeTitleText(raw);
       if (!name) return null;
-      // Only allow actual human names — filter out psychological terms,
-      // institutions, document titles that the KI may have put in the people array
-      if (!isLikelyValidPersonLabel(name)) return null;
       const affiliation = normalizeTitleText(
-        typeof entry === "object" ? (entry?.affiliation || "Privatperson") : "Privatperson"
+        typeof entry === "object" ? (entry?.affiliation || entry?.rolle || "") : ""
       );
       return { name, affiliation: affiliation || "Privatperson" };
     })
     .filter(Boolean)
-    .slice(0, 12);
+    .slice(0, 20);
 }
 
 function normalizeImpactRanking(entries) {
