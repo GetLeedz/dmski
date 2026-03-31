@@ -1704,7 +1704,9 @@ async function getPreviewUrl(file) {
       }
 
       if (response.status === 404) {
-        detail = "File fehlt im Serverspeicher. Bitte neu hochladen.";
+        // Silently cache the failure — don't spam the UI with per-file errors
+        previewUrlCache.set(file.id, null);
+        return null;
       }
 
       setMessage(listMessage, `${decodeUtf8Safe(file.original_name)}: ${detail}`, "error");
