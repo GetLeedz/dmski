@@ -2891,12 +2891,12 @@ async function loadCaseContext() {
 }
 
 async function deleteCurrentCase() {
-  // Only admin can delete a case
-  if (currentUserRole !== "admin") {
+  // Only admin or customer (case owner) can delete a case
+  if (currentUserRole !== "admin" && currentUserRole !== "customer") {
     await dmskiModal({
       icon: "error",
       title: "Keine Berechtigung",
-      body: "Nur Administratoren können einen Fall komplett löschen.",
+      body: "Nur Administratoren und Fallinhaber können einen Fall löschen.",
       confirmLabel: "Verstanden"
     });
     return;

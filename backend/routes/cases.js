@@ -3697,9 +3697,10 @@ router.delete("/:caseId", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
   }
 
-  // Only admin can delete a case
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Nur Administratoren können Fälle löschen." });
+  // Only admin or customer (case owner) can delete a case
+  const userRole = req.user?.role || "customer";
+  if (userRole !== "admin" && userRole !== "customer") {
+    return res.status(403).json({ error: "Nur Administratoren und Fallinhaber können Fälle löschen." });
   }
 
   try {
