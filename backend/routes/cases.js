@@ -556,16 +556,9 @@ function pickBetterPdfText(primaryText, ocrText) {
 
 const BACKEND_INSTANCE_STARTED_AT = new Date().toISOString();
 
-// Purge ALL stored analyses on deploy so the new LLM prompt takes effect.
-// This runs once per deploy. Old analyses had psych terms in people arrays.
+// No startup purge — analyses are preserved across deploys.
+// Use "Alle neu analysieren" button or ?refresh=1 to re-analyze individual files.
 (async () => {
-  try {
-    const r = await pool.query("DELETE FROM case_document_analysis");
-    console.log(`[startup] Purged ${r.rowCount || 0} old analyses — new LLM prompt will regenerate them.`);
-  } catch (e) {
-    // Table may not exist yet on first run
-    console.log("[startup] No analyses to purge (table may not exist yet).");
-  }
 })();
 
 function getAnalysisEngineVersion() {

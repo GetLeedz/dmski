@@ -1377,6 +1377,53 @@ async function refreshAnalysisReport(files = allFiles) {
           addPerson(p.name || "", p.affiliation || "Privatperson");
         }
       }
+
+      // ── Dossier-level name learning ──────────────────────────────
+      // Resolve single-token names against ALL known full names in the dossier.
+      // E.g. if File A has "Ayhan" and File B has "Ayhan Ergen", merge to "Ayhan Ergen".
+      // Also checks case party aliases.
+      const allFullNames = mergedPeople
+        .map(p => normalizeTitleText(p.name))
+        .filter(n => n.split(/\s+/).length >= 2);
+
+      for (let i = 0; i < mergedPeople.length; i++) {
+        const name = normalizeTitleText(mergedPeople[i].name);
+        const parts = name.split(/\s+/);
+        if (parts.length !== 1 || parts[0].length < 3) continue;
+
+        const token = parts[0].toLowerCase();
+
+        // 1. Try to match against other full names in the dossier
+        const dossierMatch = allFullNames.find(full =>
+          full.toLowerCase().split(/\s+/).some(w => w.toLowerCase() === token)
+        );
+        if (dossierMatch) {
+          // Remove the single-token entry and ensure the full name is present
+          const fullKey = dedupKey(dossierMatch);
+          if (!seenKeys.has(fullKey)) {
+            mergedPeople[i].name = dossierMatch;
+            seenKeys.add(fullKey);
+          } else {
+            mergedPeople.splice(i, 1);
+            i--;
+          }
+          continue;
+        }
+
+        // 2. Try case party aliases
+        const resolved = resolveNameFromParties(name);
+        if (resolved !== name) {
+          const resolvedKey = dedupKey(resolved);
+          if (!seenKeys.has(resolvedKey)) {
+            mergedPeople[i].name = resolved;
+            seenKeys.add(resolvedKey);
+          } else {
+            mergedPeople.splice(i, 1);
+            i--;
+          }
+        }
+      }
+
       const aggregateForAkteure = {
         people: mergedPeople,
         positiveMentions: protectedPositiveTotal,
