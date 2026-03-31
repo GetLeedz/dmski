@@ -27,6 +27,34 @@ const isLocalHost = host === "localhost"
 
 const API_BASE = "https://lively-reverence-production-def3.up.railway.app/api";
 
+// ── Modern Modal System (replaces window.alert / window.confirm) ──
+function dmskiModal({ icon = "warn", title, body, confirmLabel = "OK", cancelLabel, confirmClass = "is-primary" }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "dmski-modal-overlay";
+    const iconHtml = icon === "warn" ? "⚠️" : icon === "error" ? "❌" : icon === "info" ? "ℹ️" : icon === "success" ? "✅" : icon;
+    const iconClass = icon === "warn" ? "is-warn" : icon === "error" ? "is-error" : "is-info";
+    const cancelBtn = cancelLabel ? `<button class="dmski-modal-btn is-secondary" data-action="cancel">${cancelLabel}</button>` : "";
+    overlay.innerHTML = `
+      <div class="dmski-modal">
+        <div class="dmski-modal-icon ${iconClass}">${iconHtml}</div>
+        <p class="dmski-modal-title">${title}</p>
+        <div class="dmski-modal-body">${body}</div>
+        <div class="dmski-modal-actions">
+          ${cancelBtn}
+          <button class="dmski-modal-btn ${confirmClass}" data-action="confirm">${confirmLabel}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => {
+      const action = e.target.closest("[data-action]")?.dataset.action;
+      if (action === "confirm") { overlay.remove(); resolve(true); }
+      else if (action === "cancel") { overlay.remove(); resolve(false); }
+    });
+    overlay.querySelector("[data-action=confirm]").focus();
+  });
+}
+
 const OUTAGE_STATUSES = new Set([502, 503, 504]);
 let serviceAlertEl = null;
 let authRedirectStarted = false;
@@ -306,7 +334,7 @@ function setRowUploadedFileId(fileKey, fileId) {
   }
 }
 
-function addPendingFiles(newFiles) {
+async function addPendingFiles(newFiles) {
   const { accepted, rejected } = splitAcceptedFiles(newFiles);
   const existingKeys = new Set(pendingFiles.map((f) => getFileKey(f)));
 
@@ -324,10 +352,17 @@ function addPendingFiles(newFiles) {
     }
   }
 
-  // Handle duplicates: ask user to replace or skip
+  // Handle duplicates with modern modal
   for (const f of duplicates) {
     const name = decodeUtf8Safe(f.name);
-    const replace = window.confirm(`„${name}" existiert bereits im Dossier.\n\nErsetzen?  OK = Ersetzen  |  Abbrechen = Überspringen`);
+    const replace = await dmskiModal({
+      icon: "warn",
+      title: "Datei existiert bereits",
+      body: `<strong>${name}</strong> ist bereits im Dossier vorhanden.<br>Möchten Sie die bestehende Datei ersetzen?`,
+      confirmLabel: "Ersetzen",
+      cancelLabel: "Überspringen",
+      confirmClass: "is-gold"
+    });
     if (replace) {
       fresh.push(f);
       existingKeys.add(getFileKey(f));
@@ -340,9 +375,13 @@ function addPendingFiles(newFiles) {
 
   if (rejected.length > 0) {
     const rejectedNames = rejected.map((f) => decodeUtf8Safe(f.name)).join(", ");
-    const message = `Nur ${ALLOWED_FILES_LABEL} erlaubt. Nicht akzeptiert: ${rejectedNames}`;
-    window.alert(message);
-    setMessage(uploadMessage, message, "error");
+    await dmskiModal({
+      icon: "error",
+      title: "Dateityp nicht erlaubt",
+      body: `Nur <strong>${ALLOWED_FILES_LABEL}</strong> erlaubt.<br>Nicht akzeptiert: ${rejectedNames}`,
+      confirmLabel: "Verstanden"
+    });
+    setMessage(uploadMessage, `Nur ${ALLOWED_FILES_LABEL} erlaubt.`, "error");
   }
 
   renderPendingFiles();
