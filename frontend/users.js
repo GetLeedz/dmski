@@ -114,8 +114,17 @@ function normalizeUser(raw) {
         role: String(raw.role || "collaborator"),
         fn: String(raw.function_label || ""),
         caseId: String(raw.case_id || ""),
-        caseName: String(raw.case_name || "")
+        caseName: String(raw.case_name || ""),
+        invitedAt: raw.invited_at || null,
+        lastLoginAt: raw.last_login_at || null,
+        loginCount: raw.login_count || 0
     };
+}
+
+function formatDate(isoStr) {
+    if (!isoStr) return null;
+    const d = new Date(isoStr);
+    return d.toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 async function loadUsers() {
@@ -182,12 +191,20 @@ function renderList(rows) {
                 </svg>
             </button>` : "";
 
+        const trackingInfo = isAdmin ? `
+                <div class="u-tracking">
+                    ${u.invitedAt ? `<span class="u-track u-track--invited" title="Eingeladen: ${esc(formatDate(u.invitedAt))}">&#9993; ${esc(formatDate(u.invitedAt))}</span>` : `<span class="u-track u-track--none" title="Noch nicht eingeladen">&#9993; –</span>`}
+                    ${u.lastLoginAt ? `<span class="u-track u-track--login" title="Letzter Login: ${esc(formatDate(u.lastLoginAt))}">&#8635; ${esc(formatDate(u.lastLoginAt))}</span>` : `<span class="u-track u-track--none" title="Noch nie eingeloggt">&#8635; –</span>`}
+                    ${u.loginCount > 0 ? `<span class="u-track u-track--count" title="${u.loginCount} Login(s)">${u.loginCount}x</span>` : ""}
+                </div>` : "";
+
         return `
             <div class="u-card" id="uc-${u.id}">
                 <div class="u-av ${u.role === "collaborator" ? "u-av--f" : "u-av--k"}">${esc(initials)}</div>
                 <div class="u-info">
                     <div class="u-name">${esc(name)}</div>
                     <div class="u-email">${esc(u.email)}</div>
+                    ${trackingInfo}
                 </div>
                 ${u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : ""}
                 <span class="${roleClass}">${roleLabel}</span>
@@ -477,6 +494,11 @@ function openProfileView(id) {
                 <div class="pv-field"><span class="pv-label">Funktion</span><span class="pv-value">${u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : "–"}</span></div>
                 <div class="pv-field"><span class="pv-label">Beziehung</span><span class="pv-value"><span class="badge ${u.role === "collaborator" ? "badge--team" : "badge--kunde"}">${esc(roleLabel)}</span></span></div>
                 <div class="pv-field pv-full"><span class="pv-label">Zugewiesener Fall</span><span class="pv-value">${esc(caseName)}</span></div>
+                ${isAdmin ? `
+                <div class="pv-field"><span class="pv-label">Eingeladen am</span><span class="pv-value">${u.invitedAt ? esc(formatDate(u.invitedAt)) : "Noch nicht eingeladen"}</span></div>
+                <div class="pv-field"><span class="pv-label">Letzter Login</span><span class="pv-value">${u.lastLoginAt ? esc(formatDate(u.lastLoginAt)) : "Noch nie eingeloggt"}</span></div>
+                <div class="pv-field"><span class="pv-label">Anzahl Logins</span><span class="pv-value">${u.loginCount || 0}</span></div>
+                ` : ""}
             </div>
         </div>`;
     modal.classList.add("open");

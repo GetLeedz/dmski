@@ -289,7 +289,7 @@ router.patch("/me", requireAuth, async (req, res) => {
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile
+      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
        FROM users ORDER BY created_at DESC`
     );
     res.json({ users: result.rows });
@@ -302,7 +302,7 @@ router.get("/", requireAuth, requireAdmin, async (req, res) => {
 router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile
+      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
        FROM users WHERE role != 'admin' ORDER BY created_at DESC`
     );
     res.json({ users: result.rows });
@@ -423,7 +423,7 @@ router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSel
     const password = generateServerPassword();
     const password_hash = await bcrypt.hash(password, 12);
     await pool.query(
-      "UPDATE users SET password_hash = $1, password_change_required = true WHERE id = $2",
+      "UPDATE users SET password_hash = $1, password_change_required = true, invited_at = NOW() WHERE id = $2",
       [password_hash, user.id]
     );
 

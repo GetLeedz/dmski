@@ -85,6 +85,12 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Ungültige E-Mail oder Passwort." });
     }
 
+    // Login-Tracking: Zeitstempel und Zähler aktualisieren
+    await pool.query(
+      "UPDATE users SET last_login_at = NOW(), login_count = COALESCE(login_count, 0) + 1 WHERE id = $1",
+      [user.id]
+    );
+
     const role = user.role || "customer";
     const token = jwt.sign(
       { sub: user.id, email: user.email, role },
