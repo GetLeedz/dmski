@@ -86,47 +86,6 @@ body {
   padding: 5rem 1.5rem 2rem;
 }
 
-/* ── Ambient background ── */
-.ambient {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.shape {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0;
-  animation: float-in 1.2s ease forwards;
-}
-
-.shape-a {
-  width: 600px;
-  height: 600px;
-  top: -15%;
-  right: -10%;
-  background: radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%);
-}
-
-.shape-b {
-  width: 500px;
-  height: 500px;
-  left: -8%;
-  bottom: -10%;
-  background: radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%);
-  animation-delay: 150ms;
-}
-
-.shape-c {
-  width: 400px;
-  height: 400px;
-  left: 45%;
-  top: 8%;
-  background: radial-gradient(circle, rgba(197,160,89,0.12), transparent 70%);
-  animation-delay: 300ms;
-}
-
 /* ── Login Shell ── */
 .login-shell {
   width: min(1020px, 100%);
@@ -141,18 +100,6 @@ body {
     0 32px 64px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   position: relative;
-}
-
-/* Neon accent line on top */
-.login-shell::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #C5A059, #8b5cf6, #ec4899, #C5A059, transparent);
-  z-index: 1;
 }
 
 /* ── Brand side ── */
@@ -365,26 +312,12 @@ button[type="submit"] {
   overflow: hidden;
 }
 
-button[type="submit"]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-  transform: translateX(-100%);
-  transition: transform 600ms ease;
-}
-
 button[type="submit"]:hover {
-  transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(197,160,89,0.3);
 }
 
-button[type="submit"]:hover::before {
-  transform: translateX(100%);
-}
-
 button[type="submit"]:active {
-  transform: translateY(0);
+  opacity: 0.9;
 }
 
 button[type="submit"]:disabled {
@@ -436,10 +369,6 @@ button[type="submit"]:disabled {
   to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes float-in {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
 
 /* ── Responsive ── */
 @media (max-width: 880px) {

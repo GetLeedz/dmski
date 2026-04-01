@@ -27,17 +27,6 @@
       overflow: hidden;
     }
 
-    /* Neon accent line top */
-    .dmski-footer::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #C5A059, #8b5cf6, #ec4899, #C5A059, transparent);
-    }
-
     .dmski-footer-inner {
       max-width: 1100px;
       margin: 0 auto;

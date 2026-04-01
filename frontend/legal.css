@@ -92,16 +92,6 @@ body {
   position: relative;
 }
 
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), #8b5cf6, var(--accent), transparent);
-  border-radius: 16px 16px 0 0;
-}
 
 h1 {
   margin: 0 0 1rem;
