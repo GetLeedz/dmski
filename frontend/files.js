@@ -3023,7 +3023,8 @@ async function downloadFile(fileId) {
 async function deleteFile(fileId, triggerButton) {
   if (pendingDelete) {
     clearTimeout(pendingDelete.timerId);
-    await flushPendingDelete();
+    pendingDelete = null;
+    hideUndoBar();
   }
 
   const file = allFiles.find((entry) => entry.id === fileId);
@@ -3036,17 +3037,36 @@ async function deleteFile(fileId, triggerButton) {
     triggerButton.textContent = "Lösche...";
   }
 
-  allFiles = allFiles.filter((file) => file.id !== fileId);
+  // Delete from backend IMMEDIATELY (hard delete)
+  try {
+    await commitDelete(fileId);
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REDIRECT") {
+      return;
+    }
+    if (triggerButton instanceof HTMLButtonElement) {
+      triggerButton.disabled = false;
+      triggerButton.textContent = "";
+    }
+    setMessage(listMessage, error.message || "File konnte nicht gelöscht werden.", "error");
+    return;
+  }
+
+  // Only remove from UI after backend confirms deletion
+  allFiles = allFiles.filter((f) => f.id !== fileId);
   renderFiles(filterFiles(allFiles));
   void refreshAnalysisReport(allFiles);
 
-  const timerId = window.setTimeout(() => {
-    void flushPendingDelete();
-  }, 5000);
+  const cachedUrl = previewUrlCache.get(fileId);
+  if (cachedUrl) {
+    URL.revokeObjectURL(cachedUrl);
+    previewUrlCache.delete(fileId);
+  }
+  previewPromiseCache.delete(fileId);
+  analysisCache.delete(fileId);
+  analysisPromiseCache.delete(fileId);
 
-  pendingDelete = { file, timerId };
-  showUndoBar(file.original_name);
-  setMessage(listMessage, "Datei entfernt. Rückgängig möglich.", "success");
+  setMessage(listMessage, "Datei gelöscht.", "success");
 }
 
 filesTableBody.addEventListener("click", async (event) => {
