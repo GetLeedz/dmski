@@ -2125,7 +2125,7 @@ function normalizePeople(people) {
     .map((entry) => {
       const raw = typeof entry === "string" ? entry : (entry?.name || entry?.fullName || "");
       const name = normalizeTitleText(raw);
-      if (!name) return null;
+      if (!name || !isValidPersonName(name)) return null;
       const affiliation = normalizeTitleText(
         typeof entry === "object" ? (entry?.affiliation || entry?.rolle || "") : ""
       );
@@ -2613,7 +2613,7 @@ async function loadRowAnalysis(file, options = {}) {
     const fallback = [];
     // Add author as person
     const auth = normalizeTitleText(analysis.author || "");
-    if (auth && auth !== "Unbekannt" && auth.split(/\s+/).length >= 2 && /^[A-ZÄÖÜ]/.test(auth)) {
+    if (auth && auth !== "Unbekannt" && auth.split(/\s+/).length >= 2 && /^[A-ZÄÖÜ]/.test(auth) && isValidPersonName(auth)) {
       fallback.push(auth);
     }
     // Extract "Vorname Nachname" patterns from Fazit
@@ -2623,7 +2623,7 @@ async function loadRowAnalysis(file, options = {}) {
     let m;
     while ((m = nameRe.exec(summary)) !== null) {
       const n = m[1].trim();
-      if (n.length >= 5 && !stopWords.test(n)) {
+      if (n.length >= 5 && !stopWords.test(n) && isValidPersonName(n)) {
         fallback.push(n);
       }
     }
