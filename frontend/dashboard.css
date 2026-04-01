@@ -4820,79 +4820,101 @@ select.case-edit-input {
   width: 100%;
 }
 
+/* ── Personen-Tabelle (Tabelle 5) — grid layout like tactic-table ── */
+.akteure-table-container {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(26,43,60,0.14);
+  background: rgba(255,255,255,0.9);
+  width: 100%;
+}
+
 table.akteure-personen {
   width: 100%;
-  table-layout: fixed;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.82rem;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  display: block;
   font-family: var(--font, "Inter"), system-ui, sans-serif;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 1px 6px rgba(26,43,60,0.08);
 }
 
-table.akteure-personen col.col-name      { width: 30%; }
-table.akteure-personen col.col-rolle     { width: 30%; }
-table.akteure-personen col.col-bemerkung { width: 40%; }
+table.akteure-personen col { display: none; }
 
 table.akteure-personen thead {
+  display: block;
+  width: 100%;
   background: var(--navy, #1A2B3C);
+  border-bottom: 3px solid var(--gold, #C5A059);
 }
 
-table.akteure-personen thead th {
-  padding: 0.75rem 1rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #F8F9FA;
-  text-align: left;
+table.akteure-personen tbody {
+  display: block;
+  width: 100%;
+}
+
+table.akteure-personen thead tr,
+table.akteure-personen tbody tr {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 2fr;
+  align-items: stretch;
+  width: 100%;
+}
+
+table.akteure-personen thead tr {
   background: transparent;
   border: none;
-  border-bottom: 2px solid var(--gold, #C5A059);
 }
 
-table.akteure-personen tbody tr {
-  transition: background 0.15s ease;
-}
-table.akteure-personen tbody tr:hover {
-  background: rgba(197,160,89,0.06);
-}
-table.akteure-personen tbody tr:nth-child(even) {
-  background: rgba(26,43,60,0.02);
-}
-table.akteure-personen tbody tr:nth-child(even):hover {
-  background: rgba(197,160,89,0.08);
+table.akteure-personen th {
+  padding: 0.85rem 1.1rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #F8F9FA;
+  border: none;
+  text-align: left;
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
 }
 
 table.akteure-personen td {
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid rgba(26,43,60,0.06);
-  font-size: 0.82rem;
-  line-height: 1.5;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(26,43,60,0.07);
+  line-height: 1.45;
   color: #1a2b3c;
-  vertical-align: top;
+  font-size: 0.78rem;
+  background: transparent;
+  word-break: break-word;
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
   text-align: left;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
 }
 
 table.akteure-personen td:first-child {
   font-weight: 600;
   color: #0f2b36;
-  white-space: nowrap;
 }
 table.akteure-personen td:nth-child(2) {
   color: #4a6a7a;
-  font-weight: 500;
 }
 table.akteure-personen td:nth-child(3) {
   color: #5a6a7a;
-  font-size: 0.78rem;
-  line-height: 1.45;
+  font-size: 0.76rem;
 }
-table.akteure-personen tr:last-child td { border-bottom: none; }
+
+table.akteure-personen tbody tr:last-child td { border-bottom: none; }
+
+table.akteure-personen tbody tr {
+  background: rgba(255,255,255,0.55);
+}
+table.akteure-personen tbody tr:hover td {
+  background: rgba(255,255,255,0.75);
+}
 
 
 /* Big rounded sentiment dot */
