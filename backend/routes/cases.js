@@ -472,6 +472,65 @@ function normalizeDateFieldCases(value) {
   return "-";
 }
 
+/**
+ * Detects semantically garbage text that looks "readable" to simple char-based
+ * quality checks but is actually OCR noise (random words, no sentence structure).
+ *
+ * Heuristics:
+ * - Very few real German/French words (< 20% dictionary hit rate)
+ * - Too many ALL-CAPS or single-char tokens
+ * - No sentence-ending punctuation (no periods, question marks)
+ * - Average word length is abnormal (< 2.5 or > 12)
+ */
+function isGarbageText(value) {
+  const text = String(value || "").trim();
+  if (!text || text.length < 30) return true;
+
+  const tokens = text.split(/\s+/).filter(Boolean);
+  if (tokens.length < 5) return true;
+
+  // Check for sentence structure: at least some periods or sentence-enders
+  const sentenceEnders = (text.match(/[.!?;:]\s/g) || []).length;
+  const hasSentences = sentenceEnders >= 1;
+
+  // Average word length
+  const totalLen = tokens.reduce((sum, t) => sum + t.length, 0);
+  const avgLen = totalLen / tokens.length;
+  if (avgLen < 2.2 || avgLen > 14) return true;
+
+  // Count very short tokens (1-2 chars, excluding common particles)
+  const shortParticles = new Set(["in", "am", "an", "im", "um", "zu", "da", "so", "ob", "ja", "es", "er", "du", "ab", "je"]);
+  const shortTokens = tokens.filter(t => t.length <= 2 && !shortParticles.has(t.toLowerCase())).length;
+  if (shortTokens / tokens.length > 0.35) return true;
+
+  // Count ALL-CAPS tokens (more than 3 chars) — normal text has few
+  const capsTokens = tokens.filter(t => t.length > 3 && t === t.toUpperCase() && /[A-Z]/.test(t)).length;
+  if (capsTokens / tokens.length > 0.25) return true;
+
+  // Common German words check — at least 15% should be recognizable
+  const commonWords = new Set([
+    "der", "die", "das", "und", "ist", "ein", "eine", "den", "dem", "des",
+    "mit", "auf", "für", "von", "aus", "bei", "nach", "über", "vor", "wie",
+    "als", "auch", "oder", "aber", "nicht", "wird", "hat", "sind", "war",
+    "sich", "dass", "werden", "kann", "wurde", "haben", "sein", "sehr",
+    "wir", "sie", "ich", "zur", "zum", "vom", "bis", "nur", "noch",
+    "herr", "frau", "liebe", "guten", "tag", "datum", "betreff", "basel",
+    "bern", "zürich", "schweiz", "kanton", "kind", "kinder", "eltern",
+    "le", "la", "les", "de", "du", "des", "et", "en", "pour", "par",
+    "patient", "patientin", "name", "adresse", "telefon", "mail"
+  ]);
+  const knownCount = tokens.filter(t => commonWords.has(t.toLowerCase().replace(/[.,;:!?()]/g, ""))).length;
+  const knownRatio = knownCount / tokens.length;
+
+  // If no sentences AND low known-word ratio → garbage
+  if (!hasSentences && knownRatio < 0.12) return true;
+
+  // Even with some sentences, very low known ratio is suspicious
+  if (knownRatio < 0.06) return true;
+
+  return false;
+}
+
 function normalizeExtractedDocumentText(value) {
   return String(value || "")
     .replace(/-\s*\r?\n\s*/g, "")
@@ -4317,18 +4376,65 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
           && extractedText === normalizedOcrText
           && extractedText !== normalizedParsedText;
 
-        if (!extractedText) {
-          return res.json(withAnalysisRuntimeMeta({
-            status: "empty",
-            title: "",
-            author: "",
-            authoredDate: "",
-            people: [],
-            disadvantagedPerson: "",
-            message: pdfParse
-              ? "PDF-Inhalt konnte nicht gelesen werden (möglicherweise Scan oder defekter Textlayer)."
-              : "PDF-Parser ist aktuell nicht verfuegbar und OCR lieferte keinen klaren Text."
-          }));
+        // Vision fallback: if text is empty or garbage, use Claude Vision on rendered pages
+        if (!extractedText || isGarbageText(extractedText)) {
+          console.log(`[analysis] Text empty or garbage for ${file.original_name}, trying Vision…`);
+          const visionResult = await analyzePdfWithVision(fileBuffer, file.original_name, parties.protectedPersonName, parties.opposingPartyName);
+          if (visionResult && visionResult.status === "ok") {
+            // Map vision forensic result to analysis format
+            const visionPeople = Array.isArray(visionResult.personen)
+              ? visionResult.personen
+                  .filter(p => isHumanNameCases(p.name))
+                  .map(p => ({
+                    name: p.name,
+                    affiliation: p.rolle || "Privatperson",
+                    ...(p.sentiment && { sentiment: p.sentiment }),
+                    ...(p.bemerkung && { bemerkung: p.bemerkung })
+                  }))
+              : [];
+            const visionAnalysis = buildFallbackAnalysis({
+              title: file.original_name.replace(/\.[^.]+$/, ""),
+              author: "",
+              authoredDate: "",
+              people: visionPeople,
+              senderInstitution: "",
+              impactAssessment: visionResult.fazit || "",
+              rawText: ""
+            });
+            visionAnalysis.score = visionResult.score || 0;
+            visionAnalysis._visionAnalyzed = true;
+            const enriched = enrichAnalysisForReport(visionAnalysis, {
+              rawText: "",
+              protectedAliases: parsePartyAliases(parties.protectedPersonName).aliases,
+              opposingAliases: parsePartyAliases(parties.opposingPartyName).aliases,
+              textQuality: buildTextQualityMeta("", {
+                sourceType: "PDF",
+                extractionMethod: "Claude Vision (Text nicht lesbar)",
+                ocrUsed: true
+              }),
+              methodology: "Vision-basierte Analyse (Textextraktion fehlgeschlagen)."
+            });
+            await saveDocumentAnalysis(file.id, enriched);
+            return res.json(withAnalysisRuntimeMeta(enriched));
+          }
+
+          // Vision also failed — return empty
+          if (!extractedText) {
+            const emptyResult = {
+              status: "empty",
+              title: "",
+              author: "",
+              authoredDate: "",
+              people: [],
+              disadvantagedPerson: "",
+              message: pdfParse
+                ? "PDF-Inhalt konnte nicht gelesen werden (möglicherweise Scan oder defekter Textlayer)."
+                : "PDF-Parser ist aktuell nicht verfuegbar und OCR lieferte keinen klaren Text."
+            };
+            await saveDocumentAnalysis(file.id, emptyResult);
+            return res.json(withAnalysisRuntimeMeta(emptyResult));
+          }
+          // Fall through to text analysis with whatever we have
         }
 
         const fallback = buildHeuristicAnalysisFromText(extractedText, parsed?.info || {});
