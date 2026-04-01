@@ -1102,11 +1102,60 @@ function deduplicatePeople(people) {
  * @param {string} opposingParty
  * @param {Map}    authorSentimentMap  – Map<authorName, {positive,negative}> from refreshAnalysisReport
  */
+/**
+ * Client-side name validation — filters garbage from cached analysis results.
+ * Mirrors backend looksLikePersonName() logic but runs at render time.
+ */
+function isValidPersonName(name) {
+  const n = (name || "").trim();
+  if (!n) return false;
+  // Strip titles for validation
+  const cleaned = n.replace(/^(Herrn?|Frau|Prof\.?\s*|Dr\.?\s*(med\.?\s*)?)/i, "").trim();
+  if (!cleaned) return false;
+  const words = cleaned.split(/\s+/);
+  // Each significant word must be ≥3 chars (blocks OCR garbage like "In Dov", "Leet Lh")
+  const particles = new Set(["von", "de", "di", "van", "le", "du", "el", "al", "da", "la", "lo"]);
+  for (const w of words) {
+    if (particles.has(w.toLowerCase())) continue;
+    if (w.replace(/[.']/g, "").length < 3) return false;
+  }
+  // Must have at least one uppercase start
+  if (!words.some(w => /^[A-ZÄÖÜÀÁÂÈÉÊÌÍÎÒÓÔÙÚÛ]/.test(w))) return false;
+  // Block known non-name words
+  const lower = cleaned.toLowerCase();
+  const blocked = [
+    "nachmittag", "vormittag", "morgen", "abend", "nacht", "mittag",
+    "strasse", "straße", "datum", "kanton", "gemeinde", "polizei",
+    "gericht", "kesb", "spital", "klinik", "praxis", "schule",
+    "kindergarten", "therapie", "behandlung", "diagnose", "rezept",
+    "medizinisch", "universitäts", "universität", "ukbb", "kinderspital",
+    "ergotherapie", "sozialkompetenz", "training", "gruppentraining",
+    "verfuegung", "verfügung", "massnahme", "maßnahme", "anordnung",
+    "gutachten", "protokoll", "stellungnahme", "zusammenfassung",
+    "bericht", "dokument", "verfahren", "beschwerde", "einschreiben",
+    "betreff", "mitteilung", "sekretariat", "abteilung", "information",
+    "sozialamt", "jugendamt", "sozialdienst", "kindesschutz",
+    "kantonsgericht", "bezirksgericht", "obergericht", "bundesgericht",
+    "staatsanwaltschaft", "unfallversicherung", "sozialversicherung"
+  ];
+  if (blocked.some(b => lower.includes(b))) return false;
+  // Block if contains digits
+  if (/\d/.test(cleaned)) return false;
+  return true;
+}
+
 function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentimentMap = new Map()) {
   const people = Array.isArray(analysis.people) ? analysis.people : [];
 
-  // Smart deduplication (handles "Ayhan" == "Ayhan Ergen", name variants, etc.)
-  const unique = deduplicatePeople(people);
+  // Filter out garbage names, then deduplicate
+  const validated = people.filter(p => isValidPersonName(typeof p === "string" ? p : p?.name));
+  // Strip "Herrn" prefix before dedup
+  for (const p of validated) {
+    if (typeof p === "object" && p.name) {
+      p.name = p.name.replace(/^Herrn?\s+/i, "").trim();
+    }
+  }
+  const unique = deduplicatePeople(validated);
 
   if (unique.length === 0) {
     return `
@@ -2031,6 +2080,7 @@ function collectAnalysisPeople(analysis) {
 
   for (const entry of people) {
     const raw = normalizeTitleText(typeof entry === "string" ? entry : entry?.name || entry?.fullName || "");
+    if (!isValidPersonName(raw)) continue;
     if (!raw || raw.length < 2) continue;
     let name = raw.replace(/^(Herr|Frau)\s+/i, "").trim();
     // Resolve single first names against case parties (e.g. "Ayhan" → "Ayhan Ergen")
