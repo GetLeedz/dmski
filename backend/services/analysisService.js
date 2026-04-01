@@ -87,13 +87,30 @@ const SYSTEM_PROMPT = [
   "- WICHTIG: Benenne klar WER manipuliert, WEN es trifft, und WELCHES MUSTER dahintersteckt.",
   "- Antworte ausschliesslich mit validem JSON gemaess dem folgenden Schema.",
   "",
-  "### PERSONEN-EXTRAKTION (PFLICHT):",
+  "### DATUMSFORMAT (PFLICHT):",
+  "- Alle Datumsangaben MUESSEN im Format TT.MM.JJJJ zurueckgegeben werden.",
+  "- Wenn nur 2-stellige Jahreszahl vorhanden (z.B. 24.06.23), zu 4-stellig konvertieren (24.06.2023).",
+  "- Wenn kein Datum erkennbar oder ungueltig → gib '-' zurueck.",
+  "",
+  "### PERSONEN-EXTRAKTION (PFLICHT – STRIKTE REGELN):",
+  "Das Array 'personen' ist AUSSCHLIESSLICH fuer echte menschliche Individuen reserviert.",
   "Lies das GESAMTE Dokument aufmerksam durch und merke dir ALLE Personennamen.",
   "Nutze dein semantisches Verstaendnis – extrahiere nicht einfach alle grossgeschriebenen Woerter.",
   "",
+  "WAS GEHOERT IN 'personen'? → NUR echte Menschennamen:",
+  "  Richtig: 'Max Muster', 'Ayhan Ergen', 'Dr. med. Brotzmann', 'Timur'",
+  "",
+  "WAS GEHOERT NICHT IN 'personen'? → ALLES was kein Mensch ist:",
+  "  - Organisationen/Institutionen: UKBB, KESB, Gericht, Spital, Kinderspital,",
+  "    Universitaets-Kinderspital, Kantonsgericht, Polizei, Sozialamt, Jugendamt",
+  "  - Dokumenttypen: Medizinisches Rezept, Gutachten, Verfuegung, Bericht",
+  "  - Fachbegriffe: Ergotherapie, Sozialkompetenztraining, Diagnose",
+  "  - Generische Labels: Patient, Mutter, Vater (ohne konkreten Namen)",
+  "  - Institutionen gehoeren in 'absender'/'herkunft', NIEMALS in 'personen'",
+  "",
+  "WENN KEINE echten Personennamen gefunden werden → personen-Array LEER lassen: []",
+  "",
   "REGELN:",
-  "- NUR echte Menschennamen (Vorname und/oder Nachname).",
-  "- KEINE Institutionen (UKBB, KESB, Gericht), KEINE Fachbegriffe, KEINE Dokumenttitel.",
   "- Namen koennen ueberall stehen: Absender, Anrede, Betreff, Textkörper, Unterschrift, Verteiler.",
   "- Kurzformen erkennen: 'Ruedi' = 'Rudolf', 'Roli' = 'Roland', 'Susi' = 'Susanne'.",
   "- Wenn nur ein Vorname erscheint (z.B. 'Timur'), trotzdem auffuehren.",
@@ -202,7 +219,7 @@ async function analyzeLegalDocument(textContent, options = {}) {
       risikoStufe: validateRisikoStufe(parsed.risikoStufe),
       personen: Array.isArray(parsed.personen)
         ? parsed.personen
-            .filter((p) => p && typeof p === "object" && (p.name || "").trim())
+            .filter((p) => p && typeof p === "object" && isHumanName(p.name))
             .map((p) => ({
               name: (p.name || "").trim(),
               rolle: (p.rolle || "").trim(),
@@ -300,6 +317,73 @@ function normalizeFinding(f) {
     analyse: String(f.analyse || "–"),
     schweregrad: validateRisikoStufe(f.schweregrad)
   };
+}
+
+// ── Person name validation (server-side) ────────────────────────────
+
+const BLOCKED_ORG_PATTERNS = [
+  /\bukbb\b/i, /\bkesb\b/i, /\bgericht\b/i, /\bspital\b/i, /\bkinderspital\b/i,
+  /\bpolizei\b/i, /\bkantonsgericht\b/i, /\bbezirksgericht\b/i, /\bbundesgericht\b/i,
+  /\bsozialamt\b/i, /\bjugendamt\b/i, /\bsozialdienst\b/i, /\bkindesschutz\b/i,
+  /\bstaatsanwaltschaft\b/i, /\bschule\b/i, /\bklinik\b/i, /\bpraxis\b/i,
+  /\buniversit[äa]t/i, /\binstitut\b/i, /\bamt\b/i, /\bbeh[öo]rde\b/i,
+  /\bstiftung\b/i, /\bverein\b/i, /\bverband\b/i, /\bversicherung\b/i,
+  /\bmedizinisch\w*\s+(rezept|bericht|gutachten|dokument)/i,
+  /\bergotherapie\b/i, /\bsozialkompetenz/i, /\bdiagnose\b/i,
+  /\brezept\b/i, /\bgutachten\b/i, /\bverf[üu]gung\b/i, /\bprotokoll\b/i,
+  /\bstellungnahme\b/i, /\bbericht\b/i, /\bdokument\b/i,
+  /\bbehandlung\b/i, /\btherapie\b/i, /\btraining\b/i,
+  /\bGmbH\b/i, /\bAG\b/i, /\bSA\b/i, /\bGmbH\b/i,
+];
+
+function isHumanName(name) {
+  const trimmed = (name || "").trim();
+  if (!trimmed || trimmed === "-") return false;
+  if (BLOCKED_ORG_PATTERNS.some(p => p.test(trimmed))) return false;
+  // Must contain at least one letter
+  if (!/[a-zA-ZäöüÄÖÜàáâèéêìíîòóôùúû]/.test(trimmed)) return false;
+  // Block entries with digits (not names)
+  if (/\d/.test(trimmed)) return false;
+  return true;
+}
+
+/**
+ * Normalizes date strings to DD.MM.YYYY format.
+ * Handles 2-digit years (24.06.23 → 24.06.2023).
+ */
+function normalizeDateField(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "-") return "-";
+
+  // DD.MM.YYYY — already correct
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(raw)) return raw;
+
+  // DD.MM.YY — convert to 4-digit year
+  const twoDigitYear = raw.match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+  if (twoDigitYear) {
+    const yy = Number(twoDigitYear[3]);
+    const yyyy = yy >= 50 ? 1900 + yy : 2000 + yy;
+    return `${twoDigitYear[1]}.${twoDigitYear[2]}.${yyyy}`;
+  }
+
+  // YYYY-MM-DD (ISO) → DD.MM.YYYY
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+
+  // D.M.YYYY or DD.M.YYYY etc — normalize padding
+  const loose = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+  if (loose) {
+    const d = loose[1].padStart(2, "0");
+    const m = loose[2].padStart(2, "0");
+    let y = loose[3];
+    if (y.length === 2) {
+      const yy = Number(y);
+      y = String(yy >= 50 ? 1900 + yy : 2000 + yy);
+    }
+    return `${d}.${m}.${y}`;
+  }
+
+  return "-";
 }
 
 // ── Cross-document dossier analysis ─────────────────────────────────

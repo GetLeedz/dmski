@@ -1136,7 +1136,9 @@ function isValidPersonName(name) {
     "betreff", "mitteilung", "sekretariat", "abteilung", "information",
     "sozialamt", "jugendamt", "sozialdienst", "kindesschutz",
     "kantonsgericht", "bezirksgericht", "obergericht", "bundesgericht",
-    "staatsanwaltschaft", "unfallversicherung", "sozialversicherung"
+    "staatsanwaltschaft", "unfallversicherung", "sozialversicherung",
+    "institut", "stiftung", "verein", "verband", "versicherung",
+    "behörde", "behoerde", "amt", "gmbh"
   ];
   if (blocked.some(b => lower.includes(b))) return false;
   // Block if contains digits
@@ -1190,7 +1192,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
     const dotClass    = sentiment === "positive" ? "is-positive" : sentiment === "negative" ? "is-negative" : "is-neutral";
     return `
       <tr class="tactic-row-present">
-        <td><span class="akteure-sentiment-dot ${dotClass}"></span> ${escapeHtml(displayName)}</td>
+        <td>${escapeHtml(displayName)}</td>
         <td>${escapeHtml(roleLabel)}</td>
         <td>${escapeHtml(bemerkung)}</td>
       </tr>
@@ -1573,14 +1575,37 @@ function formatDate(value) {
 
 function formatSwissAnalysisDate(value) {
   const raw = String(value || "").trim();
-  if (!raw) {
-    return "";
+  if (!raw || raw === "-") {
+    return "-";
   }
 
+  // Already DD.MM.YYYY
   if (/^\d{2}\.\d{2}\.\d{4}$/.test(raw)) {
     return raw;
   }
 
+  // DD.MM.YY → DD.MM.YYYY (2-digit year conversion)
+  const twoDigitYear = raw.match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+  if (twoDigitYear) {
+    const yy = Number(twoDigitYear[3]);
+    const yyyy = yy >= 50 ? 1900 + yy : 2000 + yy;
+    return `${twoDigitYear[1]}.${twoDigitYear[2]}.${yyyy}`;
+  }
+
+  // D.M.YYYY or DD.M.YYYY etc — normalize padding
+  const loose = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+  if (loose) {
+    const d = loose[1].padStart(2, "0");
+    const m = loose[2].padStart(2, "0");
+    let y = loose[3];
+    if (y.length === 2) {
+      const yy = Number(y);
+      y = String(yy >= 50 ? 1900 + yy : 2000 + yy);
+    }
+    return `${d}.${m}.${y}`;
+  }
+
+  // ISO YYYY-MM-DD
   const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (iso) {
     return `${iso[3]}.${iso[2]}.${iso[1]}`;
@@ -1595,7 +1620,7 @@ function formatSwissAnalysisDate(value) {
     });
   }
 
-  return raw;
+  return "-";
 }
 
 function formatSizeKB(bytes) {
@@ -2632,11 +2657,11 @@ async function loadRowAnalysis(file, options = {}) {
   const opposingKeywords = normalizeTitleText(currentCaseOpposingKeywords) || "Nicht gesetzt";
   const title = analysis.title || "Unbekannt";
   const author = analysis.author || "Unbekannt";
-  const date = swissAuthoredDate || "Unbekannt";
+  const date = (swissAuthoredDate && swissAuthoredDate !== "-") ? swissAuthoredDate : "-";
   const senderInstitution = analysis.senderInstitution || "Unbekannt";
   const impactAssessment = analysis.impactAssessment || "";
   const manipulationsmuster = Array.isArray(analysis.manipulationsmuster) ? analysis.manipulationsmuster.filter(m => m && m.typ) : [];
-  const peopleValue = people.length > 0 ? people.join(" · ") : "Keine";
+  const peopleValue = people.length > 0 ? people.join(" · ") : "-";
   const verdict = deriveDocumentVerdict(analysis);
   const evidenceCount = countEvidenceSnippets(evidence);
 

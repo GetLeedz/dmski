@@ -421,6 +421,57 @@ function normalizeWhitespace(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+// ── Strict person/date validation for analysis output ──
+
+const BLOCKED_ORG_PATTERNS_CASES = [
+  /\bukbb\b/i, /\bkesb\b/i, /\bgericht\b/i, /\bspital\b/i, /\bkinderspital\b/i,
+  /\bpolizei\b/i, /\bkantonsgericht\b/i, /\bbezirksgericht\b/i, /\bbundesgericht\b/i,
+  /\bsozialamt\b/i, /\bjugendamt\b/i, /\bsozialdienst\b/i, /\bkindesschutz\b/i,
+  /\bstaatsanwaltschaft\b/i, /\bschule\b/i, /\bklinik\b/i, /\bpraxis\b/i,
+  /\buniversit[äa]t/i, /\binstitut\b/i, /\bamt\b/i, /\bbeh[öo]rde\b/i,
+  /\bstiftung\b/i, /\bverein\b/i, /\bverband\b/i, /\bversicherung\b/i,
+  /\bmedizinisch/i, /\brezept\b/i, /\bgutachten\b/i, /\bverf[üu]gung\b/i,
+  /\bprotokoll\b/i, /\bstellungnahme\b/i, /\bbericht\b/i, /\bdokument\b/i,
+  /\bergotherapie\b/i, /\bsozialkompetenz/i, /\bdiagnose\b/i,
+  /\bbehandlung\b/i, /\btherapie\b/i, /\btraining\b/i,
+  /\bGmbH\b/i, /\b(AG|SA)\b/,
+];
+
+function isHumanNameCases(name) {
+  const trimmed = (name || "").trim();
+  if (!trimmed || trimmed === "-") return false;
+  if (BLOCKED_ORG_PATTERNS_CASES.some(p => p.test(trimmed))) return false;
+  if (!/[a-zA-ZäöüÄÖÜàáâèéêìíîòóôùúû]/.test(trimmed)) return false;
+  if (/\d/.test(trimmed)) return false;
+  return true;
+}
+
+function normalizeDateFieldCases(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "-") return "-";
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(raw)) return raw;
+  const twoDigitYear = raw.match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+  if (twoDigitYear) {
+    const yy = Number(twoDigitYear[3]);
+    const yyyy = yy >= 50 ? 1900 + yy : 2000 + yy;
+    return `${twoDigitYear[1]}.${twoDigitYear[2]}.${yyyy}`;
+  }
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  const loose = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+  if (loose) {
+    const d = loose[1].padStart(2, "0");
+    const m = loose[2].padStart(2, "0");
+    let y = loose[3];
+    if (y.length === 2) {
+      const yy = Number(y);
+      y = String(yy >= 50 ? 1900 + yy : 2000 + yy);
+    }
+    return `${d}.${m}.${y}`;
+  }
+  return "-";
+}
+
 function normalizeExtractedDocumentText(value) {
   return String(value || "")
     .replace(/-\s*\r?\n\s*/g, "")
@@ -2178,7 +2229,7 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
     ? src.personen
       .map((entry) => {
         const name = normalizeWhitespace(entry?.name || "");
-        if (!name) {
+        if (!name || !isHumanNameCases(name)) {
           return null;
         }
         const rolle = normalizeWhitespace(entry?.rolle || "");
@@ -2202,11 +2253,15 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
   const posFromBp = Number(bp.positiv || bp.positive || 0);
   const negFromBp = Number(bp.negativ || bp.negative || 0);
 
+  // Normalize date to DD.MM.YYYY
+  const rawDate = src.datum || src.datum_verfassung || src.authoredDate || fallback.authoredDate || "";
+  const normalizedDate = normalizeDateFieldCases(rawDate);
+
   return buildFallbackAnalysis({
     title: src.titel || src.dokument_titel || src.title || fallback.title,
     author: src.verfasser || src.author || fallback.author,
     documentType: src.documentType || src.dokument_typ || fallback.documentType || "",
-    authoredDate: src.datum || src.datum_verfassung || src.authoredDate || fallback.authoredDate,
+    authoredDate: normalizedDate !== "-" ? normalizedDate : fallback.authoredDate,
     people: mappedPeople.length > 0 ? mappedPeople : fallback.people,
     disadvantagedPerson: src.disadvantagedPerson || fallback.disadvantagedPerson,
     senderInstitution: src.absender || src.herkunft || src.senderInstitution || fallback.senderInstitution,
@@ -2753,14 +2808,20 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "E) TEXTKÖRPER: Namentlich genannte Personen mit Kontext → Personen",
       "F) UNTERZEICHNER: Unterschrift, Ersteller → verfasser",
       "",
-      "### SCHRITT 2 – PERSONEN-EXTRAKTION:",
+      "### DATUMSFORMAT (PFLICHT):",
+      "- Alle Datumsangaben MUESSEN im Format TT.MM.JJJJ zurueckgegeben werden.",
+      "- 2-stellige Jahreszahl konvertieren: 24.06.23 → 24.06.2023",
+      "- Kein Datum erkennbar → '-'",
       "",
-      "KRITISCHE REGEL: Das Array 'personen' enthaelt AUSSCHLIESSLICH Eigennamen",
-      "von echten Menschen. Nutze dein semantisches Verstaendnis:",
+      "### SCHRITT 2 – PERSONEN-EXTRAKTION (STRIKTE REGELN):",
+      "",
+      "Das Array 'personen' ist AUSSCHLIESSLICH fuer echte menschliche Individuen reserviert.",
+      "Nutze dein semantisches Verstaendnis:",
       "",
       "WAS IST EIN EIGENNAME? → Vorname und/oder Nachname eines Menschen.",
       "  Richtig: 'Alexandra Schifferli', 'Ayhan Ergen', 'Dr. med. Brotzmann', 'Timur'",
       "  Falsch:  'Triangulation', 'Coercive Control', 'UKBB Ergotherapie', 'Das Dokument'",
+      "  Falsch:  'Universitaets-Kinderspital beider Basel (UKBB)', 'Medizinisches Rezept'",
       "",
       "WO FINDEST DU NAMEN?",
       "  - Anrede: 'Hallo Ayhan,' → Ayhan ist eine Person",
@@ -2769,12 +2830,15 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "  - Unterschrift: 'Alexandra' am Ende = Verfasser",
       "  - Im Text namentlich erwaehnt: 'Timur nahm an allen Sitzungen teil'",
       "",
-      "WAS GEHOERT NICHT IN PERSONEN?",
-      "  - Psychologische Begriffe (Triangulation, Gaslighting, DARVO, etc.) → gehoeren in 'manipulationsmuster'",
-      "  - Institutionen (UKBB, KESB, Gericht, Universitaets-Kinderspital, Polizei, Kantonsgericht, Spital) → gehoeren in 'absender'",
-      "  - Fachbegriffe (Medizinisches Rezept, Ergotherapie, Sozialkompetenztraining, Diagnose) → NICHT in personen",
-      "  - Dokumenttitel → gehoeren in 'titel'",
-      "  - Rollen ohne Namen (die Mutter, der Vater) → NUR wenn der Name bekannt ist",
+      "WAS GEHOERT NICHT IN PERSONEN? → ALLES was kein Mensch ist:",
+      "  - Organisationen/Institutionen: UKBB, KESB, Gericht, Spital, Kinderspital,",
+      "    Universitaets-Kinderspital, Kantonsgericht, Polizei, Sozialamt → gehoeren in 'absender'",
+      "  - Dokumenttypen: Medizinisches Rezept, Gutachten, Verfuegung, Bericht → NICHT in personen",
+      "  - Fachbegriffe: Ergotherapie, Sozialkompetenztraining, Diagnose → NICHT in personen",
+      "  - Psychologische Begriffe: Triangulation, Gaslighting, DARVO → gehoeren in 'manipulationsmuster'",
+      "  - Generische Rollen ohne Namen (die Mutter, der Vater) → NUR wenn der Name bekannt ist",
+      "",
+      "WENN KEINE echten Personennamen gefunden werden → personen-Array LEER lassen: []",
       "",
       "ALIAS-ERKENNUNG: Schweizer Kurzformen zusammenfuehren:",
       "  Ruedi=Rudolf, Roli=Roland, Susi=Susanne, Res=Andreas, Sepp=Josef, Toni=Anton,",
@@ -3031,17 +3095,26 @@ async function analyzePdfWithVision(fileBuffer, documentTitle = "", protectedPer
     "Deine Aufgabe: Lies die PDF-Seiten VOLLSTAENDIG, auch handschriftlichen Text.",
     "Lies JEDEN sichtbaren Text Zeile fuer Zeile. Erfinde NICHTS.",
     "",
-    "### PERSONEN-EXTRAKTION (PFLICHT):",
-    "Lies das GESAMTE Dokument aufmerksam durch und extrahiere ALLE Personennamen.",
+    "### DATUMSFORMAT (PFLICHT):",
+    "- Alle Datumsangaben im Format TT.MM.JJJJ zurueckgeben.",
+    "- 2-stellige Jahreszahl konvertieren: 24.06.23 → 24.06.2023",
+    "- Kein Datum erkennbar → '-'",
+    "",
+    "### PERSONEN-EXTRAKTION (PFLICHT – STRIKTE REGELN):",
+    "Das Array 'personen' ist AUSSCHLIESSLICH fuer echte menschliche Individuen.",
+    "Lies das GESAMTE Dokument und extrahiere ALLE Personennamen.",
     "AUCH handschriftlich geschriebene Namen muessen extrahiert werden!",
     "",
     "REGELN:",
     "- NUR echte Menschennamen (Vorname und/oder Nachname).",
-    "- KEINE Institutionen (UKBB, KESB, Gericht, Spital), KEINE Fachbegriffe.",
+    "- KEINE Institutionen (UKBB, KESB, Gericht, Spital, Kinderspital) → gehoeren in 'absender'.",
+    "- KEINE Dokumenttypen (Medizinisches Rezept, Gutachten) → NICHT in personen.",
+    "- KEINE Fachbegriffe (Ergotherapie, Diagnose) → NICHT in personen.",
     "- Handschriftliche Namen besonders sorgfaeltig lesen.",
-    "- Bei medizinischen Dokumenten: Patient/Patientin ist eine Person!",
+    "- Bei medizinischen Dokumenten: Patient/Patientin ist eine Person – NAME extrahieren!",
     "- Bestimme die Rolle aus dem Kontext: Patient, Vater, Mutter, Kind, Arzt, etc.",
     "- BEMERKUNG (Pflichtfeld): Was tut/betrifft diese Person im Dokument? 1 Satz.",
+    "- Wenn KEINE echten Personennamen gefunden → personen-Array LEER lassen: []",
     "",
     `FOKUS-PARTEI = [${focusKeywords}]`,
     `GEGENPARTEI = [${referenceKeywords}]`,
