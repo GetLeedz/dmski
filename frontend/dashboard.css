@@ -3709,6 +3709,8 @@ td {
     word-break: break-word !important;
   }
   .tactic-table.akteure-tbl { font-size: 0.72rem !important; }
+  .tactic-table.akteure-tbl thead tr,
+  .tactic-table.akteure-tbl tbody tr { grid-template-columns: 30% 30% 40% !important; }
   .tactic-analysis-body{ font-size: 0.73rem !important; line-height: 1.45 !important; }
   .party-split-num,
   .file-count-num      { font-size: 1.35rem !important; }
@@ -3803,6 +3805,8 @@ body.printing .tactic-table td {
 }
 
 body.printing .tactic-table.akteure-tbl { font-size: 0.72rem !important; }
+body.printing .tactic-table.akteure-tbl thead tr,
+body.printing .tactic-table.akteure-tbl tbody tr { grid-template-columns: 30% 30% 40% !important; }
 body.printing .tactic-analysis-body { font-size: 0.73rem !important; line-height: 1.45 !important; }
 
 body.printing .party-split-num,
@@ -4844,16 +4848,15 @@ select.case-edit-input {
   width: 100%;
 }
 
-/* ── Personen-Tabelle (Tabelle 5) — uses tactic-table base, custom grid ── */
+/* ── Personen-Tabelle (Tabelle 5) — 30 / 30 / 40 column split ── */
 .tactic-table.akteure-tbl thead tr,
 .tactic-table.akteure-tbl tbody tr {
-  grid-template-columns: 1.4fr 1fr 2fr;
+  grid-template-columns: 30% 30% 40%;
 }
 
 .tactic-table.akteure-tbl td:first-child {
   font-weight: 600;
   color: #0f2b36;
-  gap: 0.5rem;
 }
 .tactic-table.akteure-tbl td:nth-child(2) {
   color: #4a6a7a;
@@ -4864,7 +4867,12 @@ select.case-edit-input {
 }
 
 
-/* Big rounded sentiment dot */
+/* Sentiment dots — hidden inside tables for clean text-only look */
+.tactic-table .akteure-sentiment-dot,
+.tactic-table .akteure-legend-dot {
+  display: none !important;
+}
+
 .akteure-sentiment-dot {
   display: inline-block;
   width: 1.1rem;
@@ -5282,10 +5290,11 @@ select.case-edit-input {
 
 .tactic-table .tactic-row-present {
   background: rgba(255,255,255,0.55);
+  transition: background 0.15s ease;
 }
 
 .tactic-table .tactic-row-present:hover {
-  background: rgba(255,255,255,0.85);
+  background: #f5f7fa;
 }
 
 .tactic-table .tactic-row-absent {
@@ -5294,7 +5303,7 @@ select.case-edit-input {
 }
 
 .tactic-table tbody tr:hover td {
-  background: #f0f2f5;
+  background: #f5f7fa;
 }
 
 /* ── Badge – pill shape with colored border ── */
