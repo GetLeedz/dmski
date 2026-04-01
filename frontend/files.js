@@ -1016,11 +1016,16 @@ function deduplicatePeople(people) {
     const key = personDedupKey(name);
     if (!key) continue;
 
+    const bemerkung = rawP.bemerkung || "";
+
     // 1. Exact match
     if (keyIndex.has(key)) {
       const idx = keyIndex.get(key);
       if (affil && affil !== "Privatperson" && result[idx].affiliation === "Privatperson") {
         result[idx].affiliation = affil;
+      }
+      if (bemerkung && !result[idx].bemerkung) {
+        result[idx].bemerkung = bemerkung;
       }
       continue;
     }
@@ -1041,6 +1046,10 @@ function deduplicatePeople(people) {
         if (affil && affil !== "Privatperson" && result[idx].affiliation === "Privatperson") {
           result[idx].affiliation = affil;
         }
+        // Merge bemerkung
+        if (bemerkung && !result[idx].bemerkung) {
+          result[idx].bemerkung = bemerkung;
+        }
         merged = true;
         break;
       }
@@ -1049,7 +1058,7 @@ function deduplicatePeople(people) {
 
     // 3. New person
     keyIndex.set(key, result.length);
-    result.push({ name, affiliation: affil });
+    result.push({ name, affiliation: affil, ...(bemerkung && { bemerkung }) });
   }
 
   return result;
@@ -1096,10 +1105,12 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   const rows = sorted.map(person => {
     const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
     const displayName = formatNameFirstLast(person.name);
+    const bemerkung   = person.bemerkung || "";
     return `
       <tr class="akteure-row">
         <td class="akteure-col-name">${escapeHtml(displayName)}</td>
         <td class="akteure-col-role">${escapeHtml(roleLabel)}</td>
+        <td class="akteure-col-bemerkung">${escapeHtml(bemerkung)}</td>
       </tr>
     `;
   }).join("");
@@ -1115,11 +1126,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
             <colgroup>
               <col class="col-name" />
               <col class="col-rolle" />
+              <col class="col-bemerkung" />
             </colgroup>
             <thead>
               <tr>
                 <th>Person</th>
                 <th>Funktion</th>
+                <th>Bemerkung</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>

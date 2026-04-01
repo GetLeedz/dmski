@@ -87,10 +87,34 @@ const SYSTEM_PROMPT = [
   "- WICHTIG: Benenne klar WER manipuliert, WEN es trifft, und WELCHES MUSTER dahintersteckt.",
   "- Antworte ausschliesslich mit validem JSON gemaess dem folgenden Schema.",
   "",
+  "### PERSONEN-EXTRAKTION (PFLICHT):",
+  "Lies das GESAMTE Dokument aufmerksam durch und merke dir ALLE Personennamen.",
+  "Nutze dein semantisches Verstaendnis – extrahiere nicht einfach alle grossgeschriebenen Woerter.",
+  "",
+  "REGELN:",
+  "- NUR echte Menschennamen (Vorname und/oder Nachname).",
+  "- KEINE Institutionen (UKBB, KESB, Gericht), KEINE Fachbegriffe, KEINE Dokumenttitel.",
+  "- Namen koennen ueberall stehen: Absender, Anrede, Betreff, Textkörper, Unterschrift, Verteiler.",
+  "- Kurzformen erkennen: 'Ruedi' = 'Rudolf', 'Roli' = 'Roland', 'Susi' = 'Susanne'.",
+  "- Wenn nur ein Vorname erscheint (z.B. 'Timur'), trotzdem auffuehren.",
+  "- Bestimme die Rolle aus dem Kontext: Vater, Mutter, Kind, Anwalt, Gutachter, Richter, etc.",
+  "- BEMERKUNG (Pflichtfeld): Fasse in 1 Satz zusammen, was diese Person im Dokument KONKRET tut",
+  "  oder was ueber sie gesagt wird. Fokus auf Handlungen GEGEN oder FUER die Fokus-Partei.",
+  "  Beispiele: 'Verfasst negativen Bericht ueber Fokus-Partei', 'Ordnet Kontaktsperre an',",
+  "  'Wird im Dokument als liebevoller Vater beschrieben', 'Empfaenger des Schreibens'.",
+  "",
   "### JSON-SCHEMA (exakt einhalten):",
   "{",
   '  "score": <number 0-100>,',
   '  "risikoStufe": "<niedrig|mittel|hoch|kritisch>",',
+  '  "personen": [',
+  "    {",
+  '      "name": "Vorname Nachname",',
+  '      "rolle": "Funktion z.B. Berufsbeistand/Anwalt/Kind/Vater",',
+  '      "sentiment": "positiv|negativ|neutral",',
+  '      "bemerkung": "Was tut diese Person im Dokument? 1 Satz."',
+  "    }",
+  "  ],",
   '  "findings": [',
   "    {",
   '      "typ": "<widerspruch|manipulation|fehlende_evidenz|suggestive_sprache|framing|passivverschleierung|narzissmus_muster|system_vernetzung|benachteiligung|kinderrechte_verletzung|menschenrechte_verletzung>",',
@@ -176,6 +200,16 @@ async function analyzeLegalDocument(textContent, options = {}) {
     return {
       score: clamp(Number(parsed.score) || 0, 0, 100),
       risikoStufe: validateRisikoStufe(parsed.risikoStufe),
+      personen: Array.isArray(parsed.personen)
+        ? parsed.personen
+            .filter((p) => p && typeof p === "object" && (p.name || "").trim())
+            .map((p) => ({
+              name: (p.name || "").trim(),
+              rolle: (p.rolle || "").trim(),
+              sentiment: (p.sentiment || "neutral").trim(),
+              bemerkung: (p.bemerkung || "").trim()
+            }))
+        : [],
       findings: Array.isArray(parsed.findings)
         ? parsed.findings.map(normalizeFinding)
         : [],

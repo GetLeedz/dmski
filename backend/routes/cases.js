@@ -696,7 +696,59 @@ function looksLikePersonName(value) {
     "kindergarten",
     "ukbb",
     "universitäts",
-    "universität"
+    "universität",
+    "medizinisches",
+    "rezept",
+    "kinderspital",
+    "kantonsgericht",
+    "bezirksgericht",
+    "familiengericht",
+    "polizei",
+    "staatsanwaltschaft",
+    "sozialdienst",
+    "jugendamt",
+    "schulhaus",
+    "tagesstruktur",
+    "betreuung",
+    "abklaerung",
+    "abklärung",
+    "gutachterlich",
+    "kindesschutz",
+    "sorgerecht",
+    "besuchsrecht",
+    "obhut",
+    "erziehungsbeistandschaft",
+    "verfuegung",
+    "anordnung",
+    "superprovisorisch",
+    "massnahme",
+    "vormundschaft",
+    "pflegefamilie",
+    "sozialbericht",
+    "schulbericht",
+    "arztbericht",
+    "medizinisch",
+    "psychiatrisch",
+    "psychologisch",
+    "neurologisch",
+    "paediatrisch",
+    "pädiatrisch",
+    "ambulant",
+    "stationaer",
+    "stationär",
+    "notfall",
+    "rettung",
+    "spitex",
+    "sozialversicherung",
+    "invalidenversicherung",
+    "unfallversicherung",
+    "beider basel",
+    "kanton",
+    "gemeinde",
+    "regierungsrat",
+    "stadtrat",
+    "bundesgericht",
+    "obergericht"
   ];
 
   const lower = cleaned.toLowerCase();
@@ -1035,11 +1087,13 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
     }
 
     const inputSentiment = typeof value === "object" && value ? value.sentiment : "";
+    const inputBemerkung = typeof value === "object" && value ? normalizeWhitespace(value.bemerkung || "") : "";
     seen.add(key);
     list.push({
       name: normalized,
       affiliation: normalizeAffiliation(inputAffiliation || inferAffiliationForPerson(rawText, normalized)),
-      ...(inputSentiment && { sentiment: inputSentiment })
+      ...(inputSentiment && { sentiment: inputSentiment }),
+      ...(inputBemerkung && { bemerkung: inputBemerkung })
     });
   }
 
@@ -2103,10 +2157,12 @@ function mapSwissForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
         }
         const rolle = normalizeWhitespace(entry?.rolle || "");
         const sentiment = normalizeWhitespace(entry?.sentiment || "");
+        const bemerkung = normalizeWhitespace(entry?.bemerkung || "");
         return {
           name,
           affiliation: rolle || "Privatperson",
-          ...(sentiment && { sentiment })
+          ...(sentiment && { sentiment }),
+          ...(bemerkung && { bemerkung })
         };
       })
       .filter(Boolean)
@@ -2178,7 +2234,12 @@ function mapBiasForensicJsonToAnalysis(parsed, fallback = {}, rawText = "") {
       const name = normalizeWhitespace(typeof entry === "string" ? entry : entry?.name || "");
       if (!name) return null;
       const rolle = typeof entry === "object" && entry ? normalizeWhitespace(entry.rolle || "") : "";
-      return { name, affiliation: normalizeAffiliation(rolle) || "Privatperson" };
+      const bemerkung = typeof entry === "object" && entry ? normalizeWhitespace(entry.bemerkung || "") : "";
+      return {
+        name,
+        affiliation: normalizeAffiliation(rolle) || "Privatperson",
+        ...(bemerkung && { bemerkung })
+      };
     })
     .filter(Boolean);
 
@@ -2328,7 +2389,13 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "  KEINE Funktion, KEINEN Titel, KEINE Institution, KEIN Geburtsdatum im Namen.",
     "  Falsch: {name: 'Jugendforensik Max Muster Leiter'} | Richtig: {name: 'Max Muster', rolle: 'Leiter Jugendforensik'}",
     "  Falsch: {name: 'Muster Hans, geb. 01.01.2010, m'} | Richtig: {name: 'Muster Hans', rolle: 'Kind'}",
-    "- NUR echte Menschennamen! KEINE Institutionen (UKBB, KESB, Gericht), KEINE Themen, KEINE Dokumenttitel.",
+    "- NUR echte Menschennamen! KEINE Institutionen (UKBB, KESB, Gericht, Universitaets-Kinderspital, Polizei, Kantonsgericht), KEINE Themen, KEINE Dokumenttitel, KEINE Fachbegriffe (Medizinisches Rezept, Ergotherapie, Sozialkompetenztraining).",
+    "- ALIAS-ERKENNUNG: Schweizer Kurzformen zusammenfuehren: Ruedi=Rudolf, Roli=Roland, Susi=Susanne, Urs=Ursus, Res=Andreas, Sepp=Josef, Toni=Anton, Köbi=Jakob, Vreni=Verena, Röbi=Robert, Kari=Karl, Fredi=Alfred, Ueli=Ulrich, Werni=Werner, Heiri=Heinrich.",
+    "  Wenn nur ein Vorname erscheint (z.B. 'Timur'), trotzdem als Person auffuehren.",
+    "  Gleiche Person mit verschiedenen Namensvarianten nur EINMAL auffuehren (laengste/vollstaendigste Form waehlen).",
+    "- BEMERKUNG (Pflichtfeld): Fasse in 1 Satz zusammen, was diese Person im Dokument KONKRET tut oder was ueber sie gesagt wird.",
+    "  Fokus auf Handlungen GEGEN oder FUER die Fokus-Partei. Beispiele:",
+    "  'Verfasst negativen Bericht', 'Ordnet Kontaktsperre an', 'Wird als kooperativ beschrieben'.",
     "- Bestimme die Rolle aus dem Kontext: Vater, Mutter, Kind, Arzt, Therapeut, Anwalt, Beistand, Richter, etc.",
     `- Wenn eine Person zur FOKUS-PARTEI [${focusKeywords}] gehoert: Rolle aus dem Kontext (z.B. Vater, Mutter).`,
     `- Wenn eine Person zur GEGENPARTEI [${referenceKeywords}] gehoert: Rolle aus dem Kontext (z.B. Mutter, Vater).`,
@@ -2450,7 +2517,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '  "datum": "TT.MM.JJJJ oder wie im Dokument angegeben",',
     '  "absender": "",',
     '  "documentType": "Verfuegung|Brief|E-Mail|Gutachten|Bericht|Protokoll|Eingabe|Urteil|Superprovisorische Massnahme|Chat",',
-    '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind", "sentiment": "positiv|negativ|neutral"}],',
+    '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind", "sentiment": "positiv|negativ|neutral", "bemerkung": "Was tut diese Person im Dokument? 1 Satz."}],',
     '  "benachteiligte_person": {',
     '    "positiv": 0,',
     '    "negativ": 0',
@@ -2678,13 +2745,20 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "",
       "WAS GEHOERT NICHT IN PERSONEN?",
       "  - Psychologische Begriffe (Triangulation, Gaslighting, DARVO, etc.) → gehoeren in 'manipulationsmuster'",
-      "  - Institutionen (UKBB, KESB, Gericht) → gehoeren in 'absender'",
+      "  - Institutionen (UKBB, KESB, Gericht, Universitaets-Kinderspital, Polizei, Kantonsgericht, Spital) → gehoeren in 'absender'",
+      "  - Fachbegriffe (Medizinisches Rezept, Ergotherapie, Sozialkompetenztraining, Diagnose) → NICHT in personen",
       "  - Dokumenttitel → gehoeren in 'titel'",
       "  - Rollen ohne Namen (die Mutter, der Vater) → NUR wenn der Name bekannt ist",
       "",
-      "NAMENSFORMAT: {name: 'Vorname Nachname', rolle: 'Funktion aus dem Kontext'}",
+      "ALIAS-ERKENNUNG: Schweizer Kurzformen zusammenfuehren:",
+      "  Ruedi=Rudolf, Roli=Roland, Susi=Susanne, Res=Andreas, Sepp=Josef, Toni=Anton,",
+      "  Köbi=Jakob, Vreni=Verena, Röbi=Robert, Kari=Karl, Fredi=Alfred, Ueli=Ulrich.",
+      "  Gleiche Person mit verschiedenen Namensvarianten nur EINMAL auffuehren (vollstaendigste Form).",
+      "",
+      "NAMENSFORMAT: {name: 'Vorname Nachname', rolle: 'Funktion aus dem Kontext', bemerkung: 'Was tut die Person?'}",
       "  - Kein Geburtsdatum im Namen, kein Geschlecht, keine Institution",
       "  - rolle = was die Person IST: Vater, Mutter, Kind, Arzt, Anwalt, Empfaenger, etc.",
+      "  - bemerkung = 1 Satz: was die Person im Dokument tut/was ueber sie gesagt wird (Fokus auf Handlungen gegen/fuer Fokus-Partei)",
       `  - Wenn Person zur FOKUS-PARTEI [${focusKeywords}] gehoert: Rolle aus Kontext (z.B. Vater)`,
       `  - Wenn Person zur GEGENPARTEI [${referenceKeywords}] gehoert: Rolle aus Kontext (z.B. Mutter)`,
       "",
@@ -2749,7 +2823,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       '  "datum": "TT.MM.JJJJ",',
       '  "absender": "Institution/Organisation aus dem Briefkopf",',
       '  "documentType": "Bericht|Brief|E-Mail|Verfuegung|Gutachten|Protokoll|Eingabe|Urteil|Chat",',
-      '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion", "sentiment": "positiv|negativ|neutral"}],',
+      '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion", "sentiment": "positiv|negativ|neutral", "bemerkung": "Was tut diese Person im Dokument? 1 Satz."}],',
       '  "benachteiligte_person": {"positiv": 0, "negativ": 0},',
       '  "manipulationsmuster": [{"muster": "DARVO|Gaslighting|Triangulation|Isolation|Schuldzuweisung|Drohung", "beleg": "Zitat oder Beschreibung aus dem Text"}],',
       '  "zusammenfassung": "2-3 Saetze Fazit mit forensischer Einordnung inkl. Manipulationsmuster"',
@@ -3809,6 +3883,15 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
                   documentTitle: decodedOriginalName,
                   documentType: "PDF"
                 });
+                // Merge AI-extracted personen into forensic result
+                if (Array.isArray(forensic.personen) && forensic.personen.length > 0) {
+                  forensic.people = forensic.personen.map((p) => ({
+                    name: p.name,
+                    affiliation: p.rolle || "Privatperson",
+                    ...(p.sentiment && { sentiment: p.sentiment }),
+                    ...(p.bemerkung && { bemerkung: p.bemerkung })
+                  }));
+                }
                 forensic.documentId = docId;
                 forensic.fileName = decodedOriginalName;
                 await saveForensicAnalysis(docId, forensic);
@@ -4325,6 +4408,16 @@ router.get("/:caseId/files/:fileId/forensic", requireAuth, async (req, res) => {
       documentTitle: file.original_name,
       documentType: mimeType.includes("pdf") ? "PDF" : "Bild/OCR"
     });
+
+    // Merge AI-extracted personen into forensic result for downstream use
+    if (Array.isArray(forensicResult.personen) && forensicResult.personen.length > 0) {
+      forensicResult.people = forensicResult.personen.map((p) => ({
+        name: p.name,
+        affiliation: p.rolle || "Privatperson",
+        ...(p.sentiment && { sentiment: p.sentiment }),
+        ...(p.bemerkung && { bemerkung: p.bemerkung })
+      }));
+    }
 
     forensicResult.documentId = file.id;
     forensicResult.fileName = file.original_name;

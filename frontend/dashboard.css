@@ -4828,8 +4828,9 @@ table.akteure-personen {
   font-family: var(--font, "Inter"), system-ui, sans-serif;
 }
 
-table.akteure-personen col.col-name   { width: 50%; }
-table.akteure-personen col.col-rolle  { width: 50%; }
+table.akteure-personen col.col-name      { width: 22%; }
+table.akteure-personen col.col-rolle     { width: 20%; }
+table.akteure-personen col.col-bemerkung { width: 58%; }
 
 table.akteure-personen thead {
   background: var(--navy, #1A2B3C);
@@ -4866,6 +4867,7 @@ table.akteure-personen td {
 
 table.akteure-personen td:first-child { font-weight: 700; color: #0f2b36; }
 table.akteure-personen td:nth-child(2) { color: #4a6a7a; }
+table.akteure-personen td:nth-child(3) { color: #5a6a7a; font-size: 0.74rem; }
 table.akteure-personen tr:last-child td { border-bottom: none; }
 
 
