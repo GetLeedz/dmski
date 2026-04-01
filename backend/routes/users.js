@@ -20,6 +20,20 @@ function normalizeDatabaseUrl(rawUrl) {
 
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
 
+let trackingSchemaDone = false;
+async function ensureTrackingSchema() {
+  if (trackingSchemaDone) return;
+  trackingSchemaDone = true;
+  try {
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_at TIMESTAMPTZ");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER NOT NULL DEFAULT 0");
+  } catch (err) {
+    trackingSchemaDone = false;
+    console.warn("Tracking schema info:", err.message);
+  }
+}
+
 const LOGIN_URL = "https://dmski.ch";
 const FROM_ADDRESS = "DMSKI Scrutor <info@dmski.ch>";
 
@@ -288,6 +302,7 @@ router.patch("/me", requireAuth, async (req, res) => {
 // GET / – Liste aller Benutzer (Admin only)
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
+    await ensureTrackingSchema();
     const result = await pool.query(
       `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
        FROM users ORDER BY created_at DESC`
@@ -301,6 +316,7 @@ router.get("/", requireAuth, requireAdmin, async (req, res) => {
 // GET /:userId/users – Fachpersonen für einen bestimmten Admin
 router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   try {
+    await ensureTrackingSchema();
     const result = await pool.query(
       `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
        FROM users WHERE role != 'admin' ORDER BY created_at DESC`
