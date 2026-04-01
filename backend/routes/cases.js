@@ -3010,6 +3010,129 @@ async function renderPdfPagesToImageBuffers(fileBuffer, maxPages = 6) {
   }
 }
 
+/**
+ * Vision fallback for PDFs with handwritten or poorly-OCR'd content.
+ * Renders PDF pages to images and sends them to Claude Vision for full analysis.
+ * Returns the same structure as analyzeLegalDocument so it can be used as a drop-in.
+ */
+async function analyzePdfWithVision(fileBuffer, documentTitle = "", protectedPersonName = "", opposingPartyName = "") {
+  if (!getAnthropicClient()) return null;
+
+  const renderedPages = await renderPdfPagesToImageBuffers(fileBuffer, 4);
+  if (renderedPages.length === 0) return null;
+
+  const focusAliases = parsePartyAliases(protectedPersonName);
+  const referenceAliases = parsePartyAliases(opposingPartyName);
+  const focusKeywords = focusAliases.aliases.length > 0 ? focusAliases.aliases.join(", ") : "(keine)";
+  const referenceKeywords = referenceAliases.aliases.length > 0 ? referenceAliases.aliases.join(", ") : "(keine)";
+
+  const systemPrompt = [
+    "Du bist ein forensischer Dokumenten-Analyst fuer Familienrecht.",
+    "Deine Aufgabe: Lies die PDF-Seiten VOLLSTAENDIG, auch handschriftlichen Text.",
+    "Lies JEDEN sichtbaren Text Zeile fuer Zeile. Erfinde NICHTS.",
+    "",
+    "### PERSONEN-EXTRAKTION (PFLICHT):",
+    "Lies das GESAMTE Dokument aufmerksam durch und extrahiere ALLE Personennamen.",
+    "AUCH handschriftlich geschriebene Namen muessen extrahiert werden!",
+    "",
+    "REGELN:",
+    "- NUR echte Menschennamen (Vorname und/oder Nachname).",
+    "- KEINE Institutionen (UKBB, KESB, Gericht, Spital), KEINE Fachbegriffe.",
+    "- Handschriftliche Namen besonders sorgfaeltig lesen.",
+    "- Bei medizinischen Dokumenten: Patient/Patientin ist eine Person!",
+    "- Bestimme die Rolle aus dem Kontext: Patient, Vater, Mutter, Kind, Arzt, etc.",
+    "- BEMERKUNG (Pflichtfeld): Was tut/betrifft diese Person im Dokument? 1 Satz.",
+    "",
+    `FOKUS-PARTEI = [${focusKeywords}]`,
+    `GEGENPARTEI = [${referenceKeywords}]`,
+    "",
+    "### JSON-SCHEMA (exakt einhalten):",
+    "{",
+    '  "score": <number 0-100>,',
+    '  "risikoStufe": "<niedrig|mittel|hoch|kritisch>",',
+    '  "personen": [',
+    '    {"name": "Vorname Nachname", "rolle": "Funktion", "sentiment": "positiv|negativ|neutral", "bemerkung": "1 Satz"}',
+    "  ],",
+    '  "findings": [',
+    '    {"typ": "<widerspruch|manipulation|fehlende_evidenz|suggestive_sprache|framing|benachteiligung>",',
+    '     "stelle": "<Zitat>", "analyse": "<Erklaerung>", "schweregrad": "<niedrig|mittel|hoch|kritisch>"}',
+    "  ],",
+    '  "statistik": {"widersprueche": 0, "manipulationen": 0, "fehlende_belege": 0, "suggestive_formulierungen": 0},',
+    '  "fazit": "<Zusammenfassung, max 4 Saetze>"',
+    "}",
+    "",
+    "NUR JSON. Kein Markdown. Kein zusaetzlicher Text. Keine Codeblocks."
+  ].join("\n");
+
+  const imageContent = renderedPages.map(buf => ({
+    type: "image",
+    source: {
+      type: "base64",
+      media_type: "image/png",
+      data: buf.toString("base64")
+    }
+  }));
+
+  const userText = [
+    `Analysiere dieses PDF-Dokument gruendlich. Dateiname: "${documentTitle}".`,
+    `Das Dokument hat ${renderedPages.length} Seite(n).`,
+    "Lies den GESAMTEN sichtbaren Text, AUCH handschriftliche Eintraege.",
+    "Extrahiere ALLE Personennamen inkl. handschriftlich geschriebener Namen.",
+    "Bei medizinischen Dokumenten: Der Patient ist eine Person – Namen extrahieren!"
+  ].join("\n");
+
+  try {
+    const client = getAnthropicClient();
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
+      temperature: 0,
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "text", text: userText },
+          ...imageContent
+        ]
+      }]
+    });
+
+    const raw = response?.content?.[0]?.text || "";
+    console.log(`[pdf-vision] Response for ${documentTitle}:`, raw.substring(0, 500));
+    const parsed = extractJsonObject(raw);
+
+    if (!parsed || typeof parsed !== "object") return null;
+
+    return {
+      score: Math.max(0, Math.min(100, Number(parsed.score) || 0)),
+      risikoStufe: parsed.risikoStufe || "niedrig",
+      personen: Array.isArray(parsed.personen)
+        ? parsed.personen
+            .filter(p => p && typeof p === "object" && (p.name || "").trim())
+            .map(p => ({
+              name: (p.name || "").trim(),
+              rolle: (p.rolle || "").trim(),
+              sentiment: (p.sentiment || "neutral").trim(),
+              bemerkung: (p.bemerkung || "").trim()
+            }))
+        : [],
+      findings: Array.isArray(parsed.findings) ? parsed.findings : [],
+      statistik: {
+        widersprueche: Math.max(0, Number(parsed.statistik?.widersprueche) || 0),
+        manipulationen: Math.max(0, Number(parsed.statistik?.manipulationen) || 0),
+        fehlende_belege: Math.max(0, Number(parsed.statistik?.fehlende_belege) || 0),
+        suggestive_formulierungen: Math.max(0, Number(parsed.statistik?.suggestive_formulierungen) || 0)
+      },
+      fazit: String(parsed.fazit || "Vision-Analyse abgeschlossen."),
+      status: "ok",
+      _visionAnalyzed: true
+    };
+  } catch (err) {
+    console.warn(`[pdf-vision] Vision analysis failed for ${documentTitle}:`, err.message);
+    return null;
+  }
+}
+
 async function extractTextFromPdfWithOcr(fileBuffer) {
   const renderedPages = await renderPdfPagesToImageBuffers(fileBuffer);
   if (renderedPages.length === 0) {
@@ -3904,11 +4027,38 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
               const txt = String(parsed?.text || "");
               const ocrTxt = shouldUsePdfOcrFallback(txt) ? await extractTextFromPdfWithOcr(buf) : "";
               const finalText = pickBetterPdfText(txt, ocrTxt);
-              if (finalText && finalText.trim()) {
-                const forensic = await analyzeLegalDocument(finalText, {
+
+              let forensic;
+              if (!finalText || !finalText.trim() || scoreExtractedTextQuality(finalText) < 0.5) {
+                // Text extraction failed or very poor → use Vision to read handwritten/scanned content
+                console.log(`[forensic] Text quality too low for ${decodedOriginalName}, trying Vision…`);
+                let protectedName = "";
+                let opposingName = "";
+                try {
+                  const caseRow = await pool.query("SELECT protected_person, opposing_party FROM cases WHERE id = $1 LIMIT 1", [caseId]);
+                  if (caseRow.rows.length > 0) {
+                    protectedName = caseRow.rows[0].protected_person || "";
+                    opposingName = caseRow.rows[0].opposing_party || "";
+                  }
+                } catch (_) { /* ignore */ }
+                forensic = await analyzePdfWithVision(buf, decodedOriginalName, protectedName, opposingName);
+                if (!forensic) {
+                  // Vision also failed — try text analysis with whatever we have
+                  if (finalText && finalText.trim()) {
+                    forensic = await analyzeLegalDocument(finalText, {
+                      documentTitle: decodedOriginalName,
+                      documentType: "PDF"
+                    });
+                  }
+                }
+              } else {
+                forensic = await analyzeLegalDocument(finalText, {
                   documentTitle: decodedOriginalName,
                   documentType: "PDF"
                 });
+              }
+
+              if (forensic) {
                 // Merge AI-extracted personen into forensic result
                 if (Array.isArray(forensic.personen) && forensic.personen.length > 0) {
                   forensic.people = forensic.personen.map((p) => ({
@@ -3921,7 +4071,7 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
                 forensic.documentId = docId;
                 forensic.fileName = decodedOriginalName;
                 await saveForensicAnalysis(docId, forensic);
-                console.log(`[forensic] Auto-analyzed: ${decodedOriginalName} → score ${forensic.score}`);
+                console.log(`[forensic] Auto-analyzed: ${decodedOriginalName} → score ${forensic.score}${forensic._visionAnalyzed ? " (vision)" : ""}`);
               }
             } catch (e) {
               console.warn(`[forensic] Auto-analysis failed for ${decodedOriginalName}:`, e.message);
@@ -4419,6 +4569,35 @@ router.get("/:caseId/files/:fileId/forensic", requireAuth, async (req, res) => {
       }
     }
 
+    // Vision fallback for PDFs with poor/no text (handwritten, scanned)
+    if (mimeType.includes("pdf") && (!extractedText || !extractedText.trim() || scoreExtractedTextQuality(extractedText) < 0.5)) {
+      console.log(`[forensic] Text quality too low for ${file.original_name}, trying Vision…`);
+      let protectedName = "";
+      let opposingName = "";
+      try {
+        const caseRow = await pool.query("SELECT protected_person, opposing_party FROM cases WHERE id = $1 LIMIT 1", [caseId]);
+        if (caseRow.rows.length > 0) {
+          protectedName = caseRow.rows[0].protected_person || "";
+          opposingName = caseRow.rows[0].opposing_party || "";
+        }
+      } catch (_) { /* ignore */ }
+      const visionResult = await analyzePdfWithVision(fileBuffer, file.original_name, protectedName, opposingName);
+      if (visionResult) {
+        if (Array.isArray(visionResult.personen) && visionResult.personen.length > 0) {
+          visionResult.people = visionResult.personen.map((p) => ({
+            name: p.name,
+            affiliation: p.rolle || "Privatperson",
+            ...(p.sentiment && { sentiment: p.sentiment }),
+            ...(p.bemerkung && { bemerkung: p.bemerkung })
+          }));
+        }
+        visionResult.documentId = file.id;
+        visionResult.fileName = file.original_name;
+        await saveForensicAnalysis(file.id, visionResult);
+        return res.json(visionResult);
+      }
+    }
+
     if (!extractedText || !extractedText.trim()) {
       const empty = {
         status: "empty",
@@ -4533,22 +4712,54 @@ router.get("/:caseId/forensic", requireAuth, async (req, res) => {
           : "";
         const extractedText = pickBetterPdfText(parsedText, ocrText);
 
-        if (!extractedText || !extractedText.trim()) {
-          fileResults.push({
-            fileId: file.id,
-            fileName: file.original_name,
-            score: 0,
-            risikoStufe: "niedrig",
-            findingsCount: 0,
-            fazit: "Kein lesbarer Text."
+        let result;
+        if (!extractedText || !extractedText.trim() || scoreExtractedTextQuality(extractedText) < 0.5) {
+          // Vision fallback for handwritten/scanned PDFs
+          console.log(`[forensic-all] Text quality too low for ${file.original_name}, trying Vision…`);
+          let protectedName = "";
+          let opposingName = "";
+          try {
+            const caseRow = await pool.query("SELECT protected_person, opposing_party FROM cases WHERE id = $1 LIMIT 1", [caseId]);
+            if (caseRow.rows.length > 0) {
+              protectedName = caseRow.rows[0].protected_person || "";
+              opposingName = caseRow.rows[0].opposing_party || "";
+            }
+          } catch (_) { /* ignore */ }
+          result = await analyzePdfWithVision(fileBuffer, file.original_name, protectedName, opposingName);
+          if (!result && extractedText && extractedText.trim()) {
+            result = await analyzeLegalDocument(extractedText, {
+              documentTitle: file.original_name,
+              documentType: "PDF"
+            });
+          }
+          if (!result) {
+            fileResults.push({
+              fileId: file.id,
+              fileName: file.original_name,
+              score: 0,
+              risikoStufe: "niedrig",
+              findingsCount: 0,
+              fazit: "Kein lesbarer Text."
+            });
+            continue;
+          }
+        } else {
+          result = await analyzeLegalDocument(extractedText, {
+            documentTitle: file.original_name,
+            documentType: "PDF"
           });
-          continue;
         }
 
-        const result = await analyzeLegalDocument(extractedText, {
-          documentTitle: file.original_name,
-          documentType: "PDF"
-        });
+        // Merge personen into people
+        if (Array.isArray(result.personen) && result.personen.length > 0 && !result.people) {
+          result.people = result.personen.map((p) => ({
+            name: p.name,
+            affiliation: p.rolle || "Privatperson",
+            ...(p.sentiment && { sentiment: p.sentiment }),
+            ...(p.bemerkung && { bemerkung: p.bemerkung })
+          }));
+        }
+
         result.documentId = file.id;
         result.fileName = file.original_name;
         await saveForensicAnalysis(file.id, result);
