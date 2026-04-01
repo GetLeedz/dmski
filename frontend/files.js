@@ -980,8 +980,39 @@ function sigWords(key) {
 }
 
 /**
+ * Simple edit distance check: true if strings differ by at most 1 character.
+ * Handles OCR typos like "Timor"→"Timur", "Naer"→"Nael".
+ */
+function isFuzzyMatch(a, b) {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  if (a.length === b.length) {
+    let diffs = 0;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) diffs++;
+      if (diffs > 1) return false;
+    }
+    return diffs === 1;
+  }
+  // Length differs by 1 — check for single insertion/deletion
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  let diffs = 0;
+  for (let i = 0, j = 0; i < longer.length; i++) {
+    if (longer[i] !== shorter[j]) {
+      diffs++;
+      if (diffs > 1) return false;
+    } else {
+      j++;
+    }
+  }
+  return true;
+}
+
+/**
  * Returns true if ALL words of the shorter name appear in the longer name.
  * Handles "Ayhan" ⊂ "Ayhan Ergen", "Schifferli" ⊂ "Schifferli Nael Kaan", etc.
+ * Also handles OCR typos: "Timor" ≈ "Timur", "Naer" ≈ "Nael".
  */
 function isSamePersonSubset(keyA, keyB) {
   const wa = sigWords(keyA);
@@ -989,7 +1020,7 @@ function isSamePersonSubset(keyA, keyB) {
   if (wa.length === 0 || wb.length === 0) return false;
   const shorter = wa.length <= wb.length ? wa : wb;
   const longer  = wa.length <= wb.length ? wb : wa;
-  return shorter.every(w => longer.some(lw => lw === w || lw.startsWith(w) || w.startsWith(lw)));
+  return shorter.every(w => longer.some(lw => lw === w || lw.startsWith(w) || w.startsWith(lw) || isFuzzyMatch(w, lw)));
 }
 
 /**

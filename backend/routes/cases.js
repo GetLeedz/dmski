@@ -748,7 +748,25 @@ function looksLikePersonName(value) {
     "regierungsrat",
     "stadtrat",
     "bundesgericht",
-    "obergericht"
+    "obergericht",
+    "nachmittag",
+    "vormittag",
+    "morgen",
+    "abend",
+    "nacht",
+    "mittagessen",
+    "zwischenbericht",
+    "schlussbericht",
+    "empfehlung",
+    "antragstellung",
+    "verhandlung",
+    "anhörung",
+    "anhoerung",
+    "protokollnotiz",
+    "aktennotiz",
+    "telefonnotiz",
+    "gespraechsnotiz",
+    "gesprächsnotiz"
   ];
 
   const lower = cleaned.toLowerCase();
@@ -771,6 +789,14 @@ function looksLikePersonName(value) {
     .filter(Boolean);
 
   if (parts.length < 2 || parts.length > 4) {
+    return false;
+  }
+
+  // Each significant word must be at least 3 chars (blocks OCR garbage like "Lh", "Dov")
+  // Exception: known name particles (von, de, di, van, le, du, el, al)
+  const nameParticles = new Set(["von", "de", "di", "van", "le", "du", "el", "al", "da", "la", "lo"]);
+  const significantParts = parts.filter((p) => !nameParticles.has(p.toLowerCase()));
+  if (significantParts.some((p) => p.replace(/[.']/g, "").length < 3)) {
     return false;
   }
 
@@ -1050,7 +1076,7 @@ function normalizePeopleDetailed(values, rawText = "", blockedNames = new Set(),
     const allowSingleToken = typeof value === "object" && value ? value.allowSingleToken === true : false;
 
     let normalized = normalizeWhitespace(inputName).replace(/[;,]+$/g, "");
-    normalized = normalized.replace(/^(Herr|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "");
+    normalized = normalized.replace(/^(Herrn?|Frau|Bruder|Schwester|Mutter|Vater)\s+/i, "");
     // Strip birth dates, gender markers, and trailing metadata from names
     normalized = normalized.replace(/,?\s*geb\.?\s*\d[\d.\-/\s]*/gi, "").replace(/,?\s*\b[mfw]\s*$/i, "").trim();
     // Strip academic/medical titles for cleaner name

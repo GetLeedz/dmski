@@ -4822,15 +4822,15 @@ select.case-edit-input {
 
 table.akteure-personen {
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto;
   border-collapse: collapse;
   font-size: 0.78rem;
   font-family: var(--font, "Inter"), system-ui, sans-serif;
 }
 
-table.akteure-personen col.col-name      { width: 22%; }
-table.akteure-personen col.col-rolle     { width: 20%; }
-table.akteure-personen col.col-bemerkung { width: 58%; }
+table.akteure-personen col.col-name      { width: 20%; min-width: 120px; }
+table.akteure-personen col.col-rolle     { width: 18%; min-width: 100px; }
+table.akteure-personen col.col-bemerkung { width: 62%; }
 
 table.akteure-personen thead {
   background: var(--navy, #1A2B3C);
