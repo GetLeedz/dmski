@@ -3684,7 +3684,7 @@ td {
     padding: 0.28rem 0.4rem !important;
     word-break: break-word !important;
   }
-  table.akteure-personen { font-size: 0.72rem !important; }
+  .tactic-table.akteure-tbl { font-size: 0.72rem !important; }
   .tactic-analysis-body{ font-size: 0.73rem !important; line-height: 1.45 !important; }
   .party-split-num,
   .file-count-num      { font-size: 1.35rem !important; }
@@ -3778,7 +3778,7 @@ body.printing .tactic-table td {
   word-break: break-word !important;
 }
 
-body.printing table.akteure-personen { font-size: 0.72rem !important; }
+body.printing .tactic-table.akteure-tbl { font-size: 0.72rem !important; }
 body.printing .tactic-analysis-body { font-size: 0.73rem !important; line-height: 1.45 !important; }
 
 body.printing .party-split-num,
@@ -4820,100 +4820,23 @@ select.case-edit-input {
   width: 100%;
 }
 
-/* ── Personen-Tabelle (Tabelle 5) — grid layout like tactic-table ── */
-.akteure-table-container {
-  overflow-x: auto;
-  border-radius: 10px;
-  border: 1px solid rgba(26,43,60,0.14);
-  background: rgba(255,255,255,0.9);
-  width: 100%;
+/* ── Personen-Tabelle (Tabelle 5) — uses tactic-table base, custom grid ── */
+.tactic-table.akteure-tbl thead tr,
+.tactic-table.akteure-tbl tbody tr {
+  grid-template-columns: 1.4fr 1fr 2fr;
 }
 
-table.akteure-personen {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.78rem;
-  display: block;
-  font-family: var(--font, "Inter"), system-ui, sans-serif;
-}
-
-table.akteure-personen col { display: none; }
-
-table.akteure-personen thead {
-  display: block;
-  width: 100%;
-  background: var(--navy, #1A2B3C);
-  border-bottom: 3px solid var(--gold, #C5A059);
-}
-
-table.akteure-personen tbody {
-  display: block;
-  width: 100%;
-}
-
-table.akteure-personen thead tr,
-table.akteure-personen tbody tr {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr 2fr;
-  align-items: stretch;
-  width: 100%;
-}
-
-table.akteure-personen thead tr {
-  background: transparent;
-  border: none;
-}
-
-table.akteure-personen th {
-  padding: 0.85rem 1.1rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #F8F9FA;
-  border: none;
-  text-align: left;
-  background: transparent;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-}
-
-table.akteure-personen td {
-  padding: 0.85rem 1.1rem;
-  border-bottom: 1px solid rgba(26,43,60,0.07);
-  line-height: 1.45;
-  color: #1a2b3c;
-  font-size: 0.78rem;
-  background: transparent;
-  word-break: break-word;
-  display: flex;
-  align-items: flex-start;
-  min-width: 0;
-  text-align: left;
-}
-
-table.akteure-personen td:first-child {
+.tactic-table.akteure-tbl td:first-child {
   font-weight: 600;
   color: #0f2b36;
+  gap: 0.5rem;
 }
-table.akteure-personen td:nth-child(2) {
+.tactic-table.akteure-tbl td:nth-child(2) {
   color: #4a6a7a;
 }
-table.akteure-personen td:nth-child(3) {
+.tactic-table.akteure-tbl td:nth-child(3) {
   color: #5a6a7a;
   font-size: 0.76rem;
-}
-
-table.akteure-personen tbody tr:last-child td { border-bottom: none; }
-
-table.akteure-personen tbody tr {
-  background: rgba(255,255,255,0.55);
-}
-table.akteure-personen tbody tr:hover td {
-  background: rgba(255,255,255,0.75);
 }
 
 

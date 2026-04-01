@@ -1185,12 +1185,14 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   const rows = sorted.map(person => {
     const roleLabel   = deriveRoleLabel(person, protectedPerson, opposingParty);
     const displayName = formatNameFirstLast(person.name);
-    const bemerkung   = person.bemerkung || "";
+    const bemerkung   = person.bemerkung || "\u2014";
+    const sentiment   = derivePersonSentiment(person, analysis, protectedPerson, opposingParty, authorSentimentMap);
+    const dotClass    = sentiment === "positive" ? "is-positive" : sentiment === "negative" ? "is-negative" : "is-neutral";
     return `
-      <tr class="akteure-row">
-        <td class="akteure-col-name">${escapeHtml(displayName)}</td>
-        <td class="akteure-col-role">${escapeHtml(roleLabel)}</td>
-        <td class="akteure-col-bemerkung">${escapeHtml(bemerkung)}</td>
+      <tr class="tactic-row-present">
+        <td><span class="akteure-sentiment-dot ${dotClass}"></span> ${escapeHtml(displayName)}</td>
+        <td>${escapeHtml(roleLabel)}</td>
+        <td>${escapeHtml(bemerkung)}</td>
       </tr>
     `;
   }).join("");
@@ -1200,14 +1202,9 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
       <div class="tactic-section-number">5</div>
       <div class="tactic-section-content">
         <p class="tactic-section-title">Involvierte Personen & Funktion</p>
-        <p class="tactic-section-subtitle">Alle im Dossier erkannten Personen mit Rolle</p>
-        <div class="akteure-table-container">
-          <table class="akteure-personen">
-            <colgroup>
-              <col class="col-name" />
-              <col class="col-rolle" />
-              <col class="col-bemerkung" />
-            </colgroup>
+        <p class="tactic-section-subtitle">${sorted.length} erkannte Personen im Dossier mit Rolle und forensischer Einordnung</p>
+        <div class="tactic-table-wrap">
+          <table class="tactic-table akteure-tbl">
             <thead>
               <tr>
                 <th>Person</th>
