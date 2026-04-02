@@ -1589,14 +1589,15 @@ async function refreshAnalysisReport(files = allFiles) {
                 tsEl.textContent = `Letztes Update: ${now.toLocaleDateString("de-CH")} ${now.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })}`;
               }
             } else {
-              alert(data.error || "Konsolidierung fehlgeschlagen.");
+              const errMsg = data.error || "Konsolidierung fehlgeschlagen.";
+              dmskiModal({ icon: "error", title: "Personen-Update fehlgeschlagen", body: errMsg, confirmLabel: "Verstanden", confirmClass: "is-secondary" });
               consolidateBtn.disabled = false;
               consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
             }
           } catch (err) {
             if (err instanceof Error && err.message === "AUTH_REDIRECT") return;
             console.error("Consolidate persons error:", err);
-            alert(err.message || "Fehler bei der Personen-Konsolidierung.");
+            dmskiModal({ icon: "error", title: "Personen-Update fehlgeschlagen", body: err.message || "Unbekannter Fehler bei der Konsolidierung.", confirmLabel: "Verstanden", confirmClass: "is-secondary" });
             consolidateBtn.disabled = false;
             consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
           }

@@ -5144,19 +5144,29 @@ router.post("/:caseId/consolidate-persons", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Keine Personendaten in den Analysen gefunden." });
     }
 
-    // 3. Get case party names for context
-    const caseResult = await pool.query(
-      "SELECT protected_person, opposing_party FROM cases WHERE case_id = $1 LIMIT 1",
-      [caseId]
-    );
-    const caseData = caseResult.rows[0] || {};
+    // 3. Get case party names for context (try main table, then fallback)
+    let caseData = {};
+    try {
+      const r1 = await pool.query("SELECT protected_person_name, opposing_party FROM cases WHERE id = $1 LIMIT 1", [caseId]);
+      if (r1.rows[0]) {
+        caseData = { protected_person: r1.rows[0].protected_person_name, opposing_party: r1.rows[0].opposing_party };
+      }
+    } catch { /* column may not exist */ }
+    if (!caseData.protected_person) {
+      try {
+        const r2 = await pool.query("SELECT protected_person_name, opposing_party FROM case_party_fallback WHERE case_id = $1 LIMIT 1", [caseId]);
+        if (r2.rows[0]) {
+          caseData = { protected_person: r2.rows[0].protected_person_name, opposing_party: r2.rows[0].opposing_party };
+        }
+      } catch { /* table may not exist */ }
+    }
 
     // 4. Call Claude to consolidate
     console.log(`[consolidate-persons] Case ${caseId}: ${allPersons.length} raw persons from ${docs.length} docs`);
     const result = await consolidatePersons(
       allPersons,
-      caseData.protected_person || "",
-      caseData.opposing_party || ""
+      caseData.protected_person || "unbekannt",
+      caseData.opposing_party || "unbekannt"
     );
 
     if (result.status !== "ok") {
