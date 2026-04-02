@@ -4887,6 +4887,7 @@ async function runForensicScan(caseId) {
   let analyzedCount = 0;
   const allFindings = [];
 
+  try {
     for (let fi = 0; fi < files.length; fi++) {
       const file = files[fi];
       job.progress = Math.round(((fi) / files.length) * 80);
