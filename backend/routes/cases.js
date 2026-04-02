@@ -4891,7 +4891,7 @@ async function runForensicScan(caseId) {
     for (let fi = 0; fi < files.length; fi++) {
       const file = files[fi];
       job.progress = Math.round(((fi) / files.length) * 80);
-      job.progressText = `Datei ${fi + 1}/${files.length}: ${file.original_name}`;
+      job.progressText = `File ${fi + 1}/${files.length}: ${file.original_name}`;
 
       // Try cached first
       let forensic = await loadStoredForensic(file.id);
@@ -5023,7 +5023,7 @@ async function runForensicScan(caseId) {
     const hochCount = allFindings.filter(f => f.schweregrad === "hoch").length;
 
     job.progress = 82;
-    job.progressText = "Kreuzanalyse wird gestartet…";
+    job.progressText = "Kreuzanalyse über alle Files wird gestartet…";
 
     // ── Cross-document contradiction analysis ──────────────────────
     let crossDocResult = null;
@@ -5085,8 +5085,8 @@ async function runForensicScan(caseId) {
       crossDoc: crossDocResult || null,
       files: fileResults,
       gesamtFazit: analyzedCount === 0
-        ? "Keine Dateien konnten analysiert werden."
-        : `${analyzedCount} von ${files.length} Dateien forensisch analysiert. Manipulations-Score: ${avgScore}/100. ${crossDocResult ? `Kreuzanalyse-Score: ${crossScore}/100 mit ${(crossDocResult.widersprueche || []).length} dokumentuebergreifenden Widerspruechen. ` : ""}${allFindings.length} Auffaelligkeiten erkannt, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
+        ? "Keine Files konnten analysiert werden."
+        : `${analyzedCount} von ${files.length} Files forensisch analysiert. Manipulations-Score: ${avgScore}/100. ${crossDocResult ? `Kreuzanalyse-Score: ${crossScore}/100 mit ${(crossDocResult.widersprueche || []).length} dokumentuebergreifenden Widerspruechen. ` : ""}${allFindings.length} Auffaelligkeiten erkannt, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
     };
 
   } catch (err) {

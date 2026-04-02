@@ -3869,7 +3869,22 @@ void loadCaseContext().then(() => {
     resultsWrap.innerHTML = "";
     const waveEl = document.getElementById("forensicWave");
 
-    setProgress(2, "Forensische Analyse wird gestartet…");
+    // Count files for time estimate
+    const fileCountEl = document.querySelector(".analysis-report-card.is-file-count .file-count-num");
+    const estFiles = parseInt(fileCountEl?.textContent) || 0;
+    const estMinutes = estFiles > 0 ? Math.ceil((estFiles * 2.3 + 60) / 60) : 3;
+
+    const confirmed = await dmskiModal({
+      icon: "info",
+      title: "Fall-Analyse starten?",
+      body: `Alle <strong>${estFiles || "?"} Files</strong> werden forensisch analysiert und vernetzt.<br>Geschätzte Dauer: <strong>~${estMinutes} Minuten</strong>`,
+      confirmLabel: "Analyse starten",
+      cancelLabel: "Abbrechen",
+      confirmClass: "is-primary"
+    });
+    if (!confirmed) { scanBtn.disabled = false; return; }
+
+    setProgress(2, "Fall-Analyse wird gestartet…");
     if (waveEl) waveEl.classList.remove("hidden");
 
     try {
@@ -3881,9 +3896,9 @@ void loadCaseContext().then(() => {
       const startData = await startResp.json();
       if (startData.error) throw new Error(startData.error);
 
-      // Poll for results
+      // Poll for results (max 15 minutes)
       let pollCount = 0;
-      const maxPolls = 300; // 5 minutes at 1s intervals
+      const maxPolls = 450;
       while (pollCount < maxPolls) {
         await new Promise(r => setTimeout(r, 2000));
         pollCount++;
@@ -3895,7 +3910,7 @@ void loadCaseContext().then(() => {
         }
 
         if (status.status === "done" && status.result) {
-          setProgress(100, `Analyse abgeschlossen – ${status.result.analyzedCount || 0} Dateien gescannt`);
+          setProgress(100, `Fall-Analyse abgeschlossen – ${status.result.analyzedCount || 0} Files gescannt`);
           if (waveEl) waveEl.classList.add("hidden");
           renderForensicResults(status.result);
           return;
