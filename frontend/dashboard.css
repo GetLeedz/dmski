@@ -3694,7 +3694,7 @@ td {
 
   .tactic-table-wrap  { overflow: hidden !important; }
   .tactic-table thead tr,
-  .tactic-table tbody tr { grid-template-columns: 2fr 0.7fr 2.6fr 0.55fr !important; }
+  .tactic-table tbody tr { grid-template-columns: 20% 10% 20% 50% !important; }
   .tactic-table th,
   .tactic-table td {
     font-size: 0.67rem !important;
@@ -3787,7 +3787,7 @@ body.printing .tactic-section {
 
 body.printing .tactic-table thead tr,
 body.printing .tactic-table tbody tr {
-  grid-template-columns: 2fr 0.7fr 2.6fr 0.55fr !important;
+  grid-template-columns: 20% 10% 20% 50% !important;
 }
 
 body.printing .tactic-table th,
@@ -5227,7 +5227,7 @@ select.case-edit-input {
 .tactic-table thead tr,
 .tactic-table tbody tr {
   display: grid;
-  grid-template-columns: 2fr 0.7fr 2.6fr 0.55fr;
+  grid-template-columns: 20% 10% 20% 50%;
   align-items: stretch;
   width: 100%;
 }
@@ -5521,15 +5521,15 @@ select.case-edit-input {
 }
 
 .tactic-doc-ids {
-  display: block;
+  display: inline;
   white-space: normal;
-  word-break: break-word;
-  line-height: 1.65;
-  font-size: 0.76rem;
+  word-break: break-all;
+  line-height: 1.55;
+  font-size: 0.72rem;
   font-weight: 500;
-  font-family: inherit;
+  font-family: var(--font-mono, "SF Mono", "Consolas", monospace);
   color: var(--navy);
-  letter-spacing: 0;
+  letter-spacing: 0.01em;
   text-align: left;
   background: none;
   border-radius: 0;
@@ -7013,7 +7013,7 @@ body.printing .upload-hero-wrap { display: none !important; }
    ================================================================ */
 #analysisReportTactics .tactic-table thead tr,
 #analysisReportTactics .tactic-table tbody tr {
-  grid-template-columns: 2fr 0.7fr 2.6fr 0.55fr !important;
+  grid-template-columns: 20% 10% 20% 50% !important;
 }
 
 /* ================================================================
