@@ -66,7 +66,15 @@
     </section>
 
   </main>
-  <div id="site-footer"></div>
-  <script src="footer.js"></script>
+  <footer class="site-footer">
+    <span>&copy; <span id="cYear"></span> DMSKI</span>
+    <span class="footer-dot">&middot;</span>
+    <a href="/impressum.html">Impressum</a>
+    <span class="footer-dot">&middot;</span>
+    <a href="/datenschutz.html">Datenschutz</a>
+    <span class="footer-dot">&middot;</span>
+    <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>
+  </footer>
+  <script>document.getElementById("cYear").textContent=new Date().getFullYear();</script>
 </body>
 </html>

@@ -226,7 +226,7 @@
 
     <div class="zugang-hero">
       <h1>Zugang anfragen</h1>
-      <p>DMSKI ist eine geschlossene Plattform. Beschreiben Sie Ihren Fall und wir prüfen, ob wir Ihnen helfen können.</p>
+      <p>Beschreiben Sie Ihren Fall und wir prüfen, ob wir Ihnen helfen können.</p>
     </div>
 
     <div class="zugang-card" id="zugangCard">
@@ -269,6 +269,20 @@
           </div>
 
           <div class="zugang-field">
+            <label for="zFileCount">Geschätzte Anzahl Files im Fall</label>
+            <select id="zFileCount" name="fileCount">
+              <option value="">Bitte wählen</option>
+              <option value="bis_50">Bis 50 Files</option>
+              <option value="bis_100">Bis 100 Files</option>
+              <option value="bis_200">Bis 200 Files</option>
+              <option value="bis_400">Bis 400 Files</option>
+              <option value="bis_500">Bis 500 Files</option>
+              <option value="bis_1000">Bis 1'000 Files</option>
+              <option value="mehr_als_1000">Mehr als 1'000 Files</option>
+            </select>
+          </div>
+
+          <div class="zugang-field">
             <label for="zNachricht">Beschreibung Ihres Anliegens *</label>
             <textarea id="zNachricht" name="nachricht" placeholder="Beschreiben Sie kurz Ihren Fall und wie DMSKI Ihnen helfen kann..." required></textarea>
           </div>
@@ -284,9 +298,18 @@
     </div>
   </main>
 
-  <div id="site-footer"></div>
+  <footer class="site-footer">
+    <span>&copy; <span id="copyrightYear"></span> DMSKI</span>
+    <span class="footer-dot">&middot;</span>
+    <a href="/impressum.html">Impressum</a>
+    <span class="footer-dot">&middot;</span>
+    <a href="/datenschutz.html">Datenschutz</a>
+    <span class="footer-dot">&middot;</span>
+    <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>
+  </footer>
 
   <script>
+    document.getElementById("copyrightYear").textContent = new Date().getFullYear();
     const API_BASE = "https://lively-reverence-production-def3.up.railway.app/api";
 
     document.getElementById("zugangForm").addEventListener("submit", async (e) => {
@@ -321,6 +344,7 @@
             telefon: form.telefon.value.trim(),
             rolle: form.rolle.value,
             nachricht: form.nachricht.value.trim(),
+            fileCount: form.fileCount?.value || "",
             turnstileToken: turnstileResponse
           })
         });
@@ -347,6 +371,6 @@
       }
     });
   </script>
-  <script src="footer.js"></script>
+
 </body>
 </html>

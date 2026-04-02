@@ -131,10 +131,21 @@ a:hover {
   color: #fff;
 }
 
-/* Legacy footer styles (overridden by footer.js) */
-.dashboard-footer { display: none; }
+/* ── Footer ── */
+.site-footer {
+  padding: 2rem 2rem 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.55rem; flex-wrap: wrap;
+  font-size: 0.75rem; color: rgba(255,255,255,0.25); letter-spacing: 0.01em;
+  background: #080c14; border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: auto;
+}
+.site-footer a { color: rgba(255,255,255,0.35); text-decoration: none; transition: color 160ms ease; }
+.site-footer a:hover { color: rgba(197,160,89,0.7); }
+.footer-dot { opacity: 0.3; font-size: 0.6rem; }
 
 @media (max-width: 600px) {
   .card { padding: 1.5rem 1.2rem; }
   .top-bar { padding: 0.6rem 1rem; }
+  .site-footer { padding: 1.2rem 1rem; }
 }
