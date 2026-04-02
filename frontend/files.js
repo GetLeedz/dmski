@@ -1198,10 +1198,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   }).join("");
 
   const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
-    ? `<button id="consolidatePersonsBtn" type="button" class="akteure-refresh-btn" title="KI: Personen über alle Files konsolidieren">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-        KI Personen-Update
-      </button>`
+    ? `<div class="akteure-refresh-wrap">
+        <button id="consolidatePersonsBtn" type="button" class="akteure-refresh-btn" title="KI: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          KI Personen-Update
+        </button>
+        <span id="consolidateTimestamp" class="akteure-timestamp"></span>
+      </div>`
     : "";
 
   return `
@@ -1575,10 +1578,15 @@ async function refreshAnalysisReport(files = allFiles) {
                 currentCaseOpposingParty,
                 authorSentimentMap
               );
-              // Flash success
+              // Update subtitle + timestamp
               const subtitle = analysisReportAkteure.querySelector(".tactic-section-subtitle");
               if (subtitle) {
                 subtitle.textContent = `${data.consolidatedCount} Personen konsolidiert (vorher ${data.rawCount} Einträge)`;
+              }
+              const tsEl = analysisReportAkteure.querySelector("#consolidateTimestamp");
+              if (tsEl) {
+                const now = new Date();
+                tsEl.textContent = `Letztes Update: ${now.toLocaleDateString("de-CH")} ${now.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })}`;
               }
             } else {
               alert(data.error || "Konsolidierung fehlgeschlagen.");
