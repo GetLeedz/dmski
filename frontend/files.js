@@ -3851,33 +3851,71 @@ void loadCaseContext().then(() => {
     resultsWrap.classList.remove("hidden");
   }
 
+  const authHeader = { Authorization: `Bearer ${token}` };
+
+  async function pollForensicStatus() {
+    try {
+      const resp = await fetch(`${API_BASE}/cases/${currentCaseId}/forensic/status`, { headers: authHeader });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return await resp.json();
+    } catch (e) {
+      return { status: "error", error: e.message };
+    }
+  }
+
   scanBtn.addEventListener("click", async () => {
     scanBtn.disabled = true;
     resultsWrap.classList.add("hidden");
     resultsWrap.innerHTML = "";
+    const waveEl = document.getElementById("forensicWave");
 
-    setProgress(5, "Forensische Analyse wird gestartet…");
+    setProgress(2, "Forensische Analyse wird gestartet…");
+    if (waveEl) waveEl.classList.remove("hidden");
 
     try {
-      setProgress(15, "Einzeldokumente werden analysiert…");
-
-      const response = await apiFetch(`${API_BASE}/cases/${currentCaseId}/forensic`, {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem("token") || localStorage.getItem("token")}` }
+      // Kick off async scan
+      const startResp = await fetch(`${API_BASE}/cases/${currentCaseId}/forensic/start`, {
+        method: "POST",
+        headers: { ...authHeader, "Content-Type": "application/json" }
       });
+      const startData = await startResp.json();
+      if (startData.error) throw new Error(startData.error);
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${response.status}`);
+      // Poll for results
+      let pollCount = 0;
+      const maxPolls = 300; // 5 minutes at 1s intervals
+      while (pollCount < maxPolls) {
+        await new Promise(r => setTimeout(r, 2000));
+        pollCount++;
+        const status = await pollForensicStatus();
+
+        if (status.status === "running") {
+          setProgress(status.progress || 5, status.progressText || "Analyse läuft…");
+          continue;
+        }
+
+        if (status.status === "done" && status.result) {
+          setProgress(100, `Analyse abgeschlossen – ${status.result.analyzedCount || 0} Dateien gescannt`);
+          if (waveEl) waveEl.classList.add("hidden");
+          renderForensicResults(status.result);
+          return;
+        }
+
+        if (status.status === "error") {
+          throw new Error(status.error || "Analyse fehlgeschlagen");
+        }
+
+        // status === "none" — scan not found, maybe finished between start and first poll
+        if (status.status === "none" && pollCount > 3) {
+          throw new Error("Scan-Job nicht gefunden");
+        }
       }
+      throw new Error("Timeout – Analyse dauert zu lange");
 
-      setProgress(90, "Ergebnisse werden aufbereitet…");
-
-      const data = await response.json();
-      setProgress(100, `Analyse abgeschlossen – ${data.analyzedCount || 0} Dateien gescannt`);
-
-      renderForensicResults(data);
     } catch (err) {
+      if (err instanceof Error && err.message === "AUTH_REDIRECT") return;
       setProgress(100, `Fehler: ${err.message}`);
+      if (waveEl) waveEl.classList.add("hidden");
       if (resultsWrap) {
         resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Forensische Analyse fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
         resultsWrap.classList.remove("hidden");

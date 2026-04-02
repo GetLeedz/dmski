@@ -4818,36 +4818,80 @@ router.get("/:caseId/files/:fileId/forensic", requireAuth, async (req, res) => {
 });
 
 // Dossier-level forensic analysis (all files in a case)
-router.get("/:caseId/forensic", requireAuth, async (req, res) => {
-  const caseId = String(req.params.caseId || "").trim();
+/* ── In-memory forensic job store ── */
+const forensicJobs = new Map();
 
+// Clean up old jobs after 30 minutes
+setInterval(() => {
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  for (const [key, job] of forensicJobs) {
+    if (job.startedAt < cutoff) forensicJobs.delete(key);
+  }
+}, 5 * 60 * 1000);
+
+/* GET /:caseId/forensic/status – poll for scan progress */
+router.get("/:caseId/forensic/status", requireAuth, (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  const job = forensicJobs.get(caseId);
+  if (!job) return res.json({ status: "none" });
+  return res.json({
+    status: job.status,
+    progress: job.progress,
+    progressText: job.progressText,
+    result: job.status === "done" ? job.result : null,
+    error: job.status === "error" ? job.error : null
+  });
+});
+
+/* POST /:caseId/forensic/start – kick off async scan */
+router.post("/:caseId/forensic/start", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
   }
 
-  try {
-    const filesResult = await pool.query(
-      "SELECT id, original_name, stored_name, mime_type FROM case_documents WHERE case_id = $1 ORDER BY uploaded_at ASC",
-      [caseId]
-    );
-    const files = filesResult.rows;
-    if (files.length === 0) {
-      return res.json({
-        caseId,
-        status: "empty",
-        totalScore: 0,
-        fileCount: 0,
-        files: [],
-        gesamtFazit: "Keine Dateien im Dossier."
-      });
-    }
+  const existing = forensicJobs.get(caseId);
+  if (existing && existing.status === "running") {
+    return res.json({ status: "running", message: "Scan laeuft bereits." });
+  }
 
-    const fileResults = [];
-    let totalScore = 0;
-    let analyzedCount = 0;
-    const allFindings = [];
+  // Start async scan
+  forensicJobs.set(caseId, { status: "running", progress: 0, progressText: "Starte…", startedAt: Date.now(), result: null, error: null });
+  res.json({ status: "started" });
 
-    for (const file of files) {
+  // Run in background (not awaited)
+  runForensicScan(caseId).catch(err => {
+    console.error(`[forensic-job] Case ${caseId} error:`, err.message);
+    const job = forensicJobs.get(caseId);
+    if (job) { job.status = "error"; job.error = err.message; }
+  });
+});
+
+async function runForensicScan(caseId) {
+  const job = forensicJobs.get(caseId);
+  if (!job) return;
+
+  const filesResult = await pool.query(
+    "SELECT id, original_name, stored_name, mime_type FROM case_documents WHERE case_id = $1 ORDER BY uploaded_at ASC",
+    [caseId]
+  );
+  const files = filesResult.rows;
+  if (files.length === 0) {
+    job.status = "done";
+    job.result = { caseId, status: "empty", totalScore: 0, fileCount: 0, files: [], gesamtFazit: "Keine Dateien im Dossier." };
+    return;
+  }
+
+  const fileResults = [];
+  let totalScore = 0;
+  let analyzedCount = 0;
+  const allFindings = [];
+
+    for (let fi = 0; fi < files.length; fi++) {
+      const file = files[fi];
+      job.progress = Math.round(((fi) / files.length) * 80);
+      job.progressText = `Datei ${fi + 1}/${files.length}: ${file.original_name}`;
+
       // Try cached first
       let forensic = await loadStoredForensic(file.id);
       if (forensic && forensic.status === "ok") {
@@ -4977,6 +5021,9 @@ router.get("/:caseId/forensic", requireAuth, async (req, res) => {
     const kritischCount = allFindings.filter(f => f.schweregrad === "kritisch").length;
     const hochCount = allFindings.filter(f => f.schweregrad === "hoch").length;
 
+    job.progress = 82;
+    job.progressText = "Kreuzanalyse wird gestartet…";
+
     // ── Cross-document contradiction analysis ──────────────────────
     let crossDocResult = null;
     if (analyzedCount >= 2) {
@@ -5020,7 +5067,10 @@ router.get("/:caseId/forensic", requireAuth, async (req, res) => {
     else if (combinedScore >= 50 || hochCount >= 3) gesamtRisiko = "hoch";
     else if (combinedScore >= 25 || hochCount >= 1) gesamtRisiko = "mittel";
 
-    return res.json({
+    job.progress = 100;
+    job.progressText = "Analyse abgeschlossen";
+    job.status = "done";
+    job.result = {
       caseId,
       status: "ok",
       totalScore: avgScore,
@@ -5036,12 +5086,26 @@ router.get("/:caseId/forensic", requireAuth, async (req, res) => {
       gesamtFazit: analyzedCount === 0
         ? "Keine Dateien konnten analysiert werden."
         : `${analyzedCount} von ${files.length} Dateien forensisch analysiert. Manipulations-Score: ${avgScore}/100. ${crossDocResult ? `Kreuzanalyse-Score: ${crossScore}/100 mit ${(crossDocResult.widersprueche || []).length} dokumentuebergreifenden Widerspruechen. ` : ""}${allFindings.length} Auffaelligkeiten erkannt, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
-    });
+    };
 
   } catch (err) {
     console.error("Dossier forensic error:", err.message);
-    return res.status(500).json({ error: "Dossier-Forensik konnte nicht durchgefuehrt werden." });
+    const job = forensicJobs.get(caseId);
+    if (job) { job.status = "error"; job.error = err.message; }
   }
+}
+
+/* Legacy sync endpoint – redirect to async flow */
+router.get("/:caseId/forensic", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+  const job = forensicJobs.get(caseId);
+  if (job && job.status === "done" && job.result) {
+    return res.json(job.result);
+  }
+  return res.json({ status: "none", message: "Bitte POST /forensic/start verwenden." });
 });
 
 router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
