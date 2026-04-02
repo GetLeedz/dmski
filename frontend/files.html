@@ -42,6 +42,40 @@
             <div id="analysisReportTactics"></div>
             <div id="analysisReportAkteure"></div>
           </section>
+
+          <!-- ── Forensic MASTER SCAN Section (moved to top) ── -->
+          <section id="forensicSection" class="forensic-section">
+            <div class="forensic-header">
+              <div class="forensic-header-text">
+                <p class="forensic-eyebrow">KI-Analyse</p>
+                <h3 class="forensic-title">Dossier-Gesamtanalyse</h3>
+                <p class="forensic-subtitle">Muster · Zusammenhänge · Auffälligkeiten · Rechtsprüfung</p>
+                <ul class="forensic-features">
+                  <li>Vernetzte Analyse aller Dokumente</li>
+                  <li>Erkennung von Zusammenhängen zwischen Beteiligten</li>
+                  <li>Verhaltens- und Kommunikationsmuster</li>
+                  <li>Abgleich mit EMRK und KRK</li>
+                </ul>
+              </div>
+              <div class="forensic-header-action">
+                <div id="forensicWave" class="forensic-wave hidden" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <button id="startForensicScanBtn" type="button" class="forensic-scan-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/><path d="M12 2c2.8 3.1 4.4 6.4 4.5 10-.1 3.6-1.7 6.9-4.5 10"/>
+                  </svg>
+                  Master Scan Start – all Files
+                </button>
+              </div>
+            </div>
+            <div id="forensicProgress" class="forensic-progress hidden">
+              <div class="forensic-progress-bar"><div id="forensicProgressFill" class="forensic-progress-fill"></div></div>
+              <p id="forensicProgressText" class="forensic-progress-text">Analyse wird gestartet…</p>
+            </div>
+            <div id="forensicResults" class="forensic-results hidden"></div>
+          </section>
+
         </div>
         <button id="deleteCaseBtn" type="button" class="icon-btn danger" aria-label="Dossier löschen" title="Dossier löschen">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -130,39 +164,6 @@
         <tbody id="filesTableBody"></tbody>
       </table>
       </div><!-- /files-panel -->
-
-      <!-- ── Forensic MASTER SCAN Section ── -->
-      <section id="forensicSection" class="forensic-section">
-        <div class="forensic-header">
-          <div class="forensic-header-text">
-            <p class="forensic-eyebrow">KI-Analyse</p>
-            <h3 class="forensic-title">Dossier-Gesamtanalyse</h3>
-            <p class="forensic-subtitle">Muster · Zusammenhänge · Auffälligkeiten · Rechtsprüfung</p>
-            <ul class="forensic-features">
-              <li>Vernetzte Analyse aller Dokumente</li>
-              <li>Erkennung von Zusammenhängen zwischen Beteiligten</li>
-              <li>Verhaltens- und Kommunikationsmuster</li>
-              <li>Abgleich mit EMRK und KRK</li>
-            </ul>
-          </div>
-          <div class="forensic-header-action">
-            <div id="forensicWave" class="forensic-wave hidden" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
-            <button id="startForensicScanBtn" type="button" class="forensic-scan-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/><path d="M12 2c2.8 3.1 4.4 6.4 4.5 10-.1 3.6-1.7 6.9-4.5 10"/>
-              </svg>
-              Master Scan Start – all Files
-            </button>
-          </div>
-        </div>
-        <div id="forensicProgress" class="forensic-progress hidden">
-          <div class="forensic-progress-bar"><div id="forensicProgressFill" class="forensic-progress-fill"></div></div>
-          <p id="forensicProgressText" class="forensic-progress-text">Analyse wird gestartet…</p>
-        </div>
-        <div id="forensicResults" class="forensic-results hidden"></div>
-      </section>
 
       <p id="listMessage" class="message"></p>
       <div id="undoBar" class="undo-bar hidden" aria-live="polite"></div>
