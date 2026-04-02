@@ -3614,6 +3614,13 @@ void loadCaseContext().then(() => {
   const resultsWrap = document.getElementById("forensicResults");
   if (!scanBtn) return;
 
+  // Team members cannot run Master Scan – only case owner (customer) or admin
+  if (currentUserRole === "team") {
+    scanBtn.disabled = true;
+    scanBtn.title = "Nur Fall-Inhaber kann Master Scan ausführen";
+    scanBtn.setAttribute("aria-label", "Nur Fall-Inhaber kann Master Scan ausführen");
+  }
+
   function setProgress(pct, text) {
     if (progressWrap) progressWrap.classList.remove("hidden");
     if (progressFill) progressFill.style.width = `${pct}%`;

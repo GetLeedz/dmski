@@ -5749,8 +5749,9 @@ select.case-edit-input {
    FILES PANEL – unified toolbar + table wrapper
    ================================================================ */
 .files-panel {
-  background: #f5f6f8;
+  background: rgba(245,246,248,0.7);
   border-radius: var(--radius-lg);
+  border: 1px solid rgba(26,43,60,0.10);
   padding: 1.8rem;
   margin: 1.5rem 0 0;
 }
@@ -7102,9 +7103,11 @@ body.printing .upload-hero-wrap { display: none !important; }
 }
 
 .forensic-scan-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
+  background: #6b7a8a;
 }
 
 .forensic-scan-btn svg {
