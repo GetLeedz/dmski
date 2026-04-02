@@ -4818,16 +4818,48 @@ router.get("/:caseId/files/:fileId/forensic", requireAuth, async (req, res) => {
 });
 
 // Dossier-level forensic analysis (all files in a case)
-/* ── In-memory forensic job store ── */
+/* ── Forensic scan: in-memory job tracker + DB persistence ── */
 const forensicJobs = new Map();
-
-// Clean up old jobs after 30 minutes
 setInterval(() => {
   const cutoff = Date.now() - 30 * 60 * 1000;
   for (const [key, job] of forensicJobs) {
     if (job.startedAt < cutoff) forensicJobs.delete(key);
   }
 }, 5 * 60 * 1000);
+
+/* DB table for persistent forensic results */
+let forensicTableReady = null;
+async function ensureForensicResultsTable() {
+  if (!forensicTableReady) {
+    forensicTableReady = pool.query(`
+      CREATE TABLE IF NOT EXISTS case_forensic_results (
+        case_id TEXT PRIMARY KEY,
+        step1_json JSONB,
+        step2_json JSONB,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `).catch(e => { forensicTableReady = null; throw e; });
+  }
+  await forensicTableReady;
+}
+
+async function saveForensicStep(caseId, step, data) {
+  await ensureForensicResultsTable();
+  const col = step === 1 ? "step1_json" : "step2_json";
+  await pool.query(
+    `INSERT INTO case_forensic_results (case_id, ${col}, updated_at) VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
+     ON CONFLICT (case_id) DO UPDATE SET ${col} = $2::jsonb, updated_at = CURRENT_TIMESTAMP`,
+    [caseId, JSON.stringify(data)]
+  );
+}
+
+async function loadForensicResult(caseId) {
+  try {
+    await ensureForensicResultsTable();
+    const r = await pool.query("SELECT step1_json, step2_json, updated_at FROM case_forensic_results WHERE case_id = $1", [caseId]);
+    return r.rows[0] || null;
+  } catch { return null; }
+}
 
 /* GET /:caseId/forensic/status – poll for scan progress */
 router.get("/:caseId/forensic/status", requireAuth, (req, res) => {
@@ -4838,36 +4870,61 @@ router.get("/:caseId/forensic/status", requireAuth, (req, res) => {
     status: job.status,
     progress: job.progress,
     progressText: job.progressText,
-    result: job.status === "done" ? job.result : null,
+    result: job.status === "step1_done" ? job.result : (job.status === "done" ? job.result : null),
     error: job.status === "error" ? job.error : null
   });
 });
 
-/* POST /:caseId/forensic/start – kick off async scan */
+/* GET /:caseId/forensic/stored – load persisted results from DB */
+router.get("/:caseId/forensic/stored", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  const stored = await loadForensicResult(caseId);
+  if (!stored) return res.json({ status: "none" });
+  const step1 = stored.step1_json || null;
+  const step2 = stored.step2_json || null;
+  const merged = step2 ? { ...step1, ...step2 } : step1;
+  return res.json({ status: "ok", result: merged, updatedAt: stored.updated_at });
+});
+
+/* POST /:caseId/forensic/start – Schritt 1: Einzeldokument-Analyse */
 router.post("/:caseId/forensic/start", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
   }
-
   const existing = forensicJobs.get(caseId);
   if (existing && existing.status === "running") {
     return res.json({ status: "running", message: "Scan laeuft bereits." });
   }
-
-  // Start async scan
-  forensicJobs.set(caseId, { status: "running", progress: 0, progressText: "Starte…", startedAt: Date.now(), result: null, error: null });
+  forensicJobs.set(caseId, { status: "running", progress: 0, progressText: "Starte Schritt 1…", startedAt: Date.now(), result: null, error: null });
   res.json({ status: "started" });
-
-  // Run in background (not awaited)
-  runForensicScan(caseId).catch(err => {
-    console.error(`[forensic-job] Case ${caseId} error:`, err.message);
+  runForensicStep1(caseId).catch(err => {
+    console.error(`[forensic-step1] Case ${caseId} error:`, err.message);
     const job = forensicJobs.get(caseId);
     if (job) { job.status = "error"; job.error = err.message; }
   });
 });
 
-async function runForensicScan(caseId) {
+/* POST /:caseId/forensic/crossdoc – Schritt 2: Kreuzanalyse */
+router.post("/:caseId/forensic/crossdoc", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+  const existing = forensicJobs.get(caseId);
+  if (existing && existing.status === "running") {
+    return res.json({ status: "running" });
+  }
+  forensicJobs.set(caseId, { status: "running", progress: 85, progressText: "Kreuzanalyse startet…", startedAt: Date.now(), result: null, error: null });
+  res.json({ status: "started" });
+  runForensicStep2(caseId).catch(err => {
+    console.error(`[forensic-step2] Case ${caseId} error:`, err.message);
+    const job = forensicJobs.get(caseId);
+    if (job) { job.status = "error"; job.error = err.message; }
+  });
+});
+
+async function runForensicStep1(caseId) {
   const job = forensicJobs.get(caseId);
   if (!job) return;
 
@@ -5022,92 +5079,124 @@ async function runForensicScan(caseId) {
     const kritischCount = allFindings.filter(f => f.schweregrad === "kritisch").length;
     const hochCount = allFindings.filter(f => f.schweregrad === "hoch").length;
 
-    job.progress = 82;
-    job.progressText = "Kreuzanalyse über alle Files wird gestartet…";
-
-    // ── Cross-document contradiction analysis ──────────────────────
-    let crossDocResult = null;
-    if (analyzedCount >= 2) {
-      // Collect document texts for cross-analysis
-      const crossDocs = [];
-      for (const file of files) {
-        const mimeType = String(file.mime_type || "");
-        if (!mimeType.includes("pdf")) continue;
-        try {
-          const buf = await downloadStorageFile(caseId, file.stored_name);
-          const pdfParse = getPdfParse();
-          const parsed = pdfParse ? await pdfParse(buf) : { text: "" };
-          const txt = pickBetterPdfText(
-            String(parsed?.text || ""),
-            shouldUsePdfOcrFallback(String(parsed?.text || ""))
-              ? await extractTextFromPdfWithOcr(buf)
-              : ""
-          );
-          if (txt && txt.trim()) {
-            const storedForensic = await loadStoredForensic(file.id);
-            crossDocs.push({
-              fileName: file.original_name,
-              text: txt,
-              date: storedForensic?.authoredDate || "",
-              forensic: storedForensic
-            });
-          }
-        } catch (e) {
-          console.warn(`Cross-doc skip ${file.original_name}:`, e.message);
-        }
-      }
-      if (crossDocs.length >= 2) {
-        crossDocResult = await analyzeDossierCrossDocument(crossDocs);
-      }
-    }
-
+    // ── Step 1 done: save intermediate result to DB ──
     let gesamtRisiko = "niedrig";
-    const crossScore = crossDocResult?.crossDocScore || 0;
-    const combinedScore = Math.round((avgScore + crossScore) / 2);
-    if (combinedScore >= 70 || kritischCount > 0) gesamtRisiko = "kritisch";
-    else if (combinedScore >= 50 || hochCount >= 3) gesamtRisiko = "hoch";
-    else if (combinedScore >= 25 || hochCount >= 1) gesamtRisiko = "mittel";
+    if (avgScore >= 70 || kritischCount > 0) gesamtRisiko = "kritisch";
+    else if (avgScore >= 50 || hochCount >= 3) gesamtRisiko = "hoch";
+    else if (avgScore >= 25 || hochCount >= 1) gesamtRisiko = "mittel";
 
-    job.progress = 100;
-    job.progressText = "Analyse abgeschlossen";
-    job.status = "done";
-    job.result = {
+    const step1Result = {
       caseId,
-      status: "ok",
+      status: "step1_done",
       totalScore: avgScore,
-      crossDocScore: crossScore,
-      combinedScore,
       gesamtRisiko,
       fileCount: files.length,
       analyzedCount,
       findingsTotal: allFindings.length,
       topFindings: allFindings.slice(0, 15),
-      crossDoc: crossDocResult || null,
       files: fileResults,
-      gesamtFazit: analyzedCount === 0
-        ? "Keine Files konnten analysiert werden."
-        : `${analyzedCount} von ${files.length} Files forensisch analysiert. Manipulations-Score: ${avgScore}/100. ${crossDocResult ? `Kreuzanalyse-Score: ${crossScore}/100 mit ${(crossDocResult.widersprueche || []).length} dokumentuebergreifenden Widerspruechen. ` : ""}${allFindings.length} Auffaelligkeiten erkannt, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
+      gesamtFazit: `Schritt 1 abgeschlossen: ${analyzedCount} von ${files.length} Files analysiert. Score: ${avgScore}/100. ${allFindings.length} Auffälligkeiten, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
     };
 
+    await saveForensicStep(caseId, 1, step1Result);
+    job.progress = 100;
+    job.progressText = `Schritt 1 abgeschlossen – ${analyzedCount} Files analysiert`;
+    job.status = "step1_done";
+    job.result = step1Result;
+
   } catch (err) {
-    console.error("Dossier forensic error:", err.message);
+    console.error("Forensic step1 error:", err.message);
     const job = forensicJobs.get(caseId);
     if (job) { job.status = "error"; job.error = err.message; }
   }
 }
 
-/* Legacy sync endpoint – redirect to async flow */
-router.get("/:caseId/forensic", requireAuth, async (req, res) => {
-  const caseId = String(req.params.caseId || "").trim();
-  if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
-  }
+/* ── Step 2: Cross-document analysis ── */
+async function runForensicStep2(caseId) {
   const job = forensicJobs.get(caseId);
-  if (job && job.status === "done" && job.result) {
-    return res.json(job.result);
+  if (!job) return;
+
+  try {
+    const filesResult = await pool.query(
+      "SELECT id, original_name, stored_name, mime_type FROM case_documents WHERE case_id = $1 ORDER BY uploaded_at ASC",
+      [caseId]
+    );
+    const files = filesResult.rows;
+
+    job.progress = 88;
+    job.progressText = "Kreuzanalyse über alle Files…";
+
+    const crossDocs = [];
+    for (const file of files) {
+      const mimeType = String(file.mime_type || "");
+      if (!mimeType.includes("pdf")) continue;
+      try {
+        const buf = await downloadStorageFile(caseId, file.stored_name);
+        const pdfParse = getPdfParse();
+        const parsed = pdfParse ? await pdfParse(buf) : { text: "" };
+        const txt = pickBetterPdfText(
+          String(parsed?.text || ""),
+          shouldUsePdfOcrFallback(String(parsed?.text || ""))
+            ? await extractTextFromPdfWithOcr(buf)
+            : ""
+        );
+        if (txt && txt.trim()) {
+          const storedForensic = await loadStoredForensic(file.id);
+          crossDocs.push({
+            fileName: file.original_name,
+            text: txt,
+            date: storedForensic?.authoredDate || "",
+            forensic: storedForensic
+          });
+        }
+      } catch (e) {
+        console.warn(`Cross-doc skip ${file.original_name}:`, e.message);
+      }
+    }
+
+    let crossDocResult = null;
+    if (crossDocs.length >= 2) {
+      job.progressText = `Kreuzanalyse: ${crossDocs.length} Files werden verglichen…`;
+      crossDocResult = await analyzeDossierCrossDocument(crossDocs);
+    }
+
+    // Load step1 result from DB and merge
+    const stored = await loadForensicResult(caseId);
+    const step1 = stored?.step1_json || {};
+
+    const avgScore = step1.totalScore || 0;
+    const crossScore = crossDocResult?.crossDocScore || 0;
+    const combinedScore = Math.round((avgScore + crossScore) / 2);
+    const kritischCount = (step1.topFindings || []).filter(f => f.schweregrad === "kritisch").length;
+    const hochCount = (step1.topFindings || []).filter(f => f.schweregrad === "hoch").length;
+
+    let gesamtRisiko = "niedrig";
+    if (combinedScore >= 70 || kritischCount > 0) gesamtRisiko = "kritisch";
+    else if (combinedScore >= 50 || hochCount >= 3) gesamtRisiko = "hoch";
+    else if (combinedScore >= 25 || hochCount >= 1) gesamtRisiko = "mittel";
+
+    const finalResult = {
+      ...step1,
+      status: "ok",
+      crossDocScore: crossScore,
+      combinedScore,
+      gesamtRisiko,
+      crossDoc: crossDocResult || null,
+      gesamtFazit: `${step1.analyzedCount || 0} von ${step1.fileCount || 0} Files forensisch analysiert. Score: ${avgScore}/100. Kreuzanalyse-Score: ${crossScore}/100 mit ${(crossDocResult?.widersprueche || []).length} Widersprüchen. ${step1.findingsTotal || 0} Auffälligkeiten, davon ${kritischCount} kritisch und ${hochCount} schwerwiegend.`
+    };
+
+    await saveForensicStep(caseId, 2, { crossDocScore: crossScore, combinedScore, gesamtRisiko, crossDoc: crossDocResult, gesamtFazit: finalResult.gesamtFazit });
+    job.progress = 100;
+    job.progressText = "Fall-Analyse abgeschlossen";
+    job.status = "done";
+    job.result = finalResult;
+
+  } catch (err) {
+    console.error("Forensic step2 error:", err.message);
+    const job = forensicJobs.get(caseId);
+    if (job) { job.status = "error"; job.error = err.message; }
   }
-  return res.json({ status: "none", message: "Bitte POST /forensic/start verwenden." });
-});
+}
 
 router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();

@@ -3888,7 +3888,7 @@ void loadCaseContext().then(() => {
     if (waveEl) waveEl.classList.remove("hidden");
 
     try {
-      // Kick off async scan
+      // ── SCHRITT 1: Einzeldokument-Analyse ──
       const startResp = await fetch(`${API_BASE}/cases/${currentCaseId}/forensic/start`, {
         method: "POST",
         headers: { ...authHeader, "Content-Type": "application/json" }
@@ -3896,36 +3896,86 @@ void loadCaseContext().then(() => {
       const startData = await startResp.json();
       if (startData.error) throw new Error(startData.error);
 
-      // Poll for results (max 15 minutes)
+      // Poll Step 1
+      let step1Result = null;
       let pollCount = 0;
-      const maxPolls = 450;
-      while (pollCount < maxPolls) {
+      while (pollCount < 450) {
         await new Promise(r => setTimeout(r, 2000));
         pollCount++;
         const status = await pollForensicStatus();
 
         if (status.status === "running") {
-          setProgress(status.progress || 5, status.progressText || "Analyse läuft…");
+          setProgress(status.progress || 5, status.progressText || "Files werden analysiert…");
           continue;
         }
-
+        if (status.status === "step1_done" && status.result) {
+          step1Result = status.result;
+          break;
+        }
         if (status.status === "done" && status.result) {
-          setProgress(100, `Fall-Analyse abgeschlossen – ${status.result.analyzedCount || 0} Files gescannt`);
+          // Full result already available (from cache)
+          setProgress(100, `Fall-Analyse abgeschlossen – ${status.result.analyzedCount || 0} Files`);
           if (waveEl) waveEl.classList.add("hidden");
           renderForensicResults(status.result);
           return;
         }
-
-        if (status.status === "error") {
-          throw new Error(status.error || "Analyse fehlgeschlagen");
-        }
-
-        // status === "none" — scan not found, maybe finished between start and first poll
-        if (status.status === "none" && pollCount > 3) {
-          throw new Error("Scan-Job nicht gefunden");
-        }
+        if (status.status === "error") throw new Error(status.error || "Schritt 1 fehlgeschlagen");
+        if (status.status === "none" && pollCount > 5) throw new Error("Job nicht gefunden");
       }
-      throw new Error("Timeout – Analyse dauert zu lange");
+      if (!step1Result) throw new Error("Timeout Schritt 1");
+
+      // Show intermediate result
+      setProgress(82, `Schritt 1 abgeschlossen – ${step1Result.analyzedCount} Files analysiert`);
+      if (waveEl) waveEl.classList.add("hidden");
+      renderForensicResults(step1Result);
+
+      // ── DIALOG: Kreuzanalyse starten? ──
+      const continueAnalysis = await dmskiModal({
+        icon: "info",
+        title: "Schritt 1 abgeschlossen",
+        body: `<strong>${step1Result.analyzedCount} Files</strong> analysiert. Score: ${step1Result.totalScore}/100.<br><br>Jetzt die <strong>Kreuzanalyse</strong> starten? Alle Files werden vernetzt verglichen.<br>Geschätzte Dauer: <strong>~2-4 Minuten</strong>`,
+        confirmLabel: "Kreuzanalyse starten",
+        cancelLabel: "Später fortsetzen",
+        confirmClass: "is-primary"
+      });
+
+      if (!continueAnalysis) {
+        setProgress(82, "Schritt 1 gespeichert – Kreuzanalyse kann später gestartet werden");
+        return;
+      }
+
+      // ── SCHRITT 2: Kreuzanalyse ──
+      if (waveEl) waveEl.classList.remove("hidden");
+      setProgress(85, "Kreuzanalyse wird gestartet…");
+
+      const crossResp = await fetch(`${API_BASE}/cases/${currentCaseId}/forensic/crossdoc`, {
+        method: "POST",
+        headers: { ...authHeader, "Content-Type": "application/json" }
+      });
+      const crossData = await crossResp.json();
+      if (crossData.error) throw new Error(crossData.error);
+
+      // Poll Step 2
+      pollCount = 0;
+      while (pollCount < 450) {
+        await new Promise(r => setTimeout(r, 2000));
+        pollCount++;
+        const status = await pollForensicStatus();
+
+        if (status.status === "running") {
+          setProgress(status.progress || 88, status.progressText || "Kreuzanalyse läuft…");
+          continue;
+        }
+        if (status.status === "done" && status.result) {
+          setProgress(100, `Fall-Analyse abgeschlossen – ${status.result.analyzedCount || 0} Files`);
+          if (waveEl) waveEl.classList.add("hidden");
+          renderForensicResults(status.result);
+          return;
+        }
+        if (status.status === "error") throw new Error(status.error || "Kreuzanalyse fehlgeschlagen");
+        if (status.status === "none" && pollCount > 5) throw new Error("Job nicht gefunden");
+      }
+      throw new Error("Timeout Kreuzanalyse");
 
     } catch (err) {
       if (err instanceof Error && err.message === "AUTH_REDIRECT") return;
