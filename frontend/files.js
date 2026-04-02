@@ -1547,10 +1547,18 @@ async function refreshAnalysisReport(files = allFiles) {
           consolidateBtn.disabled = true;
           consolidateBtn.innerHTML = `<svg class="akteure-refresh-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI analysiert…`;
           try {
-            const resp = await apiFetch(`${API_BASE}/cases/${currentCaseId}/consolidate-persons`, {
+            const tkn = sessionStorage.getItem("token") || "";
+            const resp = await fetch(`${API_BASE}/cases/${currentCaseId}/consolidate-persons`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" }
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${tkn}`
+              }
             });
+            if (!resp.ok) {
+              const errBody = await resp.json().catch(() => ({}));
+              throw new Error(errBody.error || `HTTP ${resp.status}`);
+            }
             const data = await resp.json();
             if (data.ok && Array.isArray(data.persons)) {
               // Re-render Akteure table with consolidated data
@@ -1578,8 +1586,9 @@ async function refreshAnalysisReport(files = allFiles) {
               consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
             }
           } catch (err) {
+            if (err instanceof Error && err.message === "AUTH_REDIRECT") return;
             console.error("Consolidate persons error:", err);
-            alert("Fehler bei der Personen-Konsolidierung.");
+            alert(err.message || "Fehler bei der Personen-Konsolidierung.");
             consolidateBtn.disabled = false;
             consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
           }
