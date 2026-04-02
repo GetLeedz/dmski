@@ -3694,7 +3694,7 @@ td {
 
   .tactic-table-wrap  { overflow: hidden !important; }
   .tactic-table thead tr,
-  .tactic-table tbody tr { grid-template-columns: 20% 10% 20% 50% !important; }
+  .tactic-table tbody tr { grid-template-columns: 22% 28% 50% !important; }
   .tactic-table th,
   .tactic-table td {
     font-size: 0.67rem !important;
@@ -3787,7 +3787,7 @@ body.printing .tactic-section {
 
 body.printing .tactic-table thead tr,
 body.printing .tactic-table tbody tr {
-  grid-template-columns: 20% 10% 20% 50% !important;
+  grid-template-columns: 22% 28% 50% !important;
 }
 
 body.printing .tactic-table th,
@@ -5227,7 +5227,7 @@ select.case-edit-input {
 .tactic-table thead tr,
 .tactic-table tbody tr {
   display: grid;
-  grid-template-columns: 20% 10% 20% 50%;
+  grid-template-columns: 22% 28% 50%;
   align-items: stretch;
   width: 100%;
 }
@@ -5281,22 +5281,28 @@ select.case-edit-input {
   text-align: left;
 }
 
+/* ── Alternate row colors (zebra striping) ── */
+.tactic-table tbody tr:nth-child(odd) {
+  background: rgba(255,255,255,0.65);
+}
+.tactic-table tbody tr:nth-child(even) {
+  background: rgba(26,43,60,0.04);
+}
+
 .tactic-table .tactic-row-present {
-  background: rgba(255,255,255,0.55);
   transition: background 0.15s ease;
 }
 
 .tactic-table .tactic-row-present:hover {
-  background: #f5f7fa;
+  background: rgba(197,160,89,0.08);
 }
 
 .tactic-table .tactic-row-absent {
   opacity: 0.5;
-  background: transparent;
 }
 
 .tactic-table tbody tr:hover td {
-  background: #f5f7fa;
+  background: transparent;
 }
 
 /* ── Badge – pill shape with colored border ── */
@@ -5544,12 +5550,12 @@ select.case-edit-input {
    TACTIC TABLE – row state overrides
    ================================================================ */
 .tactic-table .tactic-row-present td {
-  background: rgba(26, 43, 60, 0.02);
+  background: transparent;
 }
 
 .tactic-table .tactic-row-absent td {
   background: transparent;
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .tactic-td-tactic {
@@ -5603,7 +5609,12 @@ select.case-edit-input {
   font-style: italic;
 }
 
-/* Evidenz column cell */
+/* Evidence badge now lives inside tactic-td-tactic */
+.tactic-td-tactic .tactic-ev-badge {
+  margin-top: 0.35rem;
+}
+
+/* Legacy evidenz column cell (kept for compat) */
 .tactic-td-ev {
   align-items: flex-start !important;
   justify-content: flex-start !important;
@@ -7013,7 +7024,7 @@ body.printing .upload-hero-wrap { display: none !important; }
    ================================================================ */
 #analysisReportTactics .tactic-table thead tr,
 #analysisReportTactics .tactic-table tbody tr {
-  grid-template-columns: 20% 10% 20% 50% !important;
+  grid-template-columns: 22% 28% 50% !important;
 }
 
 /* ================================================================

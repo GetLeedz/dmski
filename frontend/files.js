@@ -607,8 +607,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
     const evCell = `<div class="tactic-ev-badge tactic-ev-${evTone}" title="${escapeHtml(evDetail)}"><span class="tactic-ev-dot"></span><span class="tactic-ev-label">${escapeHtml(evLabel)}</span></div>`;
 
     return `<tr class="${cls}">
-      <td class="tactic-td-tactic"><span class="tactic-tactic-name">${escapeHtml(r.tactic)}</span>${articlePart}</td>
-      <td class="tactic-td-ev">${evCell}</td>
+      <td class="tactic-td-tactic"><span class="tactic-tactic-name">${escapeHtml(r.tactic)}</span>${articlePart}${evCell}</td>
       <td class="tactic-td-ki">${evidenceText}</td>
       <td class="tactic-doc-id-cell">${docCell}</td>
     </tr>`;
@@ -676,7 +675,6 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
               <thead>
                 <tr>
                   <th>Tatbestand / Methode</th>
-                  <th>Evidenz</th>
                   <th>Fazit</th>
                   <th>File Nummer</th>
                 </tr>
