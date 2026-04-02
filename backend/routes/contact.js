@@ -1,6 +1,7 @@
 const express = require("express");
 const { Resend } = require("resend");
 const { Pool } = require("pg");
+const { requireAuth, requireAdmin } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -187,31 +188,8 @@ router.post("/", async (req, res) => {
   return res.json({ ok: true, message: "Anfrage erfolgreich gesendet." });
 });
 
-// Test email sending (temporary debug endpoint)
-router.get("/test-email", async (req, res) => {
-  const resendKey = process.env.RESEND_API_KEY;
-  const allKeys = Object.keys(process.env).sort();
-  if (!resendKey) {
-    return res.json({ error: "RESEND_API_KEY not set", all_env_keys: allKeys });
-  }
-  try {
-    const resend = new Resend(resendKey);
-    const result = await resend.emails.send({
-      from: "DMSKI Scrutor <info@dmski.ch>",
-      to: ["info@dmski.ch"],
-      subject: "DMSKI Test - E-Mail funktioniert!",
-      html: "<h2 style='color:#1A2B3C'>Test erfolgreich!</h2><p>Resend API + dmski.ch Domain verifiziert. E-Mails werden jetzt zugestellt.</p>",
-    });
-    console.log("[contact] Test email result:", JSON.stringify(result));
-    return res.json({ ok: true, result });
-  } catch (err) {
-    console.error("[contact] Test email error:", err);
-    return res.json({ error: err.message, name: err.name, statusCode: err.statusCode, key_length: resendKey.length });
-  }
-});
-
-// GET all requests (for admin)
-router.get("/", async (req, res) => {
+// GET all requests (admin only)
+router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     await ensureContactTable();
     const result = await pool.query("SELECT * FROM contact_requests ORDER BY created_at DESC");

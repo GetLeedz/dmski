@@ -4,7 +4,7 @@ const multer = require("multer");
 const OpenAI = require("openai");
 const { Pool } = require("pg");
 const { createClient } = require("@supabase/supabase-js");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requireCaseAccess, setCaseAccessPool } = require("../middleware/auth");
 const { analyzeLegalDocument, analyzeDossierCrossDocument, consolidatePersons } = require("../services/analysisService");
 
 const router = express.Router();
@@ -47,6 +47,7 @@ function normalizeDatabaseUrl(rawUrl) {
 }
 
 const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL) });
+setCaseAccessPool(pool);
 const supabaseUrl = String(process.env.SUPABASE_URL || "").trim();
 const supabaseServiceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
 const supabaseBucketName = String(process.env.SUPABASE_STORAGE_BUCKET || "case-files").trim();
@@ -3931,6 +3932,9 @@ function applyProtectedPersonFocus(analysis, rawText, protectedPersonName = "", 
 }
 
 router.post("/", requireAuth, async (req, res) => {
+  if (req.user.role === "collaborator") {
+    return res.status(403).json({ error: "Nur Fall-Inhaber oder Admin können Fälle erstellen." });
+  }
   const {
     caseId,
     caseDate,
@@ -4000,7 +4004,7 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router.patch("/:caseId", requireAuth, async (req, res) => {
+router.patch("/:caseId", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
@@ -4046,7 +4050,7 @@ router.patch("/:caseId", requireAuth, async (req, res) => {
   }
 });
 
-router.delete("/:caseId", requireAuth, async (req, res) => {
+router.delete("/:caseId", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
@@ -4093,7 +4097,7 @@ router.delete("/:caseId", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/:caseId/files", requireAuth, (req, res) => {
+router.post("/:caseId/files", requireAuth, requireCaseAccess("write"), (req, res) => {
   upload.array("files", 20)(req, res, async (uploadErr) => {
     if (uploadErr) {
       return res.status(400).json({ error: uploadErr.message || "Upload fehlgeschlagen." });
@@ -4220,7 +4224,7 @@ router.post("/:caseId/files", requireAuth, (req, res) => {
   });
 });
 
-router.get("/:caseId/files", requireAuth, async (req, res) => {
+router.get("/:caseId/files", requireAuth, requireCaseAccess("read"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ung├╝ltige Fall-ID." });
@@ -4239,7 +4243,7 @@ router.get("/:caseId/files", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/:caseId/files/:fileId/preview", requireAuth, async (req, res) => {
+router.get("/:caseId/files/:fileId/preview", requireAuth, requireCaseAccess("read"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();
 
@@ -4272,7 +4276,7 @@ router.get("/:caseId/files/:fileId/preview", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
+router.get("/:caseId/files/:fileId/download", requireAuth, requireCaseAccess("read"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();
 
@@ -4304,7 +4308,7 @@ router.get("/:caseId/files/:fileId/download", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/:caseId/files/:fileId/analysis", requireAuth, async (req, res) => {
+router.get("/:caseId/files/:fileId/analysis", requireAuth, requireCaseAccess("read"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();
   const forceRefresh = ["1", "true", "yes"].includes(String(req.query.refresh || "").toLowerCase());
@@ -4687,7 +4691,7 @@ async function saveForensicAnalysis(documentId, forensic) {
 }
 
 // Single file forensic analysis
-router.get("/:caseId/files/:fileId/forensic", requireAuth, async (req, res) => {
+router.get("/:caseId/files/:fileId/forensic", requireAuth, requireCaseAccess("read"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();
   const forceRefresh = ["1", "true", "yes"].includes(String(req.query.refresh || "").toLowerCase());
@@ -4862,7 +4866,7 @@ async function loadForensicResult(caseId) {
 }
 
 /* GET /:caseId/forensic/status – poll for scan progress */
-router.get("/:caseId/forensic/status", requireAuth, (req, res) => {
+router.get("/:caseId/forensic/status", requireAuth, requireCaseAccess("read"), (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const job = forensicJobs.get(caseId);
   if (!job) return res.json({ status: "none" });
@@ -4876,7 +4880,7 @@ router.get("/:caseId/forensic/status", requireAuth, (req, res) => {
 });
 
 /* GET /:caseId/forensic/stored – load persisted results from DB */
-router.get("/:caseId/forensic/stored", requireAuth, async (req, res) => {
+router.get("/:caseId/forensic/stored", requireAuth, requireCaseAccess("read"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const stored = await loadForensicResult(caseId);
   if (!stored) return res.json({ status: "none" });
@@ -4887,7 +4891,7 @@ router.get("/:caseId/forensic/stored", requireAuth, async (req, res) => {
 });
 
 /* POST /:caseId/forensic/start – Schritt 1: Einzeldokument-Analyse */
-router.post("/:caseId/forensic/start", requireAuth, async (req, res) => {
+router.post("/:caseId/forensic/start", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
@@ -4906,7 +4910,7 @@ router.post("/:caseId/forensic/start", requireAuth, async (req, res) => {
 });
 
 /* POST /:caseId/forensic/crossdoc – Schritt 2: Kreuzanalyse */
-router.post("/:caseId/forensic/crossdoc", requireAuth, async (req, res) => {
+router.post("/:caseId/forensic/crossdoc", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
@@ -5198,7 +5202,7 @@ async function runForensicStep2(caseId) {
   }
 }
 
-router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
+router.delete("/:caseId/files/:fileId", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   const fileId = String(req.params.fileId || "").trim();
 
@@ -5238,7 +5242,7 @@ router.delete("/:caseId/files/:fileId", requireAuth, async (req, res) => {
 });
 
 // Invalidate all stored analyses for a case (triggers re-analysis on next load)
-router.post("/:caseId/reanalyze", requireAuth, async (req, res) => {
+router.post("/:caseId/reanalyze", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });
@@ -5262,7 +5266,7 @@ router.post("/:caseId/reanalyze", requireAuth, async (req, res) => {
 /* ================================================================
    CONSOLIDATE PERSONS – KI review all files, merge & deduplicate
    ================================================================ */
-router.post("/:caseId/consolidate-persons", requireAuth, async (req, res) => {
+router.post("/:caseId/consolidate-persons", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
     return res.status(400).json({ error: "Ungueltige Fall-ID." });

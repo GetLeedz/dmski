@@ -61,8 +61,58 @@ function requireAdminOrSelf(paramKey = "userId") {
   };
 }
 
-module.exports = { 
-  requireAuth, 
-  requireAdmin, 
-  requireAdminOrSelf 
+/**
+ * Case-Access-Middleware: Prüft ob der User Zugriff auf den Fall hat.
+ *
+ * mode = "read"  → admin, customer (alle), collaborator (nur zugewiesener Fall)
+ * mode = "write" → admin, customer (alle), collaborator GESPERRT
+ *
+ * Erwartet :caseId als Route-Parameter.
+ * Benötigt eine DB-Pool-Instanz via setCaseAccessPool().
+ */
+let _casePool = null;
+function setCaseAccessPool(pool) { _casePool = pool; }
+
+function requireCaseAccess(mode = "read") {
+  return async (req, res, next) => {
+    const role = req.user?.role;
+    const caseId = String(req.params.caseId || "").trim();
+
+    // Admin: full access
+    if (role === "admin") return next();
+
+    // Customer: full access to all cases (they are case owners)
+    if (role === "customer") {
+      if (mode === "read" || mode === "write") return next();
+    }
+
+    // Collaborator (team): read-only on assigned case
+    if (role === "collaborator") {
+      if (mode === "write") {
+        return res.status(403).json({ error: "Nur der Fall-Inhaber kann diese Aktion ausführen." });
+      }
+      // Check if this case is assigned to them
+      if (_casePool && caseId) {
+        try {
+          const r = await _casePool.query("SELECT case_id FROM users WHERE id = $1", [req.user.sub]);
+          const assigned = String(r.rows[0]?.case_id || "").trim();
+          if (assigned && assigned === caseId) return next();
+        } catch (e) {
+          console.error("Case access check error:", e.message);
+        }
+      }
+      return res.status(403).json({ error: "Kein Zugriff auf diesen Fall." });
+    }
+
+    // Unknown role
+    return res.status(403).json({ error: "Keine Berechtigung." });
+  };
+}
+
+module.exports = {
+  requireAuth,
+  requireAdmin,
+  requireAdminOrSelf,
+  requireCaseAccess,
+  setCaseAccessPool
 };
