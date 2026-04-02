@@ -7207,6 +7207,24 @@ body.printing .upload-hero-wrap { display: none !important; }
   background: #6b7a8a;
 }
 
+.forensic-cancel-btn {
+  padding: 0.55rem 1.2rem;
+  border: 1px solid rgba(192,57,43,0.3);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: #c0392b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+  margin-top: 0.5rem;
+}
+
+.forensic-cancel-btn:hover {
+  background: rgba(192,57,43,0.08);
+  border-color: #c0392b;
+}
+
 .forensic-scan-btn svg {
   width: 1.3rem;
   height: 1.3rem;

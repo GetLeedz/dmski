@@ -3852,6 +3852,8 @@ void loadCaseContext().then(() => {
   }
 
   const authHeader = { Authorization: `Bearer ${token}` };
+  const cancelBtn = document.getElementById("cancelForensicScanBtn");
+  let aborted = false;
 
   async function pollForensicStatus() {
     try {
@@ -3884,7 +3886,13 @@ void loadCaseContext().then(() => {
     });
     if (!confirmed) { scanBtn.disabled = false; return; }
 
-    setProgress(2, "Fall-Analyse wird gestartet…");
+    aborted = false;
+    if (cancelBtn) {
+      cancelBtn.classList.remove("hidden");
+      cancelBtn.onclick = () => { aborted = true; };
+    }
+
+    setProgress(2, "Schritt 1: Files werden analysiert…");
     if (waveEl) waveEl.classList.remove("hidden");
 
     try {
@@ -3900,12 +3908,13 @@ void loadCaseContext().then(() => {
       let step1Result = null;
       let pollCount = 0;
       while (pollCount < 450) {
+        if (aborted) throw new Error("ABORTED");
         await new Promise(r => setTimeout(r, 2000));
         pollCount++;
         const status = await pollForensicStatus();
 
         if (status.status === "running") {
-          setProgress(status.progress || 5, status.progressText || "Files werden analysiert…");
+          setProgress(status.progress || 5, status.progressText || "Schritt 1: Files werden analysiert…");
           continue;
         }
         if (status.status === "step1_done" && status.result) {
@@ -3958,18 +3967,28 @@ void loadCaseContext().then(() => {
       // Poll Step 2
       pollCount = 0;
       while (pollCount < 450) {
+        if (aborted) throw new Error("ABORTED");
         await new Promise(r => setTimeout(r, 2000));
         pollCount++;
         const status = await pollForensicStatus();
 
         if (status.status === "running") {
-          setProgress(status.progress || 88, status.progressText || "Kreuzanalyse läuft…");
+          setProgress(status.progress || 88, status.progressText || "Schritt 2: Kreuzanalyse läuft…");
           continue;
         }
         if (status.status === "done" && status.result) {
-          setProgress(100, `Fall-Analyse abgeschlossen – ${status.result.analyzedCount || 0} Files`);
+          setProgress(100, "Fall-Analyse abgeschlossen");
           if (waveEl) waveEl.classList.add("hidden");
+          if (cancelBtn) cancelBtn.classList.add("hidden");
           renderForensicResults(status.result);
+          // Success-Modal
+          dmskiModal({
+            icon: "success",
+            title: "Fall-Analyse abgeschlossen",
+            body: `<strong>${status.result.analyzedCount || 0} Files</strong> analysiert und vernetzt.<br>Gesamt-Score: <strong>${status.result.combinedScore || status.result.totalScore}/100</strong> · Risiko: <strong>${status.result.gesamtRisiko || "–"}</strong>`,
+            confirmLabel: "Ergebnisse ansehen",
+            confirmClass: "is-primary"
+          });
           return;
         }
         if (status.status === "error") throw new Error(status.error || "Kreuzanalyse fehlgeschlagen");
@@ -3979,14 +3998,20 @@ void loadCaseContext().then(() => {
 
     } catch (err) {
       if (err instanceof Error && err.message === "AUTH_REDIRECT") return;
-      setProgress(100, `Fehler: ${err.message}`);
       if (waveEl) waveEl.classList.add("hidden");
-      if (resultsWrap) {
-        resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Forensische Analyse fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
-        resultsWrap.classList.remove("hidden");
+      if (err.message === "ABORTED") {
+        setProgress(0, "Analyse abgebrochen");
+        dmskiModal({ icon: "info", title: "Analyse abgebrochen", body: "Die Fall-Analyse wurde abgebrochen. Bereits analysierte Ergebnisse bleiben gespeichert.", confirmLabel: "OK" });
+      } else {
+        setProgress(100, `Fehler: ${err.message}`);
+        if (resultsWrap) {
+          resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Fall-Analyse fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
+          resultsWrap.classList.remove("hidden");
+        }
       }
     } finally {
       scanBtn.disabled = false;
+      if (cancelBtn) cancelBtn.classList.add("hidden");
     }
   });
 })();
