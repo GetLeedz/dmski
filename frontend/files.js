@@ -3693,9 +3693,32 @@ void loadCaseContext().then(() => {
   // Team members cannot run Master Scan – only case owner (customer) or admin
   if (currentUserRole === "team") {
     scanBtn.disabled = true;
-    scanBtn.title = "Nur Fall-Inhaber kann Master Scan ausführen";
-    scanBtn.setAttribute("aria-label", "Nur Fall-Inhaber kann Master Scan ausführen");
+    scanBtn.title = "Nur Fall-Inhaber kann Fall-Analyse ausführen";
+    scanBtn.setAttribute("aria-label", "Nur Fall-Inhaber kann Fall-Analyse ausführen");
   }
+
+  // ── Load stored results from DB on page load ──
+  (async function loadStoredForensicResults() {
+    try {
+      const resp = await fetch(`${API_BASE}/cases/${currentCaseId}/forensic/stored`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (data.status === "ok" && data.result) {
+        renderForensicResults(data.result);
+        const ts = data.updatedAt ? new Date(data.updatedAt) : null;
+        const tsText = ts ? `Letztes Update: ${ts.toLocaleDateString("de-CH")} ${ts.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })}` : "";
+        if (progressWrap) {
+          progressWrap.classList.remove("hidden");
+          if (progressFill) progressFill.style.width = "100%";
+          if (progressText) progressText.textContent = tsText || "Gespeicherte Fall-Analyse geladen";
+        }
+      }
+    } catch (e) {
+      console.warn("Load stored forensic:", e.message);
+    }
+  })();
 
   function setProgress(pct, text) {
     if (progressWrap) progressWrap.classList.remove("hidden");
