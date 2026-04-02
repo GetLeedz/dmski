@@ -592,4 +592,75 @@ async function analyzeDossierCrossDocument(documents) {
   }
 }
 
-module.exports = { analyzeLegalDocument, analyzeDossierCrossDocument };
+/**
+ * consolidatePersons – KI-gestützte Personenkonsolidierung über alle Dokumente
+ *
+ * Nimmt alle extrahierten Personen aus allen Dokumentanalysen eines Falls,
+ * lässt Claude Vornamen+Nachnamen zusammenführen, Funktionen erkennen
+ * und Duplikate eliminieren.
+ */
+async function consolidatePersons(rawPersons, protectedPerson, opposingParty) {
+  const anthropic = getClient();
+
+  const personList = rawPersons.map((p, i) =>
+    `${i + 1}. Name: "${p.name}" | Funktion: "${p.affiliation || ""}" | Bemerkung: "${p.bemerkung || ""}" | Quelle: File ${p.sourceFileIndex || "?"}`
+  ).join("\n");
+
+  const systemPrompt = [
+    "Du bist ein forensischer Datenanalyst für DMSKI.ch.",
+    "Deine Aufgabe: Personenlisten aus mehreren Dokumenten konsolidieren.",
+    "",
+    "REGELN:",
+    "1. Führe Vornamen und Nachnamen zusammen (z.B. 'Kiss' + 'Dr. Kiss Peter' → 'Dr. Kiss Peter')",
+    "2. Erkenne die korrekte Funktion/Rolle jeder Person aus dem Kontext",
+    "3. Eliminiere exakte Duplikate (gleiche Person, unterschiedliche Schreibweisen)",
+    "4. Behalte ALLE echten Personen – lösche niemanden, der real ist",
+    "5. Korrigiere offensichtliche Tippfehler in Namen",
+    "6. Wenn eine Person in mehreren Files vorkommt, wähle die vollständigste Info",
+    "7. Bemerkung: Fasse die Rolle/Tätigkeit der Person im Dossier in 1 Satz zusammen",
+    "",
+    `Fokus-Partei (benachteiligt): ${protectedPerson || "unbekannt"}`,
+    `Gegenpartei: ${opposingParty || "unbekannt"}`,
+    "",
+    "Antworte NUR mit einem JSON-Array. Kein Markdown, kein Text davor/danach.",
+    "Format: [{\"name\": \"Vorname Nachname\", \"affiliation\": \"Funktion\", \"bemerkung\": \"Kurzbeschreibung\"}]"
+  ].join("\n");
+
+  const userMessage = `Hier sind ${rawPersons.length} Personen-Einträge aus ${new Set(rawPersons.map(p => p.sourceFileIndex)).size} Dokumenten:\n\n${personList}`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
+      temperature: 0,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }]
+    });
+
+    const text = (response.content?.[0]?.text || "").trim();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("[consolidatePersons] No JSON array in response:", text.slice(0, 200));
+      return { status: "error", error: "KI-Antwort enthielt kein gültiges JSON." };
+    }
+
+    const consolidated = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(consolidated)) {
+      return { status: "error", error: "KI-Antwort war kein Array." };
+    }
+
+    return {
+      status: "ok",
+      persons: consolidated.map(p => ({
+        name: String(p.name || "").trim(),
+        affiliation: String(p.affiliation || "Privatperson").trim(),
+        bemerkung: String(p.bemerkung || "").trim()
+      })).filter(p => p.name.length > 1)
+    };
+  } catch (error) {
+    console.error("[consolidatePersons] Fehler:", error.message);
+    return { status: "error", error: error.message };
+  }
+}
+
+module.exports = { analyzeLegalDocument, analyzeDossierCrossDocument, consolidatePersons };

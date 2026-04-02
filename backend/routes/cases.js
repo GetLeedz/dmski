@@ -5,7 +5,7 @@ const OpenAI = require("openai");
 const { Pool } = require("pg");
 const { createClient } = require("@supabase/supabase-js");
 const { requireAuth } = require("../middleware/auth");
-const { analyzeLegalDocument, analyzeDossierCrossDocument } = require("../services/analysisService");
+const { analyzeLegalDocument, analyzeDossierCrossDocument, consolidatePersons } = require("../services/analysisService");
 
 const router = express.Router();
 
@@ -5102,6 +5102,77 @@ router.post("/:caseId/reanalyze", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Reanalyze error:", err.message);
     return res.status(500).json({ error: "Analysen konnten nicht zurückgesetzt werden." });
+  }
+});
+
+/* ================================================================
+   CONSOLIDATE PERSONS – KI review all files, merge & deduplicate
+   ================================================================ */
+router.post("/:caseId/consolidate-persons", requireAuth, async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+
+  try {
+    // 1. Load all stored analyses for this case
+    const docsResult = await pool.query(
+      "SELECT id, original_name FROM case_documents WHERE case_id = $1 ORDER BY uploaded_at ASC",
+      [caseId]
+    );
+    const docs = docsResult.rows;
+    if (docs.length === 0) {
+      return res.status(400).json({ error: "Keine Dokumente im Fall." });
+    }
+
+    // 2. Collect all persons from all analyses
+    const allPersons = [];
+    for (let i = 0; i < docs.length; i++) {
+      const stored = await loadStoredDocumentAnalysis(docs[i].id);
+      if (!stored || !Array.isArray(stored.people)) continue;
+      for (const p of stored.people) {
+        allPersons.push({
+          name: typeof p === "string" ? p : (p.name || ""),
+          affiliation: p.affiliation || "",
+          bemerkung: p.bemerkung || "",
+          sourceFileIndex: i + 1
+        });
+      }
+    }
+
+    if (allPersons.length === 0) {
+      return res.status(400).json({ error: "Keine Personendaten in den Analysen gefunden." });
+    }
+
+    // 3. Get case party names for context
+    const caseResult = await pool.query(
+      "SELECT protected_person, opposing_party FROM cases WHERE case_id = $1 LIMIT 1",
+      [caseId]
+    );
+    const caseData = caseResult.rows[0] || {};
+
+    // 4. Call Claude to consolidate
+    console.log(`[consolidate-persons] Case ${caseId}: ${allPersons.length} raw persons from ${docs.length} docs`);
+    const result = await consolidatePersons(
+      allPersons,
+      caseData.protected_person || "",
+      caseData.opposing_party || ""
+    );
+
+    if (result.status !== "ok") {
+      return res.status(500).json({ error: result.error || "Konsolidierung fehlgeschlagen." });
+    }
+
+    console.log(`[consolidate-persons] Case ${caseId}: ${allPersons.length} → ${result.persons.length} consolidated`);
+    return res.json({
+      ok: true,
+      persons: result.persons,
+      rawCount: allPersons.length,
+      consolidatedCount: result.persons.length
+    });
+  } catch (err) {
+    console.error("[consolidate-persons] Error:", err.message);
+    return res.status(500).json({ error: "Personen-Konsolidierung fehlgeschlagen." });
   }
 });
 

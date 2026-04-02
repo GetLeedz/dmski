@@ -1197,12 +1197,24 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
     `;
   }).join("");
 
+  const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
+    ? `<button id="consolidatePersonsBtn" type="button" class="akteure-refresh-btn" title="KI: Personen über alle Files konsolidieren">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        KI Personen-Update
+      </button>`
+    : "";
+
   return `
     <div class="tactic-section">
       <div class="tactic-section-number">5</div>
       <div class="tactic-section-content">
-        <p class="tactic-section-title">Involvierte Personen & Funktion</p>
-        <p class="tactic-section-subtitle">${sorted.length} erkannte Personen im Dossier mit Rolle und forensischer Einordnung</p>
+        <div class="akteure-title-row">
+          <div>
+            <p class="tactic-section-title">Involvierte Personen & Funktion</p>
+            <p class="tactic-section-subtitle">${sorted.length} erkannte Personen im Dossier mit Rolle und forensischer Einordnung</p>
+          </div>
+          ${refreshBtn}
+        </div>
         <div class="tactic-table-wrap">
           <table class="tactic-table akteure-tbl">
             <thead>
@@ -1527,6 +1539,52 @@ async function refreshAnalysisReport(files = allFiles) {
         currentCaseOpposingParty,
         authorSentimentMap
       );
+
+      // ── KI Personen-Update Button Handler ──────────────────────────
+      const consolidateBtn = document.getElementById("consolidatePersonsBtn");
+      if (consolidateBtn) {
+        consolidateBtn.addEventListener("click", async () => {
+          consolidateBtn.disabled = true;
+          consolidateBtn.innerHTML = `<svg class="akteure-refresh-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI analysiert…`;
+          try {
+            const resp = await apiFetch(`${API_BASE}/cases/${currentCaseId}/consolidate-persons`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" }
+            });
+            const data = await resp.json();
+            if (data.ok && Array.isArray(data.persons)) {
+              // Re-render Akteure table with consolidated data
+              const consolidated = {
+                people: data.persons,
+                positiveMentions: aggregateForAkteure.positiveMentions,
+                negativeMentions: aggregateForAkteure.negativeMentions,
+                opposingPositiveMentions: aggregateForAkteure.opposingPositiveMentions,
+                opposingNegativeMentions: aggregateForAkteure.opposingNegativeMentions
+              };
+              analysisReportAkteure.innerHTML = renderAkteureBox(
+                consolidated,
+                currentCaseProtectedPerson,
+                currentCaseOpposingParty,
+                authorSentimentMap
+              );
+              // Flash success
+              const subtitle = analysisReportAkteure.querySelector(".tactic-section-subtitle");
+              if (subtitle) {
+                subtitle.textContent = `${data.consolidatedCount} Personen konsolidiert (vorher ${data.rawCount} Einträge)`;
+              }
+            } else {
+              alert(data.error || "Konsolidierung fehlgeschlagen.");
+              consolidateBtn.disabled = false;
+              consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
+            }
+          } catch (err) {
+            console.error("Consolidate persons error:", err);
+            alert("Fehler bei der Personen-Konsolidierung.");
+            consolidateBtn.disabled = false;
+            consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
+          }
+        });
+      }
     }
 
   } catch (error) {
