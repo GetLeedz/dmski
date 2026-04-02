@@ -488,7 +488,8 @@ const CROSS_DOC_SYSTEM_PROMPT = [
   '      "dokument": "<In welchem Dokument ist das sichtbar?>"',
   "    }",
   "  ],",
-  '  "fazit": "<Profiler-Zusammenfassung: Gesamtbild des systemischen Musters. Max 5 Saetze>"',
+  '  "fazit": "<Profiler-Zusammenfassung: Gesamtbild des systemischen Musters. Max 5 Saetze>",',
+  '  "gesamtfallAnalyse": "<PFLICHTFELD. Du bist Professor fuer Schweizer Recht. Schreibe eine sachliche, kompakte Gesamtfall-Analyse (10-20 Saetze), die ein Richter lesen koennte. Struktur: (1) Was will die Fokus-Partei? (2) Was macht die Gegenpartei, um das zu verhindern? (3) Welche Methoden werden eingesetzt? (Behörden-Manipulation, Instrumentalisierung von Kindern/Personen/Institutionen, Diskreditierung, Anschwärzung, Angstmacherei durch Polizei-Reports, absurde Tatsachenbehauptungen, Verneblung des Gerichts). (4) Unstimmigkeiten: Schreibt ein Beistand einmal so und ein anderes Mal anders? Will sich ein Arzt nicht erinnern? Handelt eine Behoerde ohne Indiz/Beweis? Hoert man nur eine Partei? (5) Psychologische Einordnung: Hinweise auf Narzissmus, Psychopathie (z.B. Gutachten abgelehnt = verdaechtig, Verstecken, Kontrollverhalten). (6) Muster zwischen den Zeilen. Schreibe faktenbasiert, direkt, auf den Punkt.>"',
   "}",
   "",
   "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
@@ -577,6 +578,7 @@ async function analyzeDossierCrossDocument(documents) {
           }))
         : [],
       fazit: String(parsed.fazit || "Keine Zusammenfassung."),
+      gesamtfallAnalyse: String(parsed.gesamtfallAnalyse || ""),
       status: "ok"
     };
   } catch (error) {

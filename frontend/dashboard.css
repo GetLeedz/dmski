@@ -7136,6 +7136,22 @@ body.printing .upload-hero-wrap { display: none !important; }
   flex-wrap: wrap;
 }
 
+/* Section badge (number circle) */
+.forensic-section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  flex-shrink: 0;
+}
+
 .forensic-eyebrow {
   margin: 0;
   font-size: 0.65rem;
@@ -7292,6 +7308,86 @@ body.printing .upload-hero-wrap { display: none !important; }
   font-size: 0.85rem;
   line-height: 1.65;
   color: var(--navy);
+}
+
+/* ── Gesamtfall-Analyse Box ── */
+.forensic-gesamtfall {
+  margin: 1.8rem 0 0.5rem;
+  padding: 1.4rem 1.6rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(26,43,60,0.12);
+  background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(248,249,252,0.95));
+}
+
+.forensic-gesamtfall.is-critical {
+  border: 2px solid rgba(192,57,43,0.35);
+  background: linear-gradient(135deg, rgba(255,250,248,0.98), rgba(255,243,240,0.95));
+  box-shadow: 0 2px 16px rgba(192,57,43,0.08);
+}
+
+.forensic-gesamtfall-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(26,43,60,0.08);
+}
+
+.forensic-gesamtfall.is-critical .forensic-gesamtfall-header {
+  border-bottom-color: rgba(192,57,43,0.15);
+}
+
+.forensic-gesamtfall-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.forensic-gesamtfall-title {
+  margin: 0;
+  font-family: "IBM Plex Serif", serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.forensic-gesamtfall.is-critical .forensic-gesamtfall-title {
+  color: #8b1a0f;
+}
+
+.forensic-gesamtfall-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(26,43,60,0.45);
+}
+
+.forensic-gesamtfall.is-critical .forensic-gesamtfall-subtitle {
+  color: rgba(192,57,43,0.55);
+}
+
+.forensic-gesamtfall-body {
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: #1a2b3c;
+  white-space: pre-line;
+}
+
+.forensic-gesamtfall.is-critical .forensic-gesamtfall-body {
+  color: #3a1010;
+}
+
+.forensic-gesamtfall-disclaimer {
+  margin: 1rem 0 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(26,43,60,0.06);
+  font-size: 0.62rem;
+  font-style: italic;
+  color: rgba(26,43,60,0.35);
 }
 
 /* Contradiction cards */

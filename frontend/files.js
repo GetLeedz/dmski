@@ -3781,7 +3781,24 @@ void loadCaseContext().then(() => {
           eskalation: "Eskalationsmuster",
           koordination: "Koordinierte Strategie",
           fehlende_gegendarstellung: "Fehlende Gegendarstellung",
-          instrumentalisierung_kinder: "Instrumentalisierung von Kindern"
+          instrumentalisierung_kinder: "Instrumentalisierung von Kindern",
+          netzwerk_infektion: "System-Infektion / Netzwerk",
+          flying_monkeys: "Flying Monkeys",
+          darvo: "DARVO (Täter-Opfer-Umkehr)",
+          gaslighting: "Gaslighting",
+          isolation: "Isolationstaktik",
+          smear_campaign: "Rufmordkampagne",
+          institutionelle_zerstoerung: "Institutionelle Zerstörung",
+          rechte_verletzung: "Grund-/Menschenrechtsverletzung",
+          projektion: "Projektion",
+          isolationstaktik: "Systematische Isolation",
+          machtmissbrauch_geld: "Finanzieller Machtmissbrauch",
+          triangulation: "Triangulation",
+          ad_hominem: "Ad-hominem-Angriffe",
+          empathielosigkeit: "Empathielosigkeit",
+          sabotage: "Sabotage",
+          absolute_sprache: "Absolute Sprache",
+          wortsalat: "Wortsalat / Ablenkung"
         };
         html += `<div class="forensic-pattern">
           <p class="forensic-pattern-type">${escapeHtml(typeLabels[m.typ] || m.typ)}</p>
@@ -3810,6 +3827,24 @@ void loadCaseContext().then(() => {
     // Cross-doc fazit
     if (crossDoc.fazit && crossDoc.status === "ok") {
       html += `<div class="forensic-fazit" style="margin-top:1.5rem;border-left-color:#c0392b"><strong>Kreuzanalyse-Fazit:</strong> ${escapeHtml(crossDoc.fazit)}</div>`;
+    }
+
+    // ── Gesamtfall-Analyse (Professor für Schweizer Recht) ──
+    const gesamtfall = crossDoc.gesamtfallAnalyse || "";
+    if (gesamtfall) {
+      const isKritisch = data.gesamtRisiko === "kritisch" || data.gesamtRisiko === "hoch";
+      html += `
+        <div class="forensic-gesamtfall ${isKritisch ? "is-critical" : ""}">
+          <div class="forensic-gesamtfall-header">
+            <div class="forensic-gesamtfall-icon">${isKritisch ? "⚠" : "⚖"}</div>
+            <div>
+              <p class="forensic-gesamtfall-title">Gesamtfall-Analyse</p>
+              <p class="forensic-gesamtfall-subtitle">Forensische Einordnung nach Schweizer Recht · KI als neutraler Rechtsbeobachter</p>
+            </div>
+          </div>
+          <div class="forensic-gesamtfall-body">${escapeHtml(gesamtfall)}</div>
+          <p class="forensic-gesamtfall-disclaimer">Diese KI-Analyse stellt keine Rechtsberatung dar. Sie dient als forensische Entscheidungshilfe basierend auf der Aktenlage.</p>
+        </div>`;
     }
 
     resultsWrap.innerHTML = html;
