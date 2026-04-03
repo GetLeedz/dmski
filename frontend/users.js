@@ -207,6 +207,7 @@ function renderList(rows) {
                     ${trackingInfo}
                 </div>
                 ${u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : ""}
+                ${u.caseId ? `<span class="badge badge--case" title="Fall-ID: ${esc(u.caseId)}">${esc(u.caseName || u.caseId)}</span>` : ""}
                 <span class="${roleClass}">${roleLabel}</span>
                 <div class="u-actions">${viewBtn}${adminActions}</div>
             </div>`;
