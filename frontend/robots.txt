@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard.html
+Disallow: /files.html
+Disallow: /upload.html
+Disallow: /report.html
+Disallow: /profile.html
+Disallow: /users.html
+
+Sitemap: https://www.dmski.ch/sitemap.xml
