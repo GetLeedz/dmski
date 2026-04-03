@@ -292,7 +292,7 @@ body {
 
 /* ═══ AUDIENCES ═══ */
 .audience-section { padding: 5rem 2rem; }
-.audience-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.audience-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .audience-card {
   text-align: left;
   padding: 2rem 1.8rem;
