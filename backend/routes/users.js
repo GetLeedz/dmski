@@ -230,6 +230,36 @@ async function sendDossierAccessEmail(user, password, caseName) {
   });
 }
 
+async function sendCaseAccessEmail(user, caseName) {
+  const greeting = buildFormalGreeting(user);
+  const caseRef = caseName ? esc(caseName) : "";
+  const caseBlock = caseName ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(26,43,60,.03);border:1px solid #e2e8ef;border-radius:10px;margin-bottom:20px;">
+      <tr><td style="padding:14px 20px;">
+        <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:rgba(26,43,60,.45);text-transform:uppercase;letter-spacing:.08em;">Fall-Referenz</p>
+        <span style="color:#1A2B3C;font-size:15px;font-weight:700;">${caseRef}</span>
+      </td></tr>
+    </table>` : "";
+
+  const html = buildEmail({
+    greeting: `${greeting},<br><br>
+      Sie wurden zum Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf <strong>DMSKI Scrutor</strong> eingeladen.<br><br>
+      Sie k&ouml;nnen sich mit Ihren bestehenden Zugangsdaten anmelden &ndash; Ihr Passwort wurde nicht ge&auml;ndert.`,
+    bodyHtml: caseBlock + `
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;">
+        <tr><td style="padding:14px 20px;background:#f0f4f8;border-radius:10px;text-align:center;">
+          <a href="https://www.dmski.ch/login.html" style="color:#1A2B3C;font-weight:700;font-size:15px;text-decoration:none;">Jetzt anmelden &rarr;</a>
+        </td></tr>
+      </table>`,
+    showPwdChange: false,
+  });
+  await sendEmail({
+    to: user.email,
+    subject: `DMSKI Scrutor: Sie wurden zum Dossier eingeladen${caseName ? ` – ${caseName}` : ""}`,
+    html,
+  });
+}
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 
 // GET /me
@@ -435,14 +465,6 @@ router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSel
     const user = userRes.rows[0];
     if (!user) return res.status(404).json({ error: "Empfänger nicht gefunden." });
 
-    // Generate a fresh password for the invite
-    const password = generateServerPassword();
-    const password_hash = await bcrypt.hash(password, 12);
-    await pool.query(
-      "UPDATE users SET password_hash = $1, password_change_required = true, invited_at = NOW() WHERE id = $2",
-      [password_hash, user.id]
-    );
-
     // Look up case name if assigned
     let caseName = "";
     if (user.case_id) {
@@ -450,8 +472,25 @@ router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSel
       caseName = caseRes.rows[0]?.case_name || String(user.case_id);
     }
 
-    await sendDossierAccessEmail({ ...user }, password, caseName);
-    res.json({ ok: true, message: "Einladung mit Zugangsdaten erfolgreich versendet." });
+    // Check if user has already logged in (existing active account)
+    const hasLoggedIn = user.login_count > 0 && !user.password_change_required;
+
+    if (hasLoggedIn) {
+      // Existing user: send case-access email WITHOUT resetting password
+      await pool.query("UPDATE users SET invited_at = NOW() WHERE id = $1", [user.id]);
+      await sendCaseAccessEmail({ ...user }, caseName);
+      res.json({ ok: true, message: "Einladung versendet (bestehendes Konto, Passwort unveraendert)." });
+    } else {
+      // New user or never logged in: generate fresh credentials
+      const password = generateServerPassword();
+      const password_hash = await bcrypt.hash(password, 12);
+      await pool.query(
+        "UPDATE users SET password_hash = $1, password_change_required = true, invited_at = NOW() WHERE id = $2",
+        [password_hash, user.id]
+      );
+      await sendDossierAccessEmail({ ...user }, password, caseName);
+      res.json({ ok: true, message: "Einladung mit Zugangsdaten erfolgreich versendet." });
+    }
   } catch (err) {
     console.error("send-invite error:", err.message);
     res.status(500).json({ error: "Versand-Fehler: " + err.message });
@@ -465,6 +504,81 @@ router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Löschen fehlgeschlagen." });
+  }
+});
+
+// DELETE /me – Self-service account deletion (non-admin)
+router.delete("/me/account", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
+  if (userRole === "admin") {
+    return res.status(403).json({ error: "Admin-Konten koennen nicht selbst geloescht werden." });
+  }
+
+  try {
+    // 1. Gather info about what will be deleted
+    const info = { files: 0, cases: [], teamMembers: 0 };
+
+    if (userRole === "customer") {
+      // Find all cases owned by this user
+      const casesResult = await pool.query(
+        "SELECT id, case_name FROM cases WHERE id IN (SELECT case_id FROM users WHERE id = $1 AND case_id IS NOT NULL) OR id IN (SELECT DISTINCT c.id FROM cases c JOIN case_documents cd ON cd.case_id = c.id WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = $1 AND u.case_id = c.id))",
+        [userId]
+      );
+      // Actually: cases where this user is the owner — find via customer_users
+      const ownedCases = await pool.query(
+        "SELECT DISTINCT cu.collaborator_id FROM customer_users WHERE customer_id = $1",
+        [userId]
+      );
+      info.teamMembers = ownedCases.rows.length;
+
+      // Count files across all cases this user owns
+      const userCase = await pool.query("SELECT case_id FROM users WHERE id = $1", [userId]);
+      if (userCase.rows[0]?.case_id) {
+        const fileCount = await pool.query(
+          "SELECT COUNT(*) as cnt FROM case_documents WHERE case_id = $1",
+          [userCase.rows[0].case_id]
+        );
+        info.files = Number(fileCount.rows[0]?.cnt || 0);
+        info.cases.push(userCase.rows[0].case_id);
+      }
+    }
+
+    // 2. If only requesting info (dry-run), return it
+    if (req.query.dryrun === "true") {
+      return res.json({ ok: true, info });
+    }
+
+    // 3. Actually delete
+    if (userRole === "customer") {
+      // Delete all cases owned by this customer (cascades to documents, analyses)
+      const caseIds = info.cases;
+      for (const cid of caseIds) {
+        // Delete consolidated persons
+        await pool.query("DELETE FROM case_consolidated_persons WHERE case_id = $1", [cid]).catch(() => {});
+        // Delete forensic results
+        await pool.query("DELETE FROM case_forensic_results WHERE case_id = $1", [cid]).catch(() => {});
+        // Delete case (cascades to documents + analyses)
+        await pool.query("DELETE FROM cases WHERE id = $1", [cid]);
+      }
+      // Delete team relationships (customer_users where I'm the customer)
+      await pool.query("DELETE FROM customer_users WHERE customer_id = $1", [userId]).catch(() => {});
+    }
+
+    // For collaborators: remove from all teams
+    if (userRole === "collaborator") {
+      await pool.query("DELETE FROM customer_users WHERE collaborator_id = $1", [userId]).catch(() => {});
+    }
+
+    // Delete user account
+    await pool.query("DELETE FROM users WHERE id = $1 AND role != 'admin'", [userId]);
+
+    console.log(`[self-delete] User ${userId} (${userRole}) deleted their account`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[self-delete] Error:", err.message);
+    res.status(500).json({ error: "Kontolöschung fehlgeschlagen." });
   }
 });
 

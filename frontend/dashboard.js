@@ -461,4 +461,19 @@ if (role === "collaborator") {
   if (welcomeStrip) welcomeStrip.style.display = "none";
 }
 
-loadCasesList();
+loadCasesList().then(() => {
+  // Alert collaborators if their assigned case was deleted
+  if (role === "collaborator") {
+    const opts = existingCasesSelect?.querySelectorAll("option[value]") || [];
+    const hasCases = [...opts].some(o => o.value && /^\d{6}$/.test(o.value));
+    if (!hasCases) {
+      const msg = document.createElement("div");
+      msg.style.cssText = "max-width:600px;margin:2rem auto;padding:1.5rem 2rem;border:1px solid rgba(220,38,38,0.25);border-radius:14px;background:rgba(220,38,38,0.04);text-align:center;";
+      msg.innerHTML = `<p style="font-size:1rem;font-weight:700;color:#dc2626;margin:0 0 .5rem">Ihr Fall wurde geloescht</p>
+        <p style="font-size:.88rem;color:#64748b;margin:0 0 1rem;line-height:1.55">Der Fall, zu dem Sie eingeladen waren, existiert nicht mehr. Falls Sie Fragen haben, wenden Sie sich bitte an die Person, die Sie eingeladen hat.</p>
+        <p style="font-size:.82rem;color:#94a3b8;margin:0">Sie koennen Ihr Profil unter <a href="/profile.html" style="color:#1A2B3C;font-weight:600">Mein Profil</a> verwalten oder dauerhaft loeschen.</p>`;
+      const main = document.getElementById("dashboardMain");
+      if (main) main.appendChild(msg);
+    }
+  }
+});
