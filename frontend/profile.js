@@ -223,23 +223,23 @@ function validatePassword(pw) {
       const info = data.info || {};
 
       // 2. Build confirmation message
-      let msg = "Sind Sie sicher, dass Sie Ihr Konto dauerhaft loeschen moechten?\n\n";
+      let msg = "Sind Sie sicher, dass Sie Ihr Konto dauerhaft löschen möchten?\n\n";
       if (info.files > 0) {
-        msg += `⚠ Sie haben ${info.files} Dokument(e) in Ihrem Fall. Alle Dokumente und Analysen werden unwiderruflich geloescht.\n\n`;
+        msg += `⚠ Sie haben ${info.files} Dokument(e) in Ihrem Fall. Alle Dokumente und Analysen werden unwiderruflich gelöscht.\n\n`;
       }
       if (info.teamMembers > 0) {
         msg += `⚠ ${info.teamMembers} Teammitglied(er) verlieren den Zugang zu Ihrem Fall.\n\n`;
       }
-      msg += "Diese Aktion kann NICHT rueckgaengig gemacht werden.";
+      msg += "Diese Aktion kann NICHT rückgängig gemacht werden.";
 
       if (!confirm(msg)) return;
 
       // 3. Second confirmation
-      if (!confirm("Letzte Bestaetigung: Konto, Dokumente und Team wirklich dauerhaft loeschen?")) return;
+      if (!confirm("Letzte Bestätigung: Konto, Dokumente und Team wirklich dauerhaft löschen?")) return;
 
       // 4. Execute deletion
       btn.disabled = true;
-      btn.textContent = "Wird geloescht...";
+      btn.textContent = "Wird gelöscht...";
 
       const delResp = await fetch(`${API}/users/me/account`, {
         method: "DELETE",
@@ -247,18 +247,18 @@ function validatePassword(pw) {
       });
       if (!delResp.ok) {
         const err = await delResp.json().catch(() => ({}));
-        throw new Error(err.error || "Loeschung fehlgeschlagen.");
+        throw new Error(err.error || "Löschung fehlgeschlagen.");
       }
 
       // 5. Clear session and redirect
       sessionStorage.clear();
       localStorage.removeItem("dmski_remember_email");
-      alert("Ihr Konto wurde dauerhaft geloescht. Vielen Dank fuer Ihr Vertrauen.");
+      alert("Ihr Konto wurde dauerhaft gelöscht. Vielen Dank für Ihr Vertrauen.");
       window.location.replace("/");
     } catch (err) {
       alert("Fehler: " + err.message);
       btn.disabled = false;
-      btn.textContent = "Konto und alle Daten loeschen";
+      btn.textContent = "Konto und alle Daten löschen";
     }
   });
 })();

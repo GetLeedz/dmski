@@ -3820,7 +3820,7 @@ void loadCaseContext().then(() => {
 
     // Cross-doc contradictions
     if (widersprueche.length > 0) {
-      html += `<h4 class="forensic-contradictions-title">Dokumentuebergreifende Widersprueche (${widersprueche.length})</h4>`;
+      html += `<h4 class="forensic-contradictions-title">Dokumentübergreifende Widersprüche (${widersprueche.length})</h4>`;
       for (const w of widersprueche) {
         html += `<div class="forensic-contradiction">
           <div class="forensic-contradiction-header">
@@ -3883,7 +3883,7 @@ void loadCaseContext().then(() => {
 
     // Top findings
     if (findings.length > 0) {
-      html += `<h4 class="forensic-findings-title">Top-Auffaelligkeiten (${data.findingsTotal || findings.length})</h4>`;
+      html += `<h4 class="forensic-findings-title">Top-Auffälligkeiten (${data.findingsTotal || findings.length})</h4>`;
       for (const f of findings) {
         html += `<div class="forensic-finding">
           <span class="forensic-finding-type">${escapeHtml(f.typ || "")}</span>

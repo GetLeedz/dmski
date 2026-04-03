@@ -36,10 +36,11 @@
 
   let adminBlock = "";
   if (role === "admin") {
-    adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Benutzer", icons.users)}`;
+    adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Alle Benutzer", icons.users)}`;
   } else if (role === "customer") {
     adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}`;
   }
+  // collaborator: no adminBlock → sees only Dashboard + Mein Profil
 
   const sidebarHTML = `
     <aside class="dmski-sidebar" id="dmski-sidebar" role="navigation" aria-label="Hauptnavigation">
@@ -81,17 +82,17 @@
     },
     "/files.html": {
       title: "Fall-Analyse",
-      sub: "Forensische Dokumentenanalyse — KI-gestützte Mustererkennung",
+      sub: "Dokumentenanalyse — KI-gestützte Mustererkennung",
       icon: `<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h4"/>`
     },
     "/users.html": {
-      title: role === "admin" ? "Benutzerverwaltung" : "Team",
-      sub: role === "admin" ? "Benutzer verwalten — Kunden & Fachpersonen" : "Ihr Team verwalten — Fachpersonen einladen und zuweisen",
+      title: role === "admin" ? "Alle Benutzer" : "Team",
+      sub: role === "admin" ? "Übersicht aller Benutzer — Kunden & Fachpersonen" : "Ihr Team verwalten — Fachpersonen einladen und zuweisen",
       icon: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>`
     },
     "/upload.html": {
       title: "File Upload",
-      sub: "Dokumente hochladen — automatische forensische Analyse",
+      sub: "Dokumente hochladen — automatische Analyse",
       icon: `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>`
     }
   };

@@ -274,7 +274,7 @@
       <!-- ── Left: Info ── -->
       <div class="zugang-info">
         <h1 class="zugang-info-title">Ihr Zugang zur<br />KI-Fallanalyse</h1>
-        <p class="zugang-info-sub">Beschreiben Sie Ihr Anliegen und wir richten Ihren persoenlichen Zugang ein. Unverbindlich und vertraulich.</p>
+        <p class="zugang-info-sub">Beschreiben Sie Ihr Anliegen und wir richten Ihren persönlichen Zugang ein. Unverbindlich und vertraulich.</p>
 
         <div class="zugang-features">
           <div class="zugang-feature">
@@ -283,7 +283,7 @@
             </span>
             <div>
               <h4>Antwort innerhalb von 24 Stunden</h4>
-              <p>Wir pruefen Ihre Anfrage und melden uns persoenlich bei Ihnen.</p>
+              <p>Wir prüfen Ihre Anfrage und melden uns persönlich bei Ihnen.</p>
             </div>
           </div>
           <div class="zugang-feature">
@@ -301,7 +301,7 @@
             </span>
             <div>
               <h4>Keine Datensammlung</h4>
-              <p>Ihre Dokumente dienen ausschliesslich der Analyse und werden nicht archiviert. Volle Kontrolle ueber Ihre Daten.</p>
+              <p>Ihre Dokumente dienen ausschließlich der Analyse und werden nicht archiviert. Volle Kontrolle über Ihre Daten.</p>
             </div>
           </div>
           <div class="zugang-feature">
@@ -310,7 +310,7 @@
             </span>
             <div>
               <h4>Team einladen</h4>
-              <p>Laden Sie Anwaelte, Gutachter oder andere Fachpersonen direkt in Ihren Fall ein.</p>
+              <p>Laden Sie Anwälte, Gutachter oder andere Fachpersonen direkt in Ihren Fall ein.</p>
             </div>
           </div>
         </div>
@@ -351,12 +351,12 @@
             <div class="zugang-field">
               <label for="zRolle">Ihre Rolle *</label>
               <select id="zRolle" name="rolle" required>
-                <option value="">Bitte waehlen</option>
+                <option value="">Bitte wählen</option>
                 <option value="betroffene_person">Betroffene Person / Privatperson</option>
-                <option value="anwalt">Anwaeltin / Anwalt</option>
-                <option value="gutachter">Gutachter / Sachverstaendige</option>
+                <option value="anwalt">Anwältin / Anwalt</option>
+                <option value="gutachter">Gutachter / Sachverständige</option>
                 <option value="ermittler">Ermittler / Detektiv</option>
-                <option value="behoerde">Behoerde / Gericht</option>
+                <option value="behoerde">Behörde / Gericht</option>
                 <option value="berater">Berater / Sozialarbeiter</option>
                 <option value="unternehmen">Unternehmen / Compliance</option>
                 <option value="andere">Andere</option>
@@ -366,7 +366,7 @@
             <div class="zugang-field">
               <label for="zRechtsgebiet">Rechtsgebiet (optional)</label>
               <select id="zRechtsgebiet" name="rechtsgebiet">
-                <option value="">Bitte waehlen</option>
+                <option value="">Bitte wählen</option>
                 <option value="familienrecht">Familienrecht / KESB</option>
                 <option value="strafrecht">Strafrecht</option>
                 <option value="arbeitsrecht">Arbeitsrecht</option>
@@ -379,9 +379,9 @@
             </div>
 
             <div class="zugang-field">
-              <label for="zFileCount">Geschaetzte Anzahl Dokumente</label>
+              <label for="zFileCount">Geschätzte Anzahl Dokumente</label>
               <select id="zFileCount" name="fileCount">
-                <option value="">Bitte waehlen</option>
+                <option value="">Bitte wählen</option>
                 <option value="bis_50">Bis 50</option>
                 <option value="bis_100">Bis 100</option>
                 <option value="bis_200">Bis 200</option>
@@ -392,7 +392,7 @@
 
             <div class="zugang-field">
               <label for="zNachricht">Ihr Anliegen *</label>
-              <textarea id="zNachricht" name="nachricht" placeholder="Beschreiben Sie kurz Ihre Situation und wie wir Ihnen helfen koennen..." required></textarea>
+              <textarea id="zNachricht" name="nachricht" placeholder="Beschreiben Sie kurz Ihre Situation und wie wir Ihnen helfen können..." required></textarea>
             </div>
 
             <div class="turnstile-wrap">
@@ -429,7 +429,7 @@
 
       const turnstileResponse = document.querySelector("[name='cf-turnstile-response']")?.value;
       if (!turnstileResponse) {
-        msg.textContent = "Bitte bestaetigen Sie, dass Sie kein Roboter sind.";
+        msg.textContent = "Bitte bestätigen Sie, dass Sie kein Roboter sind.";
         msg.className = "zugang-msg error";
         return;
       }
@@ -467,7 +467,7 @@
             <div class="zugang-success">
               <div class="zugang-success-icon">&#10003;</div>
               <h3>Anfrage gesendet</h3>
-              <p>Vielen Dank fuer Ihr Interesse. Wir pruefen Ihre Anfrage und melden uns innerhalb von 24 Stunden persoenlich bei Ihnen.</p>
+              <p>Vielen Dank für Ihr Interesse. Wir prüfen Ihre Anfrage und melden uns innerhalb von 24 Stunden persönlich bei Ihnen.</p>
             </div>`;
         } else {
           throw new Error(data.error || "Anfrage konnte nicht gesendet werden.");
