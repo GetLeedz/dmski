@@ -32,7 +32,21 @@ _Accounts.txt
 # Local DMSKI working folder
 DMSKI/
 
+# Screenshots, design files, PDFs (working files, not source)
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.psd
+Logo/
+# Exception: frontend assets are tracked
+!frontend/assets/*.png
+!frontend/assets/*.jpg
+!dmski-site/frontend/assets/
+
 # Backend compiled assets
 backend/assets/
+
+.vercel
 
 .vercel
