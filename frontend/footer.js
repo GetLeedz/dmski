@@ -122,6 +122,15 @@
 
     .dmski-footer-bottom a:hover { color: rgba(255,255,255,.8); }
 
+    .dmski-footer-mail {
+      font-size: .82rem;
+      color: rgba(197,160,89,.7);
+      text-decoration: none;
+      letter-spacing: .02em;
+      transition: color .18s;
+    }
+    .dmski-footer-mail:hover { color: #C5A059; }
+
     .dmski-footer-hosted {
       display: flex;
       align-items: center;
@@ -138,6 +147,7 @@
         <div class="dmski-footer-brand">
           <img src="/assets/logo-dmski.png" alt="DMSKI" class="dmski-footer-logo" />
           <p class="dmski-footer-tagline">DMSKI Scrutor<br>KI-gestützte forensische Fallanalyse.</p>
+          <a href="mailto:info@dmski.ch" class="dmski-footer-mail">info@dmski.ch</a>
         </div>
 
         <div class="dmski-footer-col">
