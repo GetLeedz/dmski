@@ -5266,6 +5266,68 @@ router.post("/:caseId/reanalyze", requireAuth, requireCaseAccess("write"), async
 /* ================================================================
    CONSOLIDATE PERSONS – KI review all files, merge & deduplicate
    ================================================================ */
+/* ═══ CONSOLIDATED PERSONS PERSISTENCE ═══ */
+let consolidatedPersonsTableReady = null;
+async function ensureConsolidatedPersonsTable() {
+  if (!consolidatedPersonsTableReady) {
+    consolidatedPersonsTableReady = pool.query(`
+      CREATE TABLE IF NOT EXISTS case_consolidated_persons (
+        case_id TEXT PRIMARY KEY,
+        persons_json JSONB NOT NULL,
+        raw_count INTEGER NOT NULL DEFAULT 0,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `).catch(e => { consolidatedPersonsTableReady = null; throw e; });
+  }
+  await consolidatedPersonsTableReady;
+}
+
+async function saveConsolidatedPersons(caseId, persons, rawCount) {
+  await ensureConsolidatedPersonsTable();
+  await pool.query(
+    `INSERT INTO case_consolidated_persons (case_id, persons_json, raw_count, updated_at)
+     VALUES ($1, $2::jsonb, $3, CURRENT_TIMESTAMP)
+     ON CONFLICT (case_id)
+     DO UPDATE SET persons_json = EXCLUDED.persons_json, raw_count = EXCLUDED.raw_count, updated_at = CURRENT_TIMESTAMP`,
+    [caseId, JSON.stringify(persons), rawCount]
+  );
+}
+
+async function loadConsolidatedPersons(caseId) {
+  try {
+    await ensureConsolidatedPersonsTable();
+    const r = await pool.query(
+      "SELECT persons_json, raw_count, updated_at FROM case_consolidated_persons WHERE case_id = $1",
+      [caseId]
+    );
+    return r.rows[0] || null;
+  } catch { return null; }
+}
+
+/* GET /:caseId/consolidated-persons – load persisted consolidated persons */
+router.get("/:caseId/consolidated-persons", requireAuth, requireCaseAccess("read"), async (req, res) => {
+  const caseId = String(req.params.caseId || "").trim();
+  if (!/^\d{6}$/.test(caseId)) {
+    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+  }
+  try {
+    const stored = await loadConsolidatedPersons(caseId);
+    if (!stored) {
+      return res.json({ ok: true, persons: null });
+    }
+    return res.json({
+      ok: true,
+      persons: stored.persons_json,
+      rawCount: stored.raw_count,
+      consolidatedCount: Array.isArray(stored.persons_json) ? stored.persons_json.length : 0,
+      updatedAt: stored.updated_at
+    });
+  } catch (err) {
+    console.error("[consolidated-persons GET] Error:", err.message);
+    return res.status(500).json({ error: "Konsolidierte Personen konnten nicht geladen werden." });
+  }
+});
+
 router.post("/:caseId/consolidate-persons", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
@@ -5332,6 +5394,11 @@ router.post("/:caseId/consolidate-persons", requireAuth, requireCaseAccess("writ
     }
 
     console.log(`[consolidate-persons] Case ${caseId}: ${allPersons.length} → ${result.persons.length} consolidated`);
+
+    // 5. Persist consolidated persons to DB
+    await saveConsolidatedPersons(caseId, result.persons, allPersons.length);
+    console.log(`[consolidate-persons] Case ${caseId}: saved to DB`);
+
     return res.json({
       ok: true,
       persons: result.persons,

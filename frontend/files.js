@@ -1544,12 +1544,54 @@ async function refreshAnalysisReport(files = allFiles) {
         opposingPositiveMentions: opposingPositiveTotal,
         opposingNegativeMentions: opposingNegativeTotal
       };
-      analysisReportAkteure.innerHTML = renderAkteureBox(
-        aggregateForAkteure,
-        currentCaseProtectedPerson,
-        currentCaseOpposingParty,
-        authorSentimentMap
-      );
+
+      // ── Load persisted consolidated persons (if available) ────────
+      let usedConsolidated = false;
+      try {
+        const cResp = await apiFetch(`${API_BASE}/cases/${currentCaseId}/consolidated-persons`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (cResp.ok) {
+          const cData = await cResp.json();
+          if (cData.ok && Array.isArray(cData.persons) && cData.persons.length > 0) {
+            const consolidated = {
+              people: cData.persons,
+              positiveMentions: aggregateForAkteure.positiveMentions,
+              negativeMentions: aggregateForAkteure.negativeMentions,
+              opposingPositiveMentions: aggregateForAkteure.opposingPositiveMentions,
+              opposingNegativeMentions: aggregateForAkteure.opposingNegativeMentions
+            };
+            analysisReportAkteure.innerHTML = renderAkteureBox(
+              consolidated,
+              currentCaseProtectedPerson,
+              currentCaseOpposingParty,
+              authorSentimentMap
+            );
+            usedConsolidated = true;
+            const subtitle = analysisReportAkteure.querySelector(".tactic-section-subtitle");
+            if (subtitle) {
+              subtitle.textContent = `${cData.consolidatedCount} Personen konsolidiert (vorher ${cData.rawCount} Einträge)`;
+            }
+            const tsEl = analysisReportAkteure.querySelector("#consolidateTimestamp");
+            if (tsEl && cData.updatedAt) {
+              const d = new Date(cData.updatedAt);
+              tsEl.textContent = `Letztes Update: ${d.toLocaleDateString("de-CH")} ${d.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })}`;
+            }
+          }
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message === "AUTH_REDIRECT") throw e;
+        console.warn("Could not load consolidated persons:", e.message);
+      }
+
+      if (!usedConsolidated) {
+        analysisReportAkteure.innerHTML = renderAkteureBox(
+          aggregateForAkteure,
+          currentCaseProtectedPerson,
+          currentCaseOpposingParty,
+          authorSentimentMap
+        );
+      }
 
       // ── KI Personen-Update Button Handler ──────────────────────────
       const consolidateBtn = document.getElementById("consolidatePersonsBtn");
