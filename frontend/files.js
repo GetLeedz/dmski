@@ -528,31 +528,31 @@ function deriveTacticProfile(analysis, protectedPerson, opposingParty) {
   const presentCount = rows.filter(r => r.present).length;
 
   if (pressure >= 4 || (protNeg >= 3 && oppPos >= 2)) {
-    counselTitle = `Alarmstufe Rot – Ihr Rechtsbeistand muss JETZT handeln`;
+    counselTitle = `Dringender Handlungsbedarf – Bitte besprechen Sie diese Analyse mit Ihrem Rechtsbeistand`;
     counselItems = [
-      { icon: "🚨", label: "Ihr Anwalt schläft – oder sieht er das Muster?", text: `Die KI hat <strong>${presentCount} aktive Tatbestände</strong> gegen ${nameP} erkannt. ${protNeg} negative Zuschreibungen stehen ${protPos} positiven gegenüber – das ist kein Zufall, das ist eine <strong>Kampagne</strong>. Wenn Ihr Anwalt das nicht als systematisches Degradierungsmuster benennt und vor Gericht rügt, hat er die Tragweite nicht verstanden. Fragen Sie ihn direkt: „Sehen Sie das Muster? Was ist Ihre Gegenstrategie?"` },
-      { icon: "⚖️", label: "Falsche Flughöhe = verlorener Fall", text: `Kommuniziert Ihr Anwalt gegenüber dem Gericht <strong>auf Augenhöhe</strong> – sachlich, forensisch, belegt? Oder schreibt er emotional, devot oder unpräzise? Die Gegenpartei (${nameG}) fährt eine kalkulierte Strategie. Wenn Ihr Anwalt das Spiel nicht durchschaut und auf derselben taktischen Ebene kontert, verlieren Sie. Ein Anwalt, der die Behörde nicht herausfordert, legitimiert die Angriffe.` },
-      { icon: "📋", label: "Konkrete Sofortmassnahmen", text: `Fordern Sie von Ihrem Anwalt: <strong>1)</strong> Formelle Rüge nach Art. 152 ZPO gegen jede sachfremde Darstellung. <strong>2)</strong> Befangenheitsantrag prüfen, falls beteiligte Amtspersonen einseitig agieren. <strong>3)</strong> Gegendarstellung zu jedem einzelnen der ${presentCount} erkannten Tatbestände. Wenn er/sie das nicht liefern kann, ist das ein Warnsignal.` },
-      { icon: "🔄", label: "Anwaltswechsel ernsthaft prüfen", text: `Bei einem Druck-Score von <strong>${pressure}</strong> und ${presentCount} aktiven Indizien empfiehlt die KI-Analyse <strong>dringend eine Zweitmeinung</strong>. Zeigen Sie diesen Report einem unabhängigen Fachanwalt für Familienrecht. Wenn Ihr aktueller Anwalt die Muster verharmlost, die falschen Prioritäten setzt oder die Behörde nicht konfrontiert – wechseln Sie. Lieber jetzt als nach dem Urteil.` },
-      { icon: "🛡️", label: "Jedes Dokument zählt", text: `Laden Sie <strong>jedes Schreiben</strong> hoch – von Behörden, Gegenpartei, Ihrem eigenen Anwalt. Die KI wird Widersprüche aufdecken, die dem menschlichen Auge entgehen. Je mehr Material, desto stärker Ihre Position. Halten Sie auch Telefonate schriftlich fest.` }
+      { icon: "📊", label: "Was die Analyse zeigt", text: `Die KI hat <strong>${presentCount} auffällige Muster</strong> in den Dokumenten erkannt. ${protNeg} negative Zuschreibungen stehen ${protPos} positiven gegenüber. Diese Verteilung kann auf eine <strong>einseitige Darstellung</strong> hindeuten. Solche Muster sind bei manueller Aktendurchsicht kaum zu erkennen – erst die systematische Auswertung macht sie sichtbar.` },
+      { icon: "⚖️", label: "Empfehlung für das Gespräch mit Ihrem Anwalt", text: `Teilen Sie diese Analyse mit Ihrem Rechtsbeistand. Wichtige Gesprächspunkte: Werden die erkannten Muster in den Eingaben bereits berücksichtigt? Gibt es eine Strategie, um einseitigen Darstellungen sachlich entgegenzutreten? Ihr Anwalt kennt die prozessualen Möglichkeiten – diese Analyse liefert die Datengrundlage dafür.` },
+      { icon: "📋", label: "Mögliche nächste Schritte", text: `Punkte, die Sie mit Ihrem Rechtsbeistand besprechen können: <strong>1)</strong> Formelle Rüge bei sachfremden Darstellungen prüfen. <strong>2)</strong> Befangenheitsantrag erwägen, falls Amtspersonen einseitig erscheinen. <strong>3)</strong> Gegendarstellung zu den ${presentCount} erkannten Auffälligkeiten erarbeiten. Ihr Anwalt entscheidet, welche Schritte im konkreten Fall sinnvoll sind.` },
+      { icon: "🔍", label: "Zweitmeinung einholen", text: `Bei einer derart deutlichen Datenverteilung kann es sinnvoll sein, die Analyse einem weiteren Fachanwalt zu zeigen. Das ist kein Misstrauen gegenüber Ihrem aktuellen Rechtsbeistand – sondern eine <strong>zusätzliche Absicherung</strong>. Gerade bei komplexen Fällen profitieren alle Beteiligten von einer zweiten Perspektive.` },
+      { icon: "🛡️", label: "Ihre Dokumentation stärken", text: `Laden Sie weitere Schreiben hoch – von Behörden, Gegenpartei und aus Ihrer eigenen Korrespondenz. Je vollständiger die Datenbasis, desto aussagekräftiger die Analyse. Halten Sie auch mündliche Absprachen schriftlich fest.` }
     ];
   } else if (pressure >= 2 || protNeg >= 2) {
-    counselTitle = `Achtung – Die Gegenseite baut Druck auf`;
+    counselTitle = `Auffälligkeiten erkannt – Besprechen Sie die Ergebnisse mit Ihrem Rechtsbeistand`;
     counselItems = [
-      { icon: "⚠️", label: "Ihr Anwalt muss das Framing durchbrechen", text: `Die KI erkennt <strong>${presentCount} Indizien</strong> für selektive Darstellung gegen ${nameP}. ${nameG} setzt gezielt auf Ablenkung und einseitige Information. Besprechen Sie mit Ihrem Anwalt: Rügt er/sie diese Muster aktiv – oder lässt er sie stillschweigend stehen? Schweigen ist Zustimmung vor Gericht.` },
-      { icon: "🔍", label: "Sprache und Haltung Ihres Anwalts", text: `Beobachten Sie kritisch: Übernimmt Ihr Anwalt unbewusst das <strong>Framing der Gegenpartei</strong>? Ein guter Anwalt hinterfragt jede Behauptung – ein schlechter folgt der Erzählung. Achten Sie darauf, ob Ihr Anwalt ${nameP} aktiv verteidigt oder nur reagiert.` },
-      { icon: "📋", label: "Gegenbeweise aufbauen", text: `Sammeln Sie gezielt Dokumente, die das einseitige Bild widerlegen: Zeugenaussagen, positive Berichte, eigene Korrespondenz. Die KI-Analyse wird mit jedem neuen Dokument präziser. ${protNeg} negative Zuschreibungen brauchen konkrete Gegenpunkte.` }
+      { icon: "📊", label: "Einseitige Darstellungen erkannt", text: `Die KI erkennt <strong>${presentCount} Hinweise</strong> auf eine selektive Darstellung zulasten von ${nameP}. Diese Muster fallen beim normalen Lesen nicht sofort auf – erst die systematische Auswertung macht die Tendenz sichtbar. Besprechen Sie mit Ihrem Anwalt, ob und wie diese Punkte in Ihre Strategie einfliessen sollten.` },
+      { icon: "💬", label: "Gesprächsgrundlage für Ihren Anwalt", text: `Nutzen Sie diese Analyse als <strong>sachliche Diskussionsgrundlage</strong>. Fragen Sie Ihren Rechtsbeistand: Sehen Sie die gleiche Tendenz? Wie gehen wir damit um? KI-Analysen ersetzen keine anwaltliche Einschätzung – aber sie können neue Perspektiven eröffnen, die beiden Seiten helfen.` },
+      { icon: "📋", label: "Dokumentation ergänzen", text: `Sammeln Sie gezielt Unterlagen, die ein vollständigeres Bild zeichnen: Zeugenaussagen, positive Berichte, eigene Korrespondenz. Die Analyse wird mit jedem neuen Dokument aussagekräftiger. ${protNeg} negative Zuschreibungen verdienen eine fundierte Gegendarstellung.` }
     ];
   } else if (pressure >= 1) {
-    counselTitle = `Beobachtungsmodus – Leichte Tendenz erkannt`;
+    counselTitle = `Leichte Tendenz erkannt – Zur Kenntnis nehmen und beobachten`;
     counselItems = [
-      { icon: "👁️", label: "Noch kein Alarm, aber wachsam bleiben", text: `Die KI hat eine <strong>leichte einseitige Tendenz</strong> zuungunsten von ${nameP} erkannt. Das ist noch kein Alarmsignal – aber informieren Sie Ihren Anwalt über diese Einschätzung. Fragen Sie: „Sehen Sie eine Schieflage?" Die Antwort zeigt, ob er den Fall richtig einschätzt.` },
-      { icon: "📁", label: "Dossier systematisch aufbauen", text: `Einzelne Dokumente sind Momentaufnahmen. Laden Sie <strong>weitere Unterlagen</strong> hoch – die KI erkennt Muster erst ab einer gewissen Datenmenge. Was heute als leichte Tendenz erscheint, kann sich über mehrere Dokumente zu einem belastenden Muster verdichten.` }
+      { icon: "👁️", label: "Kleine Auffälligkeiten, kein Alarm", text: `Die KI hat eine <strong>leichte einseitige Tendenz</strong> zulasten von ${nameP} erkannt. Das ist noch kein Grund zur Sorge – aber es lohnt sich, Ihren Anwalt darüber zu informieren. Fragen Sie: „Sehen Sie in den Akten eine ähnliche Tendenz?" So stellen Sie sicher, dass nichts übersehen wird.` },
+      { icon: "📁", label: "Dokumentation weiter aufbauen", text: `Einzelne Dokumente zeigen nur Ausschnitte. Laden Sie <strong>weitere Unterlagen</strong> hoch – die KI erkennt Muster erst ab einer gewissen Datenmenge. Was heute als leichte Tendenz erscheint, kann sich über mehrere Dokumente zu einem klareren Bild verdichten.` }
     ];
   } else {
     counselTitle = `Unauffällig – Gute Ausgangslage`;
     counselItems = [
-      { icon: "✅", label: "Keine taktischen Muster erkannt", text: `In den analysierten Dokumenten zeigt die KI <strong>keine offensichtlichen Angriffsmuster</strong> gegen ${nameP}. Die Darstellung erscheint sachlich. Das ist eine gute Ausgangslage – aber bleiben Sie wachsam und laden Sie weitere Dokumente hoch, um das Gesamtbild zu vervollständigen.` }
+      { icon: "✅", label: "Keine auffälligen Muster erkannt", text: `In den analysierten Dokumenten zeigt die KI <strong>keine auffälligen Ungleichgewichte</strong> gegenüber ${nameP}. Die Darstellung erscheint sachlich und ausgewogen. Das ist eine gute Ausgangslage – laden Sie dennoch weitere Dokumente hoch, um das Gesamtbild abzurunden.` }
     ];
   }
 
@@ -631,7 +631,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
         <div class="tactic-section-number">4</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">${escapeHtml(profile.counselTitle)}</p>
-          <p class="tactic-section-subtitle">Strategische Einschätzung zur anwaltlichen Vertretung</p>
+          <p class="tactic-section-subtitle">Hinweise für das Gespräch mit Ihrem Rechtsbeistand</p>
           <div class="tactic-counsel-grid">
             ${profile.counselItems.map(item => `
               <div class="tactic-counsel-item">
@@ -1454,11 +1454,19 @@ async function refreshAnalysisReport(files = allFiles) {
       const seenKeys = new Set();
       const mergedPeople = [];
 
-      const addPerson = (name, affiliation) => {
+      const addPerson = (name, affiliation, bemerkung) => {
         const key = dedupKey(name);
-        if (!key || seenKeys.has(key)) return;
+        if (!key) return;
+        if (seenKeys.has(key)) {
+          // Update bemerkung if we have a better one
+          if (bemerkung) {
+            const existing = mergedPeople.find(p => dedupKey(p.name) === key);
+            if (existing && !existing.bemerkung) existing.bemerkung = bemerkung;
+          }
+          return;
+        }
         seenKeys.add(key);
-        mergedPeople.push({ name: normalizeTitleText(name), affiliation: affiliation || "Privatperson" });
+        mergedPeople.push({ name: normalizeTitleText(name), affiliation: affiliation || "Privatperson", bemerkung: bemerkung || "" });
       };
 
       // Collect all authors so we can exclude them from the person list
@@ -1479,7 +1487,7 @@ async function refreshAnalysisReport(files = allFiles) {
         for (const p of (Array.isArray(a.people) ? a.people : [])) {
           const key = dedupKey(p.name || "");
           if (authorKeys.has(key)) continue;
-          addPerson(p.name || "", p.affiliation || "Privatperson");
+          addPerson(p.name || "", p.affiliation || "Privatperson", p.bemerkung || "");
         }
       }
 
