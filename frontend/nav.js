@@ -36,7 +36,7 @@
 
   let adminBlock = "";
   if (role === "admin") {
-    adminBlock = `<span class="sb-section">Verwaltung</span>${sbLink("/users.html", "Benutzer", icons.users)}`;
+    adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Benutzer", icons.users)}`;
   } else if (role === "customer") {
     adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}`;
   }
