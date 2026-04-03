@@ -720,6 +720,35 @@ button[type="submit"]:disabled { cursor: not-allowed; opacity: 0.5; }
 .site-footer a:hover { color: rgba(197,160,89,0.8); }
 .footer-dot { opacity: 0.4; font-size: 0.65rem; }
 
+.footer-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-bottom: 0.6rem;
+  width: 100%;
+}
+.footer-social a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  transition: all 180ms ease;
+}
+.footer-social a:hover {
+  border-color: rgba(197,160,89,0.4);
+  color: var(--gold);
+  background: rgba(197,160,89,0.08);
+}
+.footer-social svg { width: 1rem; height: 1rem; fill: currentColor; }
+.footer-mail { color: rgba(197,160,89,0.7) !important; font-weight: 500; }
+
 /* ═══ ANIMATIONS ═══ */
 @keyframes rise-in {
   from { transform: translateY(14px); opacity: 0; }
