@@ -13,9 +13,74 @@
 </head>
 <body>
   <div id="authGate" class="auth-gate">
-    <img src="assets/logo-dmski.png" alt="DMSKI" style="height:2.2rem;opacity:.7" />
-    <p style="margin:.8rem 0 0;color:#4a6672;font-size:.92rem">Sitzung wird geprüft…</p>
+    <div class="auth-gate-loader">
+      <div class="dmski-pulse-ring"></div>
+      <img src="assets/logo-dmski.png" alt="DMSKI" class="auth-gate-logo" />
+    </div>
+    <p class="auth-gate-text">Dossier wird geladen…</p>
   </div>
+  <style>
+    .auth-gate-loader {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-gate-logo {
+      height: 2rem;
+      opacity: .8;
+      position: relative;
+      z-index: 1;
+    }
+    .dmski-pulse-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(197,160,89,0.15);
+      border-top-color: rgba(197,160,89,0.7);
+      animation: dmski-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    .dmski-pulse-ring::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      border: 2px solid rgba(197,160,89,0.08);
+      border-bottom-color: rgba(197,160,89,0.4);
+      animation: dmski-spin 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+    }
+    @keyframes dmski-spin {
+      to { transform: rotate(360deg); }
+    }
+    .auth-gate-text {
+      margin: 1rem 0 0;
+      color: rgba(197,160,89,0.6);
+      font-size: .92rem;
+      letter-spacing: .02em;
+      animation: dmski-fade-pulse 2s ease-in-out infinite;
+    }
+    @keyframes dmski-fade-pulse {
+      0%, 100% { opacity: .5; }
+      50% { opacity: 1; }
+    }
+    .files-panel-section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0 0 1rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .files-panel-section-header .forensic-title {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .files-panel-section-header .forensic-eyebrow {
+      margin: 0 0 0.15rem;
+    }
+  </style>
   <main class="page" style="display:none" id="dashboardMain">
     <div id="site-nav"></div>
 
@@ -88,8 +153,15 @@
         </button>
       </div>
 
-      <!-- ── Files Panel (toolbar + table unified) ── -->
+      <!-- ── Section 7: Files Panel (toolbar + table unified) ── -->
       <div class="files-panel">
+        <div class="files-panel-section-header">
+          <div class="forensic-section-badge">7</div>
+          <div>
+            <p class="forensic-eyebrow">Dossier · Dokumente</p>
+            <h3 class="forensic-title">Ihre Files</h3>
+          </div>
+        </div>
 
         <!-- Row 1: Upload + Search -->
         <div class="fp-header">
