@@ -12,7 +12,11 @@ const authGate = document.getElementById("authGate");
 const dashboardMain = document.getElementById("dashboardMain");
 if (token && dashboardMain) {
   dashboardMain.style.display = "";
-  if (authGate) authGate.remove();
+  if (authGate) {
+    authGate.style.transition = "opacity 0.4s ease";
+    authGate.style.opacity = "0";
+    setTimeout(() => authGate.remove(), 450);
+  }
 }
 
 const host = String(window.location.hostname || "").toLowerCase();
