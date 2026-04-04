@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DMSKI – Experten-Zugang anfragen</title>
+  <title>DMSKI – Zugang anfragen anfragen</title>
   <meta name="description" content="Fordern Sie Ihren Zugang zum DMSKI Experten-Portal an. Kausale Validierung und Evidenz-Sicherung für komplexe Fälle in CH, DE und AT." />
-  <meta property="og:title" content="DMSKI – Experten-Zugang anfragen" />
-  <meta property="og:description" content="Sicherer Zugang zur algorithmischen Akten-Revision für Juristen, Mediziner, Forensiker und Sachverständige." />
+  <meta property="og:title" content="DMSKI – Zugang anfragen anfragen" />
+  <meta property="og:description" content="Sicherer Zugang zur KI-Fallanalyse für Juristen, Mediziner, Forensiker und Sachverständige." />
   <meta property="og:image" content="https://www.dmski.ch/assets/dmski-file-scan_socialshare.png" />
   <meta property="og:url" content="https://www.dmski.ch/zugang.html" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -255,26 +255,26 @@
       <img src="assets/logo-dmski_gold.png" alt="DMSKI" />
     </a>
     <nav class="top-bar-nav">
-      <a href="/#methodik" class="top-bar-link">Methodik</a>
-      <a href="/#expertise" class="top-bar-link">Expertise</a>
+      <a href="/#so-funktioniert-es" class="top-bar-link">So funktioniert es</a>
+      <a href="/#fuer-wen" class="top-bar-link">Für wen</a>
       <a href="/login.html" class="top-bar-link">Login</a>
-      <a href="/zugang.html" class="top-bar-cta">Experten-Zugang</a>
+      <a href="/zugang.html" class="top-bar-cta">Zugang anfragen</a>
     </nav>
     <button class="hamburger" id="hamburger" aria-label="Menü öffnen"><span></span><span></span><span></span></button>
   </header>
   <nav class="mobile-nav" id="mobileNav">
-    <a href="/#methodik">Methodik</a>
-    <a href="/#expertise">Expertise</a>
+    <a href="/#so-funktioniert-es">So funktioniert es</a>
+    <a href="/#fuer-wen">Für wen</a>
     <a href="/login.html">Login</a>
-    <a href="/zugang.html" class="mobile-nav-cta">Experten-Zugang</a>
+    <a href="/zugang.html" class="mobile-nav-cta">Zugang anfragen</a>
   </nav>
 
   <main class="zugang-page">
     <div class="zugang-shell">
       <!-- ── Left: Info ── -->
       <div class="zugang-info">
-        <h1 class="zugang-info-title">Ihr Zugang zur<br />algorithmischen Akten-Revision</h1>
-        <p class="zugang-info-sub">Beschreiben Sie Ihren Fall und wir konfigurieren Ihr persönliches Analyse-Portal. Vertraulich und unverbindlich.</p>
+        <h1 class="zugang-info-title">Ihr Zugang zur<br />KI-Fallanalyse</h1>
+        <p class="zugang-info-sub">Beschreiben Sie Ihren Fall und wir richten Ihren persönlichen Zugang ein. Vertraulich und unverbindlich.</p>
 
         <div class="zugang-features">
           <div class="zugang-feature">
@@ -282,7 +282,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
             </span>
             <div>
-              <h4>Alle Rechtsgebiete &amp; Jurisdiktionen</h4>
+              <h4>Alle Rechtsgebiete abgedeckt</h4>
               <p>Strafrecht, Familienrecht, Arbeitsrecht, Verwaltungsrecht, Compliance und mehr – in CH, DE und AT.</p>
             </div>
           </div>
@@ -291,8 +291,8 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg>
             </span>
             <div>
-              <h4>Zero Data Retention</h4>
-              <p>Ihre Dokumente dienen ausschliesslich der Revision. Keine Archivierung, keine Weitergabe. Volle Datensouveränität.</p>
+              <h4>Keine Datensammlung</h4>
+              <p>Ihre Dokumente dienen ausschliesslich der Analyse. Keine Archivierung, keine Weitergabe. Volle Kontrolle über Ihre Daten.</p>
             </div>
           </div>
           <div class="zugang-feature">
@@ -395,7 +395,7 @@
               <div class="cf-turnstile" data-sitekey="0x4AAAAAACxqY-MwQt4fHgbb" data-theme="dark"></div>
             </div>
 
-            <button type="submit" class="zugang-submit" id="zugangSubmit">Zugangsanfrage absenden</button>
+            <button type="submit" class="zugang-submit" id="zugangSubmit">Anfrage absenden</button>
             <p id="zugangMsg" class="zugang-msg" role="status" aria-live="polite"></p>
           </div>
         </form>
@@ -483,7 +483,7 @@
         msg.textContent = err.message;
         msg.className = "zugang-msg error";
         btn.disabled = false;
-        btn.textContent = "Zugangsanfrage absenden";
+        btn.textContent = "Anfrage absenden";
         if (window.turnstile) turnstile.reset();
       }
     });
