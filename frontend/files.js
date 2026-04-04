@@ -12,12 +12,17 @@ const authGate = document.getElementById("authGate");
 const dashboardMain = document.getElementById("dashboardMain");
 if (token && dashboardMain) {
   dashboardMain.style.display = "";
-  if (authGate) {
-    authGate.style.transition = "opacity 0.4s ease";
-    authGate.style.opacity = "0";
-    setTimeout(() => authGate.remove(), 450);
-  }
+  // Keep spinner visible until content loads – dismissed by hideAuthGate()
 }
+
+function hideAuthGate() {
+  if (!authGate || !authGate.parentNode) return;
+  authGate.style.transition = "opacity 0.5s ease";
+  authGate.style.opacity = "0";
+  setTimeout(() => { if (authGate.parentNode) authGate.remove(); }, 550);
+}
+// Safety: dismiss spinner after 8s max
+setTimeout(hideAuthGate, 8000);
 
 const host = String(window.location.hostname || "").toLowerCase();
 const isLocalHost = host === "localhost"
@@ -1198,7 +1203,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
 
   const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
     ? `<div class="akteure-refresh-wrap">
-        <button id="consolidatePersonsBtn" type="button" class="akteure-refresh-btn" title="KI: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
+        <button id="consolidatePersonsBtn" type="button" class="ki-action-btn" title="KI: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
           KI Personen-Update
         </button>
@@ -1212,8 +1217,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
       <div class="tactic-section-content">
         <div class="akteure-title-row">
           <div>
-            <p class="tactic-section-title">Involvierte Personen <span class="tactic-section-meta">${sorted.length} Personen</span></p>
-            <p class="tactic-section-subtitle"></p>
+            <p class="tactic-section-title">Involvierte Personen <span class="tactic-section-meta" id="akteureMetaCount">${sorted.length} Personen</span></p>
           </div>
           ${refreshBtn}
         </div>
@@ -1305,6 +1309,7 @@ async function refreshAnalysisReport(files = allFiles) {
   if (fileCount === 0) {
     analysisReportBar.classList.remove("is-ready");
     analysisReportHint.textContent = "Noch keine Files im Dossier.";
+    hideAuthGate();
     analysisReportMeta.innerHTML = renderAnalysisReportMeta(
       { label: "Leeres Dossier", tone: "neutral", detail: "Noch keine Files hochgeladen." },
       "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.",
@@ -1375,6 +1380,7 @@ async function refreshAnalysisReport(files = allFiles) {
 
     analysisReportBar.classList.add("is-ready");
     analysisReportHint.textContent = hintParts.join(" · ");
+    hideAuthGate();
     analysisReportMeta.innerHTML = renderAnalysisReportMeta(
       verdict,
       methodology,
@@ -1567,9 +1573,9 @@ async function refreshAnalysisReport(files = allFiles) {
               authorSentimentMap
             );
             usedConsolidated = true;
-            const subtitle = analysisReportAkteure.querySelector(".tactic-section-subtitle");
-            if (subtitle) {
-              subtitle.textContent = `${cData.consolidatedCount} konsolidiert (${cData.rawCount} Einträge)`;
+            const metaCount = analysisReportAkteure.querySelector("#akteureMetaCount");
+            if (metaCount) {
+              metaCount.textContent = `${cData.consolidatedCount} Personen`;
             }
             const tsEl = analysisReportAkteure.querySelector("#consolidateTimestamp");
             if (tsEl && cData.updatedAt) {
@@ -1597,7 +1603,7 @@ async function refreshAnalysisReport(files = allFiles) {
       if (consolidateBtn) {
         consolidateBtn.addEventListener("click", async () => {
           consolidateBtn.disabled = true;
-          consolidateBtn.innerHTML = `<svg class="akteure-refresh-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI analysiert…`;
+          consolidateBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI analysiert…`;
           try {
             const tkn = sessionStorage.getItem("token") || "";
             const resp = await fetch(`${API_BASE}/cases/${currentCaseId}/consolidate-persons`, {
@@ -1628,9 +1634,9 @@ async function refreshAnalysisReport(files = allFiles) {
                 authorSentimentMap
               );
               // Update subtitle + timestamp
-              const subtitle = analysisReportAkteure.querySelector(".tactic-section-subtitle");
-              if (subtitle) {
-                subtitle.textContent = `${data.consolidatedCount} konsolidiert (${data.rawCount} Einträge)`;
+              const metaCount = analysisReportAkteure.querySelector("#akteureMetaCount");
+              if (metaCount) {
+                metaCount.textContent = `${data.consolidatedCount} Personen`;
               }
               const tsEl = analysisReportAkteure.querySelector("#consolidateTimestamp");
               if (tsEl) {
