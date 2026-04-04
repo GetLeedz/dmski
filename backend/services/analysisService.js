@@ -721,7 +721,8 @@ async function consolidatePersons(rawPersons, protectedPerson, opposingParty) {
     `Fokus-Partei (benachteiligt): ${protectedPerson || "unbekannt"}`,
     `Gegenpartei: ${opposingParty || "unbekannt"}`,
     "",
-    "Antworte NUR mit einem JSON-Array. Kein Markdown, kein Text davor/danach.",
+    "AUSGABE: Antworte AUSSCHLIESSLICH mit einem rohen JSON-Array. KEIN Markdown, KEINE Codeblocks, KEIN Text davor oder danach.",
+    "Beginne deine Antwort DIREKT mit [ und ende mit ]. Nichts anderes.",
     "Format: [{\"name\": \"Titel Vorname Nachname\", \"affiliation\": \"Funktion (Organisation)\", \"bemerkung\": \"Kurzbeschreibung der Relevanz\"}]"
   ].join("\n");
 
@@ -736,14 +737,34 @@ async function consolidatePersons(rawPersons, protectedPerson, opposingParty) {
       messages: [{ role: "user", content: userMessage }]
     });
 
-    const text = (response.content?.[0]?.text || "").trim();
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      console.error("[consolidatePersons] No JSON array in response:", text.slice(0, 200));
-      return { status: "error", error: "KI-Antwort enthielt kein gültiges JSON." };
+    const rawText = (response.content?.[0]?.text || "").trim();
+    // Strip markdown codeblocks if present
+    const text = rawText
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/, "")
+      .trim();
+
+    console.log("[consolidatePersons] Raw response length:", rawText.length, "First 300 chars:", rawText.slice(0, 300));
+
+    // Try direct parse first
+    let consolidated;
+    try {
+      consolidated = JSON.parse(text);
+    } catch {
+      // Fallback: extract JSON array with regex
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        console.error("[consolidatePersons] No JSON array in response:", text.slice(0, 500));
+        return { status: "error", error: "KI-Antwort enthielt kein gültiges JSON." };
+      }
+      try {
+        consolidated = JSON.parse(jsonMatch[0]);
+      } catch (parseErr) {
+        console.error("[consolidatePersons] JSON parse failed:", parseErr.message, "Extracted:", jsonMatch[0].slice(0, 300));
+        return { status: "error", error: "KI-Antwort konnte nicht geparst werden." };
+      }
     }
 
-    const consolidated = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(consolidated)) {
       return { status: "error", error: "KI-Antwort war kein Array." };
     }
