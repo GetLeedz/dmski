@@ -36,7 +36,7 @@
           </span>
           <div>
             <h2 class="card-title">Neuen Fall anlegen</h2>
-            <p class="card-subtitle">Erstellt ein neues Dossier mit automatisch generierter Fallnummer.</p>
+            <p class="card-subtitle">Erstellt ein neuen Fall mit automatisch generierter Fallnummer.</p>
           </div>
         </div>
 
@@ -104,13 +104,13 @@
             </svg>
           </span>
           <div>
-            <h2 class="card-title">Bestehendes Dossier öffnen</h2>
-            <p class="card-subtitle">Dossier auswählen, um Files hochzuladen oder die Analyse einzusehen.</p>
+            <h2 class="card-title">Bestehenden Fall öffnen</h2>
+            <p class="card-subtitle">Fall auswählen, um Files hochzuladen oder die Analyse einzusehen.</p>
           </div>
         </div>
 
         <div class="open-case-body">
-          <label class="field-label" for="existingCasesSelect">Dossier wählen</label>
+          <label class="field-label" for="existingCasesSelect">Fall wählen</label>
           <select id="existingCasesSelect" class="field-input open-case-select">
             <option value="">Lade Fallliste …</option>
           </select>
@@ -120,7 +120,7 @@
               <path d="M8 7v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
               <circle cx="8" cy="5" r=".8" fill="currentColor"/>
             </svg>
-            Nach der Auswahl werden Sie automatisch zur Dossierübersicht weitergeleitet.
+            Nach der Auswahl werden Sie automatisch zur Fallübersicht weitergeleitet.
           </p>
         </div>
       </section>
@@ -153,7 +153,7 @@
         <ol class="workflow-gutachter-steps">
           <li>
             <span class="workflow-gutachter-num">①</span>
-            <span class="wg-step-text">Wählen Sie unter <strong>«Bestehendes Dossier öffnen»</strong> das Ihnen zugewiesene Dossier aus der Dropdown-Liste. Dossiernummer und Fallname erhalten Sie vorab per E-Mail vom <strong>File Owner</strong>.</span>
+            <span class="wg-step-text">Wählen Sie unter <strong>«Bestehenden Fall öffnen»</strong> den Ihnen zugewiesenen Fall aus der Dropdown-Liste. Fallnummer und Fallname erhalten Sie vorab per E-Mail vom <strong>File Owner</strong>.</span>
           </li>
           <li>
             <span class="workflow-gutachter-num">②</span>
@@ -173,10 +173,10 @@
         <li class="workflow-step">
           <span class="step-number">1</span>
           <div class="step-body">
-            <strong class="step-title">Neues Dossier anlegen oder bestehendes öffnen</strong>
+            <strong class="step-title">Neuen Fall anlegen oder bestehendes öffnen</strong>
             <p class="step-desc">
               <strong>Neu:</strong> Formular links ausfüllen (Fallname, Personen, Ort) und auf <em>«Fall anlegen»</em> klicken.
-              <strong>Bestehend:</strong> Dossier direkt aus der Dropdown-Liste rechts auswählen.
+              <strong>Bestehend:</strong> Fall direkt aus der Dropdown-Liste rechts auswählen.
             </p>
           </div>
         </li>
@@ -185,7 +185,7 @@
           <div class="step-body">
             <strong class="step-title">Files hochladen <span style="font-size:.78em;font-weight:500;background:#fef3c7;color:#92400e;padding:.1rem .45rem;border-radius:5px;vertical-align:middle">nur File Owner</span></strong>
             <p class="step-desc">
-              Nach dem Öffnen des Dossiers erscheint die Upload-Seite. Laden Sie Akten, Gutachten, Berichte
+              Nach dem Öffnen des Falls erscheint die Upload-Seite. Laden Sie Akten, Gutachten, Berichte
               oder Beweismittel hoch (PDF, JPG, PNG) — einzeln oder per Drag &amp; Drop gleichzeitig.
             </p>
           </div>
@@ -197,14 +197,14 @@
             <p class="step-desc">
               Nach jedem Upload startet die KI-Analyse ohne weiteres Zutun.
               Sie erkennt Beteiligte, bewertet Erwähnungen (positiv / negativ) und erstellt
-              eine forensische Einschätzung je File sowie eine Gesamtbewertung des Dossiers.
+              eine forensische Einschätzung je File sowie eine Gesamtbewertung des Falls.
             </p>
           </div>
         </li>
         <li class="workflow-step">
           <span class="step-number">4</span>
           <div class="step-body">
-            <strong class="step-title">Dossierübersicht &amp; Bericht einsehen</strong>
+            <strong class="step-title">Fallübersicht &amp; Bericht einsehen</strong>
             <p class="step-desc">
               Klicken Sie in der Sidebar auf <em>«Fall-Analyse»</em>, um alle Files,
               Einzelanalysen, den KI-Gesamtbericht und die Taktikanalyse einzusehen.

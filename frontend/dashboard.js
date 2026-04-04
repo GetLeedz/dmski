@@ -287,7 +287,7 @@ async function loadCasesList() {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      maybeShowServiceAlert(res.status, "Dossierliste nicht verfügbar");
+      maybeShowServiceAlert(res.status, "Fallliste nicht verfügbar");
       existingCasesSelect.innerHTML = "<option value=\"\">Fallliste konnte nicht geladen werden</option>";
       setMessage(caseMessage, data.error || "Fallliste konnte nicht geladen werden.", "error");
       return;
@@ -300,8 +300,8 @@ async function loadCasesList() {
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = cases.length > 0
-      ? "Bitte Dossier auswählen"
-      : "Noch keine Dossiers vorhanden";
+      ? "Bitte Fall auswählen"
+      : "Noch keine Fälle vorhanden";
     existingCasesSelect.appendChild(placeholder);
 
     for (const item of cases) {
@@ -401,7 +401,7 @@ caseForm.addEventListener("submit", async (event) => {
         continue;
       }
 
-      maybeShowServiceAlert(res.status, "Dossier-Erstellung derzeit gestört");
+      maybeShowServiceAlert(res.status, "Fall-Erstellung derzeit gestört");
 
       setMessage(caseMessage, data.error || "Fall konnte nicht erstellt werden.", "error");
       return;

@@ -1289,7 +1289,7 @@ function setAnalysisReportLoading() {
   analysisReportBar.classList.remove("is-ready");
   analysisReportHint.textContent = "Analysen werden geladen…";
   analysisReportMeta.innerHTML = renderAnalysisReportMeta(
-    { label: "Bericht wird vorbereitet", tone: "neutral", detail: "Dossierdaten werden zusammengeführt." },
+    { label: "Bericht wird vorbereitet", tone: "neutral", detail: "Falldaten werden zusammengeführt." },
     "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.",
     "Die Übersicht wird nach jeder Analyse automatisch aktualisiert."
   );
@@ -1308,10 +1308,10 @@ async function refreshAnalysisReport(files = allFiles) {
   const fileCount = fileList.length;
   if (fileCount === 0) {
     analysisReportBar.classList.remove("is-ready");
-    analysisReportHint.textContent = "Noch keine Files im Dossier.";
+    analysisReportHint.textContent = "Noch keine Files im Fall.";
     hideAuthGate();
     analysisReportMeta.innerHTML = renderAnalysisReportMeta(
-      { label: "Leeres Dossier", tone: "neutral", detail: "Noch keine Files hochgeladen." },
+      { label: "Leerer Fall", tone: "neutral", detail: "Noch keine Files hochgeladen." },
       "Parteibezogene Positiv-/Negativzählung mit Belegstellen und Qualitätsprüfung.",
       "Die Gesamtbeurteilung erscheint, sobald erste Files vorliegen."
     );
@@ -1385,7 +1385,7 @@ async function refreshAnalysisReport(files = allFiles) {
       verdict,
       methodology,
       evidenceCount > 0
-        ? `${evidenceCount} Belegstelle${evidenceCount === 1 ? "" : "n"} wurden dossierweit verdichtet.`
+        ? `${evidenceCount} Belegstelle${evidenceCount === 1 ? "" : "n"} wurden fallweit verdichtet.`
         : "Noch keine expliziten Belegstellen aus gespeicherten Analysen vorhanden."
     );
     analysisReportGrid.innerHTML = [

@@ -77,12 +77,12 @@
   const pageHeaders = {
     "/dashboard.html": {
       title: "Dashboard",
-      sub: "Neuen Fall anlegen oder bestehendes Dossier öffnen",
+      sub: "Neuen Fall anlegen oder bestehenden Fall öffnen",
       icon: `<path d="M3 10.5L10 4l7 6.5"/><path d="M5 9v7h4v-4h2v4h4V9"/>`
     },
     "/files.html": {
-      title: "Fall-Analyse",
-      sub: "Dokumentenanalyse — KI-gestützte Mustererkennung",
+      title: (sessionStorage.getItem("currentCaseId") || "").trim() || "Fall",
+      sub: "",
       icon: `<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h4"/>`
     },
     "/users.html": {
@@ -92,7 +92,7 @@
     },
     "/upload.html": {
       title: "File Upload",
-      sub: "Dokumente hochladen — automatische Analyse",
+      sub: "Files hochladen — automatische Analyse",
       icon: `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>`
     }
   };
