@@ -68,17 +68,15 @@
     .files-panel-section-header {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
-      padding: 0 0 1rem;
+      gap: 0.7rem;
+      padding: 0 0 0.8rem;
       margin-bottom: 0.5rem;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .files-panel-section-header .forensic-title {
       margin: 0;
-      font-size: 1.1rem;
-    }
-    .files-panel-section-header .forensic-eyebrow {
-      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      font-family: inherit;
     }
   </style>
   <main class="page" style="display:none" id="dashboardMain">
@@ -114,16 +112,7 @@
             <div class="forensic-header">
               <div class="forensic-header-text">
                 <div class="forensic-section-badge">6</div>
-                <p class="forensic-eyebrow">KI-Forensik · Fall-Analyse</p>
                 <h3 class="forensic-title">Fall-Analyse</h3>
-                <p class="forensic-subtitle">Systemische Muster · Behörden-Verknüpfungen · Manipulation · Schweizer Recht</p>
-                <ul class="forensic-features">
-                  <li>Alle Dokumente vernetzt analysieren</li>
-                  <li>Gruppenbildung und System-Netzwerke erkennen</li>
-                  <li>Behörden-Manipulation und Instrumentalisierung prüfen</li>
-                  <li>Widersprüche und Unstimmigkeiten aufdecken</li>
-                  <li>Rechtliche Einordnung nach Schweizer Recht (ZGB, ZPO, StGB, EMRK, KRK)</li>
-                </ul>
               </div>
               <div class="forensic-header-action">
                 <div id="forensicWave" class="forensic-wave hidden" aria-hidden="true">
@@ -157,10 +146,7 @@
       <div class="files-panel">
         <div class="files-panel-section-header">
           <div class="forensic-section-badge">7</div>
-          <div>
-            <p class="forensic-eyebrow">Dossier · Dokumente</p>
-            <h3 class="forensic-title">Ihre Files</h3>
-          </div>
+          <h3 class="forensic-title">Ihre Files</h3>
         </div>
 
         <!-- Row 1: Upload + Search -->

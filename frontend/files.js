@@ -619,7 +619,6 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
         <div class="tactic-section-number">3</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">Juristische Bewertung</p>
-          <p class="tactic-section-subtitle">KI als neutraler Rechtsbeobachter</p>
           <div class="tactic-legal-text">${profile.legalNote}</div>
         </div>
       </div>`
@@ -631,7 +630,6 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
         <div class="tactic-section-number">4</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">${escapeHtml(profile.counselTitle)}</p>
-          <p class="tactic-section-subtitle">Hinweise für das Gespräch mit Ihrem Rechtsbeistand</p>
           <div class="tactic-counsel-grid">
             ${profile.counselItems.map(item => `
               <div class="tactic-counsel-item">
@@ -660,7 +658,6 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
         <div class="tactic-section-number">1</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">Forensische Einordnung</p>
-          <p class="tactic-section-subtitle">Analyse der Darstellungsmuster im Dossier</p>
           <div class="tactic-analysis-body">${profile.summary}</div>
         </div>
       </div>
@@ -668,8 +665,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
       <div class="tactic-section">
         <div class="tactic-section-number">2</div>
         <div class="tactic-section-content">
-          <p class="tactic-section-title">Erkannte Tatbestände</p>
-          <p class="tactic-section-subtitle">${presentCount} von ${profile.rows.length} Tatbeständen mit Indizien – Schweizer Recht (StGB / ZGB / ZPO)</p>
+          <p class="tactic-section-title">Erkannte Tatbestände <span class="tactic-section-meta">${presentCount} von ${profile.rows.length} mit Indizien</span></p>
           <div class="tactic-table-wrap">
             <table class="tactic-table">
               <thead>
@@ -1162,8 +1158,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
       <div class="tactic-section">
         <div class="tactic-section-number">5</div>
         <div class="tactic-section-content">
-          <p class="tactic-section-title">Involvierte Personen & Funktion</p>
-          <p class="tactic-section-subtitle">Alle im Dossier erkannten Personen</p>
+          <p class="tactic-section-title">Involvierte Personen</p>
           <p class="akteure-empty">Noch keine Personen extrahiert. Werden mit jedem weiteren File erg\u00e4nzt.</p>
         </div>
       </div>
@@ -1213,8 +1208,8 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
       <div class="tactic-section-content">
         <div class="akteure-title-row">
           <div>
-            <p class="tactic-section-title">Involvierte Personen & Funktion</p>
-            <p class="tactic-section-subtitle">${sorted.length} erkannte Personen im Dossier mit Rolle und forensischer Einordnung</p>
+            <p class="tactic-section-title">Involvierte Personen <span class="tactic-section-meta">${sorted.length} Personen</span></p>
+            <p class="tactic-section-subtitle"></p>
           </div>
           ${refreshBtn}
         </div>
@@ -1570,7 +1565,7 @@ async function refreshAnalysisReport(files = allFiles) {
             usedConsolidated = true;
             const subtitle = analysisReportAkteure.querySelector(".tactic-section-subtitle");
             if (subtitle) {
-              subtitle.textContent = `${cData.consolidatedCount} Personen konsolidiert (vorher ${cData.rawCount} Einträge)`;
+              subtitle.textContent = `${cData.consolidatedCount} konsolidiert (${cData.rawCount} Einträge)`;
             }
             const tsEl = analysisReportAkteure.querySelector("#consolidateTimestamp");
             if (tsEl && cData.updatedAt) {
@@ -1631,7 +1626,7 @@ async function refreshAnalysisReport(files = allFiles) {
               // Update subtitle + timestamp
               const subtitle = analysisReportAkteure.querySelector(".tactic-section-subtitle");
               if (subtitle) {
-                subtitle.textContent = `${data.consolidatedCount} Personen konsolidiert (vorher ${data.rawCount} Einträge)`;
+                subtitle.textContent = `${data.consolidatedCount} konsolidiert (${data.rawCount} Einträge)`;
               }
               const tsEl = analysisReportAkteure.querySelector("#consolidateTimestamp");
               if (tsEl) {

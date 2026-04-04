@@ -5204,17 +5204,28 @@ select.case-edit-input {
 }
 
 .tactic-section-title {
-  margin: 0 0 0.15rem;
+  margin: 0 0 0.5rem;
   font-size: 1rem;
   font-weight: 700;
   color: var(--navy);
   letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.tactic-section-meta {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(26,43,60,0.45);
+  letter-spacing: 0;
 }
 
 .tactic-section-subtitle {
-  margin: 0 0 0.8rem;
+  margin: 0 0 0.5rem;
   font-size: 0.78rem;
-  color: rgba(26,43,60,0.5);
+  color: rgba(26,43,60,0.45);
 }
 
 /* ── Legal text ── */
@@ -7148,24 +7159,24 @@ body.printing .upload-hero-wrap { display: none !important; }
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
-  margin-bottom: 0.4rem;
   flex-shrink: 0;
 }
 
+.forensic-header-text {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
 .forensic-eyebrow {
-  margin: 0;
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--gold-2);
+  display: none;
 }
 
 .forensic-title {
-  margin: 0.15rem 0 0;
-  font-family: "IBM Plex Serif", serif;
-  font-size: 1.2rem;
-  font-weight: 600;
+  margin: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--navy);
 }
 
