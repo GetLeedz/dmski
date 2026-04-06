@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
 const { validatePassword } = require("../utils/passwordPolicy");
 
+const { requireAuth } = require("../middleware/auth");
+const { writeLog } = require("./audit");
+
 const router = express.Router();
 
 function normalizeDatabaseUrl(rawUrl) {
@@ -85,6 +88,8 @@ router.post("/login", async (req, res) => {
 
     if (!user || !match) {
       console.log(`Login fehlgeschlagen für: ${emailNorm}`);
+      const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+      writeLog({ userId: null, email: emailNorm, action: "login_failed", ip, userAgent: req.headers["user-agent"] });
       return res.status(401).json({ error: "Ungültige E-Mail oder Passwort." });
     }
 
@@ -102,6 +107,8 @@ router.post("/login", async (req, res) => {
     );
 
     console.log(`Login erfolgreich: ${user.email}`);
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+    writeLog({ userId: user.id, email: user.email, action: "login", ip, userAgent: req.headers["user-agent"] });
     return res.json({
       token,
       id: user.id,
@@ -113,6 +120,13 @@ router.post("/login", async (req, res) => {
     console.error("Login error:", err.message);
     return res.status(500).json({ error: "Serverfehler." });
   }
+});
+
+// POST /auth/logout – log session end
+router.post("/logout", requireAuth, async (req, res) => {
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+  writeLog({ userId: req.user.sub, email: req.user.email, action: "logout", ip, userAgent: req.headers["user-agent"] });
+  res.json({ ok: true });
 });
 
 module.exports = router;

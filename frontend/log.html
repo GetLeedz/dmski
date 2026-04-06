@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI – Aktivitätslog</title>
+  <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <script>if(!sessionStorage.getItem("token"))window.location.replace("/login.html");</script>
+</head>
+<body>
+  <div id="authGate" class="auth-gate">
+    <img src="assets/logo-dmski.png" alt="DMSKI" style="height:2.2rem;opacity:.7" />
+    <p style="margin:.8rem 0 0;color:#4a6672;font-size:.92rem">Sitzung wird geprüft…</p>
+  </div>
+
+  <main class="page" style="display:none" id="logMain">
+    <div id="site-nav"></div>
+
+    <!-- Hero injected by nav.js -->
+
+    <section class="card" style="margin-top:1.5rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
+        <h2 style="margin:0;font-size:1.15rem;font-weight:700;color:#fff">Session-Protokoll</h2>
+        <button id="refreshBtn" class="btn-outline" style="font-size:.88rem;padding:.45rem 1.2rem">Aktualisieren</button>
+      </div>
+
+      <div id="logLoading" style="text-align:center;padding:2rem;color:rgba(255,255,255,.5)">
+        Lade Aktivitätslog…
+      </div>
+
+      <div id="logTable" style="display:none;overflow-x:auto">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Zeitpunkt</th>
+              <th>Benutzer</th>
+              <th>Aktion</th>
+              <th>IP-Adresse</th>
+              <th>Browser</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+
+      <div id="logEmpty" style="display:none;text-align:center;padding:2.5rem;color:rgba(255,255,255,.45)">
+        Noch keine Einträge vorhanden.
+      </div>
+
+      <div id="logPagination" style="display:none;margin-top:1.5rem;display:flex;align-items:center;justify-content:center;gap:1rem">
+        <button id="prevBtn" class="btn-outline" style="font-size:.85rem;padding:.4rem 1rem" disabled>Zurück</button>
+        <span id="pageInfo" style="font-size:.9rem;color:rgba(255,255,255,.6)"></span>
+        <button id="nextBtn" class="btn-outline" style="font-size:.85rem;padding:.4rem 1rem" disabled>Weiter</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <style>
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92rem;
+    }
+    .log-table th {
+      text-align: left;
+      padding: .75rem .8rem;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: rgba(197,160,89,.7);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      white-space: nowrap;
+    }
+    .log-table td {
+      padding: .7rem .8rem;
+      color: rgba(255,255,255,.8);
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      vertical-align: top;
+    }
+    .log-table tr:hover td {
+      background: rgba(197,160,89,.04);
+    }
+    .log-action {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .2rem .7rem;
+      border-radius: 6px;
+      font-size: .82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .log-action.login { background: rgba(52,208,88,.12); color: #34d058; }
+    .log-action.logout { background: rgba(255,107,107,.1); color: #ff6b6b; }
+    .log-action.login_failed { background: rgba(255,165,0,.1); color: #ffa500; }
+    .log-browser { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; color: rgba(255,255,255,.45); }
+    .btn-outline {
+      border: 1px solid rgba(197,160,89,.25);
+      background: rgba(197,160,89,.06);
+      color: var(--gold, #C5A059);
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+      font-family: inherit;
+    }
+    .btn-outline:hover:not(:disabled) {
+      background: rgba(197,160,89,.14);
+      border-color: rgba(197,160,89,.45);
+    }
+    .btn-outline:disabled { opacity: .4; cursor: not-allowed; }
+  </style>
+
+  <script src="nav.js"></script>
+  <script src="footer.js"></script>
+  <script src="log.js"></script>
+</body>
+</html>

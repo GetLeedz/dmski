@@ -34,9 +34,11 @@
 
   const teamIcon = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2 17c0-3.314 3.582-5 8-5s8 1.686 8 5"/></svg>`;
 
+  const icons_log = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M7 8h6M7 11h4"/></svg>`;
+
   let adminBlock = "";
   if (role === "admin") {
-    adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Alle Benutzer", icons.users)}`;
+    adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Alle Benutzer", icons.users)}${sbLink("/log.html", "Aktivitätslog", icons_log)}`;
   } else if (role === "customer") {
     adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}`;
   }
@@ -81,9 +83,10 @@
       icon: `<path d="M3 10.5L10 4l7 6.5"/><path d="M5 9v7h4v-4h2v4h4V9"/>`
     },
     "/files.html": {
-      title: (sessionStorage.getItem("currentCaseId") || "").trim() || "Fall",
+      title: "",
       sub: "",
-      icon: `<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h4"/>`
+      icon: `<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h4"/>`,
+      dynamic: true
     },
     "/users.html": {
       title: role === "admin" ? "Alle Benutzer" : "Team",
@@ -94,6 +97,11 @@
       title: "File Upload",
       sub: "Files hochladen — automatische Analyse",
       icon: `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>`
+    },
+    "/log.html": {
+      title: "Aktivitätslog",
+      sub: "Login, Logout und Session-Aktivitäten aller Benutzer",
+      icon: `<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h5"/>`
     }
   };
 
@@ -120,12 +128,21 @@
     }
   }
 
-  // Logout handler
+  // Logout handler – log session end, then redirect
   document.addEventListener("DOMContentLoaded", function () {
     const btn = document.getElementById("logoutBtn");
     if (btn && !btn._navHandled) {
       btn._navHandled = true;
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", async function () {
+        const tk = sessionStorage.getItem("token") || localStorage.getItem("token");
+        if (tk) {
+          try {
+            const h = window.location.hostname;
+            const isLocal = h === "localhost" || h === "127.0.0.1";
+            const base = isLocal ? "" : "https://lively-reverence-production-def3.up.railway.app";
+            await fetch(`${base}/api/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${tk}` } });
+          } catch (_) { /* best-effort */ }
+        }
         sessionStorage.clear();
         localStorage.removeItem("token");
         window.location.href = "/";
