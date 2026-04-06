@@ -46,7 +46,9 @@
   function formatDate(iso) {
     const d = new Date(iso);
     const pad = n => String(n).padStart(2, "0");
-    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const date = `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    return `<span class="log-time-date">${date}</span><span class="log-time-clock">${time}</span>`;
   }
 
   function shortBrowser(ua) {
@@ -88,10 +90,10 @@
       logBody.innerHTML = data.logs.map(l => {
         const name = [l.first_name, l.last_name].filter(Boolean).join(" ") || "–";
         return `<tr>
-          <td style="white-space:nowrap">${formatDate(l.created_at)}</td>
-          <td><strong style="color:#fff">${name}</strong><br><span style="font-size:.82rem;color:rgba(255,255,255,.5)">${l.email}</span></td>
+          <td class="log-time">${formatDate(l.created_at)}</td>
+          <td><div class="log-user-name">${name}</div><div class="log-user-email">${l.email}</div></td>
           <td>${actionLabel(l.action)}</td>
-          <td style="font-family:monospace;font-size:.82rem;color:rgba(255,255,255,.5)">${l.ip || "–"}</td>
+          <td class="log-ip">${l.ip || "–"}</td>
           <td class="log-browser" title="${(l.user_agent || "").replace(/"/g, "&quot;")}">${shortBrowser(l.user_agent)}</td>
         </tr>`;
       }).join("");
