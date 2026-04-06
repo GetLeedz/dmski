@@ -18,13 +18,23 @@
     #site-footer { margin-top: auto; }
 
     .dmski-footer {
-      background: linear-gradient(180deg, #0c1a30 0%, #091428 100%);
-      color: rgba(255,255,255,.82);
+      background: linear-gradient(175deg, #0e1f3d 0%, #0a1628 40%, #081020 100%);
+      color: rgba(255,255,255,.85);
       font-family: inherit;
       padding: 0;
       margin-top: 4rem;
       position: relative;
       overflow: hidden;
+      border-top: 1px solid rgba(197,160,89,.2);
+    }
+    .dmski-footer::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 320px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(197,160,89,.5), transparent);
     }
 
     .dmski-footer-inner {
@@ -45,117 +55,110 @@
     }
 
     .dmski-footer-logo {
-      height: 2.2rem;
+      height: 2.4rem;
       filter: brightness(0) invert(1);
-      opacity: .95;
+      opacity: .9;
       display: block;
-      margin-bottom: .9rem;
+      margin-bottom: 1rem;
     }
 
     .dmski-footer-tagline {
-      font-size: .88rem;
+      font-size: .95rem;
       line-height: 1.6;
-      margin: 0 0 1.2rem;
-      color: rgba(255,255,255,.5);
-    }
-
-    .dmski-footer-ext {
-      display: flex;
-      gap: .7rem;
-      flex-wrap: wrap;
-    }
-
-    .dmski-footer-ext a {
-      font-size: .76rem;
-      color: rgba(255,255,255,.45);
-      text-decoration: none;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 999px;
-      padding: .25rem .75rem;
-      transition: all .18s;
-    }
-
-    .dmski-footer-ext a:hover {
-      color: #fff;
-      border-color: rgba(197,160,89,.5);
-    }
-
-    .dmski-footer-col strong {
-      display: block;
-      font-size: .65rem;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: rgba(197,160,89,.6);
-      margin-bottom: .9rem;
-      font-weight: 700;
-    }
-
-    .dmski-footer-col a {
-      display: block;
-      font-size: .88rem;
+      margin: 0 0 1.4rem;
       color: rgba(255,255,255,.6);
-      text-decoration: none;
-      margin-bottom: .6rem;
-      transition: color .18s;
     }
-
-    .dmski-footer-col a:hover { color: #fff; }
-
-    .dmski-footer-bottom {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 1.2rem 1.8rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: .6rem;
-      font-size: .75rem;
-      color: rgba(255,255,255,.28);
-      border-top: 1px solid rgba(255,255,255,.06);
-    }
-
-    .dmski-footer-bottom a {
-      color: rgba(255,255,255,.4);
-      text-decoration: none;
-    }
-
-    .dmski-footer-bottom a:hover { color: rgba(255,255,255,.8); }
 
     .dmski-footer-mail {
-      font-size: .82rem;
-      color: rgba(197,160,89,.7);
+      font-size: .95rem;
+      color: #C5A059;
       text-decoration: none;
+      font-weight: 600;
       letter-spacing: .02em;
-      transition: color .18s;
+      padding: .5rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid rgba(197,160,89,.25);
+      background: rgba(197,160,89,.06);
+      display: inline-flex;
+      align-items: center;
+      transition: all .2s;
     }
-    .dmski-footer-mail:hover { color: #C5A059; }
+    .dmski-footer-mail:hover {
+      background: rgba(197,160,89,.14);
+      border-color: rgba(197,160,89,.45);
+      box-shadow: 0 4px 16px rgba(197,160,89,.12);
+    }
 
     .dmski-footer-social {
       display: flex;
       align-items: center;
-      gap: .6rem;
-      margin-top: .6rem;
+      gap: .8rem;
+      margin-top: 1.2rem;
     }
     .dmski-footer-social a {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 2rem;
-      height: 2rem;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.1);
-      background: rgba(255,255,255,.04);
-      color: rgba(255,255,255,.5);
+      width: 2.8rem;
+      height: 2.8rem;
+      border-radius: 12px;
+      border: 1px solid rgba(197,160,89,.2);
+      background: rgba(197,160,89,.06);
+      color: rgba(255,255,255,.7);
       text-decoration: none;
-      transition: all .18s;
+      transition: all .2s;
     }
     .dmski-footer-social a:hover {
-      border-color: rgba(197,160,89,.4);
+      border-color: rgba(197,160,89,.5);
       color: #C5A059;
-      background: rgba(197,160,89,.08);
+      background: rgba(197,160,89,.12);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(197,160,89,.15);
     }
-    .dmski-footer-social svg { width: 1rem; height: 1rem; fill: currentColor; }
+    .dmski-footer-social svg { width: 1.2rem; height: 1.2rem; fill: currentColor; }
+
+    .dmski-footer-col strong {
+      display: block;
+      font-size: .82rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(197,160,89,.7);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .dmski-footer-col a {
+      display: block;
+      font-size: .95rem;
+      color: rgba(255,255,255,.75);
+      text-decoration: none;
+      margin-bottom: .7rem;
+      font-weight: 500;
+      transition: color .18s;
+    }
+
+    .dmski-footer-col a:hover { color: #C5A059; }
+
+    .dmski-footer-bottom {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1.8rem 1.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .8rem;
+      font-size: .9rem;
+      color: rgba(255,255,255,.5);
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .dmski-footer-bottom a {
+      color: rgba(255,255,255,.6);
+      text-decoration: none;
+    }
+
+    .dmski-footer-bottom a:hover { color: #C5A059; }
 
     .dmski-footer-hosted {
       display: flex;
@@ -172,7 +175,7 @@
       <div class="dmski-footer-inner">
         <div class="dmski-footer-brand">
           <img src="/assets/logo-dmski.png" alt="DMSKI" class="dmski-footer-logo" />
-          <p class="dmski-footer-tagline">DMSKI<br>KI-gestützte Aktenanalyse.</p>
+          <p class="dmski-footer-tagline">DMSKI<br>KI-gest&uuml;tzte Aktenanalyse.</p>
           <a href="mailto:info@dmski.ch" class="dmski-footer-mail">info@dmski.ch</a>
           <div class="dmski-footer-social">
             <a href="https://www.facebook.com/profile.php?id=61574319811413" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
@@ -190,7 +193,7 @@
       </div>
 
       <div class="dmski-footer-bottom">
-        <span>&copy; ${year} GetLeedz GmbH &nbsp;&middot;&nbsp; <a href="https://dmski.ch">dmski.ch</a></span>
+        <span>&copy; ${year} GetLeedz GmbH</span>
         <span class="dmski-footer-hosted">v${version} &nbsp;&middot;&nbsp; &#127464;&#127469; Daten in Z&uuml;rich &nbsp;&middot;&nbsp; &#127466;&#127482; Server in Amsterdam</span>
       </div>
     </footer>
