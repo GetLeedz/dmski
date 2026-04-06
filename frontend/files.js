@@ -186,7 +186,7 @@ let currentCaseCity = "";
 let currentSortField = "uploadDate"; // "uploadDate" | "fileDate"
 let currentSortOrder = "desc";      // "asc" | "desc"
 
-listTitle.textContent = "Fall";
+listTitle.textContent = "";
 
 function escapeHtml(value) {
   return String(value || "")
@@ -3107,16 +3107,22 @@ async function loadCaseContext() {
     currentCaseRegion = normalizeTitleText(active.region || active.locality || "");
     currentCaseCity = normalizeTitleText(active.city || "");
     currentCaseName = normalizeTitleText(active.case_name || "");
-    listTitle.textContent = "Fall";
+
+    // ── Update page-hero topbar with Fallname + Fall-ID ──
+    const heroTitle = document.querySelector(".page-hero h1");
+    const heroSub = document.querySelector(".page-hero p");
+    if (heroTitle) {
+      heroTitle.textContent = currentCaseName || "Fall";
+    }
+    if (heroSub) {
+      heroSub.innerHTML = `Fall-ID <strong>${escapeHtml(currentCaseId)}</strong>`;
+    }
+
+    listTitle.textContent = "";
 
     const personsRow = document.getElementById("casePersonsRow");
     if (personsRow) {
       const parts = [];
-      const caseValue = currentCaseName
-        ? `${currentCaseName} (${currentCaseId})`
-        : currentCaseId;
-      parts.push(buildEditableField("is-meta is-case", "case_name", "Fallname", currentCaseName));
-      parts.push(`<div class="case-person-field is-meta"><div class="case-field-row"><div class="case-field-body"><span class="case-person-label">Fallnummer</span><span class="case-person-value">${escapeHtml(currentCaseId)}</span></div></div></div>`);
       parts.push(buildEditableField("is-protected", "protected_person_name", "Fokus-Partei", currentCaseProtectedPerson));
       parts.push(buildEditableField("is-opposing", "opposing_party", "Gegenpartei", currentCaseOpposingParty));
       const regionLabel = currentCaseCountry === "Schweiz" ? "Kanton" : currentCaseCountry ? "Bundesland" : "Kanton / Bundesland";
