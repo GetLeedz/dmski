@@ -6,7 +6,7 @@
 
 :root {
   --bg: #0b1120;
-  --bg-deep: #050810;
+  --bg-deep: #0a1628;
   --bg-card: rgba(11, 17, 32, 0.85);
   --ink: #ffffff;
   --ink-soft: #dce4ed;
@@ -775,25 +775,55 @@ button[type="submit"]:disabled { cursor: not-allowed; opacity: 0.5; }
 
 /* ═══ FOOTER ═══ */
 .site-footer {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: clamp(2rem, 4vw, 3rem) var(--space-page) clamp(1.5rem, 3vw, 2rem);
+  gap: 1.5rem;
+  padding: clamp(2.5rem, 5vw, 3.5rem) var(--space-page) clamp(1.8rem, 3vw, 2.5rem);
   font-size: clamp(0.78rem, 0.75rem + 0.1vw, 0.85rem);
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.5);
   letter-spacing: 0.01em;
-  background: var(--bg-deep);
-  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #0c1a30 0%, #091428 100%);
+  border-top: 1px solid rgba(197,160,89,0.15);
+  overflow: hidden;
 }
-.site-footer a { color: rgba(255,255,255,0.5); text-decoration: none; transition: color 160ms ease; }
-.site-footer a:hover { color: rgba(197,160,89,0.8); }
+.site-footer::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(197,160,89,0.4), transparent);
+}
+.site-footer a { color: rgba(255,255,255,0.55); text-decoration: none; transition: color 180ms ease; }
+.site-footer a:hover { color: var(--gold); }
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.footer-brand-logo {
+  height: 1.8rem;
+  width: auto;
+  opacity: 0.85;
+  filter: brightness(0) invert(1);
+}
+.footer-brand-tagline {
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 
 .footer-social {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.8rem;
+  gap: 0.7rem;
 }
 .footer-social a.footer-icon {
   display: flex;
@@ -801,29 +831,33 @@ button[type="submit"]:disabled { cursor: not-allowed; opacity: 0.5; }
   justify-content: center;
   width: 2.4rem;
   height: 2.4rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  border: 1px solid rgba(197,160,89,0.15);
+  background: rgba(197,160,89,0.04);
   color: rgba(255,255,255,0.5);
-  transition: all 180ms ease;
+  transition: all 200ms ease;
 }
 .footer-social a.footer-icon:hover {
-  border-color: rgba(197,160,89,0.4);
+  border-color: rgba(197,160,89,0.45);
   color: var(--gold);
-  background: rgba(197,160,89,0.08);
+  background: rgba(197,160,89,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(197,160,89,0.12);
 }
 .footer-social svg { width: 1.05rem; height: 1.05rem; fill: currentColor; }
 .footer-mail {
-  color: rgba(197,160,89,0.7) !important;
+  color: rgba(197,160,89,0.75) !important;
   font-weight: 500;
   font-size: clamp(0.82rem, 0.8rem + 0.1vw, 0.88rem);
-  padding: 0.35rem 0.8rem;
-  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(197,160,89,0.12);
   transition: all 200ms ease !important;
 }
 .footer-mail:hover {
   color: var(--gold) !important;
   background: rgba(197,160,89,0.08);
+  border-color: rgba(197,160,89,0.3);
 }
 
 .footer-legal {
@@ -834,6 +868,21 @@ button[type="submit"]:disabled { cursor: not-allowed; opacity: 0.5; }
   flex-wrap: wrap;
 }
 .footer-dot { opacity: 0.4; font-size: 0.65rem; }
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.22);
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  width: 100%;
+  max-width: 600px;
+}
+.footer-bottom a { color: rgba(255,255,255,0.3) !important; }
+.footer-bottom a:hover { color: rgba(197,160,89,0.6) !important; }
 
 /* ═══ ANIMATIONS ═══ */
 @keyframes rise-in {
@@ -866,6 +915,6 @@ button[type="submit"]:disabled { cursor: not-allowed; opacity: 0.5; }
 /* ═══ OLED Enhancement ═══ */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-deep: #000003;
+    --bg-deep: #071222;
   }
 }

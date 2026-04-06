@@ -18,7 +18,7 @@
     #site-footer { margin-top: auto; }
 
     .dmski-footer {
-      background: #0a0e17;
+      background: linear-gradient(180deg, #0c1a30 0%, #091428 100%);
       color: rgba(255,255,255,.82);
       font-family: inherit;
       padding: 0;
