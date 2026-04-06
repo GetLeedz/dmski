@@ -121,6 +121,51 @@
       background: rgba(255,100,100,0.12);
       border-color: rgba(255,100,100,0.5);
     }
+
+    /* ── Case Action Bar ── */
+    .case-action-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-soft, #EEF2F6);
+    }
+    .case-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 1.15rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 180ms ease;
+      white-space: nowrap;
+    }
+    .case-action-btn svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
+    .case-action-btn--report {
+      border: 1px solid var(--navy, #1A2B3C);
+      background: var(--navy, #1A2B3C);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(26,43,60,0.15);
+    }
+    .case-action-btn--report:hover {
+      background: var(--navy-2, #243447);
+      box-shadow: 0 4px 16px rgba(26,43,60,0.22);
+      transform: translateY(-1px);
+    }
+    .case-action-hint {
+      font-size: 0.78rem;
+      color: var(--ink-muted, #8899AA);
+      font-weight: 500;
+    }
   </style>
   <main class="page" style="display:none" id="dashboardMain">
     <div id="site-nav"></div>
@@ -130,20 +175,19 @@
         <div class="list-header-main">
           <h2 id="listTitle">Fall</h2>
           <div id="casePersonsRow" class="case-persons-row"></div>
-          <section id="analysisReportBar" class="analysis-report" aria-live="polite">
-            <div class="analysis-report-head">
-              <div>
-                <p class="analysis-report-eyebrow">KI-Report</p>
-                <h3 class="analysis-report-title">Gesamtbeurteilung des Falls</h3>
-              </div>
-              <div class="analysis-report-head-actions">
-                <p id="analysisReportHint" class="analysis-report-hint">Analysen werden geladen…</p>
-                <button id="exportPdfReportBtn" type="button" class="filter-btn filter-btn--report">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="15" r="2"/><path d="m13 17 2 2"/></svg>
-                  PDF KI-Report
-                </button>
-              </div>
-            </div>
+
+          <!-- ── Action Bar: KI-Buttons ── -->
+          <div class="case-action-bar">
+            <button id="exportPdfReportBtn" type="button" class="case-action-btn case-action-btn--report">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="15" r="2"/><path d="m13 17 2 2"/></svg>
+              Fall-Analyse PDF
+            </button>
+            <span id="analysisReportHint" class="case-action-hint"></span>
+          </div>
+
+          <!-- Hidden containers for report data (used by JS) -->
+          <section id="analysisReportBar" class="analysis-report" style="display:none" aria-live="polite">
+            <div class="analysis-report-head" style="display:none"></div>
             <div id="analysisReportGrid" class="analysis-report-grid"></div>
             <div id="analysisReportMeta" class="analysis-report-meta"></div>
             <div id="analysisReportTactics"></div>
