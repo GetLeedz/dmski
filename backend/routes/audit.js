@@ -53,24 +53,55 @@ async function writeLog({ userId, email, action, ip, userAgent }) {
   }
 }
 
+/* ── POST /audit/pageview – track page navigation (any authenticated user) ── */
+router.post("/pageview", requireAuth, async (req, res) => {
+  const { page } = req.body || {};
+  if (!page) return res.status(400).json({ error: "page required" });
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+  await writeLog({
+    userId: req.user.sub,
+    email: req.user.email,
+    action: `page:${String(page).substring(0, 60)}`,
+    ip,
+    userAgent: req.headers["user-agent"]
+  });
+  res.json({ ok: true });
+});
+
 /* ── GET /audit/logs – Admin only, paginated ── */
 router.get("/logs", requireAuth, requireAdmin, async (req, res) => {
   try {
     await ensureSchema();
     const limit = Math.min(parseInt(req.query.limit) || 100, 500);
     const offset = parseInt(req.query.offset) || 0;
+    const actionFilter = (req.query.action || "").trim();
+
+    let where = "";
+    const params = [limit, offset];
+    if (actionFilter) {
+      if (actionFilter.endsWith(":")) {
+        where = ` WHERE l.action LIKE $3`;
+        params.push(actionFilter + "%");
+      } else {
+        where = ` WHERE l.action = $3`;
+        params.push(actionFilter);
+      }
+    }
 
     const { rows } = await pool.query(
       `SELECT l.id, l.email, l.action, l.ip, l.user_agent, l.created_at,
               u.first_name, u.last_name
        FROM audit_logs l
        LEFT JOIN users u ON u.id = l.user_id
+       ${where}
        ORDER BY l.created_at DESC
        LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      params
     );
 
-    const countResult = await pool.query(`SELECT COUNT(*)::int AS total FROM audit_logs`);
+    const countParams = actionFilter ? (actionFilter.endsWith(":") ? [actionFilter + "%"] : [actionFilter]) : [];
+    const countWhere = actionFilter ? (actionFilter.endsWith(":") ? `WHERE action LIKE $1` : `WHERE action = $1`) : "";
+    const countResult = await pool.query(`SELECT COUNT(*)::int AS total FROM audit_logs ${countWhere}`, countParams);
     res.json({ logs: rows, total: countResult.rows[0].total });
   } catch (err) {
     console.error("audit fetch error:", err.message);

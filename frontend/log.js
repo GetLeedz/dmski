@@ -27,8 +27,14 @@
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const refreshBtn = document.getElementById("refreshBtn");
+  const filterAction = document.getElementById("filterAction");
 
   function actionLabel(action) {
+    if (action.startsWith("page:")) {
+      const page = action.replace("page:", "").replace(/^\//, "").replace(".html", "") || "home";
+      const pageNames = { dashboard: "Dashboard", files: "Files", upload: "Upload", users: "Benutzer", profile: "Profil", log: "Log" };
+      return `<span class="log-action pageview">${pageNames[page] || page}</span>`;
+    }
     const map = {
       login: "Login",
       logout: "Logout",
@@ -58,7 +64,9 @@
     logEmpty.style.display = "none";
 
     try {
-      const res = await fetch(`${API}/audit/logs?limit=${PER_PAGE}&offset=${currentOffset}`, {
+      const actionVal = filterAction ? filterAction.value : "";
+      const actionParam = actionVal ? `&action=${encodeURIComponent(actionVal)}` : "";
+      const res = await fetch(`${API}/audit/logs?limit=${PER_PAGE}&offset=${currentOffset}${actionParam}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -110,6 +118,12 @@
   if (prevBtn) prevBtn.addEventListener("click", () => { currentOffset = Math.max(0, currentOffset - PER_PAGE); loadLogs(); });
   if (nextBtn) nextBtn.addEventListener("click", () => { currentOffset += PER_PAGE; loadLogs(); });
   if (refreshBtn) refreshBtn.addEventListener("click", () => { currentOffset = 0; loadLogs(); });
+  if (filterAction) filterAction.addEventListener("change", () => { currentOffset = 0; loadLogs(); });
 
   loadLogs();
+
+  // Auto-refresh every 15 seconds (only on first page)
+  setInterval(() => {
+    if (currentOffset === 0) loadLogs();
+  }, 15000);
 })();

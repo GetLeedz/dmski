@@ -24,8 +24,17 @@
 
     <section class="card" style="margin-top:1.5rem">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
-        <h2 style="margin:0;font-size:1.15rem;font-weight:700;color:#fff">Session-Protokoll</h2>
-        <button id="refreshBtn" class="btn-outline" style="font-size:.88rem;padding:.45rem 1.2rem">Aktualisieren</button>
+        <h2 style="margin:0;font-size:1.15rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:.6rem">Session-Protokoll <span style="display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:600;color:#34d058;background:rgba(52,208,88,.1);padding:.2rem .6rem;border-radius:6px"><span style="width:6px;height:6px;border-radius:50%;background:#34d058;animation:pulse 2s infinite"></span>Live</span></h2>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <select id="filterAction" class="btn-outline" style="font-size:.85rem;padding:.4rem .8rem;appearance:auto;color:#fff;background:rgba(197,160,89,.06)">
+            <option value="">Alle Aktionen</option>
+            <option value="login">Login</option>
+            <option value="logout">Logout</option>
+            <option value="login_failed">Fehlgeschlagen</option>
+            <option value="page:">Seitenaufrufe</option>
+          </select>
+          <button id="refreshBtn" class="btn-outline" style="font-size:.88rem;padding:.45rem 1.2rem">Aktualisieren</button>
+        </div>
       </div>
 
       <div id="logLoading" style="text-align:center;padding:2rem;color:rgba(255,255,255,.5)">
@@ -100,6 +109,7 @@
     .log-action.login { background: rgba(52,208,88,.12); color: #34d058; }
     .log-action.logout { background: rgba(255,107,107,.1); color: #ff6b6b; }
     .log-action.login_failed { background: rgba(255,165,0,.1); color: #ffa500; }
+    .log-action.pageview { background: rgba(100,149,237,.1); color: #6495ed; }
     .log-browser { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; color: rgba(255,255,255,.45); }
     .btn-outline {
       border: 1px solid rgba(197,160,89,.25);
@@ -116,6 +126,7 @@
       border-color: rgba(197,160,89,.45);
     }
     .btn-outline:disabled { opacity: .4; cursor: not-allowed; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
   </style>
 
   <script src="nav.js"></script>

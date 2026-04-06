@@ -148,5 +148,18 @@
         window.location.href = "/";
       });
     }
+
+    // ── Pageview tracking (best-effort, non-blocking) ──
+    const tk = sessionStorage.getItem("token") || localStorage.getItem("token");
+    if (tk) {
+      const h = window.location.hostname;
+      const isLocal = h === "localhost" || h === "127.0.0.1";
+      const base = isLocal ? "" : "https://lively-reverence-production-def3.up.railway.app";
+      fetch(`${base}/api/audit/pageview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk}` },
+        body: JSON.stringify({ page: window.location.pathname })
+      }).catch(() => {});
+    }
   });
 })();
