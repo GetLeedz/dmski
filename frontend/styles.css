@@ -22,7 +22,8 @@
   --radius: 16px;
   --radius-sm: 10px;
   --font-display: "IBM Plex Serif", "Georgia", serif;
-  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
   --space-section: clamp(3.5rem, 8vw, 6rem);
   --space-page: clamp(1.2rem, 4vw, 2.5rem);
 }
@@ -206,7 +207,7 @@ body {
   inset: 0;
   z-index: 0;
   background:
-    linear-gradient(180deg, rgba(11,17,32,0.35) 0%, rgba(11,17,32,0.6) 50%, var(--bg) 100%),
+    linear-gradient(180deg, rgba(8,12,28,0.5) 0%, rgba(8,12,28,0.75) 50%, var(--bg) 100%),
     url("assets/dmski-file-scan.jpg") center / cover no-repeat;
 }
 
@@ -623,6 +624,103 @@ body {
   color: var(--ink-soft);
   margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
   text-align: center;
+}
+.cta-classified {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 0.68rem + 0.1vw, 0.78rem);
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding: 0.35rem 1.2rem;
+  border: 1px solid rgba(197,160,89,0.35);
+  background: rgba(197,160,89,0.06);
+  margin-bottom: 1.2rem;
+  animation: pulse-border 3s ease-in-out infinite;
+}
+
+/* ═══ FORENSIC SCANLINES ═══ */
+.hero-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(197,160,89,0.015) 2px,
+    rgba(197,160,89,0.015) 4px
+  );
+  pointer-events: none;
+}
+
+/* ═══ EYEBROW DOT (LIVE INDICATOR) ═══ */
+.eyebrow-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  animation: dot-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(197,160,89,0.5);
+}
+
+/* ═══ PROFILING CARDS ═══ */
+.profiling-card {
+  position: relative;
+  overflow: hidden;
+}
+.profiling-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--gold), rgba(197,160,89,0.15));
+  border-radius: 3px 0 0 3px;
+}
+.profiling-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.profiling-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(197,160,89,0.1);
+  border: 1px solid rgba(197,160,89,0.2);
+}
+.profiling-icon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  stroke: var(--gold);
+}
+.profiling-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(197,160,89,0.55);
+}
+
+/* ═══ FORENSIC ANIMATIONS ═══ */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(197,160,89,0.5); }
+  50% { opacity: 0.4; box-shadow: 0 0 2px rgba(197,160,89,0.2); }
+}
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(197,160,89,0.35); }
+  50% { border-color: rgba(197,160,89,0.7); }
 }
 
 /* ═══ LOGIN PAGE ═══ */
