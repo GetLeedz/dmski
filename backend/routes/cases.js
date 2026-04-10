@@ -3400,6 +3400,15 @@ async function ensureCaseOptionalColumns() {
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS region text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS city text");
         await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS owner_id integer");
+        await pool.query("ALTER TABLE cases ADD COLUMN IF NOT EXISTS created_by UUID");
+        // Backfill: assign unowned cases to admin
+        const adminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+        if (adminEmail) {
+          await pool.query(
+            `UPDATE cases SET created_by = (SELECT id FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1) WHERE created_by IS NULL`,
+            [adminEmail]
+          );
+        }
         // Ensure customer_users exists for access-control queries
         await pool.query(`
           CREATE TABLE IF NOT EXISTS customer_users (
@@ -3549,12 +3558,12 @@ async function listCasesCompat() {
   }
 }
 
-async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality, region, city) {
+async function createCaseCompat(caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality, region, city, createdBy) {
   await ensureCaseOptionalColumns();
   try {
     const result = await pool.query(
-      "INSERT INTO cases (id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city, created_at",
-      [caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality, region, city]
+      "INSERT INTO cases (id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, case_date, case_name, protected_person_name, opposing_party, country, locality, region, city, created_at",
+      [caseId, caseDate, caseName, protectedPerson, opposingParty, country, locality, region, city, createdBy]
     );
     await upsertCasePartiesFallback(caseId, protectedPerson, opposingParty, country, locality, region, city);
     return result.rows[0];
@@ -3965,7 +3974,7 @@ router.post("/", requireAuth, async (req, res) => {
     const locality = String(localityInput || "").trim() || null;
     const region = String(regionInput || "").trim() || null;
     const city = String(cityInput || "").trim() || null;
-    const created = await createCaseCompat(normalizedCaseId, caseDate, normalizedCaseName, protectedPerson, opposingParty, country, locality, region, city);
+    const created = await createCaseCompat(normalizedCaseId, caseDate, normalizedCaseName, protectedPerson, opposingParty, country, locality, region, city, req.user.sub);
     return res.status(201).json(created);
   } catch (err) {
     if (err.code === "23505") {
@@ -3995,9 +4004,24 @@ router.get("/", requireAuth, async (req, res) => {
       return res.json({ cases: caseRes.rows });
     }
 
-    // Admin and Customer see all cases
-    const cases = await listCasesCompat();
-    return res.json({ cases });
+    // Admin sees all cases
+    if (userRole === "admin") {
+      const cases = await listCasesCompat();
+      return res.json({ cases });
+    }
+
+    // Customer sees only their own cases (created_by or assigned via case_id)
+    await ensureCaseOptionalColumns();
+    const userId = req.user.sub;
+    const ownedCases = await pool.query(
+      `SELECT DISTINCT c.id, c.case_date, c.case_name, c.protected_person_name, c.country, c.locality, c.region, c.city, c.created_at
+       FROM cases c
+       WHERE c.created_by = $1
+          OR c.id IN (SELECT u.case_id FROM users u WHERE u.id = $1 AND u.case_id IS NOT NULL)
+       ORDER BY c.created_at DESC LIMIT 200`,
+      [userId]
+    );
+    return res.json({ cases: ownedCases.rows });
   } catch (err) {
     console.error("List cases error:", err.message);
     return res.status(500).json({ error: "Fallliste konnte nicht geladen werden." });
