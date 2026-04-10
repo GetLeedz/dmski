@@ -62,11 +62,12 @@ async function ensureSchema() {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
-    // Add unique constraint if missing, then seed packages
-    await pool.query(`ALTER TABLE credit_packages ADD CONSTRAINT IF NOT EXISTS credit_packages_name_key UNIQUE (name)`).catch(() => {});
-    // Clean up duplicates first
+    // Clean up duplicate packages and seed defaults
     await pool.query(`DELETE FROM credit_packages a USING credit_packages b WHERE a.id > b.id AND a.name = b.name`).catch(() => {});
-    await pool.query(`INSERT INTO credit_packages (name, credits, price, popular, sort_order) VALUES ('Starter', 50, 250.00, false, 1), ('Standard', 150, 675.00, true, 2), ('Professional', 500, 2000.00, false, 3) ON CONFLICT (name) DO NOTHING`);
+    const pkgCount = await pool.query(`SELECT COUNT(*) FROM credit_packages`);
+    if (parseInt(pkgCount.rows[0]?.count || "0", 10) === 0) {
+      await pool.query(`INSERT INTO credit_packages (name, credits, price, popular, sort_order) VALUES ('Starter', 50, 250.00, false, 1), ('Standard', 150, 675.00, true, 2), ('Professional', 500, 2000.00, false, 3)`);
+    }
     console.log("[credits] Schema ensured.");
   } catch (err) {
     if (!err.message?.includes("already exists")) {
@@ -104,6 +105,73 @@ router.get("/balance", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("[credits] balance error:", err.message);
     res.status(500).json({ error: "Konnte Credits nicht laden." });
+  }
+});
+
+// ══════════════════════════════════════════════
+// POST /credits/verify-purchase – Fallback: check Stripe sessions
+// ══════════════════════════════════════════════
+router.post("/verify-purchase", requireAuth, async (req, res) => {
+  try {
+    await ensureSchema();
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) return res.json({ credited: false });
+
+    const stripe = require("stripe")(stripeKey);
+    const userId = req.user.sub;
+
+    // Find recent completed checkout sessions for this user's email
+    const sessions = await stripe.checkout.sessions.list({
+      limit: 10,
+      status: "complete",
+      customer_details: { email: req.user.email },
+    }).catch(() => ({ data: [] }));
+
+    // Fallback: list all recent completed sessions and filter by email
+    let completedSessions = sessions.data || [];
+    if (completedSessions.length === 0) {
+      const allSessions = await stripe.checkout.sessions.list({ limit: 20 }).catch(() => ({ data: [] }));
+      completedSessions = (allSessions.data || []).filter(s =>
+        s.status === "complete" &&
+        s.metadata?.user_id === userId
+      );
+    }
+
+    let totalCredited = 0;
+    for (const session of completedSessions) {
+      if (session.metadata?.user_id !== userId) continue;
+      const credits = parseInt(session.metadata?.credits || "0", 10);
+      if (!credits) continue;
+
+      // Check if already credited
+      const existing = await pool.query(
+        `SELECT id FROM credit_transactions WHERE stripe_session_id = $1`, [session.id]
+      );
+      if (existing.rows.length > 0) continue;
+
+      // Credit the user
+      await getOrCreateBalance(userId);
+      const upd = await pool.query(
+        `UPDATE user_credits SET balance = balance + $1, total_purchased = total_purchased + $1, updated_at = NOW() WHERE user_id = $2 RETURNING balance`,
+        [credits, userId]
+      );
+      const newBalance = upd.rows[0]?.balance || credits;
+      await pool.query(
+        `INSERT INTO credit_transactions (user_id, type, amount, balance_after, description, stripe_session_id) VALUES ($1, 'purchase', $2, $3, $4, $5)`,
+        [userId, credits, newBalance, `${credits} Credits gekauft`, session.id]
+      );
+      totalCredited += credits;
+      console.log(`[credits] verify-purchase: +${credits} for user ${userId} (session: ${session.id})`);
+    }
+
+    if (totalCredited > 0) {
+      const bal = await getOrCreateBalance(userId);
+      return res.json({ credited: true, amount: totalCredited, balance: bal.balance });
+    }
+    res.json({ credited: false });
+  } catch (err) {
+    console.error("[credits] verify-purchase error:", err.message);
+    res.json({ credited: false });
   }
 });
 

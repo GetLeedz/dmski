@@ -80,7 +80,19 @@
     if (params.get("success") === "1") {
       alertEl.style.display = "block";
       alertEl.className = "credit-alert credit-alert-success";
-      alertEl.innerHTML = "<strong>Zahlung erfolgreich!</strong> Ihre Credits wurden gutgeschrieben.";
+      alertEl.innerHTML = "<strong>Zahlung wird geprüft...</strong> Credits werden gutgeschrieben.";
+      // Verify purchase with Stripe (fallback if webhook missed)
+      fetch(`${API_BASE}/api/credits/verify-purchase`, { method: "POST", headers })
+        .then(r => r.json())
+        .then(data => {
+          if (data.credited) {
+            alertEl.innerHTML = `<strong>Zahlung erfolgreich!</strong> ${data.amount} Credits wurden gutgeschrieben.`;
+          } else {
+            alertEl.innerHTML = "<strong>Zahlung erfolgreich!</strong> Ihre Credits wurden gutgeschrieben.";
+          }
+          loadBalance();
+        })
+        .catch(() => { loadBalance(); });
       window.history.replaceState({}, "", "/credits.html");
     } else if (params.get("cancelled") === "1") {
       alertEl.style.display = "block";
