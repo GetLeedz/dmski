@@ -207,31 +207,125 @@ body {
   inset: 0;
   z-index: 0;
   background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(197,160,89,0.06) 0%, transparent 70%),
     linear-gradient(180deg, rgba(8,12,28,0.5) 0%, rgba(8,12,28,0.75) 50%, var(--bg) 100%),
     url("assets/dmski-file-scan.jpg") center / cover no-repeat;
 }
 
+/* Subtle forensic grid overlay */
+.hero-grid-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(197,160,89,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(197,160,89,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 70% 50% at 50% 50%, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 50%, black 20%, transparent 70%);
+}
+
+/* Animated scanning beam */
+.hero-scan-beam {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-scan-beam::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(197,160,89,0.4) 30%, rgba(197,160,89,0.6) 50%, rgba(197,160,89,0.4) 70%, transparent 100%);
+  box-shadow: 0 0 20px 4px rgba(197,160,89,0.15), 0 0 60px 8px rgba(197,160,89,0.05);
+  animation: scan-sweep 6s ease-in-out infinite;
+}
+
+@keyframes scan-sweep {
+  0%, 100% { top: 15%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  50% { top: 85%; }
+}
+
+/* Hero card with animated gold border glow */
 .hero-content {
   position: relative;
   z-index: 1;
-  max-width: 820px;
+  max-width: 860px;
   width: 100%;
   text-align: center;
-  padding: clamp(2rem, 5vw, 3.5rem) clamp(1.5rem, 4vw, 3.5rem) clamp(1.8rem, 4vw, 3rem);
-  border-radius: clamp(16px, 3vw, 24px);
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(11,17,32,0.5);
-  backdrop-filter: blur(32px) saturate(1.5);
-  -webkit-backdrop-filter: blur(32px) saturate(1.5);
-  box-shadow: 0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  padding: clamp(2.5rem, 5vw, 4rem) clamp(2rem, 5vw, 4rem) clamp(2rem, 4vw, 3.5rem);
+  border-radius: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(197,160,89,0.15);
+  background: rgba(11,17,32,0.55);
+  backdrop-filter: blur(40px) saturate(1.6);
+  -webkit-backdrop-filter: blur(40px) saturate(1.6);
+  box-shadow:
+    0 40px 100px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(197,160,89,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 -1px 0 rgba(197,160,89,0.05);
   animation: hero-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
   transform: translateY(30px);
 }
 
+/* Rotating gold gradient border */
+.hero-content::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 0%,
+    rgba(197,160,89,0.3) 10%,
+    transparent 20%,
+    transparent 80%,
+    rgba(197,160,89,0.2) 90%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: border-rotate 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes border-rotate {
+  to { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Corner accents */
+.hero-content::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 32px;
+  height: 32px;
+  border-top: 2px solid rgba(197,160,89,0.35);
+  border-left: 2px solid rgba(197,160,89,0.35);
+  border-radius: 4px 0 0 0;
+  pointer-events: none;
+}
+
 .hero-eyebrow {
   display: inline-block;
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+  margin-bottom: clamp(0.8rem, 2vw, 1.2rem);
   padding: 0.4rem 1.1rem;
   border: 1px solid rgba(197,160,89,0.3);
   border-radius: 100px;
@@ -243,29 +337,47 @@ body {
   color: var(--gold);
 }
 
+/* Decorative gold accent line */
+.hero-accent-line {
+  width: 48px;
+  height: 2px;
+  margin: 0 auto clamp(1rem, 2vw, 1.5rem);
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
 .hero-headline {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 3.8rem);
+  font-size: clamp(2.1rem, 5vw, 3.6rem);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
   color: #fff;
   margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .hero-highlight {
-  background: linear-gradient(135deg, var(--gold), #dfc07a);
+  background: linear-gradient(135deg, #dfc07a 0%, var(--gold) 40%, #e8d5a0 70%, var(--gold) 100%);
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: gold-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes gold-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .hero-sub {
-  max-width: 640px;
+  max-width: 620px;
   margin: 0 auto clamp(1.5rem, 3vw, 2.5rem);
   font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--ink-soft);
+  letter-spacing: 0.005em;
 }
 
 .hero-actions {
@@ -277,6 +389,13 @@ body {
   flex-wrap: wrap;
 }
 
+/* Button icon */
+.btn-icon {
+  margin-right: 0.5rem;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
 /* ═══ BUTTONS ═══ */
 .btn-primary {
   display: inline-flex;
@@ -286,7 +405,7 @@ body {
   padding: 0.95rem 2.4rem;
   border: none;
   border-radius: var(--radius-sm);
-  background: linear-gradient(150deg, var(--gold), var(--gold-strong));
+  background: linear-gradient(150deg, #dfc07a, var(--gold), var(--gold-strong));
   color: #0f172a;
   font-family: inherit;
   font-size: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
@@ -294,12 +413,12 @@ body {
   letter-spacing: 0.02em;
   text-decoration: none;
   cursor: pointer;
-  transition: all 180ms ease;
-  box-shadow: 0 4px 24px rgba(197,160,89,0.25);
+  transition: all 220ms ease;
+  box-shadow: 0 4px 24px rgba(197,160,89,0.3), 0 0 0 0 rgba(197,160,89,0);
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(197,160,89,0.35);
+  box-shadow: 0 8px 40px rgba(197,160,89,0.4), 0 0 20px rgba(197,160,89,0.15);
 }
 .btn-lg { padding: 1.1rem 3rem; font-size: clamp(1rem, 0.95rem + 0.2vw, 1.1rem); }
 
