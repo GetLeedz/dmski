@@ -230,26 +230,37 @@
   </main>
 
   <!-- ── ToS Popup ── -->
-  <div id="tosModal" style="display:none;position:fixed;inset:0;background:rgba(10,30,35,.7);z-index:9999;align-items:center;justify-content:center;padding:1rem;" aria-modal="true" role="dialog" aria-labelledby="tosTitle">
-    <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:2rem 2.2rem 1.75rem;box-shadow:0 24px 64px rgba(0,0,0,.22);font-family:inherit;">
+  <div id="tosModal" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.8);z-index:9999;align-items:center;justify-content:center;padding:1rem;" aria-modal="true" role="dialog" aria-labelledby="tosTitle">
+    <div style="background:#fff;border-radius:16px;max-width:560px;width:100%;padding:2rem 2.2rem 1.75rem;box-shadow:0 24px 64px rgba(0,0,0,.3);font-family:inherit;">
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.1rem;">
-        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#116b73,#0d5760);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1A2B3C,#0F1E2B);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#C5A059" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         </div>
-        <h2 id="tosTitle" style="font-size:1.05rem;font-weight:700;color:#0d2e33;margin:0;">Nutzungsbedingungen</h2>
+        <h2 id="tosTitle" style="font-size:1.05rem;font-weight:700;color:#1A2B3C;margin:0;">Nutzungsbedingungen &amp; Datenschutz</h2>
       </div>
-      <p style="color:#4a6672;font-size:.875rem;line-height:1.65;margin:0 0 1rem;">
-        Willkommen auf DMSKI. Bevor Sie fortfahren, bitten wir Sie, unsere
-        <a href="/nutzungsbedingungen.html" target="_blank" style="color:#116b73;font-weight:600;">Nutzungsbedingungen</a>
-        und unsere <a href="/datenschutz.html" target="_blank" style="color:#116b73;font-weight:600;">Datenschutzerklärung</a> zu lesen und zu akzeptieren.
+      <p style="color:#4a5568;font-size:.875rem;line-height:1.65;margin:0 0 1rem;">
+        Willkommen bei DMSKI. Bitte lesen Sie die folgenden Bedingungen und bestätigen Sie mit «Zustimmen», um fortzufahren.
       </p>
-      <p style="color:#4a6672;font-size:.82rem;line-height:1.55;margin:0 0 1.5rem;background:#f4f7f8;border-radius:8px;padding:.75rem 1rem;">
-        Ihre Daten werden in der Schweiz (Zürich) gespeichert. KI-Analysen nutzen OpenAI ohne Training-Opt-in.
-        Die Plattform ist ausschließlich für berechtigte Benutzer zugänglich.
-      </p>
+      <div id="tosScrollBox" style="max-height:280px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;padding:1rem 1.2rem;margin-bottom:.8rem;font-size:.82rem;color:#4a5568;line-height:1.65;">
+        <p style="font-weight:700;color:#1A2B3C;margin:0 0 .4rem;">1. Leistungsbeschreibung</p>
+        <p style="margin:0 0 .8rem;">DMSKI ist eine KI-gestützte Plattform zur Faktenanalyse juristischer Dokumente. DMSKI liest, analysiert und vergleicht Ihre hochgeladenen Akten mittels Künstlicher Intelligenz. DMSKI zeigt Muster, Widersprüche und Auffälligkeiten auf und erstellt KI-Empfehlungen für Ihren Fall.</p>
+        <p style="font-weight:700;color:#1A2B3C;margin:0 0 .4rem;">2. Keine Rechtsberatung</p>
+        <p style="margin:0 0 .8rem;">DMSKI ersetzt keine anwaltliche Beratung. Die KI-Analyse dient als ergänzende Faktengrundlage für Ihren Anwalt, Gutachter oder Ihre eigene Einschätzung. DMSKI gibt keine rechtlichen Empfehlungen ab.</p>
+        <p style="font-weight:700;color:#1A2B3C;margin:0 0 .4rem;">3. Credits &amp; Abrechnung</p>
+        <p style="margin:0 0 .8rem;">Analysen werden über ein Credit-System abgerechnet. Credits sind nicht rückerstattbar. Der Credit-Preis kann angepasst werden. Gekaufte Credits bleiben unbefristet gültig.</p>
+        <p style="font-weight:700;color:#1A2B3C;margin:0 0 .4rem;">4. Datenschutz &amp; Datensicherheit</p>
+        <p style="margin:0 0 .8rem;">Ihre Dokumente werden ausschliesslich für die KI-Analyse verwendet. DMSKI sammelt keine Daten, erstellt keine Profile und gibt keine Informationen an Dritte weiter. Sie können Ihr Konto und alle zugehörigen Daten jederzeit selbst löschen.</p>
+        <p style="font-weight:700;color:#1A2B3C;margin:0 0 .4rem;">5. KI-Technologie</p>
+        <p style="margin:0 0 .8rem;">DMSKI nutzt fortschrittliche KI-Modelle zur Analyse. Ihre Dokumente werden nicht für das Training von KI-Modellen verwendet. Die Verarbeitung erfolgt verschlüsselt und DSGVO-konform.</p>
+        <p style="font-weight:700;color:#1A2B3C;margin:0 0 .4rem;">6. Verfügbarkeit</p>
+        <p style="margin:0 0 .8rem;">DMSKI ist eine professionelle Plattform für berechtigte Benutzer. DMSKI behält sich vor, Konten bei Missbrauch ohne Vorankündigung zu sperren.</p>
+        <p style="font-weight:700;color:#1A2B3C;margin:0 0 .4rem;">7. Anwendbares Recht</p>
+        <p style="margin:0 0 0;">Es gilt Schweizer Recht. Gerichtsstand ist Binningen BL, Schweiz.</p>
+      </div>
+      <p id="tosScrollHint" style="color:#C5A059;font-size:.78rem;text-align:center;margin:0 0 1rem;font-weight:600;">Bitte scrollen Sie bis zum Ende, um fortzufahren.</p>
       <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;">
-        <button id="tosDenyBtn" type="button" style="padding:.55rem 1.2rem;border:1.5px solid #cbd5da;border-radius:8px;background:#fff;color:#4a6672;font-size:.875rem;cursor:pointer;font-family:inherit;">Ablehnen & Logout</button>
-        <button id="tosAcceptBtn" type="button" style="padding:.55rem 1.4rem;border:none;border-radius:8px;background:linear-gradient(135deg,#116b73,#0d5760);color:#fff;font-size:.875rem;font-weight:600;cursor:pointer;font-family:inherit;">Zustimmen & Fortfahren</button>
+        <button id="tosDenyBtn" type="button" style="padding:.6rem 1.2rem;border:1.5px solid #cbd5da;border-radius:8px;background:#fff;color:#4a5568;font-size:.875rem;cursor:pointer;font-family:inherit;">Ablehnen &amp; Logout</button>
+        <button id="tosAcceptBtn" type="button" disabled style="padding:.6rem 1.4rem;border:none;border-radius:8px;background:#cbd5da;color:#fff;font-size:.875rem;font-weight:600;cursor:not-allowed;font-family:inherit;transition:all 200ms ease;">Zustimmen &amp; Fortfahren</button>
       </div>
     </div>
   </div>

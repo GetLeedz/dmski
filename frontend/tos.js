@@ -25,7 +25,28 @@
     if (!modal) return;
     modal.style.display = "flex";
 
-    document.getElementById("tosAcceptBtn").addEventListener("click", async () => {
+    const scrollBox = document.getElementById("tosScrollBox");
+    const acceptBtn = document.getElementById("tosAcceptBtn");
+    const scrollHint = document.getElementById("tosScrollHint");
+
+    function checkScroll() {
+      if (!scrollBox || !acceptBtn) return;
+      const atBottom = scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 10;
+      if (atBottom) {
+        acceptBtn.disabled = false;
+        acceptBtn.style.background = "linear-gradient(135deg,#1A2B3C,#0F1E2B)";
+        acceptBtn.style.cursor = "pointer";
+        if (scrollHint) scrollHint.style.display = "none";
+      }
+    }
+    if (scrollBox) {
+      scrollBox.addEventListener("scroll", checkScroll);
+      // Check immediately in case content is short enough
+      setTimeout(checkScroll, 100);
+    }
+
+    acceptBtn.addEventListener("click", async () => {
+      if (acceptBtn.disabled) return;
       const token = getToken();
       try {
         await fetch(`${API}/users/me/accept-tos`, {
