@@ -5898,6 +5898,57 @@ select.case-edit-input {
   margin-bottom: 1.5rem;
 }
 
+/* ── Big Search (Google-style) ── */
+.fp-search-hero {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0 1.8rem;
+}
+
+.fp-search-wrap-big {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+}
+
+.fp-search-icon-big {
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.4rem;
+  height: 1.4rem;
+  color: rgba(26,43,60,0.4);
+  pointer-events: none;
+}
+
+.fp-search-big {
+  width: 100%;
+  padding: 1.1rem 1.4rem 1.1rem 3.4rem;
+  border: 2px solid rgba(26,43,60,0.15);
+  border-radius: 100px;
+  background: #fff;
+  font-size: 1.1rem;
+  font-family: inherit;
+  color: var(--navy);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: all 200ms ease;
+}
+.fp-search-big:hover {
+  border-color: rgba(26,43,60,0.25);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.fp-search-big:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 4px 24px rgba(197,160,89,0.15), 0 0 0 3px rgba(197,160,89,0.08);
+}
+.fp-search-big::placeholder {
+  color: rgba(26,43,60,0.38);
+  font-size: 1rem;
+}
+
+/* Legacy search (keep for other pages) */
 .fp-search-wrap {
   flex: 1;
   position: relative;

@@ -2906,7 +2906,9 @@ function renderFiles(files) {
     return;
   }
 
-  for (const file of files) {
+  for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
+    const file = files[fileIdx];
+    const fileNr = fileIdx + 1;
     const fileType = resolveFileType(file);
     const displayName = decodeUtf8Safe(file.original_name);
     const tr = document.createElement("tr");
@@ -2925,7 +2927,7 @@ function renderFiles(files) {
       <td class="preview-cell" data-file-id="${file.id}" title="Klicken für grosse Vorschau">
         <div class="preview-topline">
           <div>
-            <div class="preview-doc-id">File-ID: ${compactDocId(file.id)}</div>
+            <div class="preview-doc-id">File #${fileNr}</div>
             <div class="preview-filename">${displayName}</div>
             <div class="preview-timestamp">${formatDate(file.uploaded_at)}</div>
             <div class="preview-meta-row">
