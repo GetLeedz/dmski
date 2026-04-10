@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI – Credits-Verwaltung</title>
+  <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div id="site-nav"></div>
+  <div class="page">
+    <div class="admin-credits-page">
+
+      <!-- Settings -->
+      <div class="admin-credits-settings" id="settingsPanel">
+        <label>Credit-Preis (CHF):</label>
+        <input type="number" id="priceInput" step="0.50" min="0.50" />
+        <label>Free Signup Credits:</label>
+        <input type="number" id="freeCreditsInput" step="1" min="0" />
+        <button onclick="saveSettings()">Speichern</button>
+        <span id="settingsMsg" style="font-size:.82rem;color:var(--gold);"></span>
+      </div>
+
+      <!-- Users table -->
+      <div id="adminMsg" style="margin-bottom:1rem;"></div>
+      <table class="admin-credits-table" id="adminTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>E-Mail</th>
+            <th>Rolle</th>
+            <th>Credits verfügbar</th>
+            <th>Gekauft</th>
+            <th>Verbraucht</th>
+            <th>Files</th>
+            <th>Letzter Login</th>
+            <th>Aktion</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody">
+          <tr><td colspan="9" style="text-align:center;padding:2rem;color:rgba(26,43,60,.4);">Wird geladen...</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <script src="nav.js"></script>
+  <script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      ? "" : "https://lively-reverence-production-def3.up.railway.app";
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+    const role = sessionStorage.getItem("dmski_role");
+    if (!token || role !== "admin") window.location.href = "/dashboard.html";
+
+    const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+
+    async function loadOverview() {
+      try {
+        const res = await fetch(`${API_BASE}/api/credits/admin/overview`, { headers });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        // Settings
+        if (data.settings) {
+          document.getElementById("priceInput").value = Number(data.settings.price_per_credit);
+          document.getElementById("freeCreditsInput").value = data.settings.free_signup_credits;
+        }
+
+        // Table
+        const tbody = document.getElementById("adminTableBody");
+        if (!data.users?.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">Keine Benutzer.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.users.map(u => {
+          const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || "—";
+          const lastLogin = u.last_login_at ? new Date(u.last_login_at).toLocaleDateString("de-CH") : "—";
+          return `<tr>
+            <td><strong>${name}</strong></td>
+            <td>${u.email}</td>
+            <td>${u.role}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">${u.balance}</td>
+            <td>${u.total_purchased}</td>
+            <td>${u.total_spent}</td>
+            <td>${u.file_count || 0}</td>
+            <td>${lastLogin}</td>
+            <td><button class="admin-grant-btn" onclick="grantCredits('${u.id}','${name}')">+ Credits</button></td>
+          </tr>`;
+        }).join("");
+      } catch (err) {
+        document.getElementById("adminTableBody").innerHTML =
+          `<tr><td colspan="9" style="color:#b33;padding:1rem;">${err.message}</td></tr>`;
+      }
+    }
+
+    async function saveSettings() {
+      const price = parseFloat(document.getElementById("priceInput").value);
+      const free = parseInt(document.getElementById("freeCreditsInput").value, 10);
+      try {
+        const res = await fetch(`${API_BASE}/api/credits/admin/settings`, {
+          method: "PATCH", headers, body: JSON.stringify({ price_per_credit: price, free_signup_credits: free })
+        });
+        const data = await res.json();
+        document.getElementById("settingsMsg").textContent = data.ok ? "Gespeichert" : (data.error || "Fehler");
+        setTimeout(() => { document.getElementById("settingsMsg").textContent = ""; }, 3000);
+      } catch (_) {
+        document.getElementById("settingsMsg").textContent = "Fehler";
+      }
+    }
+
+    async function grantCredits(userId, name) {
+      const amount = prompt(`Wie viele Credits für ${name} gutschreiben?`, "10");
+      if (!amount || isNaN(amount) || Number(amount) < 1) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/credits/grant`, {
+          method: "POST", headers, body: JSON.stringify({ userId, amount: Number(amount) })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          loadOverview();
+        } else {
+          alert(data.error || "Fehler");
+        }
+      } catch (_) {
+        alert("Verbindungsfehler");
+      }
+    }
+
+    loadOverview();
+  </script>
+</body>
+</html>

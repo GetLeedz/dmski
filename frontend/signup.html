@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI – Registrierung</title>
+  <meta name="description" content="Erstellen Sie Ihr DMSKI-Konto und erhalten Sie 10 Credits kostenlos." />
+  <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <a href="/" class="top-bar-logo" aria-label="Zur Startseite">
+      <img src="assets/logo-dmski_gold.png" alt="DMSKI" />
+    </a>
+    <nav class="top-bar-nav">
+      <a href="/login.html" class="top-bar-login">Login</a>
+      <a href="/signup.html" class="top-bar-cta">Registrieren</a>
+    </nav>
+    <button class="hamburger" id="hamburger" aria-label="Menü öffnen"><span></span><span></span><span></span></button>
+  </header>
+  <nav class="mobile-nav" id="mobileNav">
+    <a href="/login.html" class="mobile-nav-login">Login</a>
+    <a href="/signup.html" class="mobile-nav-cta">Registrieren</a>
+  </nav>
+
+  <main>
+    <section class="login-shell" style="min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:6rem 1.5rem 3rem;">
+      <div class="login-box" style="max-width:460px;width:100%;">
+        <div class="login-header">
+          <img src="assets/logo-dmski_gold.png" alt="DMSKI" class="login-logo" />
+          <h1 class="login-title">Konto erstellen</h1>
+          <p class="login-subtitle">Registrieren Sie sich und erhalten Sie <strong>10 Credits kostenlos</strong></p>
+        </div>
+
+        <form id="signupForm" autocomplete="off">
+          <div id="signupMessage" class="login-message" style="display:none"></div>
+
+          <div style="display:flex;gap:.8rem;">
+            <div style="flex:1;">
+              <label class="login-label" for="firstName">Vorname *</label>
+              <input id="firstName" type="text" class="login-input" required autocomplete="given-name" />
+            </div>
+            <div style="flex:1;">
+              <label class="login-label" for="lastName">Nachname</label>
+              <input id="lastName" type="text" class="login-input" autocomplete="family-name" />
+            </div>
+          </div>
+
+          <label class="login-label" for="signupEmail">E-Mail *</label>
+          <input id="signupEmail" type="email" class="login-input" required autocomplete="email" />
+
+          <label class="login-label" for="signupPassword">Passwort * <span style="font-weight:400;color:rgba(255,255,255,.4);font-size:.78rem;">(mind. 8 Zeichen)</span></label>
+          <input id="signupPassword" type="password" class="login-input" required minlength="8" autocomplete="new-password" />
+
+          <label class="login-label" for="signupPassword2">Passwort bestätigen *</label>
+          <input id="signupPassword2" type="password" class="login-input" required minlength="8" autocomplete="new-password" />
+
+          <button id="signupBtn" type="submit" class="login-submit" style="margin-top:1rem;">Registrieren</button>
+        </form>
+
+        <p style="text-align:center;margin-top:1.2rem;font-size:.88rem;color:rgba(255,255,255,.5);">
+          Bereits registriert? <a href="/login.html" style="color:var(--gold);text-decoration:none;font-weight:600;">Zum Login</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      ? "" : "https://lively-reverence-production-def3.up.railway.app";
+
+    const form = document.getElementById("signupForm");
+    const msg = document.getElementById("signupMessage");
+    const btn = document.getElementById("signupBtn");
+
+    function showMsg(text, type) {
+      msg.style.display = "block";
+      msg.className = `login-message ${type === "error" ? "login-error" : "login-success"}`;
+      msg.innerHTML = text;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const first_name = document.getElementById("firstName").value.trim();
+      const last_name = document.getElementById("lastName").value.trim();
+      const email = document.getElementById("signupEmail").value.trim();
+      const password = document.getElementById("signupPassword").value;
+      const password2 = document.getElementById("signupPassword2").value;
+
+      if (password !== password2) {
+        showMsg("Passwörter stimmen nicht überein.", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Wird registriert...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ first_name, last_name, email, password }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showMsg("Registrierung erfolgreich! Bitte prüfen Sie Ihre E-Mails und bestätigen Sie Ihre Adresse.", "success");
+          form.reset();
+        } else {
+          showMsg(data.error || "Registrierung fehlgeschlagen.", "error");
+          btn.disabled = false;
+          btn.textContent = "Registrieren";
+        }
+      } catch (_) {
+        showMsg("Server nicht erreichbar.", "error");
+        btn.disabled = false;
+        btn.textContent = "Registrieren";
+      }
+    });
+
+    // Hamburger
+    const hb = document.getElementById("hamburger");
+    const mn = document.getElementById("mobileNav");
+    if (hb && mn) hb.addEventListener("click", () => { hb.classList.toggle("is-open"); mn.classList.toggle("is-open"); });
+  </script>
+</body>
+</html>

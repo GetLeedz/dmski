@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI – E-Mail bestätigen</title>
+  <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <a href="/" class="top-bar-logo" aria-label="Zur Startseite">
+      <img src="assets/logo-dmski_gold.png" alt="DMSKI" />
+    </a>
+  </header>
+
+  <main>
+    <section style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:6rem 1.5rem 3rem;">
+      <div class="login-box" style="max-width:460px;width:100%;text-align:center;">
+        <div class="login-header">
+          <img src="assets/logo-dmski_gold.png" alt="DMSKI" class="login-logo" />
+          <h1 class="login-title">E-Mail bestätigen</h1>
+        </div>
+        <div id="verifyMessage" style="padding:1rem;font-size:1rem;color:rgba(255,255,255,.7);">
+          Wird verifiziert...
+        </div>
+        <a href="/login.html" class="btn-primary" style="display:inline-block;margin-top:1.5rem;text-decoration:none;">Zum Login</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      ? "" : "https://lively-reverence-production-def3.up.railway.app";
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const el = document.getElementById("verifyMessage");
+
+    if (!token) {
+      el.innerHTML = '<p style="color:#ff6b6b;">Kein Verifizierungstoken vorhanden.</p>';
+    } else {
+      fetch(`${API_BASE}/api/auth/verify-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) {
+          el.innerHTML = '<p style="color:#34d058;font-weight:600;">E-Mail erfolgreich bestätigt!</p><p style="color:rgba(255,255,255,.6);margin-top:.5rem;">Sie haben 10 Willkommens-Credits erhalten. Sie können sich jetzt anmelden.</p>';
+        } else {
+          el.innerHTML = `<p style="color:#ff6b6b;">${data.error || "Verifizierung fehlgeschlagen."}</p>`;
+        }
+      })
+      .catch(() => {
+        el.innerHTML = '<p style="color:#ff6b6b;">Server nicht erreichbar.</p>';
+      });
+    }
+  </script>
+</body>
+</html>

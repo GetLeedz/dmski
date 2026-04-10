@@ -105,6 +105,37 @@ h1, h2, h3, h4, .card-title, .step-title, .workflow-gutachter-title {
   font-family: "Inter", sans-serif !important;
 }
 
+/* Greeting */
+.sb-greeting {
+  padding: .8rem 1.2rem .2rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.85);
+  letter-spacing: .01em;
+}
+
+/* Credit badge in sidebar */
+.sb-credit-badge {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin: .5rem 1rem .3rem;
+  padding: .5rem .9rem;
+  border-radius: 8px;
+  background: rgba(197,160,89,.1);
+  border: 1px solid rgba(197,160,89,.2);
+  color: var(--gold);
+  font-size: .78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 180ms ease;
+}
+.sb-credit-badge svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+.sb-credit-badge:hover {
+  background: rgba(197,160,89,.18);
+  border-color: rgba(197,160,89,.35);
+}
+
 /* Nav area */
 .sb-nav {
   flex: 1;
@@ -7650,4 +7681,369 @@ body.printing .upload-hero-wrap { display: none !important; }
   font-size: 0.82rem;
   line-height: 1.5;
   color: var(--navy);
+}
+
+/* ══════════════════════════════════════════════
+   CREDITS PAGE
+   ══════════════════════════════════════════════ */
+.credits-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+}
+
+/* Alert banners */
+.credit-alert {
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+  font-size: .92rem;
+  font-weight: 500;
+}
+.credit-alert-success {
+  background: rgba(52,208,88,.08);
+  border: 1px solid rgba(52,208,88,.25);
+  color: #1a7a2e;
+}
+.credit-alert-warn {
+  background: rgba(255,107,107,.08);
+  border: 1px solid rgba(255,107,107,.25);
+  color: #b33;
+}
+
+/* Balance card */
+.credit-balance-card {
+  background: linear-gradient(135deg, var(--navy), var(--navy-2));
+  border-radius: 16px;
+  padding: 2px;
+  margin-bottom: 2.5rem;
+}
+.credit-balance-inner {
+  background: linear-gradient(135deg, var(--navy), var(--navy-3));
+  border-radius: 15px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  border: 1px solid rgba(197,160,89,.15);
+}
+.credit-balance-label {
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--gold);
+  margin-bottom: .5rem;
+}
+.credit-balance-number {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: .3rem;
+}
+.credit-balance-sub {
+  font-size: .85rem;
+  color: rgba(255,255,255,.5);
+}
+
+/* Explainer */
+.credit-explainer {
+  background: #fff;
+  border: 1px solid rgba(26,43,60,.08);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+}
+.credit-explainer h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 1rem;
+}
+.credit-explainer p {
+  font-size: .92rem;
+  color: rgba(26,43,60,.7);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+.credit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+.credit-table th {
+  text-align: left;
+  padding: .65rem .8rem;
+  background: var(--navy-glass);
+  color: var(--navy);
+  font-weight: 600;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 2px solid rgba(26,43,60,.1);
+}
+.credit-table td {
+  padding: .65rem .8rem;
+  border-bottom: 1px solid rgba(26,43,60,.06);
+  color: var(--navy);
+}
+.credit-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid var(--gold);
+  border-bottom: none;
+  color: var(--navy);
+}
+
+/* Section title */
+.credit-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 1.5rem;
+}
+
+/* Packages grid */
+.credit-packages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+.credit-pkg {
+  position: relative;
+  background: #fff;
+  border: 1px solid rgba(26,43,60,.1);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  transition: all 220ms ease;
+}
+.credit-pkg:hover {
+  border-color: rgba(197,160,89,.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,.06);
+  transform: translateY(-2px);
+}
+.credit-pkg-popular {
+  border-color: var(--gold);
+  box-shadow: 0 4px 24px rgba(197,160,89,.12);
+}
+.credit-pkg-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: var(--navy);
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: .3rem 1rem;
+  border-radius: 100px;
+}
+.credit-pkg-name {
+  font-size: .85rem;
+  font-weight: 600;
+  color: rgba(26,43,60,.6);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 1rem;
+}
+.credit-pkg-credits {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+.credit-pkg-credits-label {
+  font-size: .8rem;
+  color: rgba(26,43,60,.5);
+  margin-bottom: 1rem;
+}
+.credit-pkg-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: .2rem;
+}
+.credit-pkg-per {
+  font-size: .78rem;
+  color: rgba(26,43,60,.45);
+  margin-bottom: 1.5rem;
+}
+.credit-pkg-btn {
+  width: 100%;
+  padding: .85rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--gold), var(--gold-2));
+  color: var(--navy);
+  font-family: inherit;
+  font-size: .92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+.credit-pkg-btn:hover {
+  box-shadow: 0 4px 20px rgba(197,160,89,.3);
+  transform: translateY(-1px);
+}
+.credit-pkg-btn:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+.credit-pkg-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: rgba(26,43,60,.4);
+  padding: 2rem;
+}
+
+/* Transaction history */
+.credit-history {
+  background: #fff;
+  border: 1px solid rgba(26,43,60,.08);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+}
+.credit-history h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 1rem;
+}
+.credit-tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+}
+.credit-tx-table th {
+  text-align: left;
+  padding: .55rem .6rem;
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: rgba(26,43,60,.5);
+  border-bottom: 1px solid rgba(26,43,60,.1);
+}
+.credit-tx-table td {
+  padding: .55rem .6rem;
+  border-bottom: 1px solid rgba(26,43,60,.05);
+  color: var(--navy);
+}
+.tx-positive { color: #1a7a2e; font-weight: 600; }
+.tx-negative { color: #b33; font-weight: 600; }
+.credit-tx-empty, .credit-tx-loading {
+  text-align: center;
+  color: rgba(26,43,60,.4);
+  padding: 1rem;
+  font-size: .88rem;
+}
+
+/* No-credits alert (used in files.js) */
+.no-credits-alert {
+  background: linear-gradient(135deg, rgba(197,160,89,.08), rgba(197,160,89,.03));
+  border: 1px solid rgba(197,160,89,.25);
+  border-radius: var(--radius-md);
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.no-credits-alert p {
+  flex: 1;
+  margin: 0;
+  font-size: .9rem;
+  color: var(--navy);
+}
+.no-credits-alert a {
+  padding: .6rem 1.2rem;
+  background: var(--gold);
+  color: var(--navy);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: .85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════
+   ADMIN CREDITS PAGE
+   ══════════════════════════════════════════════ */
+.admin-credits-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+}
+.admin-credits-settings {
+  background: #fff;
+  border: 1px solid rgba(26,43,60,.08);
+  border-radius: var(--radius-md);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.admin-credits-settings label {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+.admin-credits-settings input {
+  width: 6rem;
+  padding: .5rem .8rem;
+  border: 1px solid rgba(26,43,60,.15);
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  font-family: "JetBrains Mono", monospace;
+}
+.admin-credits-settings button {
+  padding: .55rem 1.2rem;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.admin-credits-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+  background: #fff;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid rgba(26,43,60,.08);
+}
+.admin-credits-table th {
+  text-align: left;
+  padding: .7rem .8rem;
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: rgba(26,43,60,.55);
+  background: var(--navy-glass);
+  border-bottom: 1px solid rgba(26,43,60,.1);
+}
+.admin-credits-table td {
+  padding: .65rem .8rem;
+  border-bottom: 1px solid rgba(26,43,60,.05);
+  color: var(--navy);
+}
+.admin-grant-btn {
+  padding: .3rem .7rem;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
 }

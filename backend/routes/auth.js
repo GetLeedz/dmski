@@ -1,11 +1,14 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { Pool } = require("pg");
 const { validatePassword } = require("../utils/passwordPolicy");
+const { Resend } = require("resend");
 
 const { requireAuth } = require("../middleware/auth");
 const { writeLog } = require("./audit");
+const { getOrCreateBalance, ensureSchema: ensureCreditsSchema } = require("./credits");
 
 const router = express.Router();
 
@@ -73,7 +76,7 @@ router.post("/login", async (req, res) => {
     
     // WICHTIG: Nutze LOWER(TRIM()) auch hier in der Abfrage!
     const result = await pool.query(
-      "SELECT id, email, password_hash, role, password_change_required FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
+      "SELECT id, email, password_hash, role, password_change_required, first_name, email_verified FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
       [emailNorm]
     );
 
@@ -106,6 +109,13 @@ router.post("/login", async (req, res) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
+    // Fetch credit balance
+    let credits = { balance: 0 };
+    try {
+      await ensureCreditsSchema();
+      credits = await getOrCreateBalance(user.id);
+    } catch (_) { /* credits table may not exist yet */ }
+
     console.log(`Login erfolgreich: ${user.email}`);
     const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
     writeLog({ userId: user.id, email: user.email, action: "login", ip, userAgent: req.headers["user-agent"] });
@@ -114,6 +124,8 @@ router.post("/login", async (req, res) => {
       id: user.id,
       email: user.email,
       role,
+      first_name: user.first_name || "",
+      credit_balance: credits.balance || 0,
       password_change_required: user.password_change_required || false,
     });
   } catch (err) {
@@ -128,5 +140,159 @@ router.post("/logout", requireAuth, async (req, res) => {
   writeLog({ userId: req.user.sub, email: req.user.email, action: "logout", ip, userAgent: req.headers["user-agent"] });
   res.json({ ok: true });
 });
+
+// ══════════════════════════════════════════════
+// POST /auth/signup – Self-registration
+// ══════════════════════════════════════════════
+const FROM_ADDRESS = "DMSKI Scrutor <info@dmski.ch>";
+
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
+
+router.post("/signup", async (req, res) => {
+  if (!ensureJwtSecret(res)) return;
+
+  const { first_name, last_name, email, password } = req.body;
+  if (!email || !password || !first_name) {
+    return res.status(400).json({ error: "Vorname, E-Mail und Passwort erforderlich." });
+  }
+
+  const pwdCheck = validatePassword(password);
+  if (!pwdCheck.valid) {
+    return res.status(400).json({ error: pwdCheck.message || "Passwort zu schwach." });
+  }
+
+  const emailNorm = String(email).trim().toLowerCase();
+
+  try {
+    await ensureUserSchema();
+
+    // Check if email already exists
+    const existing = await pool.query("SELECT id FROM users WHERE LOWER(TRIM(email)) = $1", [emailNorm]);
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: "Diese E-Mail-Adresse ist bereits registriert." });
+    }
+
+    const hash = await bcrypt.hash(String(password).trim(), 12);
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+    const insertResult = await pool.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, email_verify_token, email_verify_expires)
+       VALUES ($1, $2, $3, $4, 'customer', false, $5, $6) RETURNING id`,
+      [emailNorm, hash, first_name.trim(), (last_name || "").trim(), verifyToken, verifyExpires]
+    );
+    const userId = insertResult.rows[0].id;
+
+    // Send verification email
+    const verifyUrl = `https://dmski.ch/verify.html?token=${verifyToken}`;
+    const resend = getResend();
+    if (resend) {
+      await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: [emailNorm],
+        subject: "DMSKI – E-Mail bestätigen",
+        html: buildVerifyEmail(first_name.trim(), verifyUrl),
+      });
+    }
+
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+    writeLog({ userId, email: emailNorm, action: "signup", ip, userAgent: req.headers["user-agent"] });
+
+    res.status(201).json({ ok: true, message: "Registrierung erfolgreich. Bitte bestätigen Sie Ihre E-Mail-Adresse." });
+  } catch (err) {
+    console.error("Signup error:", err.message);
+    res.status(500).json({ error: "Registrierung fehlgeschlagen." });
+  }
+});
+
+// ══════════════════════════════════════════════
+// POST /auth/verify-email – Verify email token
+// ══════════════════════════════════════════════
+router.post("/verify-email", async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ error: "Token fehlt." });
+
+  try {
+    await ensureUserSchema();
+    const r = await pool.query(
+      `SELECT id, email, first_name, email_verified, email_verify_expires FROM users WHERE email_verify_token = $1 LIMIT 1`,
+      [token]
+    );
+    const user = r.rows[0];
+    if (!user) return res.status(404).json({ error: "Ungültiger Verifizierungslink." });
+    if (user.email_verified) return res.json({ ok: true, message: "E-Mail bereits bestätigt." });
+    if (new Date(user.email_verify_expires) < new Date()) {
+      return res.status(410).json({ error: "Verifizierungslink abgelaufen. Bitte erneut registrieren." });
+    }
+
+    await pool.query(
+      `UPDATE users SET email_verified = true, email_verify_token = NULL, email_verify_expires = NULL WHERE id = $1`,
+      [user.id]
+    );
+
+    // Grant free signup credits
+    try {
+      await ensureCreditsSchema();
+      const settingsRes = await pool.query(`SELECT free_signup_credits FROM credit_settings WHERE id = 1`);
+      const freeCredits = settingsRes.rows[0]?.free_signup_credits || 10;
+      if (freeCredits > 0) {
+        await pool.query(
+          `INSERT INTO user_credits (user_id, balance, total_purchased) VALUES ($1, $2, 0) ON CONFLICT (user_id) DO UPDATE SET balance = user_credits.balance + $2`,
+          [user.id, freeCredits]
+        );
+        await pool.query(
+          `INSERT INTO credit_transactions (user_id, type, amount, balance_after, description) VALUES ($1, 'signup_bonus', $2, $2, $3)`,
+          [user.id, freeCredits, `${freeCredits} Willkommens-Credits`]
+        );
+      }
+    } catch (creditErr) {
+      console.warn("[auth] Could not grant signup credits:", creditErr.message);
+    }
+
+    writeLog({ userId: user.id, email: user.email, action: "email_verified", ip: "", userAgent: "" });
+    res.json({ ok: true, message: "E-Mail bestätigt. Sie können sich jetzt anmelden." });
+  } catch (err) {
+    console.error("Verify error:", err.message);
+    res.status(500).json({ error: "Verifizierung fehlgeschlagen." });
+  }
+});
+
+function buildVerifyEmail(firstName, verifyUrl) {
+  return `<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6f8;padding:40px 20px;">
+<tr><td>
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08);">
+  <tr><td style="background:#1A2B3C;padding:28px 40px;text-align:center;">
+    <span style="color:#C5A059;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">DMSKI SCRUTOR</span>
+    <p style="color:rgba(255,255,255,.5);font-size:11px;margin:5px 0 0;letter-spacing:.03em;">KI-gest&uuml;tzte forensische Fallanalyse</p>
+  </td></tr>
+  <tr><td style="padding:36px 40px 32px;">
+    <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 24px;">Hallo ${firstName},</p>
+    <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 24px;">Vielen Dank f&uuml;r Ihre Registrierung bei DMSKI. Bitte best&auml;tigen Sie Ihre E-Mail-Adresse:</p>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
+      <tr><td style="background:#C5A059;border-radius:10px;text-align:center;">
+        <a href="${verifyUrl}" style="display:inline-block;padding:14px 44px;color:#1A2B3C;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:.03em;">E-MAIL BEST&Auml;TIGEN &rarr;</a>
+      </td></tr>
+    </table>
+    <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0 0 16px;text-align:center;">Dieser Link ist 24 Stunden g&uuml;ltig.</p>
+    <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+      Bei Fragen: <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;">info@dmski.ch</a>
+    </p>
+  </td></tr>
+  <tr><td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
+    <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI Scrutor &middot; GetLeedz GmbH</p>
+    <p style="margin:0;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
 
 module.exports = router;

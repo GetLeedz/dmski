@@ -9,6 +9,7 @@ const casesRouter = require("./routes/cases");
 const usersRouter = require("./routes/users");
 const contactRouter = require("./routes/contact");
 const auditRouter = require("./routes/audit");
+const creditsRouter = require("./routes/credits");
 
 const app = express();
 const port = Number(process.env.PORT) || 8080;
@@ -35,6 +36,10 @@ app.use(cors({
   optionsSuccessStatus: 200 
 }));
 
+// Stripe webhook needs raw body BEFORE json parsing
+app.use("/credits/webhook", express.raw({ type: "application/json" }));
+app.use("/api/credits/webhook", express.raw({ type: "application/json" }));
+
 app.use(express.json());
 
 // Health Check
@@ -55,6 +60,9 @@ app.use("/api/contact", contactRouter);
 
 app.use("/audit", auditRouter);
 app.use("/api/audit", auditRouter);
+
+app.use("/credits", creditsRouter);
+app.use("/api/credits", creditsRouter);
 
 // 404 Handler
 app.use((_req, res) => res.status(404).json({ error: "Route nicht gefunden." }));

@@ -83,6 +83,8 @@ loginForm?.addEventListener("submit", async (event) => {
         sessionStorage.setItem("token", data.token);
         sessionStorage.setItem("dmski_user_id", String(data.id || ""));
         sessionStorage.setItem("dmski_role", data.role || "customer");
+        sessionStorage.setItem("dmski_first_name", data.first_name || "");
+        sessionStorage.setItem("dmski_credit_balance", String(data.credit_balance || 0));
         sessionStorage.setItem("dmski_pwd_change", data.password_change_required ? "1" : "0");
 
         if (rememberInput.checked) {
