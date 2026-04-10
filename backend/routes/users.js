@@ -35,7 +35,7 @@ async function ensureTrackingSchema() {
 }
 
 const LOGIN_URL = "https://dmski.ch";
-const FROM_ADDRESS = "DMSKI Scrutor <info@dmski.ch>";
+const FROM_ADDRESS = "DMSKI <info@dmski.ch>";
 
 function getResend() {
   const key = process.env.RESEND_API_KEY;
@@ -59,7 +59,7 @@ function esc(str) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// ── DMSKI Scrutor Email Template ─────────────────────────────────────────
+// ── DMSKI Email Template ─────────────────────────────────────────
 function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
   const warningBlock = showPwdChange ? `
     <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(197,160,89,.08);border:1px solid rgba(197,160,89,.3);border-radius:10px;margin-bottom:24px;">
@@ -107,7 +107,7 @@ function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
   <!-- Footer -->
   <tr>
     <td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI Scrutor &middot; GetLeedz GmbH</p>
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI &middot; GetLeedz GmbH</p>
       <p style="margin:0 0 4px;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen &middot; Schweiz</p>
       <p style="margin:0;font-size:11px;color:#6b7b8a;">
         <a href="https://dmski.ch" style="color:#C5A059;text-decoration:none;">dmski.ch</a>
@@ -174,7 +174,7 @@ async function sendWelcomeEmail(user, password) {
   const greeting = buildFormalGreeting(user);
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Ihr pers&ouml;nlicher Zugang zu <strong>DMSKI Scrutor</strong> wurde eingerichtet &ndash; der forensischen KI-Plattform f&uuml;r die pr&auml;zise Analyse juristischer Aktenlagen.<br><br>
+      Ihr pers&ouml;nlicher Zugang zu <strong>DMSKI</strong> wurde eingerichtet &ndash; der forensischen KI-Plattform f&uuml;r die pr&auml;zise Analyse juristischer Aktenlagen.<br><br>
       Unsere KI durchleuchtet jedes Dokument Wort f&uuml;r Wort: Sie erkennt Widerspr&uuml;che, manipulative Darstellungsmuster und Inkonsistenzen, die bei manueller Pr&uuml;fung h&auml;ufig unentdeckt bleiben.<br><br>
       Nachfolgend Ihre Zugangsdaten f&uuml;r die gesch&uuml;tzte Analyseumgebung:`,
     bodyHtml: credentialsTable(user.email, password),
@@ -182,7 +182,7 @@ async function sendWelcomeEmail(user, password) {
   });
   await sendEmail({
     to: user.email,
-    subject: `DMSKI Scrutor: Ihr Zugang zur forensischen Dossier-Analyse`,
+    subject: `DMSKI: Ihr Zugang zur forensischen Dossier-Analyse`,
     html,
   });
 }
@@ -191,14 +191,14 @@ async function sendCredentialsUpdatedEmail(user, password) {
   const greeting = buildFormalGreeting(user);
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Ihre Zugangsdaten f&uuml;r <strong>DMSKI Scrutor</strong> wurden aktualisiert.
+      Ihre Zugangsdaten f&uuml;r <strong>DMSKI</strong> wurden aktualisiert.
       Bitte verwenden Sie ab sofort die folgenden Anmeldedaten:`,
     bodyHtml: credentialsTable(user.email, password),
     showPwdChange: true,
   });
   await sendEmail({
     to: user.email,
-    subject: "DMSKI Scrutor: Aktualisierte Zugangsdaten",
+    subject: "DMSKI: Aktualisierte Zugangsdaten",
     html,
   });
 }
@@ -216,7 +216,7 @@ async function sendDossierAccessEmail(user, password, caseName) {
 
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Ihnen wurde der Zugriff auf das digitale Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf der forensischen Analyseplattform <strong>DMSKI Scrutor</strong> gew&auml;hrt.<br><br>
+      Ihnen wurde der Zugriff auf das digitale Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf der forensischen Analyseplattform <strong>DMSKI</strong> gew&auml;hrt.<br><br>
       Die integrierte KI unterst&uuml;tzt Sie bei der Einordnung der Aktenlage: Sie strukturiert die vorliegenden Dokumente, pr&uuml;ft diese auf Widerspr&uuml;che und systematische Darstellungsmuster und hebt relevante Indizien sowie potenzielle Inkonsistenzen direkt in der &Uuml;bersicht hervor &ndash; um die Effizienz Ihrer Fallpr&uuml;fung zu maximieren.<br><br>
       S&auml;mtliche Prozessdaten werden in einer gesch&uuml;tzten, vertraulichen Umgebung verarbeitet. Sensible Akteninhalte verlassen zu keinem Zeitpunkt die gesicherte Infrastruktur.<br><br>
       Nachfolgend Ihre Zugangsdaten:`,
@@ -225,7 +225,7 @@ async function sendDossierAccessEmail(user, password, caseName) {
   });
   await sendEmail({
     to: user.email,
-    subject: `DMSKI Scrutor: Bereitstellung digitales Dossier & KI-Analyse${caseName ? ` – ${caseName}` : ""}`,
+    subject: `DMSKI: Bereitstellung digitales Dossier & KI-Analyse${caseName ? ` – ${caseName}` : ""}`,
     html,
   });
 }
@@ -243,7 +243,7 @@ async function sendCaseAccessEmail(user, caseName) {
 
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Sie wurden zum Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf <strong>DMSKI Scrutor</strong> eingeladen.<br><br>
+      Sie wurden zum Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf <strong>DMSKI</strong> eingeladen.<br><br>
       Sie k&ouml;nnen sich mit Ihren bestehenden Zugangsdaten anmelden &ndash; Ihr Passwort wurde nicht ge&auml;ndert.`,
     bodyHtml: caseBlock + `
       <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;">
@@ -255,7 +255,7 @@ async function sendCaseAccessEmail(user, caseName) {
   });
   await sendEmail({
     to: user.email,
-    subject: `DMSKI Scrutor: Sie wurden zum Dossier eingeladen${caseName ? ` – ${caseName}` : ""}`,
+    subject: `DMSKI: Sie wurden zum Dossier eingeladen${caseName ? ` – ${caseName}` : ""}`,
     html,
   });
 }

@@ -158,7 +158,7 @@ router.post("/", async (req, res) => {
 
   <tr>
     <td style="background:#0f1520;padding:20px 40px;text-align:center;">
-      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);">DMSKI Scrutor &middot; GetLeedz GmbH</p>
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);">DMSKI &middot; GetLeedz GmbH</p>
       <p style="margin:0;font-size:10px;color:rgba(255,255,255,.25);">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen &middot; <a href="https://dmski.ch" style="color:rgba(197,160,89,.5);text-decoration:none;">dmski.ch</a></p>
     </td>
   </tr>
@@ -171,7 +171,7 @@ router.post("/", async (req, res) => {
 
       const resend = new Resend(resendKey);
       await resend.emails.send({
-        from: "DMSKI Scrutor <info@dmski.ch>",
+        from: "DMSKI <info@dmski.ch>",
         to: ["info@dmski.ch"],
         replyTo: email,
         subject: `Zugangsanfrage: ${vorname} ${nachname} (${rolleLabel})`,

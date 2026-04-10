@@ -147,7 +147,7 @@ router.post("/logout", requireAuth, async (req, res) => {
 // ══════════════════════════════════════════════
 // POST /auth/signup – Self-registration
 // ══════════════════════════════════════════════
-const FROM_ADDRESS = "DMSKI Scrutor <info@dmski.ch>";
+const FROM_ADDRESS = "DMSKI <info@dmski.ch>";
 
 function getResend() {
   const key = process.env.RESEND_API_KEY;
@@ -289,7 +289,7 @@ function buildVerifyEmail(firstName, verifyUrl) {
     </p>
   </td></tr>
   <tr><td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
-    <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI Scrutor &middot; GetLeedz GmbH</p>
+    <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI &middot; GetLeedz GmbH</p>
     <p style="margin:0;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen</p>
   </td></tr>
 </table>
