@@ -62,7 +62,11 @@ async function ensureSchema() {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
-    await pool.query(`INSERT INTO credit_packages (name, credits, price, popular, sort_order) VALUES ('Starter', 50, 250.00, false, 1), ('Standard', 150, 675.00, true, 2), ('Professional', 500, 2000.00, false, 3) ON CONFLICT DO NOTHING`);
+    // Add unique constraint if missing, then seed packages
+    await pool.query(`ALTER TABLE credit_packages ADD CONSTRAINT IF NOT EXISTS credit_packages_name_key UNIQUE (name)`).catch(() => {});
+    // Clean up duplicates first
+    await pool.query(`DELETE FROM credit_packages a USING credit_packages b WHERE a.id > b.id AND a.name = b.name`).catch(() => {});
+    await pool.query(`INSERT INTO credit_packages (name, credits, price, popular, sort_order) VALUES ('Starter', 50, 250.00, false, 1), ('Standard', 150, 675.00, true, 2), ('Professional', 500, 2000.00, false, 3) ON CONFLICT (name) DO NOTHING`);
     console.log("[credits] Schema ensured.");
   } catch (err) {
     if (!err.message?.includes("already exists")) {
@@ -169,7 +173,7 @@ router.post("/checkout", requireAuth, async (req, res) => {
 // ══════════════════════════════════════════════
 // POST /credits/webhook – Stripe webhook
 // ══════════════════════════════════════════════
-router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+router.post("/webhook", async (req, res) => {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!stripeKey) return res.status(503).send("Not configured");
@@ -180,15 +184,18 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
   try {
     if (webhookSecret) {
       const sig = req.headers["stripe-signature"];
+      // req.body is a Buffer from express.raw() in index.js
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } else {
-      event = req.body;
-      if (typeof event === "string") event = JSON.parse(event);
+      // No webhook secret: parse body directly
+      const body = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
+      event = typeof body === "string" ? JSON.parse(body) : body;
     }
   } catch (err) {
     console.error("[credits] webhook sig error:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+  console.log("[credits] webhook event:", event.type);
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
