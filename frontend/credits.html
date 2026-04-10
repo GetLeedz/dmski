@@ -81,7 +81,7 @@
       alertEl.style.display = "block";
       alertEl.className = "credit-alert credit-alert-success";
       alertEl.innerHTML = "<strong>Zahlung wird geprüft...</strong> Credits werden gutgeschrieben.";
-      // Verify purchase with Stripe (fallback if webhook missed)
+      // Verify purchase with Stripe, then reload all data
       fetch(`${API_BASE}/api/credits/verify-purchase`, { method: "POST", headers })
         .then(r => r.json())
         .then(data => {
@@ -91,8 +91,9 @@
             alertEl.innerHTML = "<strong>Zahlung erfolgreich!</strong> Ihre Credits wurden gutgeschrieben.";
           }
           loadBalance();
+          loadTransactions();
         })
-        .catch(() => { loadBalance(); });
+        .catch(() => { loadBalance(); loadTransactions(); });
       window.history.replaceState({}, "", "/credits.html");
     } else if (params.get("cancelled") === "1") {
       alertEl.style.display = "block";
@@ -187,9 +188,12 @@
       }
     }
 
-    loadBalance();
+    // Only load balance/transactions after verify-purchase if success redirect
+    if (!params.get("success")) {
+      loadBalance();
+      loadTransactions();
+    }
     loadPackages();
-    loadTransactions();
   </script>
 </body>
 </html>
