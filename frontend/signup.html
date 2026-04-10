@@ -27,60 +27,78 @@
     <a href="/signup.html" class="mobile-nav-cta">Registrieren</a>
   </nav>
 
-  <main>
-    <section class="login-shell" style="min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:6rem 1.5rem 3rem;">
-      <div class="login-box" style="max-width:460px;width:100%;">
-        <div class="login-header">
-          <img src="assets/logo-dmski_gold.png" alt="DMSKI" class="login-logo" />
-          <h1 class="login-title">Konto erstellen</h1>
-          <p class="login-subtitle">Registrieren Sie sich und erhalten Sie <strong>10 Credits kostenlos</strong></p>
+  <main class="login-page">
+    <section class="login-shell">
+      <div class="login-brand">
+        <a href="/" class="brand-home-link" aria-label="Zur Startseite">
+          <img src="assets/logo-dmski_slogan_white.png" alt="DMSKI – Fakten. Muster. Beweise." class="brand-logo" />
+        </a>
+        <h1 class="login-brand-title">Konto erstellen</h1>
+        <p class="login-brand-sub">Registrieren Sie sich und erhalten Sie <strong style="color:var(--gold);">10 Credits kostenlos</strong>, um DMSKI zu testen. KI-Analyse und KI-Empfehlung für Ihren Fall.</p>
+      </div>
+
+      <form class="login-card" id="signupForm" novalidate>
+        <h2>Registrierung</h2>
+        <p class="card-kicker">Ihr persönliches DMSKI-Konto</p>
+
+        <div id="signupMessage" class="message" role="status" aria-live="polite"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
+          <div>
+            <label for="firstName">Vorname *</label>
+            <input id="firstName" type="text" required autocomplete="given-name" placeholder="Max" />
+          </div>
+          <div>
+            <label for="lastName">Nachname</label>
+            <input id="lastName" type="text" autocomplete="family-name" placeholder="Muster" />
+          </div>
         </div>
 
-        <form id="signupForm" autocomplete="off">
-          <div id="signupMessage" class="login-message" style="display:none"></div>
+        <label for="signupEmail">E-Mail *</label>
+        <input id="signupEmail" type="email" required autocomplete="email" placeholder="name@kanzlei.ch" />
 
-          <div style="display:flex;gap:.8rem;">
-            <div style="flex:1;">
-              <label class="login-label" for="firstName">Vorname *</label>
-              <input id="firstName" type="text" class="login-input" required autocomplete="given-name" />
-            </div>
-            <div style="flex:1;">
-              <label class="login-label" for="lastName">Nachname</label>
-              <input id="lastName" type="text" class="login-input" autocomplete="family-name" />
-            </div>
-          </div>
+        <label for="signupPassword">Passwort * <span style="font-weight:400;opacity:.5;font-size:.82rem;">(mind. 8 Zeichen)</span></label>
+        <input id="signupPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="Mindestens 8 Zeichen" />
 
-          <label class="login-label" for="signupEmail">E-Mail *</label>
-          <input id="signupEmail" type="email" class="login-input" required autocomplete="email" />
+        <label for="signupPassword2">Passwort bestätigen *</label>
+        <input id="signupPassword2" type="password" required minlength="8" autocomplete="new-password" placeholder="Passwort wiederholen" />
 
-          <label class="login-label" for="signupPassword">Passwort * <span style="font-weight:400;color:rgba(255,255,255,.4);font-size:.78rem;">(mind. 8 Zeichen)</span></label>
-          <input id="signupPassword" type="password" class="login-input" required minlength="8" autocomplete="new-password" />
-
-          <label class="login-label" for="signupPassword2">Passwort bestätigen *</label>
-          <input id="signupPassword2" type="password" class="login-input" required minlength="8" autocomplete="new-password" />
-
-          <button id="signupBtn" type="submit" class="login-submit" style="margin-top:1rem;">Registrieren</button>
-        </form>
-
-        <p style="text-align:center;margin-top:1.2rem;font-size:.88rem;color:rgba(255,255,255,.5);">
-          Bereits registriert? <a href="/login.html" style="color:var(--gold);text-decoration:none;font-weight:600;">Zum Login</a>
-        </p>
-      </div>
+        <button id="signupBtn" type="submit">Registrieren</button>
+        <p id="message" class="message" role="status"></p>
+        <p class="login-no-access">Bereits registriert? <a href="/login.html">Zum Login</a></p>
+      </form>
     </section>
   </main>
 
+  <footer class="site-footer">
+    <div class="footer-brand">
+      <img src="/assets/logo-dmski.png" alt="DMSKI" class="footer-brand-logo" />
+      <span class="footer-brand-tagline">KI-gestützte Faktenanalyse</span>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-legal">
+      <a href="/impressum.html">Impressum</a>
+      <span class="footer-dot">&middot;</span>
+      <a href="/datenschutz.html">Datenschutz</a>
+      <span class="footer-dot">&middot;</span>
+      <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>
+    </div>
+    <p class="footer-copyright">&copy; <span id="copyrightYear"></span> GetLeedz GmbH</p>
+  </footer>
+
   <script>
+    document.getElementById("copyrightYear").textContent = new Date().getFullYear();
+
     const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
       ? "" : "https://lively-reverence-production-def3.up.railway.app";
 
     const form = document.getElementById("signupForm");
-    const msg = document.getElementById("signupMessage");
+    const msgEl = document.getElementById("signupMessage");
     const btn = document.getElementById("signupBtn");
 
     function showMsg(text, type) {
-      msg.style.display = "block";
-      msg.className = `login-message ${type === "error" ? "login-error" : "login-success"}`;
-      msg.innerHTML = text;
+      msgEl.textContent = text;
+      msgEl.className = `message ${type === "error" ? "error" : "success"}`;
     }
 
     form.addEventListener("submit", async (e) => {
@@ -91,13 +109,22 @@
       const password = document.getElementById("signupPassword").value;
       const password2 = document.getElementById("signupPassword2").value;
 
+      if (!first_name || !email || !password) {
+        showMsg("Bitte alle Pflichtfelder ausfüllen.", "error");
+        return;
+      }
       if (password !== password2) {
         showMsg("Passwörter stimmen nicht überein.", "error");
+        return;
+      }
+      if (password.length < 8) {
+        showMsg("Passwort muss mindestens 8 Zeichen haben.", "error");
         return;
       }
 
       btn.disabled = true;
       btn.textContent = "Wird registriert...";
+      msgEl.textContent = "";
 
       try {
         const res = await fetch(`${API_BASE}/api/auth/signup`, {
@@ -109,13 +136,14 @@
         if (res.ok) {
           showMsg("Registrierung erfolgreich! Bitte prüfen Sie Ihre E-Mails und bestätigen Sie Ihre Adresse.", "success");
           form.reset();
+          btn.textContent = "E-Mail prüfen";
         } else {
           showMsg(data.error || "Registrierung fehlgeschlagen.", "error");
           btn.disabled = false;
           btn.textContent = "Registrieren";
         }
       } catch (_) {
-        showMsg("Server nicht erreichbar.", "error");
+        showMsg("Server nicht erreichbar. Bitte später erneut versuchen.", "error");
         btn.disabled = false;
         btn.textContent = "Registrieren";
       }

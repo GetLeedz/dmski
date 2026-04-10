@@ -17,17 +17,14 @@
     </a>
   </header>
 
-  <main>
-    <section style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:6rem 1.5rem 3rem;">
-      <div class="login-box" style="max-width:460px;width:100%;text-align:center;">
-        <div class="login-header">
-          <img src="assets/logo-dmski_gold.png" alt="DMSKI" class="login-logo" />
-          <h1 class="login-title">E-Mail bestätigen</h1>
-        </div>
-        <div id="verifyMessage" style="padding:1rem;font-size:1rem;color:rgba(255,255,255,.7);">
+  <main class="login-page">
+    <section class="login-shell" style="grid-template-columns:1fr;max-width:520px;">
+      <div class="login-card" style="text-align:center;">
+        <h2>E-Mail bestätigen</h2>
+        <div id="verifyMessage" style="padding:1rem 0;font-size:1rem;color:rgba(255,255,255,.7);line-height:1.6;">
           Wird verifiziert...
         </div>
-        <a href="/login.html" class="btn-primary" style="display:inline-block;margin-top:1.5rem;text-decoration:none;">Zum Login</a>
+        <a href="/login.html" class="btn-primary" style="display:inline-block;margin-top:1rem;text-decoration:none;padding:.85rem 2rem;">Zum Login</a>
       </div>
     </section>
   </main>
@@ -51,7 +48,7 @@
       .then(res => res.json())
       .then(data => {
         if (data.ok) {
-          el.innerHTML = '<p style="color:#34d058;font-weight:600;">E-Mail erfolgreich bestätigt!</p><p style="color:rgba(255,255,255,.6);margin-top:.5rem;">Sie haben 10 Willkommens-Credits erhalten. Sie können sich jetzt anmelden.</p>';
+          el.innerHTML = '<p style="color:#34d058;font-size:1.1rem;font-weight:600;">E-Mail erfolgreich bestätigt!</p><p style="color:rgba(255,255,255,.55);margin-top:.8rem;">Sie haben 10 Willkommens-Credits erhalten.<br>Sie können sich jetzt anmelden.</p>';
         } else {
           el.innerHTML = `<p style="color:#ff6b6b;">${data.error || "Verifizierung fehlgeschlagen."}</p>`;
         }
