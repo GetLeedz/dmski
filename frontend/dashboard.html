@@ -127,7 +127,7 @@
 
     </div><!-- /.dashboard-grid -->
 
-    <!-- ── NÄCHSTER SCHRITT – Workflow-Guide ── -->
+    <!-- ── ROLLEN-GUIDE ── -->
     <section class="card card-workflow">
       <div class="card-header-row">
         <span class="card-icon card-icon--amber" aria-hidden="true">
@@ -136,93 +136,90 @@
           </svg>
         </span>
         <div>
-          <h2 class="card-title">Was muss ich nach dem Einloggen tun?</h2>
-          <p class="card-subtitle">Je nach Ihrer Rolle als <strong>File Owner</strong> oder <strong>File Reviewer</strong> sind unterschiedliche Schritte nötig.</p>
+          <h2 class="card-title">So arbeiten Sie mit DMSKI</h2>
+          <p class="card-subtitle">Je nach Ihrer Rolle unterscheidet sich der Ablauf.</p>
         </div>
       </div>
 
-      <!-- ── Fallreviewer-Quickstart (prominent box) ── -->
-      <div class="workflow-gutachter-box">
-        <div class="workflow-gutachter-head">
-          <strong class="workflow-gutachter-title">Direkt zum Fall — in drei Schritten</strong>
+      <div class="role-cards">
+        <!-- ── FALL-INHABER ── -->
+        <div class="role-card">
+          <div class="role-card-header role-card-header--owner">
+            <div class="role-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0L7 8m5-5 5 5"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+            </div>
+            <div>
+              <h3 class="role-card-title">Fall-Inhaber</h3>
+              <p class="role-card-sub">Erstellt Fälle, lädt Files hoch, startet KI-Analysen</p>
+            </div>
+          </div>
+          <ol class="role-steps">
+            <li>
+              <span class="role-step-num">1</span>
+              <div>
+                <strong>Fall anlegen</strong>
+                <p>Formular ausfüllen (Fallname, betroffene Person, Ort) und auf «Fall anlegen» klicken. Oder bestehenden Fall aus der Liste öffnen.</p>
+              </div>
+            </li>
+            <li>
+              <span class="role-step-num">2</span>
+              <div>
+                <strong>Files hochladen</strong>
+                <p>Akten, Gutachten, Berichte oder Beweismittel hochladen (PDF, JPG, PNG) — einzeln oder per Drag &amp; Drop.</p>
+              </div>
+            </li>
+            <li>
+              <span class="role-step-num">3</span>
+              <div>
+                <strong>KI-Analyse starten</strong>
+                <p>DMSKI analysiert jedes File automatisch. Personen-Analyse und Master-Analyse für den gesamten Fall starten Sie manuell.</p>
+              </div>
+            </li>
+            <li>
+              <span class="role-step-num">4</span>
+              <div>
+                <strong>Ergebnisse &amp; KI-Report</strong>
+                <p>Alle KI-Ergebnisse einsehen, Muster und Widersprüche prüfen und den vollständigen KI-Report als PDF exportieren.</p>
+              </div>
+            </li>
+          </ol>
         </div>
-        <p class="workflow-gutachter-desc">
-          Als <strong>File Reviewer</strong> (Gutachter, Anwalt, Therapeut o. ä.) ist Ihr Zugang bereits eingerichtet.
-          Sie müssen <strong>keinen neuen Fall anlegen</strong>. So gehen Sie vor:
-        </p>
-        <ol class="workflow-gutachter-steps">
-          <li>
-            <span class="workflow-gutachter-num">①</span>
-            <span class="wg-step-text">Wählen Sie unter <strong>«Bestehenden Fall öffnen»</strong> den Ihnen zugewiesenen Fall aus der Dropdown-Liste. Fallnummer und Fallname erhalten Sie vorab per E-Mail vom <strong>File Owner</strong>.</span>
-          </li>
-          <li>
-            <span class="workflow-gutachter-num">②</span>
-            <span class="wg-step-text">Nach der Auswahl werden Sie <strong>sofort und automatisch</strong> zur vollständigen Aktenübersicht weitergeleitet — mit allen Files, KI-Analysen und dem forensischen Bericht.</span>
-          </li>
-          <li>
-            <span class="workflow-gutachter-num">③</span>
-            <span class="wg-step-text">Sie können Files <strong>einzeln herunterladen</strong> oder den <strong>gesamten KI-Report als PDF exportieren</strong>. Das Hochladen neuer Files ist ausschließlich dem <strong>File Owner</strong> vorbehalten.</span>
-          </li>
-        </ol>
-      </div>
 
-      <!-- ── Vollständiger Arbeitsablauf ── -->
-      <h3 class="workflow-all-title">Vollständiger Arbeitsablauf — File Owner</h3>
-
-      <ol class="workflow-steps">
-        <li class="workflow-step">
-          <span class="step-number">1</span>
-          <div class="step-body">
-            <strong class="step-title">Neuen Fall anlegen oder bestehendes öffnen</strong>
-            <p class="step-desc">
-              <strong>Neu:</strong> Formular links ausfüllen (Fallname, Personen, Ort) und auf <em>«Fall anlegen»</em> klicken.
-              <strong>Bestehend:</strong> Fall direkt aus der Dropdown-Liste rechts auswählen.
-            </p>
+        <!-- ── FALL-TEAMMITGLIED ── -->
+        <div class="role-card">
+          <div class="role-card-header role-card-header--team">
+            <div class="role-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <h3 class="role-card-title">Fall-Teammitglied</h3>
+              <p class="role-card-sub">Gutachter, Anwalt, Therapeut — Lesezugriff auf den zugeteilten Fall</p>
+            </div>
           </div>
-        </li>
-        <li class="workflow-step">
-          <span class="step-number">2</span>
-          <div class="step-body">
-            <strong class="step-title">Files hochladen <span style="font-size:.78em;font-weight:500;background:#fef3c7;color:#92400e;padding:.1rem .45rem;border-radius:5px;vertical-align:middle">nur File Owner</span></strong>
-            <p class="step-desc">
-              Nach dem Öffnen des Falls erscheint die Upload-Seite. Laden Sie Akten, Gutachten, Berichte
-              oder Beweismittel hoch (PDF, JPG, PNG) — einzeln oder per Drag &amp; Drop gleichzeitig.
-            </p>
-          </div>
-        </li>
-        <li class="workflow-step">
-          <span class="step-number">3</span>
-          <div class="step-body">
-            <strong class="step-title">KI-Analyse läuft automatisch</strong>
-            <p class="step-desc">
-              Nach jedem Upload startet die KI-Analyse ohne weiteres Zutun.
-              Sie erkennt Beteiligte, bewertet Erwähnungen (positiv / negativ) und erstellt
-              eine forensische Einschätzung je File sowie eine Gesamtbewertung des Falls.
-            </p>
-          </div>
-        </li>
-        <li class="workflow-step">
-          <span class="step-number">4</span>
-          <div class="step-body">
-            <strong class="step-title">Fallübersicht &amp; Bericht einsehen</strong>
-            <p class="step-desc">
-              Klicken Sie in der Sidebar auf <em>«Fall-Analyse»</em>, um alle Files,
-              Einzelanalysen, den KI-Gesamtbericht und die Taktikanalyse einzusehen.
-              Von dort aus können Sie Files herunterladen oder den <em>PDF-KI-Report</em> exportieren.
-            </p>
-          </div>
-        </li>
-      </ol>
-
-      <div class="workflow-tip">
-        <svg viewBox="0 0 16 16" fill="none" style="width:1rem;height:1rem;flex-shrink:0;margin-top:.05rem" aria-hidden="true">
-          <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM7.25 5a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0zm.75 2v4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
-        <span>
-          <strong>Rollen:</strong> Der <strong>File Owner</strong> erstellt Fälle und lädt Files hoch.
-          <strong>File Reviewer</strong> (Gutachter, Anwalt, Therapeut …) haben Lesezugriff und können Files und den KI-Report herunterladen.
-          Zugangsdaten erhalten File Reviewer per E-Mail vom File Owner.
-        </span>
+          <ol class="role-steps">
+            <li>
+              <span class="role-step-num">1</span>
+              <div>
+                <strong>Fall öffnen</strong>
+                <p>Unter «Bestehenden Fall öffnen» den zugewiesenen Fall aus der Liste wählen. Fallnummer und Fallname erhalten Sie per E-Mail vom Fall-Inhaber.</p>
+              </div>
+            </li>
+            <li>
+              <span class="role-step-num">2</span>
+              <div>
+                <strong>Files &amp; KI-Analyse einsehen</strong>
+                <p>Nach der Auswahl werden Sie automatisch zur Fallübersicht weitergeleitet — mit allen Files, KI-Analysen und dem KI-Report.</p>
+              </div>
+            </li>
+            <li>
+              <span class="role-step-num">3</span>
+              <div>
+                <strong>Herunterladen &amp; Exportieren</strong>
+                <p>Files einzeln herunterladen oder den gesamten KI-Report als PDF exportieren. Das Hochladen neuer Files ist dem Fall-Inhaber vorbehalten.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
 
