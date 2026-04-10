@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { Pool } = require("pg");
-const { validatePassword } = require("../utils/passwordPolicy");
+const { validatePassword, PASSWORD_HINT } = require("../utils/passwordPolicy");
 const { Resend } = require("resend");
 
 const { requireAuth } = require("../middleware/auth");
@@ -160,9 +160,8 @@ router.post("/signup", async (req, res) => {
     return res.status(400).json({ error: "Vorname, E-Mail und Passwort erforderlich." });
   }
 
-  const pwdCheck = validatePassword(password);
-  if (!pwdCheck.valid) {
-    return res.status(400).json({ error: pwdCheck.message || "Passwort zu schwach." });
+  if (!validatePassword(password)) {
+    return res.status(400).json({ error: PASSWORD_HINT });
   }
 
   const emailNorm = String(email).trim().toLowerCase();
