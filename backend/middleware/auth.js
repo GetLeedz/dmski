@@ -81,9 +81,32 @@ function requireCaseAccess(mode = "read") {
     // Admin: full access
     if (role === "admin") return next();
 
-    // Customer: full access to all cases (they are case owners)
+    // Customer (Fallinhaber): full access only to own cases
     if (role === "customer") {
-      if (mode === "read" || mode === "write") return next();
+      if (_casePool && caseId) {
+        try {
+          const r = await _casePool.query("SELECT created_by FROM cases WHERE id = $1", [caseId]);
+          if (r.rows.length && String(r.rows[0].created_by) === String(req.user.sub)) {
+            return next();
+          }
+          // Also allow if user is a case_member
+          const memberCheck = await _casePool.query(
+            "SELECT id FROM case_members WHERE case_id = $1 AND user_id = $2",
+            [caseId, req.user.sub]
+          ).catch(() => ({ rows: [] }));
+          if (memberCheck.rows.length) {
+            if (mode === "write") {
+              return res.status(403).json({ error: "Nur der Fall-Inhaber kann diese Aktion ausführen." });
+            }
+            return next();
+          }
+          return res.status(403).json({ error: "Kein Zugriff auf diesen Fall." });
+        } catch (e) {
+          console.error("Case owner check error:", e.message);
+          return res.status(500).json({ error: "Berechtigungsprüfung fehlgeschlagen." });
+        }
+      }
+      return next(); // No caseId in route — allow (e.g. listing cases)
     }
 
     // Collaborator (team): read-only on assigned case
