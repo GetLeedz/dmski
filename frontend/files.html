@@ -121,64 +121,234 @@
       background: rgba(255,100,100,0.12);
       border-color: rgba(255,100,100,0.5);
     }
+    .ki-action-btn--add svg { width: 1rem; height: 1rem; }
+
+    /* Fall header bar */
+    .fall-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Team Section — uses forensic-section styles, no extra box */
+    .team-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+    }
+    .team-list table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .team-list th {
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(26,43,60,0.45);
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid rgba(26,43,60,0.08);
+    }
+    .team-list td {
+      padding: 0.6rem;
+      border-bottom: 1px solid rgba(26,43,60,0.05);
+      color: #1A2B3C;
+    }
+    .team-list tr:hover td { background: rgba(197,160,89,0.04); }
+    .team-empty {
+      font-size: 0.88rem;
+      color: rgba(26,43,60,0.4);
+      padding: 0.5rem 0;
+    }
+    .team-actions { display: flex; gap: 0.3rem; }
+    .team-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 0.3rem;
+      border-radius: 6px;
+      color: rgba(26,43,60,0.4);
+      transition: all 150ms ease;
+    }
+    .team-btn:hover { background: rgba(26,43,60,0.06); color: #1A2B3C; }
+    .team-btn--delete:hover { color: #ff4444; background: rgba(255,68,68,0.08); }
+    .team-btn svg { width: 1rem; height: 1rem; }
+
+    /* Team Modal */
+    .team-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+    }
+    .team-modal.hidden { display: none; }
+    .team-modal-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.8rem 2rem;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+    }
+    .team-modal-content h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      color: #1A2B3C;
+    }
+    .team-modal-row { margin-bottom: 0.7rem; }
+    .team-modal-row label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(26,43,60,0.65);
+    }
+    .team-modal-row input {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid rgba(26,43,60,0.15);
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 150ms ease;
+    }
+    .team-modal-row input:focus { border-color: #C5A059; box-shadow: 0 0 0 2px rgba(197,160,89,0.15); }
+    .team-modal-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .team-modal-actions {
+      display: flex; gap: 0.6rem; margin-top: 1.2rem;
+    }
+    .team-modal-actions .ki-action-btn {
+      flex: 1;
+      justify-content: center;
+      padding: 0.7rem 1rem;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #C5A059, #B8904A);
+      color: #0f172a;
+      border: none;
+      font-weight: 700;
+      box-shadow: 0 2px 12px rgba(197,160,89,0.25);
+    }
+    .team-modal-actions .ki-action-btn:hover {
+      box-shadow: 0 4px 20px rgba(197,160,89,0.4);
+      transform: translateY(-1px);
+    }
+    .team-modal-actions .ki-action-btn--cancel {
+      background: none;
+      border: 1px solid rgba(26,43,60,0.15);
+      color: rgba(26,43,60,0.6);
+      box-shadow: none;
+      font-weight: 600;
+    }
+    .team-modal-actions .ki-action-btn--cancel:hover {
+      background: rgba(26,43,60,0.04);
+      border-color: rgba(26,43,60,0.25);
+      color: #1A2B3C;
+      box-shadow: none;
+      transform: none;
+    }
+    .team-modal-msg { font-size: 0.85rem; margin: 0.5rem 0 0; min-height: 1.2rem; }
+    .team-modal-msg.error { color: #ff4444; }
+    .team-modal-msg.success { color: #22a844; }
   </style>
   <main class="page" style="display:none" id="dashboardMain">
     <div id="site-nav"></div>
 
-    <section class="card files-card">
-      <div class="list-header-row">
-        <div class="list-header-main">
-          <h2 id="listTitle">Fall</h2>
-          <div id="casePersonsRow" class="case-persons-row"></div>
-          <section id="analysisReportBar" class="analysis-report" aria-live="polite">
-            <div class="analysis-report-head">
-              <div>
-                <p class="analysis-report-eyebrow">KI-Report</p>
-                <h3 class="analysis-report-title">Gesamtbeurteilung des Falls</h3>
-              </div>
-              <div class="analysis-report-head-actions">
-                <p id="analysisReportHint" class="analysis-report-hint">Analysen werden geladen…</p>
-                <button id="exportPdfReportBtn" type="button" class="filter-btn filter-btn--report">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="15" r="2"/><path d="m13 17 2 2"/></svg>
-                  PDF KI-Report
-                </button>
-              </div>
-            </div>
-            <div id="analysisReportGrid" class="analysis-report-grid"></div>
-            <div id="analysisReportMeta" class="analysis-report-meta"></div>
-            <div id="analysisReportTactics"></div>
-            <div id="analysisReportAkteure"></div>
-          </section>
+    <!-- Fall-Header: Personen-Zeile + Delete -->
+    <div class="fall-header-bar">
+      <h2 id="listTitle" style="display:none">Fall</h2>
+      <div id="casePersonsRow" class="case-persons-row"></div>
+      <button id="deleteCaseBtn" type="button" class="icon-btn danger" aria-label="Fall löschen" title="Fall löschen">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9z" />
+        </svg>
+      </button>
+    </div>
 
-          <!-- ── Forensic MASTER SCAN Section 6 (Results only) ── -->
-          <section id="forensicSection" class="forensic-section">
-            <div class="forensic-header">
-              <div class="forensic-header-text">
-                <div class="forensic-section-badge">6</div>
-                <h3 class="forensic-title">Fall-Analyse</h3>
-              </div>
-            </div>
-            <div id="forensicProgress" class="forensic-progress hidden">
-              <div class="forensic-progress-bar"><div id="forensicProgressFill" class="forensic-progress-fill"></div></div>
-              <p id="forensicProgressText" class="forensic-progress-text">Analyse wird gestartet…</p>
-            </div>
-            <div id="forensicResults" class="forensic-results hidden"></div>
-          </section>
-
+    <!-- ── Section 1: Teammitglieder ── -->
+    <section id="teamSection" class="forensic-section">
+        <div class="forensic-header">
+          <div class="forensic-header-text">
+            <div class="forensic-section-badge">1</div>
+            <h3 class="forensic-title">Teammitglieder</h3>
+          </div>
+          <button id="addTeamMemberBtn" type="button" class="ki-action-btn ki-action-btn--add">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 4v12M4 10h12"/></svg>
+            Hinzufügen
+          </button>
         </div>
-        <button id="deleteCaseBtn" type="button" class="icon-btn danger" aria-label="Fall löschen" title="Fall löschen">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9z" />
-          </svg>
-        </button>
-      </div>
+        <div id="teamList" class="team-list">
+          <p class="team-empty">Noch keine Teammitglieder. Laden Sie Ihren Anwalt, Gutachter oder Berater ein.</p>
+        </div>
+        <!-- Add/Edit Modal -->
+        <div id="teamModal" class="team-modal hidden">
+          <div class="team-modal-content">
+            <h4 id="teamModalTitle">Teammitglied hinzufügen</h4>
+            <form id="teamModalForm">
+              <div class="team-modal-row">
+                <label>E-Mail *<input type="email" id="teamEmail" required placeholder="name@kanzlei.ch" /></label>
+              </div>
+              <div class="team-modal-row team-modal-row-2col">
+                <label>Vorname<input type="text" id="teamFirstName" placeholder="Max" /></label>
+                <label>Nachname<input type="text" id="teamLastName" placeholder="Muster" /></label>
+              </div>
+              <div class="team-modal-row">
+                <label>Rolle / Funktion<input type="text" id="teamFunction" placeholder="z.B. Anwalt, Gutachter, Berater" /></label>
+              </div>
+              <div class="team-modal-actions">
+                <button type="submit" class="ki-action-btn">Speichern</button>
+                <button type="button" class="ki-action-btn ki-action-btn--cancel" onclick="closeTeamModal()">Abbrechen</button>
+              </div>
+              <p id="teamModalMsg" class="team-modal-msg"></p>
+            </form>
+          </div>
+        </div>
+    </section>
 
-      <!-- ── Section 7: Files Panel (toolbar + table unified) ── -->
-      <div class="files-panel">
-        <div class="files-panel-section-header">
-          <div class="forensic-section-badge">7</div>
-          <h3 class="forensic-title">Ihre Files</h3>
-          <div class="files-panel-actions">
+    <!-- ── Section 2: Gesamtbeurteilung (compact) ── -->
+    <section id="analysisReportBar" class="forensic-section" aria-live="polite">
+      <div class="forensic-header">
+        <div class="forensic-header-text">
+          <div class="forensic-section-badge">2</div>
+          <h3 class="forensic-title">Gesamtbeurteilung des Falls</h3>
+          <p id="analysisReportHint" class="analysis-report-hint" style="margin:0 0 0 0.5rem;font-size:0.78rem"></p>
+        </div>
+        <div class="forensic-header-actions">
+          <button id="exportPdfReportBtn" type="button" class="ki-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            PDF KI-Report
+          </button>
+        </div>
+      </div>
+      <div id="analysisReportGrid" class="analysis-report-grid"></div>
+      <div id="analysisReportMeta" class="analysis-report-meta"></div>
+    </section>
+
+    <!-- Sections 3-7 rendered dynamically by files.js -->
+    <div id="analysisReportTactics"></div>
+    <div id="analysisReportAkteure"></div>
+
+    <!-- ── Section 8: Fall-Analyse (Results + Actions) ── -->
+    <section id="forensicSection" class="forensic-section">
+        <div class="forensic-header">
+          <div class="forensic-header-text">
+            <div class="forensic-section-badge">8</div>
+            <h3 class="forensic-title">Fall-Analyse</h3>
+          </div>
+          <div class="forensic-header-actions">
             <div id="forensicWave" class="forensic-wave hidden" aria-hidden="true">
               <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
@@ -191,6 +361,19 @@
             <button id="cancelForensicScanBtn" type="button" class="ki-action-btn ki-action-btn--cancel hidden">Abbrechen</button>
           </div>
         </div>
+        <div id="forensicProgress" class="forensic-progress hidden">
+          <div class="forensic-progress-bar"><div id="forensicProgressFill" class="forensic-progress-fill"></div></div>
+          <p id="forensicProgressText" class="forensic-progress-text">Analyse wird gestartet…</p>
+        </div>
+        <div id="forensicResults" class="forensic-results hidden"></div>
+    </section>
+
+    <!-- ── Section 9: Files Panel (toolbar + table unified) ── -->
+    <div class="files-panel">
+      <div class="files-panel-section-header">
+        <div class="forensic-section-badge">9</div>
+        <h3 class="forensic-title">Ihre Files</h3>
+      </div>
 
         <!-- Search: Big & prominent -->
         <div class="fp-search-hero">
@@ -280,7 +463,6 @@
         <button id="executeMultiDeleteBtn" type="button" class="delete-btn">Löschen</button>
         <button id="cancelMultiDeleteBtn" type="button" class="ghost">Abbrechen</button>
       </div>
-    </section>
 
     <div id="previewModal" class="preview-modal hidden" aria-hidden="true">
       <div class="preview-modal-backdrop" data-close-preview="true"></div>
@@ -308,5 +490,140 @@
   <script src="nav.js"></script>
   <script src="files.js"></script>
   <script src="footer.js"></script>
+  <script>
+  /* ── Team Members (per case) — uses existing /users API ── */
+  (function() {
+    const _API = "https://lively-reverence-production-def3.up.railway.app/api";
+    const _token = sessionStorage.getItem("token") || localStorage.getItem("token");
+    const _caseId = sessionStorage.getItem("currentCaseId");
+    const _userId = sessionStorage.getItem("dmski_user_id");
+    const _role = sessionStorage.getItem("dmski_role");
+    if (!_token || !_caseId) return;
+
+    const _h = { "Content-Type": "application/json", Authorization: "Bearer " + _token };
+    let _team = [];
+    let _editId = null;
+
+    function _esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+    async function loadTeam() {
+      const el = document.getElementById("teamList");
+      if (!el) return;
+      try {
+        // Use existing users endpoint — filter by case_id
+        const endpoint = _role === "admin" ? _API + "/users" : _API + "/users/" + _userId + "/users";
+        const res = await fetch(endpoint, { headers: _h });
+        if (!res.ok) { renderTeam(); return; }
+        const data = await res.json();
+        const all = data.users || data || [];
+        _team = all.filter(u => String(u.case_id) === String(_caseId) && String(u.id) !== String(_userId));
+        renderTeam();
+      } catch(_) { renderTeam(); }
+    }
+
+    function renderTeam() {
+      const el = document.getElementById("teamList");
+      if (!_team.length) {
+        el.innerHTML = '<p class="team-empty">Noch keine Teammitglieder. Laden Sie Ihren Anwalt, Gutachter oder Berater ein.</p>';
+        return;
+      }
+      el.innerHTML = '<table><thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th></th></tr></thead><tbody>' +
+        _team.map(m => '<tr>' +
+          '<td>' + _esc(((m.first_name || '') + ' ' + (m.last_name || '')).trim() || '–') + '</td>' +
+          '<td>' + _esc(m.email || '') + '</td>' +
+          '<td>' + _esc(m.function_label || m.role || '–') + '</td>' +
+          '<td class="team-actions">' +
+            '<button class="team-btn" onclick="editTeamMember(' + m.id + ')" title="Bearbeiten"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.793 8.793L4 16l.793-3.621z"/></svg></button>' +
+            '<button class="team-btn team-btn--delete" onclick="deleteTeamMember(' + m.id + ')" title="Entfernen"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l8 8M14 6l-8 8"/></svg></button>' +
+          '</td></tr>'
+        ).join('') + '</tbody></table>';
+    }
+
+    document.getElementById("addTeamMemberBtn")?.addEventListener("click", () => {
+      _editId = null;
+      document.getElementById("teamModalTitle").textContent = "Teammitglied hinzufügen";
+      document.getElementById("teamModalForm").reset();
+      document.getElementById("teamModalMsg").textContent = "";
+      document.getElementById("teamModal").classList.remove("hidden");
+    });
+
+    window.closeTeamModal = function() {
+      document.getElementById("teamModal").classList.add("hidden");
+    };
+
+    window.editTeamMember = function(id) {
+      const m = _team.find(u => u.id === id);
+      if (!m) return;
+      _editId = id;
+      document.getElementById("teamModalTitle").textContent = "Teammitglied bearbeiten";
+      document.getElementById("teamEmail").value = m.email || "";
+      document.getElementById("teamFirstName").value = m.first_name || "";
+      document.getElementById("teamLastName").value = m.last_name || "";
+      document.getElementById("teamFunction").value = m.function_label || "";
+      document.getElementById("teamModalMsg").textContent = "";
+      document.getElementById("teamModal").classList.remove("hidden");
+    };
+
+    window.deleteTeamMember = async function(id) {
+      if (!confirm("Teammitglied wirklich entfernen?")) return;
+      try {
+        const adminId = _role === "admin" ? _userId : _userId;
+        await fetch(_API + "/users/" + adminId + "/users/" + id, { method: "DELETE", headers: _h });
+        _team = _team.filter(m => m.id !== id);
+        renderTeam();
+      } catch(_) { alert("Fehler beim Entfernen."); }
+    };
+
+    document.getElementById("teamModalForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("teamModalMsg");
+      const email = document.getElementById("teamEmail").value.trim();
+      const first_name = document.getElementById("teamFirstName").value.trim();
+      const last_name = document.getElementById("teamLastName").value.trim();
+      const function_label = document.getElementById("teamFunction").value.trim();
+
+      if (!email) { msg.textContent = "E-Mail ist erforderlich."; msg.className = "team-modal-msg error"; return; }
+
+      try {
+        if (_editId) {
+          // Update existing user
+          const res = await fetch(_API + "/users/" + _userId + "/users/" + _editId, {
+            method: "PUT", headers: _h,
+            body: JSON.stringify({ first_name, last_name, function_label })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            msg.textContent = "Aktualisiert."; msg.className = "team-modal-msg success";
+            setTimeout(() => { closeTeamModal(); loadTeam(); }, 800);
+          } else {
+            msg.textContent = data.error || "Fehler."; msg.className = "team-modal-msg error";
+          }
+        } else {
+          // Create new user via admin endpoint with generated password
+          const tempPwd = "Dmski!" + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
+          const res = await fetch(_API + "/users/" + _userId + "/users", {
+            method: "POST", headers: _h,
+            body: JSON.stringify({ email, first_name, last_name, function_label, case_id: _caseId, password: tempPwd })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            msg.textContent = "Einladung gesendet!"; msg.className = "team-modal-msg success";
+            setTimeout(() => { closeTeamModal(); loadTeam(); }, 800);
+          } else {
+            msg.textContent = data.error || "Fehler beim Anlegen."; msg.className = "team-modal-msg error";
+          }
+        }
+      } catch(_) {
+        msg.textContent = "Verbindungsfehler."; msg.className = "team-modal-msg error";
+      }
+    });
+
+    document.getElementById("teamModal")?.addEventListener("click", (e) => {
+      if (e.target === document.getElementById("teamModal")) closeTeamModal();
+    });
+
+    setTimeout(loadTeam, 500);
+  })();
+  </script>
 </body>
 </html>

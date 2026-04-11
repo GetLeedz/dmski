@@ -347,23 +347,66 @@ router.get("/", requireAuth, requireAdmin, async (req, res) => {
 router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (req, res) => {
   try {
     await ensureTrackingSchema();
+    const userId = parseInt(req.params.userId, 10);
+
+    // Admin sees all non-admin users
+    if (req.user.role === "admin") {
+      const result = await pool.query(
+        `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
+         FROM users WHERE role != 'admin' ORDER BY created_at DESC`
+      );
+      return res.json({ users: result.rows });
+    }
+
+    // Non-admin: only see themselves + team members on their own cases
     const result = await pool.query(
-      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
-       FROM users WHERE role != 'admin' ORDER BY created_at DESC`
+      `SELECT DISTINCT u.id, u.email, u.role, u.salutation, u.academic_title, u.first_name, u.last_name, u.function_label, u.case_id, u.mobile, u.invited_at, u.last_login_at, u.login_count
+       FROM users u
+       WHERE u.id = $1
+          OR u.case_id IN (SELECT id FROM cases WHERE user_id = $1)
+          OR u.id IN (
+            SELECT cm.user_id FROM case_members cm
+            JOIN cases c ON c.id = cm.case_id
+            WHERE c.user_id = $1
+          )
+       ORDER BY u.created_at DESC`,
+      [userId]
     );
     res.json({ users: result.rows });
   } catch (err) {
+    console.error("GET /:userId/users error:", err.message);
     res.status(500).json({ error: "Fehler beim Laden" });
   }
 });
 
-// POST /:adminId/users – Neuen Benutzer anlegen (Admin only)
-router.post("/:adminId/users", requireAuth, requireAdmin, async (req, res) => {
+// POST /:adminId/users – Neuen Benutzer anlegen (Admin or case owner)
+router.post("/:adminId/users", requireAuth, async (req, res) => {
+  const requesterId = req.user.id;
+  const isAdmin = req.user.role === "admin";
+  const isSelf = String(requesterId) === String(req.params.adminId);
+
+  // Allow admin or case owner (customer adding team to their own case)
+  if (!isAdmin && !isSelf) {
+    return res.status(403).json({ error: "Keine Berechtigung." });
+  }
+
   const { first_name, last_name, email, mobile, function_label, case_id, password } = req.body;
   if (!email) return res.status(400).json({ error: "E-Mail ist erforderlich." });
   if (!password) return res.status(400).json({ error: "Passwort ist erforderlich." });
   if (!validatePassword(password)) {
     return res.status(400).json({ error: "Passwort entspricht nicht den Anforderungen (min. 10 Zeichen, Gross-/Kleinbuchstaben, Zahl, Sonderzeichen)." });
+  }
+
+  // Non-admin: verify they own the case they're adding to
+  if (!isAdmin && case_id) {
+    try {
+      const caseCheck = await pool.query("SELECT created_by FROM cases WHERE id = $1", [case_id]);
+      if (!caseCheck.rows.length || String(caseCheck.rows[0].created_by) !== String(requesterId)) {
+        return res.status(403).json({ error: "Sie können nur Teammitglieder zu Ihren eigenen Fällen hinzufügen." });
+      }
+    } catch (_) {
+      return res.status(403).json({ error: "Fall konnte nicht geprüft werden." });
+    }
   }
 
   const emailNorm = String(email).trim().toLowerCase();

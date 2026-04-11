@@ -139,7 +139,12 @@ async function loadUsers() {
         
         if (!res.ok) throw new Error(data?.error || "Fehler beim Laden");
 
-        const rows = (data?.users || data || []).filter(u => u.role !== 'admin');
+        let rows = (data?.users || data || []).filter(u => u.role !== 'admin');
+        // Non-admin: only show self + team on own cases (frontend safety filter)
+        if (!isAdmin) {
+          const myCaseId = rows.find(u => u.id === myUserId)?.case_id;
+          rows = rows.filter(u => u.id === myUserId || (myCaseId && u.case_id === myCaseId));
+        }
         allUsers = rows.map(u => normalizeUser(u));
         renderList(allUsers);
     } catch (err) {

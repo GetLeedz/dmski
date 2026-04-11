@@ -5627,8 +5627,11 @@ select.case-edit-input {
 /* ── Compact dossier-level tactic table (top report area) ── */
 #analysisReportTactics .tactic-analysis-box {
   margin-top: 0.55rem;
-  padding: 0.8rem 1rem;
-  gap: 0.55rem;
+  padding: 0;
+  gap: 1rem;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 #analysisReportTactics .tactic-analysis-eyebrow {
@@ -5672,25 +5675,37 @@ select.case-edit-input {
 
 /* table-layout not needed – layout is now CSS Grid */
 
-/* Compact sections for dossier-level */
+/* Standalone card style for dossier-level sections (3-7) */
 #analysisReportTactics .tactic-section,
 #analysisReportAkteure .tactic-section {
-  gap: 0.8rem;
-  margin-bottom: 1.4rem;
+  gap: 1rem;
+  margin-bottom: 0;
+  padding: 1.4rem 1.6rem;
+  border-radius: 14px;
+  border: 1px solid rgba(26,43,60,0.08);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(26,43,60,0.04);
+}
+#analysisReportTactics .tactic-section + .tactic-section,
+#analysisReportAkteure .tactic-section + .tactic-section {
+  margin-top: 1rem;
 }
 #analysisReportTactics .tactic-section-number,
 #analysisReportAkteure .tactic-section-number {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
   font-size: 0.65rem;
 }
 #analysisReportTactics .tactic-section-title,
-#analysisReportAkteure .tactic-section-title { font-size: 0.88rem; }
+#analysisReportAkteure .tactic-section-title { font-size: 0.95rem; font-weight: 700; }
 #analysisReportTactics .tactic-section-subtitle,
 #analysisReportAkteure .tactic-section-subtitle { font-size: 0.72rem; margin-bottom: 0.5rem; }
 
-}
-#analysisReportTactics .tactic-report-header { margin-bottom: 1.2rem; padding-bottom: 0.8rem; }
+#analysisReportTactics .tactic-report-header { display: none; }
+#analysisReportTactics .tactic-analysis-eyebrow { display: none; }
+#analysisReportTactics .tactic-analysis-profile-title { display: none; }
 #analysisReportTactics .tactic-legal-text { font-size: 0.76rem; padding: 0.7rem 0.9rem; }
 #analysisReportTactics .tactic-counsel-item { padding: 0.6rem 0.8rem; }
 #analysisReportTactics .tactic-counsel-label { font-size: 0.78rem; }
@@ -7407,6 +7422,11 @@ body.printing .upload-hero-wrap { display: none !important; }
   align-items: center;
   gap: 0.7rem;
 }
+.forensic-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
 
 .forensic-eyebrow {
   display: none;
@@ -8019,6 +8039,38 @@ body.printing .upload-hero-wrap { display: none !important; }
   text-align: center;
   color: rgba(26,43,60,.4);
   padding: 2rem;
+}
+.credit-pkg-scope {
+  font-size: .78rem;
+  color: rgba(26,43,60,.45);
+  margin: -.2rem 0 .4rem;
+  font-weight: 500;
+}
+.credit-pkg-discount {
+  display: inline-block;
+  padding: .2rem .6rem;
+  border-radius: 100px;
+  background: rgba(52,208,88,.1);
+  color: #22a844;
+  font-size: .72rem;
+  font-weight: 700;
+  margin-top: .3rem;
+}
+.credit-pkg-free {
+  border-color: rgba(52,208,88,.3);
+  background: rgba(52,208,88,.03);
+}
+.credit-pkg-badge-free {
+  background: linear-gradient(135deg, #34d058, #22a844);
+  color: #fff;
+}
+.credit-pkg-btn-free {
+  background: linear-gradient(135deg, #34d058, #22a844) !important;
+  color: #fff !important;
+  border-color: #22a844 !important;
+}
+.credit-pkg-btn-free:hover {
+  box-shadow: 0 4px 16px rgba(52,208,88,.3);
 }
 
 /* Transaction history */

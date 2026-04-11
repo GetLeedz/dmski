@@ -307,6 +307,44 @@ a:hover {
   color: rgba(255,255,255,0.5);
 }
 
+/* Payment footer */
+.footer-payment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.footer-payment-label {
+  font-size: clamp(0.78rem, 0.75rem + 0.1vw, 0.85rem);
+  color: rgba(255,255,255,0.4);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.footer-payment-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.stripe-logo-img {
+  height: 1.6rem;
+  width: auto;
+  opacity: 0.6;
+  filter: brightness(0) invert(1);
+  transition: opacity 200ms ease;
+}
+.stripe-logo-img:hover { opacity: 0.9; }
+.footer-payment-methods {
+  font-size: clamp(0.82rem, 0.8rem + 0.1vw, 0.88rem);
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .footer-payment-icons { flex-direction: column; align-items: center; gap: 0.3rem; }
+  .site-footer { padding: 2rem 1rem 1.5rem; gap: 1.2rem; }
+}
+
 /* Nav button styles */
 .top-bar-login {
   padding: 0.45rem 1.2rem;

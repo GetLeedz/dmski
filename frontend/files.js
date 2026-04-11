@@ -622,10 +622,10 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
     </tr>`;
   }).join("");
 
-  // Section 3: Legal assessment
+  // Section 5: Legal assessment
   const legalHtml = profile.legalNote
     ? `<div class="tactic-section">
-        <div class="tactic-section-number">3</div>
+        <div class="tactic-section-number">5</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">Juristische Bewertung</p>
           <div class="tactic-legal-text">${profile.legalNote}</div>
@@ -633,10 +633,10 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
       </div>`
     : "";
 
-  // Section 4: Counsel advice
+  // Section 6: Counsel advice
   const counselHtml = profile.counselItems.length > 0
     ? `<div class="tactic-section">
-        <div class="tactic-section-number">4</div>
+        <div class="tactic-section-number">6</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">${escapeHtml(profile.counselTitle)}</p>
           <div class="tactic-counsel-grid">
@@ -658,13 +658,9 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
 
   return `
     <div class="tactic-analysis-box">
-      <div class="tactic-report-header">
-        <p class="tactic-analysis-eyebrow">KI-Forensik · Dokumentenanalyse</p>
-        <h3 class="tactic-analysis-profile-title">${escapeHtml(profile.profileTitle)}</h3>
-      </div>
 
       <div class="tactic-section">
-        <div class="tactic-section-number">1</div>
+        <div class="tactic-section-number">3</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">Forensische Einordnung</p>
           <div class="tactic-analysis-body">${profile.summary}</div>
@@ -672,7 +668,7 @@ function renderTacticAnalysisBox(analysis, protectedPerson, opposingParty, docId
       </div>
 
       <div class="tactic-section">
-        <div class="tactic-section-number">2</div>
+        <div class="tactic-section-number">4</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">Erkannte Tatbestände <span class="tactic-section-meta">${presentCount} von ${profile.rows.length} mit Indizien</span></p>
           <div class="tactic-table-wrap">
@@ -1165,7 +1161,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   if (unique.length === 0) {
     return `
       <div class="tactic-section">
-        <div class="tactic-section-number">5</div>
+        <div class="tactic-section-number">7</div>
         <div class="tactic-section-content">
           <p class="tactic-section-title">Involvierte Personen</p>
           <p class="akteure-empty">Noch keine Personen extrahiert. Werden mit jedem weiteren File erg\u00e4nzt.</p>
@@ -1213,7 +1209,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
 
   return `
     <div class="tactic-section">
-      <div class="tactic-section-number">5</div>
+      <div class="tactic-section-number">7</div>
       <div class="tactic-section-content">
         <div class="akteure-title-row">
           <div>

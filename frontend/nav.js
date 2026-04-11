@@ -42,11 +42,9 @@
 
   let adminBlock = "";
   if (role === "admin") {
-    adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Alle Benutzer", icons.users)}${sbLink("/admin-credits.html", "Credits-Verwaltung", icons.credits)}${sbLink("/log.html", "Aktivitätslog", icons_log)}`;
-  } else if (role === "customer") {
-    adminBlock = `<span class="sb-section">Mein Fall</span>${sbLink("/users.html", "Team", teamIcon)}`;
+    adminBlock = `<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Alle Benutzer", icons.users)}${sbLink("/admin-credits.html", "Credits-Verwaltung", icons.credits)}${sbLink("/log.html", "Aktivitätslog", icons_log)}`;
   }
-  // collaborator: no adminBlock → sees only Dashboard + Mein Profil
+  // Team is now inside each case (files.html), not in sidebar
 
   const sidebarHTML = `
     <aside class="dmski-sidebar" id="dmski-sidebar" role="navigation" aria-label="Hauptnavigation">

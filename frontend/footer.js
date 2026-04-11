@@ -4,8 +4,9 @@
   if (!el) return;
 
   // Hide footer on dashboard/app pages (logged-in area)
-  const path = window.location.pathname;
-  const isAppPage = ["/dashboard.html", "/files.html", "/upload.html", "/users.html", "/profile.html", "/log.html"].some(p => path.endsWith(p));
+  const path = window.location.pathname.replace(/\/$/, "");
+  const appPages = ["dashboard", "files", "upload", "users", "profile", "log", "credits", "admin-credits", "report", "verify"];
+  const isAppPage = appPages.some(p => path.endsWith("/" + p) || path.endsWith("/" + p + ".html"));
   if (isAppPage) {
     el.style.display = "none";
     return;

@@ -3,13 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DMSKI – Registrierung</title>
-  <meta name="description" content="Erstellen Sie Ihr DMSKI-Konto und erhalten Sie 10 Credits kostenlos." />
+  <title>DMSKI – Kostenlos registrieren</title>
+  <meta name="description" content="Registrieren Sie sich bei DMSKI und erhalten Sie 7 Credits gratis. KI-Analyse für Ihre Akten in unter 2 Minuten." />
+  <meta property="og:title" content="DMSKI – Kostenlos registrieren" />
+  <meta property="og:description" content="7 Credits gratis. KI-Analyse für Ihre Akten in unter 2 Minuten." />
+  <meta property="og:image" content="https://www.dmski.ch/assets/dmski-file-scan_socialshare.png" />
+  <meta property="og:url" content="https://www.dmski.ch/signup.html" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .signup-page {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: clamp(5rem, 10vw, 6rem) var(--space-page) clamp(1.5rem, 3vw, 2rem);
+    }
+    .signup-shell {
+      width: min(1020px, 100%);
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(15,23,42,0.6);
+      backdrop-filter: blur(32px) saturate(1.3);
+      -webkit-backdrop-filter: blur(32px) saturate(1.3);
+      border-radius: clamp(16px, 3vw, 24px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .signup-brand {
+      padding: clamp(2rem, 4vw, 3rem) clamp(1.5rem, 3vw, 2.5rem);
+      background:
+        linear-gradient(160deg, rgba(6,10,20,0.95), rgba(15,21,32,0.9)),
+        repeating-linear-gradient(-35deg, rgba(255,255,255,0.015), rgba(255,255,255,0.015) 1px, transparent 1px, transparent 22px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: clamp(1.2rem, 2.5vw, 1.8rem);
+      animation: rise-in 700ms ease forwards;
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    .signup-brand-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 30%, rgba(197,160,89,0.7));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .signup-brand-sub {
+      color: var(--ink-muted);
+      font-size: clamp(0.92rem, 0.88rem + 0.2vw, 1rem);
+      line-height: 1.6;
+    }
+    .signup-perks { display: flex; flex-direction: column; gap: 0.8rem; }
+    .signup-perk { display: flex; align-items: center; gap: 0.7rem; }
+    .signup-perk-icon {
+      flex-shrink: 0; width: 2rem; height: 2rem;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; background: rgba(52,208,88,0.1);
+    }
+    .signup-perk-icon svg { width: 1rem; height: 1rem; }
+    .signup-perk span {
+      font-size: clamp(0.88rem, 0.85rem + 0.15vw, 0.95rem);
+      color: var(--ink-soft); font-weight: 500;
+    }
+    .signup-trust-row {
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .signup-trust-item {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.78rem; color: var(--ink-muted); font-weight: 500;
+    }
+    .signup-trust-item svg { width: 0.9rem; height: 0.9rem; fill: var(--gold); opacity: 0.6; }
+
+    .signup-card {
+      padding: clamp(2rem, 4vw, 2.8rem) clamp(1.5rem, 3vw, 2.4rem);
+      display: flex; flex-direction: column; gap: 0.8rem;
+      background: rgba(255,255,255,0.02);
+      animation: rise-in 750ms ease forwards;
+      animation-delay: 150ms; opacity: 0; transform: translateY(14px);
+    }
+    .signup-card h2 { margin: 0 0 0.2rem; font-size: clamp(1.4rem, 1.3rem + 0.3vw, 1.6rem); font-weight: 700; }
+    .signup-name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .signup-field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .signup-terms {
+      font-size: clamp(0.78rem, 0.75rem + 0.1vw, 0.85rem);
+      color: var(--ink-muted); line-height: 1.5; text-align: center;
+    }
+    .signup-terms a { color: var(--gold); text-decoration: none; }
+    .signup-terms a:hover { color: #fff; }
+    .signup-login {
+      margin-top: 0.3rem; text-align: center;
+      font-size: clamp(0.85rem, 0.82rem + 0.15vw, 0.92rem); color: var(--ink-muted);
+    }
+    .signup-login a { color: var(--gold); text-decoration: none; font-weight: 600; }
+    .signup-login a:hover { color: #fff; }
+    .pwd-hint {
+      margin: -0.3rem 0 0; font-size: 0.78rem;
+      color: rgba(255,255,255,0.35); line-height: 1.5;
+    }
+
+    @media (max-width: 880px) {
+      .signup-shell { grid-template-columns: 1fr; }
+      .signup-name-row { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
   <header class="top-bar">
@@ -17,56 +125,110 @@
       <img src="assets/logo-dmski_gold.png" alt="DMSKI" />
     </a>
     <nav class="top-bar-nav">
+      <a href="/#so-funktioniert-es" class="top-bar-link">Methodik</a>
+      <a href="/#preise" class="top-bar-link">Preise</a>
       <a href="/login.html" class="top-bar-login">Login</a>
-      <a href="/signup.html" class="top-bar-cta">Registrieren</a>
+      <a href="/signup.html" class="top-bar-cta">Kostenlos starten</a>
     </nav>
-    <button class="hamburger" id="hamburger" aria-label="Menü öffnen"><span></span><span></span><span></span></button>
+    <button class="hamburger" id="hamburger" aria-label="Menu öffnen"><span></span><span></span><span></span></button>
   </header>
   <nav class="mobile-nav" id="mobileNav">
+    <a href="/#so-funktioniert-es">Methodik</a>
+    <a href="/#preise">Preise</a>
     <a href="/login.html" class="mobile-nav-login">Login</a>
-    <a href="/signup.html" class="mobile-nav-cta">Registrieren</a>
+    <a href="/signup.html" class="mobile-nav-cta">Kostenlos starten</a>
   </nav>
 
-  <main class="login-page">
-    <section class="login-shell">
-      <div class="login-brand">
-        <a href="/" class="brand-home-link" aria-label="Zur Startseite">
-          <img src="assets/logo-dmski_slogan_white.png" alt="DMSKI – Fakten. Muster. Beweise." class="brand-logo" />
+  <main class="signup-page">
+    <section class="signup-shell">
+      <div class="signup-brand">
+        <a href="/" aria-label="Zur Startseite">
+          <img src="assets/logo-dmski_slogan_white.png" alt="DMSKI" class="brand-logo" />
         </a>
-        <h1 class="login-brand-title">Konto erstellen</h1>
-        <p class="login-brand-sub">Registrieren Sie sich und erhalten Sie <strong style="color:var(--gold);">10 Credits kostenlos</strong>, um DMSKI zu testen. KI-Analyse und KI-Empfehlung für Ihren Fall.</p>
+        <h1 class="signup-brand-title">7 Credits gratis.<br />Sofort loslegen.</h1>
+        <p class="signup-brand-sub">Registrieren Sie sich in 30 Sekunden und starten Sie Ihre erste KI-Analyse. Keine Kreditkarte nötig.</p>
+
+        <div class="signup-perks">
+          <div class="signup-perk">
+            <span class="signup-perk-icon"><svg viewBox="0 0 20 20" fill="#34d058"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></svg></span>
+            <span>7 Credits gratis &ndash; keine Kreditkarte</span>
+          </div>
+          <div class="signup-perk">
+            <span class="signup-perk-icon"><svg viewBox="0 0 20 20" fill="#34d058"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></svg></span>
+            <span>Erste Analyse in unter 5 Minuten</span>
+          </div>
+          <div class="signup-perk">
+            <span class="signup-perk-icon"><svg viewBox="0 0 20 20" fill="#34d058"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></svg></span>
+            <span>Kein Abo, keine Bindung</span>
+          </div>
+          <div class="signup-perk">
+            <span class="signup-perk-icon"><svg viewBox="0 0 20 20" fill="#34d058"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></svg></span>
+            <span>Schweizer Datenschutz &ndash; Ihre Daten bleiben Ihre</span>
+          </div>
+        </div>
+
+        <div class="signup-trust-row">
+          <span class="signup-trust-item">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd"/></svg>
+            SSL verschlüsselt
+          </span>
+          <span class="signup-trust-item">
+            <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.403 12.652a3 3 0 0 0 0-5.304 3 3 0 0 0-3.75-3.751 3 3 0 0 0-5.305 0 3 3 0 0 0-3.751 3.75 3 3 0 0 0 0 5.305 3 3 0 0 0 3.75 3.751 3 3 0 0 0 5.305 0 3 3 0 0 0 3.751-3.75Z" clip-rule="evenodd"/></svg>
+            DSGVO-konform
+          </span>
+          <span class="signup-trust-item">
+            <svg viewBox="0 0 20 20"><path d="M10 1a6 6 0 0 0-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.044a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-.044c0-1.013.762-1.957 1.815-2.825A6 6 0 0 0 10 1ZM8.5 18a1.5 1.5 0 0 0 3 0h-3Z"/></svg>
+            CH &middot; DE &middot; AT
+          </span>
+        </div>
       </div>
 
-      <form class="login-card" id="signupForm" novalidate>
-        <h2>Registrierung</h2>
-        <p class="card-kicker">Ihr persönliches DMSKI-Konto</p>
+      <form class="signup-card" id="signupForm" novalidate>
+        <h2>Konto erstellen</h2>
+        <p class="card-kicker">Kostenlos &ndash; 7 Credits inklusive</p>
 
         <div id="signupMessage" class="message" role="status" aria-live="polite"></div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
-          <div>
+        <div class="signup-name-row">
+          <div class="signup-field">
             <label for="firstName">Vorname *</label>
             <input id="firstName" type="text" required autocomplete="given-name" placeholder="Max" />
           </div>
-          <div>
+          <div class="signup-field">
             <label for="lastName">Nachname</label>
             <input id="lastName" type="text" autocomplete="family-name" placeholder="Muster" />
           </div>
         </div>
 
-        <label for="signupEmail">E-Mail *</label>
-        <input id="signupEmail" type="email" required autocomplete="email" placeholder="name@kanzlei.ch" />
+        <div class="signup-field">
+          <label for="signupEmail">E-Mail *</label>
+          <input id="signupEmail" type="email" required autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="name@beispiel.ch" />
+        </div>
 
-        <label for="signupPassword">Passwort *</label>
-        <input id="signupPassword" type="password" required minlength="10" autocomplete="new-password" placeholder="Sicheres Passwort" />
-        <p style="margin:-.3rem 0 0;font-size:.78rem;color:rgba(255,255,255,.35);line-height:1.5;">Mind. 10 Zeichen, 1 Grossbuchstabe, 1 Zahl, 1 Sonderzeichen (!@#$...)</p>
+        <div class="signup-field">
+          <label for="signupPassword">Passwort *</label>
+          <div class="password-field">
+            <input id="signupPassword" type="password" required minlength="10" autocomplete="new-password" placeholder="Sicheres Passwort" />
+            <button type="button" class="icon-button" id="togglePassword" aria-label="Passwort anzeigen" aria-pressed="false">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5c5.23 0 9.27 3.11 10.8 6.55a1.1 1.1 0 0 1 0 .9C21.27 15.89 17.23 19 12 19S2.73 15.89 1.2 12.45a1.1 1.1 0 0 1 0-.9C2.73 8.11 6.77 5 12 5Zm0 2c-4.12 0-7.27 2.35-8.75 5 1.48 2.65 4.63 5 8.75 5s7.27-2.35 8.75-5C19.27 9.35 16.12 7 12 7Zm0 2.2A2.8 2.8 0 1 1 9.2 12 2.8 2.8 0 0 1 12 9.2Zm0 2a.8.8 0 1 0 .8.8.8.8 0 0 0-.8-.8Z" /></svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.28 2.22a1 1 0 0 1 1.42 0l16.98 16.98a1 1 0 1 1-1.42 1.42l-3.02-3.02A13.65 13.65 0 0 1 12 19c-5.23 0-9.27-3.11-10.8-6.55a1.1 1.1 0 0 1 0-.9A12.42 12.42 0 0 1 6.2 6.44L3.28 3.64a1 1 0 0 1 0-1.42ZM7.66 7.9A10.22 10.22 0 0 0 3.25 12c1.48 2.65 4.63 5 8.75 5a10.9 10.9 0 0 0 3.7-.62l-2.06-2.06a2.8 2.8 0 0 1-3.96-3.96L7.66 7.9ZM12 5c5.23 0 9.27 3.11 10.8 6.55a1.1 1.1 0 0 1 0 .9 12.96 12.96 0 0 1-4.02 4.76l-1.43-1.43A10.64 10.64 0 0 0 20.75 12C19.27 9.35 16.12 7 12 7c-.6 0-1.2.05-1.77.14L8.61 5.52A13.76 13.76 0 0 1 12 5Z" /></svg>
+            </button>
+          </div>
+          <p class="pwd-hint">Mind. 10 Zeichen, 1 Grossbuchstabe, 1 Zahl, 1 Sonderzeichen</p>
+        </div>
 
-        <label for="signupPassword2">Passwort bestätigen *</label>
-        <input id="signupPassword2" type="password" required minlength="10" autocomplete="new-password" placeholder="Passwort wiederholen" />
+        <div class="signup-field">
+          <label for="signupPassword2">Passwort bestätigen *</label>
+          <input id="signupPassword2" type="password" required minlength="10" autocomplete="new-password" placeholder="Passwort wiederholen" />
+        </div>
 
-        <button id="signupBtn" type="submit">Registrieren</button>
-        <p id="message" class="message" role="status"></p>
-        <p class="login-no-access">Bereits registriert? <a href="/login.html">Zum Login</a></p>
+        <button id="signupBtn" type="submit">Konto erstellen &ndash; kostenlos</button>
+
+        <p class="signup-terms">
+          Mit der Registrierung akzeptieren Sie die <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a> und <a href="/datenschutz.html">Datenschutzerklaerung</a>.
+        </p>
+
+        <p class="signup-login">Bereits ein Konto? <a href="/login.html">Zum Login</a></p>
       </form>
     </section>
   </main>
@@ -74,7 +236,21 @@
   <footer class="site-footer">
     <div class="footer-brand">
       <img src="/assets/logo-dmski.png" alt="DMSKI" class="footer-brand-logo" />
-      <span class="footer-brand-tagline">KI-gestützte Faktenanalyse</span>
+      <span class="footer-brand-tagline">KI-Analyse &amp; KI-Empfehlung für Ihren Fall</span>
+    </div>
+    <div class="footer-social">
+      <a href="https://www.facebook.com/profile.php?id=61574319811413" target="_blank" rel="noopener" aria-label="Facebook" class="footer-icon"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+      <a href="https://www.instagram.com/dmski_legal/" target="_blank" rel="noopener" aria-label="Instagram" class="footer-icon"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+    </div>
+    <div class="footer-payment">
+      <span class="footer-payment-label">Sichere Zahlung via</span>
+      <div class="footer-payment-icons">
+        <img src="/assets/stripe-logo.svg" alt="Stripe" class="stripe-logo-img" />
+        <span class="footer-payment-methods">Visa · Mastercard · TWINT</span>
+      </div>
+    </div>
+    <div class="footer-contact">
+      <a href="mailto:info@dmski.ch" class="footer-mail">info@dmski.ch</a>
     </div>
     <div class="footer-divider"></div>
     <div class="footer-legal">
@@ -120,7 +296,7 @@
       }
       const pwdRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{10,}$/;
       if (!pwdRegex.test(password)) {
-        showMsg("Passwort: mind. 10 Zeichen, 1 Grossbuchstabe, 1 Zahl, 1 Sonderzeichen (!@#$...)", "error");
+        showMsg("Passwort: mind. 10 Zeichen, 1 Grossbuchstabe, 1 Zahl, 1 Sonderzeichen", "error");
         return;
       }
 
@@ -136,20 +312,31 @@
         });
         const data = await res.json();
         if (res.ok) {
-          showMsg("Registrierung erfolgreich! Bitte prüfen Sie Ihre E-Mails und bestätigen Sie Ihre Adresse.", "success");
+          showMsg("Konto erstellt! Bitte prüfen Sie Ihre E-Mails.", "success");
           form.reset();
           btn.textContent = "E-Mail prüfen";
         } else {
           showMsg(data.error || "Registrierung fehlgeschlagen.", "error");
           btn.disabled = false;
-          btn.textContent = "Registrieren";
+          btn.textContent = "Konto erstellen \u2013 kostenlos";
         }
       } catch (_) {
-        showMsg("Server nicht erreichbar. Bitte später erneut versuchen.", "error");
+        showMsg("Server nicht erreichbar. Bitte später versuchen.", "error");
         btn.disabled = false;
-        btn.textContent = "Registrieren";
+        btn.textContent = "Konto erstellen \u2013 kostenlos";
       }
     });
+
+    // Password toggle
+    const toggleBtn = document.getElementById("togglePassword");
+    const pwField = document.getElementById("signupPassword");
+    if (toggleBtn && pwField) {
+      toggleBtn.addEventListener("click", () => {
+        const isVisible = toggleBtn.classList.toggle("is-visible");
+        pwField.type = isVisible ? "text" : "password";
+        toggleBtn.setAttribute("aria-pressed", isVisible);
+      });
+    }
 
     // Hamburger
     const hb = document.getElementById("hamburger");
