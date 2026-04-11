@@ -146,6 +146,23 @@
     }
   }
 
+  // Live credit balance – fetch from server on every page load
+  (function refreshCreditBalance() {
+    const tk = sessionStorage.getItem("token") || localStorage.getItem("token");
+    if (!tk) return;
+    const h = window.location.hostname;
+    const isLocal = h === "localhost" || h === "127.0.0.1";
+    const base = isLocal ? "" : "https://lively-reverence-production-def3.up.railway.app";
+    fetch(`${base}/api/credits/balance`, {
+      headers: { Authorization: `Bearer ${tk}` }
+    }).then(r => r.json()).then(data => {
+      const bal = data.balance || 0;
+      sessionStorage.setItem("dmski_credit_balance", String(bal));
+      const badge = document.querySelector(".sb-credit-badge span");
+      if (badge) badge.textContent = bal + " Credits";
+    }).catch(() => {});
+  })();
+
   // Logout handler – log session end, then redirect
   document.addEventListener("DOMContentLoaded", function () {
     const btn = document.getElementById("logoutBtn");
