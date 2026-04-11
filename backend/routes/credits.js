@@ -62,12 +62,16 @@ async function ensureSchema() {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
-    // Clean up duplicate packages and seed defaults
-    await pool.query(`DELETE FROM credit_packages a USING credit_packages b WHERE a.id > b.id AND a.name = b.name`).catch(() => {});
-    const pkgCount = await pool.query(`SELECT COUNT(*) FROM credit_packages`);
-    if (parseInt(pkgCount.rows[0]?.count || "0", 10) === 0) {
-      await pool.query(`INSERT INTO credit_packages (name, credits, price, popular, sort_order) VALUES ('Starter', 50, 250.00, false, 1), ('Standard', 150, 675.00, true, 2), ('Professional', 500, 2000.00, false, 3)`);
-    }
+    // Seed/update packages to match current pricing (1 Credit = CHF 5, progressive discounts)
+    await pool.query(`DELETE FROM credit_packages`).catch(() => {});
+    await pool.query(`INSERT INTO credit_packages (name, credits, price, popular, sort_order) VALUES
+      ('35 Credits',   35,   175.00, false, 1),
+      ('70 Credits',   70,   315.00, true,  2),
+      ('140 Credits',  140,  595.00, false, 3),
+      ('350 Credits',  350, 1400.00, false, 4),
+      ('700 Credits',  700, 2625.00, false, 5),
+      ('1400 Credits', 1400, 4900.00, false, 6)
+    `);
     console.log("[credits] Schema ensured.");
   } catch (err) {
     if (!err.message?.includes("already exists")) {
