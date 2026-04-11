@@ -77,13 +77,22 @@
           tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">Keine Benutzer.</td></tr>';
           return;
         }
-        tbody.innerHTML = data.users.map(u => {
+        // Only show Fallinhaber (customers), not Teammitglieder (collaborators) or admins
+        const customers = data.users.filter(u => u.role === "customer");
+        if (!customers.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">Keine Kunden.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = customers.map(u => {
           const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || "—";
-          const lastLogin = u.last_login_at ? new Date(u.last_login_at).toLocaleDateString("de-CH") : "—";
+          const roleLabel = "Fallinhaber";
+          const lastLogin = u.last_login_at
+            ? new Date(u.last_login_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+            : "—";
           return `<tr>
             <td><strong>${name}</strong></td>
             <td>${u.email}</td>
-            <td>${u.role}</td>
+            <td>${roleLabel}</td>
             <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">${u.balance}</td>
             <td>${u.total_purchased}</td>
             <td>${u.total_spent}</td>

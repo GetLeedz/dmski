@@ -508,8 +508,8 @@
         <!-- Role filter (admin only) -->
         <select id="roleFilter" class="sel" onchange="filterList()">
           <option value="">Alle</option>
-          <option value="customer">Kunden</option>
-          <option value="collaborator">Team</option>
+          <option value="customer">Fallinhaber</option>
+          <option value="collaborator">Teammitglieder</option>
         </select>
 
         <!-- Funktion filter -->
@@ -673,17 +673,17 @@
         <div class="modal-section" id="mFachSection">
           <p class="modal-section-title">Funktion & Fall</p>
 
-          <!-- Beziehung: Kunde oder Team -->
+          <!-- Beziehung: Fallinhaber oder Teammitglied -->
           <div class="fg mb">
             <label class="fl">Beziehung</label>
             <div class="anrede-radios">
               <label class="anrede-radio">
                 <input type="radio" name="edit-beziehung" value="customer" />
-                <span>Kunde</span>
+                <span>Fallinhaber</span>
               </label>
               <label class="anrede-radio">
                 <input type="radio" name="edit-beziehung" value="collaborator" />
-                <span>Team</span>
+                <span>Teammitglied</span>
               </label>
             </div>
           </div>

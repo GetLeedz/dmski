@@ -166,7 +166,7 @@ function renderList(rows) {
         const name = [u.academicTitle, u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
         const initials = (u.firstName || u.email || "?")[0].toUpperCase();
         const roleClass = u.role === "collaborator" ? "badge badge--team" : "badge badge--kunde";
-        const roleLabel = u.role === "collaborator" ? "Team" : "Kunde";
+        const roleLabel = u.role === "collaborator" ? "Teammitglied" : "Fallinhaber";
 
         const viewBtn = `
             <button class="ib ib--view" onclick="openProfileView('${u.id}')" title="Profil ansehen">
@@ -468,7 +468,7 @@ function openProfileView(id) {
     const name = [u.academicTitle, u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
     const initials = (u.firstName || u.email || "?")[0].toUpperCase();
     const sal = u.salutation || "";
-    const roleLabel = u.role === "collaborator" ? "Team" : "Kunde";
+    const roleLabel = u.role === "collaborator" ? "Teammitglied" : "Fallinhaber";
     const caseName = u.caseId ? (allCases.find(c => String(c.id) === String(u.caseId))?.name || u.caseId) : "–";
 
     // Build profile view modal
