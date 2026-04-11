@@ -6,6 +6,7 @@ const { Pool } = require("pg");
 const { createClient } = require("@supabase/supabase-js");
 const { requireAuth, requireCaseAccess, setCaseAccessPool } = require("../middleware/auth");
 const { analyzeLegalDocument, analyzeDossierCrossDocument, consolidatePersons } = require("../services/analysisService");
+const { deductCredits } = require("./credits");
 
 const router = express.Router();
 
@@ -4147,6 +4148,18 @@ router.post("/:caseId/files", requireAuth, requireCaseAccess("write"), (req, res
         return res.status(404).json({ error: "Fall nicht gefunden." });
       }
 
+      // ── Credit check: 1 Credit per file for KI-File-Analyse ──
+      const fileCount = req.files.length;
+      const userId = req.user.id;
+      const creditResult = await deductCredits(userId, fileCount, `KI-File-Analyse: ${fileCount} File${fileCount > 1 ? "s" : ""} (Fall ${caseId})`);
+      if (!creditResult.success) {
+        return res.status(402).json({
+          error: `Nicht genügend Credits. Benötigt: ${fileCount}, verfügbar: ${creditResult.balance}. Bitte Credits kaufen.`,
+          needed: fileCount,
+          balance: creditResult.balance
+        });
+      }
+
       const inserted = [];
       for (const file of req.files) {
         const decodedOriginalName = decodeOriginalFileName(file.originalname);
@@ -5273,6 +5286,20 @@ router.post("/:caseId/reanalyze", requireAuth, requireCaseAccess("write"), async
   }
 
   try {
+    // ── Credit check: 1 Credit per 5 files for KI-Master-Scan ──
+    const fileCount = await pool.query("SELECT COUNT(*) FROM case_documents WHERE case_id = $1", [caseId]);
+    const totalFiles = parseInt(fileCount.rows[0]?.count || "0", 10);
+    if (totalFiles > 0) {
+      const creditsNeeded = Math.max(1, Math.ceil(totalFiles / 5));
+      const creditResult = await deductCredits(req.user.id, creditsNeeded, `KI-Master-Scan: ${totalFiles} Files (Fall ${caseId})`);
+      if (!creditResult.success) {
+        return res.status(402).json({
+          error: `Nicht genügend Credits. Benötigt: ${creditsNeeded}, verfügbar: ${creditResult.balance}.`,
+          needed: creditsNeeded, balance: creditResult.balance
+        });
+      }
+    }
+
     const result = await pool.query(
       `DELETE FROM case_document_analysis
        WHERE document_id IN (SELECT id FROM case_documents WHERE case_id = $1)`,
@@ -5367,6 +5394,16 @@ router.post("/:caseId/consolidate-persons", requireAuth, requireCaseAccess("writ
     const docs = docsResult.rows;
     if (docs.length === 0) {
       return res.status(400).json({ error: "Keine Dokumente im Fall." });
+    }
+
+    // ── Credit check: 1 Credit per 5 files for KI-Personen-Analyse ──
+    const creditsNeeded = Math.max(1, Math.ceil(docs.length / 5));
+    const creditResult = await deductCredits(req.user.id, creditsNeeded, `KI-Personen-Analyse: ${docs.length} Files (Fall ${caseId})`);
+    if (!creditResult.success) {
+      return res.status(402).json({
+        error: `Nicht genügend Credits. Benötigt: ${creditsNeeded}, verfügbar: ${creditResult.balance}.`,
+        needed: creditsNeeded, balance: creditResult.balance
+      });
     }
 
     // 2. Collect all persons from all analyses

@@ -513,6 +513,15 @@ function uploadSingleFile(file) {
         return;
       }
 
+      // Credit-Fehler: nicht genug Credits
+      if (xhr.status === 402) {
+        let msg = "Nicht genügend Credits.";
+        try { msg = JSON.parse(xhr.responseText).error || msg; } catch {}
+        updateQueueProgress(fileKey, 0, "Keine Credits", "error");
+        reject(new Error(msg + " → Credits kaufen: /credits.html"));
+        return;
+      }
+
       if (OUTAGE_STATUSES.has(Number(xhr.status))) {
         showServiceAlert("Upload-Service derzeit gestört");
       }
