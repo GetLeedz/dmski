@@ -162,61 +162,55 @@ function renderList(rows) {
         return;
     }
 
-    el.innerHTML = rows.map((u) => {
+    const svgView = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const svgInvite = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+    const svgEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>`;
+    const svgDel = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
+    const tableRows = rows.map((u) => {
         const name = [u.academicTitle, u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
-        const initials = (u.firstName || u.email || "?")[0].toUpperCase();
-        const roleClass = u.role === "collaborator" ? "badge badge--team" : "badge badge--kunde";
         const roleLabel = u.role === "collaborator" ? "Teammitglied" : "Fallinhaber";
+        const roleClass = u.role === "collaborator" ? "badge badge--team" : "badge badge--kunde";
+        const caseName = u.caseId ? esc(u.caseName || u.caseId) : "–";
+        const fn = u.fn ? esc(u.fn) : "–";
+        const lastLogin = u.lastLoginAt ? formatDate(u.lastLoginAt) : "–";
+        const logins = u.loginCount || 0;
 
-        const viewBtn = `
-            <button class="ib ib--view" onclick="openProfileView('${u.id}')" title="Profil ansehen">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
-            </button>`;
+        let actions = `<button class="ib ib--view" onclick="openProfileView('${u.id}')" title="Profil">${svgView}</button>`;
+        if (isAdmin) {
+            actions += `<button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladen">${svgInvite}</button>`;
+            actions += `<button class="ib ib--edit" onclick="openEditModal('${u.id}')" title="Bearbeiten">${svgEdit}</button>`;
+            actions += `<button class="ib ib--del" onclick="deleteUser('${u.id}')" title="Löschen">${svgDel}</button>`;
+        }
 
-        const adminActions = isAdmin ? `
-            <button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladung senden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-            </button>
-            <button class="ib ib--edit" onclick="openEditModal('${u.id}')" title="Bearbeiten">
-                <svg viewBox="0 0 24 24" stroke-width="2" style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/>
-                </svg>
-            </button>
-            <button class="ib ib--del" onclick="deleteUser('${u.id}')" title="Löschen">
-                <svg viewBox="0 0 24 24" stroke-width="2" style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-            </button>` : "";
-
-        const trackingInfo = isAdmin ? `
-                <div class="u-tracking">
-                    ${u.invitedAt ? `<span class="u-track u-track--invited" title="Eingeladen: ${esc(formatDate(u.invitedAt))}">&#9993; ${esc(formatDate(u.invitedAt))}</span>` : `<span class="u-track u-track--none" title="Noch nicht eingeladen">&#9993; –</span>`}
-                    ${u.lastLoginAt ? `<span class="u-track u-track--login" title="Letzter Login: ${esc(formatDate(u.lastLoginAt))}">&#8635; ${esc(formatDate(u.lastLoginAt))}</span>` : `<span class="u-track u-track--none" title="Noch nie eingeloggt">&#8635; –</span>`}
-                    ${u.loginCount > 0 ? `<span class="u-track u-track--count" title="${u.loginCount} Login(s)">${u.loginCount}x</span>` : ""}
-                </div>` : "";
-
-        return `
-            <div class="u-card" id="uc-${u.id}">
-                <div class="u-av ${u.role === "collaborator" ? "u-av--f" : "u-av--k"}">${esc(initials)}</div>
-                <div class="u-info">
-                    <div class="u-name">${esc(name)}</div>
-                    <div class="u-email">${esc(u.email)}</div>
-                    ${trackingInfo}
-                </div>
-                ${u.fn ? `<span class="badge badge--fn">${esc(u.fn)}</span>` : ""}
-                ${u.caseId ? `<span class="badge badge--case" title="Fall-ID: ${esc(u.caseId)}">${esc(u.caseName || u.caseId)}</span>` : ""}
-                <span class="${roleClass}">${roleLabel}</span>
-                <div class="u-actions">${viewBtn}${adminActions}</div>
-            </div>`;
+        return `<tr id="uc-${u.id}">
+            <td><strong>${esc(name)}</strong></td>
+            <td>${esc(u.email)}</td>
+            <td><span class="${roleClass}">${roleLabel}</span></td>
+            <td>${fn}</td>
+            <td>${caseName}</td>
+            <td>${lastLogin}</td>
+            <td style="text-align:center">${logins}</td>
+            <td><div class="u-actions">${actions}</div></td>
+        </tr>`;
     }).join("");
+
+    el.innerHTML = `
+        <table class="u-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>E-Mail</th>
+                    <th>Rolle</th>
+                    <th>Funktion</th>
+                    <th>Fall</th>
+                    <th>Letzter Login</th>
+                    <th>Logins</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+        </table>`;
 }
 
 // --- AKTIONEN ---

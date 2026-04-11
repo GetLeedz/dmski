@@ -290,6 +290,44 @@
     .u-empty svg { width:2.6rem;height:2.6rem;opacity:.28; }
     .u-empty p { margin:0;font-size:.9rem; }
 
+    /* ── Users Table ── */
+    .u-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: .88rem;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid rgba(26,43,60,.08);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(26,43,60,.04);
+    }
+    .u-table thead th {
+      text-align: left;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: rgba(26,43,60,.45);
+      padding: .7rem .8rem;
+      background: rgba(26,43,60,.02);
+      border-bottom: 1px solid rgba(26,43,60,.08);
+      white-space: nowrap;
+    }
+    .u-table tbody td {
+      padding: .65rem .8rem;
+      border-bottom: 1px solid rgba(26,43,60,.04);
+      color: #1A2B3C;
+      vertical-align: middle;
+    }
+    .u-table tbody tr:last-child td { border-bottom: none; }
+    .u-table tbody tr:hover td { background: rgba(197,160,89,.03); }
+    .u-table .u-actions {
+      display: flex;
+      gap: .25rem;
+      justify-content: flex-end;
+    }
+
     /* ── Modal – glassmorphism ── */
     .modal-bg {
       display:none;position:fixed;inset:0;
