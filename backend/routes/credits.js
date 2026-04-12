@@ -28,10 +28,12 @@ async function ensureSchema() {
       id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
       price_per_credit NUMERIC(10,2) NOT NULL DEFAULT 5.00,
       currency TEXT NOT NULL DEFAULT 'CHF',
-      free_signup_credits INTEGER NOT NULL DEFAULT 10,
+      free_signup_credits INTEGER NOT NULL DEFAULT 7,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
-    await pool.query(`INSERT INTO credit_settings (id, price_per_credit, currency, free_signup_credits) VALUES (1, 5.00, 'CHF', 10) ON CONFLICT (id) DO NOTHING`);
+    await pool.query(`INSERT INTO credit_settings (id, price_per_credit, currency, free_signup_credits) VALUES (1, 5.00, 'CHF', 7) ON CONFLICT (id) DO NOTHING`);
+    // One-shot: falls noch der alte Default 10 aktiv ist, auf 7 aktualisieren
+    await pool.query(`UPDATE credit_settings SET free_signup_credits = 7, updated_at = NOW() WHERE id = 1 AND free_signup_credits = 10`);
     await pool.query(`CREATE TABLE IF NOT EXISTS user_credits (
       user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       balance INTEGER NOT NULL DEFAULT 0,
@@ -94,7 +96,7 @@ async function getOrCreateBalance(userId) {
 // ── Helper: get settings ──
 async function getSettings() {
   const r = await pool.query(`SELECT * FROM credit_settings WHERE id = 1`);
-  return r.rows[0] || { price_per_credit: 5, currency: "CHF", free_signup_credits: 10 };
+  return r.rows[0] || { price_per_credit: 5, currency: "CHF", free_signup_credits: 7 };
 }
 
 // ══════════════════════════════════════════════
