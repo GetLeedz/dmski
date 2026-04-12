@@ -541,6 +541,46 @@ router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSel
   }
 });
 
+// POST /:userId/reset-password — Admin setzt Passwort eines Nicht-Admin-Benutzers neu
+router.post("/:userId/reset-password", requireAuth, requireAdmin, async (req, res) => {
+  const { password } = req.body || {};
+  if (!password || !validatePassword(password)) {
+    return res.status(400).json({ error: "Passwort entspricht nicht den Anforderungen (min. 10 Zeichen, Grossbuchstabe, Zahl, Sonderzeichen)." });
+  }
+
+  try {
+    await ensureTrackingSchema();
+
+    // Prüfe dass der Ziel-Benutzer existiert, nicht Admin ist und nicht soft-gelöscht
+    const target = await pool.query(
+      "SELECT id, email, first_name, role, deleted_at FROM users WHERE id = $1 LIMIT 1",
+      [req.params.userId]
+    );
+    if (target.rows.length === 0) {
+      return res.status(404).json({ error: "Benutzer nicht gefunden." });
+    }
+    const user = target.rows[0];
+    if (user.role === "admin") {
+      return res.status(403).json({ error: "Admin-Passwörter können nicht über dieses Panel zurückgesetzt werden." });
+    }
+    if (user.deleted_at) {
+      return res.status(400).json({ error: "Gelöschte Benutzer können nicht zurückgesetzt werden." });
+    }
+
+    const hash = await bcrypt.hash(String(password).trim(), 12);
+    await pool.query(
+      "UPDATE users SET password_hash = $1, password_change_required = true WHERE id = $2",
+      [hash, user.id]
+    );
+
+    console.log(`[admin-reset-pw] Admin reset password for user ${user.id} (${user.email})`);
+    res.json({ ok: true, email: user.email });
+  } catch (err) {
+    console.error("[admin-reset-pw] Error:", err.message);
+    res.status(500).json({ error: "Passwort-Reset fehlgeschlagen." });
+  }
+});
+
 // DELETE /:userId — Soft-Delete: Admin löscht Benutzer (Zeile bleibt, deleted_at gesetzt)
 router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
   try {

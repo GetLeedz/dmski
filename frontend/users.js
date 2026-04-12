@@ -167,6 +167,7 @@ function renderList(rows) {
     const svgInvite = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
     const svgEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>`;
     const svgDel = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    const svgKey = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`;
 
     const tableRows = rows.map((u) => {
         const isDeleted = !!u.deletedAt;
@@ -184,6 +185,7 @@ function renderList(rows) {
         if (isAdmin && !isDeleted) {
             actions += `<button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladen">${svgInvite}</button>`;
             actions += `<button class="ib ib--edit" onclick="openEditModal('${u.id}')" title="Bearbeiten">${svgEdit}</button>`;
+            actions += `<button class="ib ib--key" onclick="openResetPasswordModal('${u.id}')" title="Passwort zurücksetzen">${svgKey}</button>`;
             actions += `<button class="ib ib--del" onclick="deleteUser('${u.id}')" title="Löschen">${svgDel}</button>`;
         }
 
@@ -395,6 +397,109 @@ async function handleSave() {
         if (btn) { btn.disabled = false; btn.textContent = isAdd ? "Anlegen" : "Änderungen speichern"; }
     }
 }
+
+// ══════ RESET PASSWORD (Admin) ══════
+let _resetPwdTargetId = null;
+
+function generateStrongPassword(length = 14) {
+    const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const lower = "abcdefghijkmnopqrstuvwxyz";
+    const digits = "23456789";
+    const special = "!@#$%&*?";
+    const all = upper + lower + digits + special;
+    // Ensure at least one of each required category
+    let pwd = [
+        upper[Math.floor(Math.random() * upper.length)],
+        digits[Math.floor(Math.random() * digits.length)],
+        special[Math.floor(Math.random() * special.length)]
+    ];
+    for (let i = pwd.length; i < length; i++) {
+        pwd.push(all[Math.floor(Math.random() * all.length)]);
+    }
+    // Shuffle
+    for (let i = pwd.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pwd[i], pwd[j]] = [pwd[j], pwd[i]];
+    }
+    return pwd.join("");
+}
+
+function openResetPasswordModal(userId) {
+    const user = allUsers.find(u => String(u.id) === String(userId));
+    if (!user) return;
+    _resetPwdTargetId = userId;
+    byId("resetPwdUserEmail").textContent = user.email || "—";
+    byId("resetPwdValue").value = generateStrongPassword();
+    byId("resetPwdModal").classList.add("open");
+    setTimeout(() => byId("resetPwdValue").focus(), 120);
+}
+
+function closeResetPasswordModal() {
+    byId("resetPwdModal").classList.remove("open");
+    _resetPwdTargetId = null;
+}
+
+async function submitResetPassword() {
+    if (!_resetPwdTargetId) return;
+    const password = byId("resetPwdValue").value.trim();
+    if (password.length < 10) {
+        showToast("Passwort muss mindestens 10 Zeichen haben.", true);
+        return;
+    }
+    const saveBtn = byId("resetPwdSave");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Setzt …";
+    try {
+        const res = await fetch(`${BASE_URL}/${_resetPwdTargetId}/reset-password`, {
+            method: "POST",
+            headers: authHdr(),
+            credentials: "include",
+            body: JSON.stringify({ password })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Reset fehlgeschlagen");
+        // Copy to clipboard for admin convenience
+        try { await navigator.clipboard.writeText(password); } catch (_) { /* ignore */ }
+        closeResetPasswordModal();
+        showToast("Passwort gesetzt und in Zwischenablage kopiert.");
+    } catch (err) {
+        showToast(err.message, true);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Passwort setzen";
+    }
+}
+
+// Initialize modal handlers (after DOM loaded)
+document.addEventListener("DOMContentLoaded", () => {
+    const genBtn = byId("resetPwdGenerate");
+    const copyBtn = byId("resetPwdCopy");
+    const cancelBtn = byId("resetPwdCancel");
+    const saveBtn = byId("resetPwdSave");
+    const modal = byId("resetPwdModal");
+
+    if (genBtn) genBtn.addEventListener("click", () => {
+        byId("resetPwdValue").value = generateStrongPassword();
+    });
+    if (copyBtn) copyBtn.addEventListener("click", async () => {
+        const val = byId("resetPwdValue").value;
+        if (!val) return;
+        try {
+            await navigator.clipboard.writeText(val);
+            showToast("In Zwischenablage kopiert.");
+        } catch (_) {
+            showToast("Kopieren fehlgeschlagen.", true);
+        }
+    });
+    if (cancelBtn) cancelBtn.addEventListener("click", closeResetPasswordModal);
+    if (saveBtn) saveBtn.addEventListener("click", submitResetPassword);
+    if (modal) modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeResetPasswordModal();
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal?.classList.contains("open")) closeResetPasswordModal();
+    });
+});
 
 async function deleteUser(id) {
     showConfirm(

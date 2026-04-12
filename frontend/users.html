@@ -191,6 +191,75 @@
       text-decoration-color:rgba(148,163,184,.6);
     }
 
+    /* ── Reset Password Modal ── */
+    .reset-pwd-field { margin-top: .2rem; }
+    .reset-pwd-field label {
+      display:block;
+      font-size:.72rem;
+      font-weight:700;
+      color:#475569;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-bottom:.35rem;
+    }
+    .reset-pwd-input-wrap {
+      display:flex;
+      align-items:center;
+      gap:.3rem;
+      background:#fff;
+      border:1.5px solid #e2e8f0;
+      border-radius:10px;
+      padding:.1rem .2rem .1rem .25rem;
+      transition:border-color 160ms, box-shadow 160ms;
+    }
+    .reset-pwd-input-wrap:focus-within {
+      border-color:#c5a059;
+      box-shadow:0 0 0 3px rgba(197,160,89,.15);
+    }
+    .reset-pwd-input {
+      flex:1;
+      min-width:0;
+      border:none;
+      outline:none;
+      background:none;
+      padding:.58rem .6rem;
+      font:inherit;
+      font-size:.95rem;
+      font-family:"SF Mono", "JetBrains Mono", Menlo, monospace;
+      font-weight:700;
+      color:#0f172a;
+      letter-spacing:.02em;
+    }
+    .reset-pwd-action {
+      flex-shrink:0;
+      width:1.85rem;
+      height:1.85rem;
+      border:none;
+      background:#f1f5f9;
+      color:#475569;
+      border-radius:7px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      transition:all 140ms ease;
+    }
+    .reset-pwd-action:hover {
+      background:rgba(197,160,89,.12);
+      color:#8c6a2a;
+    }
+    .reset-pwd-action svg { width:14px; height:14px; display:block; }
+    .reset-pwd-hint {
+      display:block;
+      margin-top:.45rem;
+      font-size:.7rem;
+      color:#94a3b8;
+      line-height:1.5;
+    }
+
+    /* Action-Button für Schlüssel-Icon */
+    .ib--key:hover { background:rgba(197,160,89,.12) !important; border-color:#c5a059 !important; color:#8c6a2a !important; }
+
     /* View button */
     .ib--view { color:#1A2B3C; }
     .ib--view:hover { background:rgba(26,43,60,.08); }
@@ -607,6 +676,40 @@
 
     <div id="site-footer"></div>
   </main>
+
+  <!-- ══════ RESET PASSWORD MODAL ══════ -->
+  <div class="modal-bg" id="resetPwdModal" role="dialog" aria-modal="true" aria-labelledby="resetPwdTitle">
+    <div class="modal" style="max-width:460px;padding:1.75rem 1.9rem 1.65rem;">
+      <div class="modal-hd" style="margin-bottom:1rem;align-items:flex-start;gap:.85rem">
+        <div class="modal-hd-icon" style="background:linear-gradient(135deg,#c5a059,#8c6a2a);flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        </div>
+        <div style="flex:1">
+          <h2 id="resetPwdTitle" style="font-size:.97rem;margin:.1rem 0 .2rem">Passwort zurücksetzen</h2>
+          <p style="font-size:.78rem;color:#64748b;line-height:1.45;margin:0">Neues temporäres Passwort für <strong id="resetPwdUserEmail" style="color:#0f172a">—</strong>. Der Benutzer wird beim nächsten Login gezwungen, ein eigenes zu setzen.</p>
+        </div>
+      </div>
+
+      <div class="reset-pwd-field">
+        <label for="resetPwdValue">Neues Passwort</label>
+        <div class="reset-pwd-input-wrap">
+          <input type="text" id="resetPwdValue" class="reset-pwd-input" autocomplete="off" spellcheck="false" placeholder="Wird generiert …" />
+          <button type="button" class="reset-pwd-action" id="resetPwdGenerate" title="Neues Passwort generieren">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          </button>
+          <button type="button" class="reset-pwd-action" id="resetPwdCopy" title="In Zwischenablage kopieren">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <small class="reset-pwd-hint">Mind. 10 Zeichen · 1 Grossbuchstabe · 1 Zahl · 1 Sonderzeichen</small>
+      </div>
+
+      <div class="modal-ft" style="margin-top:1.1rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+        <button type="button" class="btn-cancel" id="resetPwdCancel">Abbrechen</button>
+        <button type="button" class="btn-save" id="resetPwdSave">Passwort setzen</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ── Confirm Modal (ersetzt browser confirm()) ── -->
   <div class="modal-bg" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
