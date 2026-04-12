@@ -28,6 +28,7 @@ async function ensureTrackingSchema() {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_at TIMESTAMPTZ");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER NOT NULL DEFAULT 0");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ");
   } catch (err) {
     trackingSchemaDone = false;
     console.warn("Tracking schema info:", err.message);
@@ -328,13 +329,13 @@ router.patch("/me", requireAuth, async (req, res) => {
   }
 });
 
-// GET / – Liste aller Benutzer (Admin only)
+// GET / – Liste aller Benutzer (Admin only) — inkl. gelöschte für Übersicht
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     await ensureTrackingSchema();
     const result = await pool.query(
-      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
-       FROM users ORDER BY created_at DESC`
+      `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count, deleted_at
+       FROM users ORDER BY deleted_at ASC NULLS FIRST, created_at DESC`
     );
     res.json({ users: result.rows });
   } catch (err) {
@@ -348,26 +349,27 @@ router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (r
     await ensureTrackingSchema();
     const userId = parseInt(req.params.userId, 10);
 
-    // Admin sees all non-admin users
+    // Admin sees all non-admin users (inkl. gelöschte für Übersicht)
     if (req.user.role === "admin") {
       const result = await pool.query(
-        `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count
-         FROM users WHERE role != 'admin' ORDER BY created_at DESC`
+        `SELECT id, email, role, salutation, academic_title, first_name, last_name, function_label, case_id, mobile, invited_at, last_login_at, login_count, deleted_at
+         FROM users WHERE role != 'admin' ORDER BY deleted_at ASC NULLS FIRST, created_at DESC`
       );
       return res.json({ users: result.rows });
     }
 
-    // Non-admin: only see themselves + team members on their own cases
+    // Non-admin: only see themselves + team members on their own cases (keine gelöschten)
     const result = await pool.query(
-      `SELECT DISTINCT u.id, u.email, u.role, u.salutation, u.academic_title, u.first_name, u.last_name, u.function_label, u.case_id, u.mobile, u.invited_at, u.last_login_at, u.login_count
+      `SELECT DISTINCT u.id, u.email, u.role, u.salutation, u.academic_title, u.first_name, u.last_name, u.function_label, u.case_id, u.mobile, u.invited_at, u.last_login_at, u.login_count, u.deleted_at
        FROM users u
-       WHERE u.id = $1
+       WHERE u.deleted_at IS NULL
+         AND (u.id = $1
           OR u.case_id IN (SELECT id FROM cases WHERE user_id = $1)
           OR u.id IN (
             SELECT cm.user_id FROM case_members cm
             JOIN cases c ON c.id = cm.case_id
             WHERE c.user_id = $1
-          )
+          ))
        ORDER BY u.created_at DESC`,
       [userId]
     );
@@ -539,10 +541,14 @@ router.post("/:userId/users/:linkId/send-invite", requireAuth, requireAdminOrSel
   }
 });
 
-// DELETE /:userId
+// DELETE /:userId — Soft-Delete: Admin löscht Benutzer (Zeile bleibt, deleted_at gesetzt)
 router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
   try {
-    await pool.query("DELETE FROM users WHERE id = $1 AND role != 'admin'", [req.params.userId]);
+    await ensureTrackingSchema();
+    await pool.query(
+      "UPDATE users SET deleted_at = NOW() WHERE id = $1 AND role != 'admin' AND deleted_at IS NULL",
+      [req.params.userId]
+    );
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Löschen fehlgeschlagen." });
@@ -617,8 +623,12 @@ router.delete("/me/account", requireAuth, async (req, res) => {
       await pool.query("DELETE FROM customer_users WHERE collaborator_id = $1", [userId]).catch(() => {});
     }
 
-    // Delete user account
-    await pool.query("DELETE FROM users WHERE id = $1 AND role != 'admin'", [userId]);
+    // Soft-Delete: Benutzerzeile bleibt für Admin-Übersicht erhalten,
+    // Daten (Cases, Files, Team) wurden oben bereits hart gelöscht.
+    await pool.query(
+      "UPDATE users SET deleted_at = NOW() WHERE id = $1 AND role != 'admin'",
+      [userId]
+    );
 
     console.log(`[self-delete] User ${userId} (${userRole}) deleted their account`);
     res.json({ ok: true });

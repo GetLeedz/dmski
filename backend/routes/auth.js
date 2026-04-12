@@ -79,7 +79,7 @@ router.post("/login", async (req, res) => {
     
     // WICHTIG: Nutze LOWER(TRIM()) auch hier in der Abfrage!
     const result = await pool.query(
-      "SELECT id, email, password_hash, role, password_change_required, first_name, email_verified FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
+      "SELECT id, email, password_hash, role, password_change_required, first_name, email_verified, deleted_at FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
       [emailNorm]
     );
 
@@ -97,6 +97,13 @@ router.post("/login", async (req, res) => {
       const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
       writeLog({ userId: null, email: emailNorm, action: "login_failed", ip, userAgent: req.headers["user-agent"] });
       return res.status(401).json({ error: "Ungültige E-Mail oder Passwort." });
+    }
+
+    // Soft-gelöschte Benutzer können sich nicht mehr einloggen
+    if (user.deleted_at) {
+      const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+      writeLog({ userId: user.id, email: emailNorm, action: "login_blocked_deleted", ip, userAgent: req.headers["user-agent"] });
+      return res.status(403).json({ error: "Dieses Konto wurde gelöscht." });
     }
 
     // Login-Tracking: Zeitstempel und Zähler aktualisieren

@@ -117,7 +117,8 @@ function normalizeUser(raw) {
         caseName: String(raw.case_name || ""),
         invitedAt: raw.invited_at || null,
         lastLoginAt: raw.last_login_at || null,
-        loginCount: raw.login_count || 0
+        loginCount: raw.login_count || 0,
+        deletedAt: raw.deleted_at || null
     };
 }
 
@@ -168,22 +169,25 @@ function renderList(rows) {
     const svgDel = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 
     const tableRows = rows.map((u) => {
+        const isDeleted = !!u.deletedAt;
         const name = [u.academicTitle, u.firstName, u.lastName].filter(Boolean).join(" ") || "–";
         const roleLabel = u.role === "collaborator" ? "Teammitglied" : "Fallinhaber";
         const roleClass = u.role === "collaborator" ? "badge badge--team" : "badge badge--kunde";
         const caseName = u.caseId ? esc(u.caseName || u.caseId) : "–";
         const fn = u.fn ? esc(u.fn) : "–";
-        const lastLogin = u.lastLoginAt ? formatDate(u.lastLoginAt) : "–";
+        const lastLogin = isDeleted
+            ? `<span class="badge badge--deleted" title="Konto gelöscht am ${esc(formatDate(u.deletedAt))}">Gelöscht · ${esc(formatDate(u.deletedAt))}</span>`
+            : (u.lastLoginAt ? formatDate(u.lastLoginAt) : "–");
         const logins = u.loginCount || 0;
 
         let actions = `<button class="ib ib--view" onclick="openProfileView('${u.id}')" title="Profil">${svgView}</button>`;
-        if (isAdmin) {
+        if (isAdmin && !isDeleted) {
             actions += `<button class="ib ib--invite" onclick="sendInvite('${u.id}')" title="Einladen">${svgInvite}</button>`;
             actions += `<button class="ib ib--edit" onclick="openEditModal('${u.id}')" title="Bearbeiten">${svgEdit}</button>`;
             actions += `<button class="ib ib--del" onclick="deleteUser('${u.id}')" title="Löschen">${svgDel}</button>`;
         }
 
-        return `<tr id="uc-${u.id}">
+        return `<tr id="uc-${u.id}"${isDeleted ? ' class="u-row--deleted"' : ""}>
             <td><strong>${esc(name)}</strong></td>
             <td>${esc(u.email)}</td>
             <td><span class="${roleClass}">${roleLabel}</span></td>
