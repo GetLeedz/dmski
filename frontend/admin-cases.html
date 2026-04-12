@@ -220,44 +220,40 @@
       box-shadow: 0 5px 16px rgba(26,43,60,0.38), inset 0 1px 0 rgba(255,255,255,0.12);
     }
 
-    /* Ghost: Edit/Delete — quadratisch, klarer Kontrast als Default */
+    /* Ghost: Edit/Delete — Icons via CSS background-image (bulletproof) */
     .ac-icon-btn {
       width: 2.15rem;
       border: 1.5px solid #cbd5e1;
-      background: #fff;
-      color: #334155;
-    }
-    .ac-icon-btn svg {
-      width: 1.15rem;
-      height: 1.15rem;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2.2;
-      display: block;
+      background-color: #fff;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 18px 18px;
+      color: transparent;
+      font-size: 0;
     }
 
-    .ac-icon-btn:hover {
-      transform: translateY(-1px);
-      background: #f8fafc;
-      border-color: #cbd5e1;
-      color: #1A2B3C;
-      box-shadow: 0 4px 12px rgba(15,23,42,0.12);
+    /* Edit icon (pencil) — default slate-700 */
+    .ac-icon-btn--edit {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/><path d='M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z'/></svg>");
     }
-
-    /* Edit — Gold-Akzent beim Hover */
     .ac-icon-btn--edit:hover {
-      background: rgba(197,160,89,0.1);
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238c6a2a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/><path d='M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z'/></svg>");
+      background-color: rgba(197,160,89,0.1);
       border-color: #c5a059;
-      color: #8c6a2a;
       box-shadow: 0 4px 14px rgba(197,160,89,0.32);
+      transform: translateY(-1px);
     }
 
-    /* Delete — Rot-Akzent beim Hover */
+    /* Delete icon (trash) — default slate-700 */
+    .ac-icon-btn--delete {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/></svg>");
+    }
     .ac-icon-btn--delete:hover {
-      background: rgba(220,38,38,0.1);
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23991b1b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/></svg>");
+      background-color: rgba(220,38,38,0.1);
       border-color: #dc2626;
-      color: #991b1b;
       box-shadow: 0 4px 14px rgba(220,38,38,0.28);
+      transform: translateY(-1px);
     }
 
     /* ── Modal ── */
@@ -814,12 +810,8 @@
           <td class="ac-hide-md"><span class="ac-date">${fmtDate(c.created_at)}</span></td>
           <td>
             <div class="ac-actions">
-              <button class="ac-icon-btn ac-icon-btn--edit" onclick="openEditModal('${esc(c.id)}')" title="Bearbeiten" aria-label="Fall bearbeiten">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:block"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-              </button>
-              <button class="ac-icon-btn ac-icon-btn--delete" onclick="openDeleteModal('${esc(c.id)}')" title="Löschen" aria-label="Fall löschen">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;display:block"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-              </button>
+              <button class="ac-icon-btn ac-icon-btn--edit" onclick="openEditModal('${esc(c.id)}')" title="Bearbeiten" aria-label="Fall bearbeiten"></button>
+              <button class="ac-icon-btn ac-icon-btn--delete" onclick="openDeleteModal('${esc(c.id)}')" title="Löschen" aria-label="Fall löschen"></button>
               <button class="ac-open-btn" onclick="openCase('${esc(c.id)}')">Öffnen</button>
             </div>
           </td>
