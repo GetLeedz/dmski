@@ -551,10 +551,17 @@ router.post("/:userId/reset-password", requireAuth, requireAdmin, async (req, re
   try {
     await ensureTrackingSchema();
 
+    // UUID-Syntax validieren (Postgres würde sonst mit Syntax-Error abbrechen)
+    const uuidRx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const targetId = String(req.params.userId || "").trim();
+    if (!uuidRx.test(targetId)) {
+      return res.status(400).json({ error: "Ungültige Benutzer-ID." });
+    }
+
     // Prüfe dass der Ziel-Benutzer existiert, nicht Admin ist und nicht soft-gelöscht
     const target = await pool.query(
-      "SELECT id, email, first_name, role, deleted_at FROM users WHERE id = $1 LIMIT 1",
-      [req.params.userId]
+      "SELECT id, email, first_name, last_name, salutation, academic_title, role, deleted_at FROM users WHERE id = $1 LIMIT 1",
+      [targetId]
     );
     if (target.rows.length === 0) {
       return res.status(404).json({ error: "Benutzer nicht gefunden." });
@@ -570,11 +577,21 @@ router.post("/:userId/reset-password", requireAuth, requireAdmin, async (req, re
     const hash = await bcrypt.hash(String(password).trim(), 12);
     await pool.query(
       "UPDATE users SET password_hash = $1, password_change_required = true WHERE id = $2",
-      [hash, user.id]
+      [hash, targetId]
     );
 
-    console.log(`[admin-reset-pw] Admin reset password for user ${user.id} (${user.email})`);
-    res.json({ ok: true, email: user.email });
+    // E-Mail mit neuen Zugangsdaten versenden (wiederverwendeter Helper)
+    let emailSent = false;
+    try {
+      await sendCredentialsUpdatedEmail(user, password);
+      emailSent = true;
+      console.log(`[admin-reset-pw] Email sent to ${user.email}`);
+    } catch (emailErr) {
+      console.warn(`[admin-reset-pw] Email send failed for ${user.email}:`, emailErr.message);
+    }
+
+    console.log(`[admin-reset-pw] Admin reset password for user ${targetId} (${user.email})`);
+    res.json({ ok: true, email: user.email, emailSent });
   } catch (err) {
     console.error("[admin-reset-pw] Error:", err.message);
     res.status(500).json({ error: "Passwort-Reset fehlgeschlagen." });

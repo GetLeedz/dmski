@@ -461,7 +461,10 @@ async function submitResetPassword() {
         // Copy to clipboard for admin convenience
         try { await navigator.clipboard.writeText(password); } catch (_) { /* ignore */ }
         closeResetPasswordModal();
-        showToast("Passwort gesetzt und in Zwischenablage kopiert.");
+        const emailNote = data.emailSent
+            ? "Passwort gesetzt, E-Mail versendet und in Zwischenablage kopiert."
+            : "Passwort gesetzt und in Zwischenablage kopiert (E-Mail-Versand fehlgeschlagen).";
+        showToast(emailNote);
     } catch (err) {
         showToast(err.message, true);
     } finally {
