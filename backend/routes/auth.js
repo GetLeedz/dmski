@@ -210,6 +210,11 @@ router.post("/signup", async (req, res) => {
 
     // Case C: Soft-gelöschter Account → reaktivieren mit neuem Passwort + Verify-Flow
     if (existingUser && existingUser.deleted_at) {
+      // Safety net: Alte Credit-Daten wegräumen, falls ein vorheriger Delete-Pfad sie
+      // nicht gecleant hat. Sonst würde der Willkommens-Bonus oben draufaddiert.
+      await pool.query("DELETE FROM user_credits WHERE user_id = $1", [existingUser.id]).catch(() => {});
+      await pool.query("DELETE FROM credit_transactions WHERE user_id = $1", [existingUser.id]).catch(() => {});
+
       await pool.query(
         `UPDATE users
             SET password_hash = $1,

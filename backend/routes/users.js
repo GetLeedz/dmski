@@ -598,16 +598,46 @@ router.post("/:userId/reset-password", requireAuth, requireAdmin, async (req, re
   }
 });
 
-// DELETE /:userId — Soft-Delete: Admin löscht Benutzer (Zeile bleibt, deleted_at gesetzt)
+// DELETE /:userId — Soft-Delete (Admin): Zeile bleibt für Audit, Daten werden hart gelöscht
 router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
+  const targetId = req.params.userId;
   try {
     await ensureTrackingSchema();
+
+    // Ziel-Rolle prüfen
+    const targetRow = await pool.query("SELECT role FROM users WHERE id = $1 LIMIT 1", [targetId]);
+    const targetRole = targetRow.rows[0]?.role;
+
+    // Harte Datenbereinigung (analog zu Self-Delete)
+    if (targetRole === "customer") {
+      // Fälle dieses Kunden inkl. Cascade auf Dokumente/Analysen
+      const userCase = await pool.query("SELECT case_id FROM users WHERE id = $1", [targetId]);
+      const caseId = userCase.rows[0]?.case_id;
+      if (caseId) {
+        await pool.query("DELETE FROM case_consolidated_persons WHERE case_id = $1", [caseId]).catch(() => {});
+        await pool.query("DELETE FROM case_forensic_results WHERE case_id = $1", [caseId]).catch(() => {});
+        await pool.query("DELETE FROM cases WHERE id = $1", [caseId]).catch(() => {});
+      }
+      await pool.query("DELETE FROM customer_users WHERE customer_id = $1", [targetId]).catch(() => {});
+    }
+    if (targetRole === "collaborator") {
+      await pool.query("DELETE FROM customer_users WHERE collaborator_id = $1", [targetId]).catch(() => {});
+    }
+
+    // Credits komplett wegräumen — konsistent mit Self-Delete
+    await pool.query("DELETE FROM user_credits WHERE user_id = $1", [targetId]).catch(() => {});
+    await pool.query("DELETE FROM credit_transactions WHERE user_id = $1", [targetId]).catch(() => {});
+
+    // Soft-Delete der Benutzerzeile für Admin-Übersicht
     await pool.query(
       "UPDATE users SET deleted_at = NOW() WHERE id = $1 AND role != 'admin' AND deleted_at IS NULL",
-      [req.params.userId]
+      [targetId]
     );
+
+    console.log(`[admin-delete] Admin soft-deleted user ${targetId} (${targetRole}) + wiped credits/cases`);
     res.json({ ok: true });
   } catch (err) {
+    console.error("[admin-delete] Error:", err.message);
     res.status(500).json({ error: "Löschen fehlgeschlagen." });
   }
 });
