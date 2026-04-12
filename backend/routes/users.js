@@ -65,7 +65,7 @@ function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
     <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(197,160,89,.08);border:1px solid rgba(197,160,89,.3);border-radius:10px;margin-bottom:24px;">
       <tr><td style="padding:16px 20px;">
         <p style="margin:0;font-size:13px;color:#96700a;line-height:1.5;">
-          <strong>&#9888; Wichtig:</strong> Sie werden beim ersten Login aufgefordert, Ihr Passwort zu &auml;ndern.
+          <strong>&#9888; Wichtig:</strong> Sie werden beim ersten Login aufgefordert, Ihr Passwort zu ändern.
           Bitte halten Sie Ihre Zugangsdaten streng vertraulich und leiten Sie diese E-Mail nicht weiter.
         </p>
       </td></tr>
@@ -107,12 +107,12 @@ function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
   <tr>
     <td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI &middot; GetLeedz GmbH</p>
-      <p style="margin:0 0 4px;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen &middot; Schweiz</p>
+      <p style="margin:0 0 4px;font-size:11px;color:#6b7b8a;">Walter Fürst-Strasse 1 &middot; CH-4102 Binningen &middot; Schweiz</p>
       <p style="margin:0;font-size:11px;color:#6b7b8a;">
         <a href="https://dmski.ch" style="color:#C5A059;text-decoration:none;">dmski.ch</a>
         &middot; <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;">info@dmski.ch</a>
       </p>
-      <p style="margin:10px 0 0;font-size:10px;color:#a0adb8;">Diese Nachricht enth&auml;lt vertrauliche Informationen und ist ausschliesslich f&uuml;r den bezeichneten Empf&auml;nger bestimmt. Eine Weiterleitung oder Vervielf&auml;ltigung ist nicht gestattet.</p>
+      <p style="margin:10px 0 0;font-size:10px;color:#a0adb8;">Diese Nachricht enthält vertrauliche Informationen und ist ausschliesslich für den bezeichneten Empfänger bestimmt. Eine Weiterleitung oder Vervielfältigung ist nicht gestattet.</p>
     </td>
   </tr>
 
@@ -135,7 +135,7 @@ function credentialsTable(email, password) {
     <span style="color:#1A2B3C;font-size:14px;font-weight:600;font-family:monospace;">${esc(email)}</span>
   </td></tr>
   <tr><td style="padding:16px 24px;">
-    <p style="margin:0 0 5px;font-size:10px;font-weight:700;color:rgba(26,43,60,.5);text-transform:uppercase;letter-spacing:.08em;">Tempor&auml;res Passwort</p>
+    <p style="margin:0 0 5px;font-size:10px;font-weight:700;color:rgba(26,43,60,.5);text-transform:uppercase;letter-spacing:.08em;">Temporäres Passwort</p>
     <span style="color:#1A2B3C;font-size:15px;font-weight:700;font-family:monospace;letter-spacing:.12em;">${esc(password)}</span>
   </td></tr>
 </table>`;
@@ -173,9 +173,9 @@ async function sendWelcomeEmail(user, password) {
   const greeting = buildFormalGreeting(user);
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Ihr pers&ouml;nlicher Zugang zu <strong>DMSKI</strong> wurde eingerichtet &ndash; der forensischen KI-Plattform f&uuml;r die pr&auml;zise Analyse juristischer Aktenlagen.<br><br>
-      Unsere KI durchleuchtet jedes Dokument Wort f&uuml;r Wort: Sie erkennt Widerspr&uuml;che, manipulative Darstellungsmuster und Inkonsistenzen, die bei manueller Pr&uuml;fung h&auml;ufig unentdeckt bleiben.<br><br>
-      Nachfolgend Ihre Zugangsdaten f&uuml;r die gesch&uuml;tzte Analyseumgebung:`,
+      Ihr persönlicher Zugang zu <strong>DMSKI</strong> wurde eingerichtet &ndash; der forensischen KI-Plattform für die präzise Analyse juristischer Aktenlagen.<br><br>
+      Unsere KI durchleuchtet jedes Dokument Wort für Wort: Sie erkennt Widersprüche, manipulative Darstellungsmuster und Inkonsistenzen, die bei manueller Prüfung häufig unentdeckt bleiben.<br><br>
+      Nachfolgend Ihre Zugangsdaten für die geschützte Analyseumgebung:`,
     bodyHtml: credentialsTable(user.email, password),
     showPwdChange: true,
   });
@@ -190,7 +190,7 @@ async function sendCredentialsUpdatedEmail(user, password) {
   const greeting = buildFormalGreeting(user);
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Ihre Zugangsdaten f&uuml;r <strong>DMSKI</strong> wurden aktualisiert.
+      Ihre Zugangsdaten für <strong>DMSKI</strong> wurden aktualisiert.
       Bitte verwenden Sie ab sofort die folgenden Anmeldedaten:`,
     bodyHtml: credentialsTable(user.email, password),
     showPwdChange: true,
@@ -215,9 +215,9 @@ async function sendDossierAccessEmail(user, password, caseName) {
 
   const html = buildEmail({
     greeting: `${greeting},<br><br>
-      Ihnen wurde der Zugriff auf das digitale Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf der forensischen Analyseplattform <strong>DMSKI</strong> gew&auml;hrt.<br><br>
-      Die integrierte KI unterst&uuml;tzt Sie bei der Einordnung der Aktenlage: Sie strukturiert die vorliegenden Dokumente, pr&uuml;ft diese auf Widerspr&uuml;che und systematische Darstellungsmuster und hebt relevante Indizien sowie potenzielle Inkonsistenzen direkt in der &Uuml;bersicht hervor &ndash; um die Effizienz Ihrer Fallpr&uuml;fung zu maximieren.<br><br>
-      S&auml;mtliche Prozessdaten werden in einer gesch&uuml;tzten, vertraulichen Umgebung verarbeitet. Sensible Akteninhalte verlassen zu keinem Zeitpunkt die gesicherte Infrastruktur.<br><br>
+      Ihnen wurde der Zugriff auf das digitale Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf der forensischen Analyseplattform <strong>DMSKI</strong> gewährt.<br><br>
+      Die integrierte KI unterstützt Sie bei der Einordnung der Aktenlage: Sie strukturiert die vorliegenden Dokumente, prüft diese auf Widersprüche und systematische Darstellungsmuster und hebt relevante Indizien sowie potenzielle Inkonsistenzen direkt in der Übersicht hervor &ndash; um die Effizienz Ihrer Fallprüfung zu maximieren.<br><br>
+      Sämtliche Prozessdaten werden in einer geschützten, vertraulichen Umgebung verarbeitet. Sensible Akteninhalte verlassen zu keinem Zeitpunkt die gesicherte Infrastruktur.<br><br>
       Nachfolgend Ihre Zugangsdaten:`,
     bodyHtml: caseBlock + credentialsTable(user.email, password),
     showPwdChange: true,
@@ -243,7 +243,7 @@ async function sendCaseAccessEmail(user, caseName) {
   const html = buildEmail({
     greeting: `${greeting},<br><br>
       Sie wurden zum Dossier${caseName ? ` <strong>${caseRef}</strong>` : ""} auf <strong>DMSKI</strong> eingeladen.<br><br>
-      Sie k&ouml;nnen sich mit Ihren bestehenden Zugangsdaten anmelden &ndash; Ihr Passwort wurde nicht ge&auml;ndert.`,
+      Sie können sich mit Ihren bestehenden Zugangsdaten anmelden &ndash; Ihr Passwort wurde nicht geändert.`,
     bodyHtml: caseBlock + `
       <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;">
         <tr><td style="padding:14px 20px;background:#f0f4f8;border-radius:10px;text-align:center;">

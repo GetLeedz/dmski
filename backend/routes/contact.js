@@ -123,7 +123,7 @@ router.post("/", async (req, res) => {
   <tr>
     <td style="background:#ffffff;padding:32px 40px;">
       <p style="margin:0 0 20px;font-size:15px;color:#1A2B3C;line-height:1.6;">
-        Eine neue Zugangsanfrage ist &uuml;ber <strong>dmski.ch</strong> eingegangen:
+        Eine neue Zugangsanfrage ist über <strong>dmski.ch</strong> eingegangen:
       </p>
 
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fa;border:1px solid #e2e8ef;border-radius:10px;overflow:hidden;margin-bottom:20px;">
@@ -159,7 +159,7 @@ router.post("/", async (req, res) => {
   <tr>
     <td style="background:#0f1520;padding:20px 40px;text-align:center;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);">DMSKI &middot; GetLeedz GmbH</p>
-      <p style="margin:0;font-size:10px;color:rgba(255,255,255,.25);">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen &middot; <a href="https://dmski.ch" style="color:rgba(197,160,89,.5);text-decoration:none;">dmski.ch</a></p>
+      <p style="margin:0;font-size:10px;color:rgba(255,255,255,.25);">Walter Fürst-Strasse 1 &middot; CH-4102 Binningen &middot; <a href="https://dmski.ch" style="color:rgba(197,160,89,.5);text-decoration:none;">dmski.ch</a></p>
     </td>
   </tr>
 

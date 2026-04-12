@@ -276,20 +276,20 @@ function buildVerifyEmail(firstName, verifyUrl) {
   </td></tr>
   <tr><td style="padding:40px 40px 32px;">
     <p style="color:#1A2B3C;font-size:17px;font-weight:600;line-height:1.5;margin:0 0 20px;">Herzlich willkommen, ${firstName} &#128075;</p>
-    <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 28px;">sch&ouml;n, dass Sie bei DMSKI dabei sind. Nur noch ein kleiner Schritt &mdash; bitte best&auml;tigen Sie kurz Ihre E-Mail-Adresse, danach k&ouml;nnen Sie direkt loslegen:</p>
+    <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 28px;">schön, dass Sie bei DMSKI dabei sind. Nur noch ein kleiner Schritt &mdash; bitte bestätigen Sie kurz Ihre E-Mail-Adresse, danach können Sie direkt loslegen:</p>
     <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
       <tr><td style="background:#C5A059;border-radius:10px;text-align:center;">
-        <a href="${verifyUrl}" style="display:inline-block;padding:15px 44px;color:#1A2B3C;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:.02em;">E-Mail best&auml;tigen &rarr;</a>
+        <a href="${verifyUrl}" style="display:inline-block;padding:15px 44px;color:#1A2B3C;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:.02em;">E-Mail bestätigen &rarr;</a>
       </td></tr>
     </table>
-    <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0 0 20px;text-align:center;">Der Link ist 24 Stunden g&uuml;ltig.</p>
+    <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0 0 20px;text-align:center;">Der Link ist 24 Stunden gültig.</p>
     <p style="color:#8a96a3;font-size:13px;line-height:1.6;margin:0;text-align:center;">
-      Fragen? Schreiben Sie uns an <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;font-weight:600;">info@dmski.ch</a> &mdash; wir helfen Ihnen gerne pers&ouml;nlich weiter.
+      Fragen? Schreiben Sie uns an <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;font-weight:600;">info@dmski.ch</a> &mdash; wir helfen Ihnen gerne persönlich weiter.
     </p>
   </td></tr>
   <tr><td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
     <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI &middot; GetLeedz GmbH</p>
-    <p style="margin:0;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen</p>
+    <p style="margin:0;font-size:11px;color:#6b7b8a;">Walter Fürst-Strasse 1 &middot; CH-4102 Binningen</p>
   </td></tr>
 </table>
 </td></tr></table>

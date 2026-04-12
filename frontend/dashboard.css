@@ -1144,7 +1144,7 @@ select.field-input:disabled {
   box-sizing: border-box;
 }
 
-/* Dashboard-Form größere Felder */
+/* Dashboard-Form grössere Felder */
 .dashboard-form input,
 .dashboard-form select {
   font-size: 1rem;
