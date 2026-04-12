@@ -205,6 +205,29 @@ function validatePassword(pw) {
   });
 }
 
+/* ═══ TOAST HELPER ═══ */
+function showDmskiToast(text, variant = "success") {
+  const toast = document.getElementById("dmskiToast");
+  const icon = document.getElementById("dmskiToastIcon");
+  const textEl = document.getElementById("dmskiToastText");
+  if (!toast || !textEl) return;
+
+  const icons = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><circle cx="12" cy="8" r=".5" fill="currentColor"/></svg>'
+  };
+
+  icon.innerHTML = icons[variant] || icons.info;
+  textEl.textContent = text;
+  toast.className = `dmski-toast ${variant} show`;
+
+  clearTimeout(showDmskiToast._t);
+  showDmskiToast._t = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 4200);
+}
+
 /* ═══ ACCOUNT DELETION ═══ */
 (function initDeleteAccount() {
   const role = getRole();
@@ -214,33 +237,93 @@ function validatePassword(pw) {
 
   zone.style.display = "";
 
+  const modal = document.getElementById("delModal");
+  const impactList = document.getElementById("delImpactList");
+  const impactBox = document.getElementById("delImpact");
+  const confirmInput = document.getElementById("delConfirmInput");
+  const okBtn = document.getElementById("delOkBtn");
+  const cancelBtn = document.getElementById("delCancelBtn");
+  const errorBox = document.getElementById("delError");
+  const CONFIRM_PHRASE = "LÖSCHEN";
+
+  function closeModal() {
+    modal.classList.remove("open");
+    confirmInput.value = "";
+    okBtn.disabled = true;
+    okBtn.textContent = "Unwiderruflich löschen";
+    errorBox.classList.remove("visible");
+    errorBox.textContent = "";
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.classList.add("visible");
+  }
+
+  confirmInput.addEventListener("input", () => {
+    okBtn.disabled = confirmInput.value.trim().toUpperCase() !== CONFIRM_PHRASE;
+  });
+
+  cancelBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.classList.contains("open")) closeModal(); });
+
   btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    btn.textContent = "Lade…";
+    errorBox.classList.remove("visible");
+    impactList.innerHTML = "";
+
     // 1. Dry-run: get info about what will be deleted
+    let info = {};
     try {
       const resp = await fetch(`${API}/users/me/account?dryrun=true`, { headers: authHdr() });
-      if (!resp.ok) throw new Error("Fehler beim Laden der Kontoinformationen.");
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Konto­informationen konnten nicht geladen werden.");
+      }
       const data = await resp.json();
-      const info = data.info || {};
+      info = data.info || {};
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Konto und alle Daten löschen";
+      showDmskiToast(err.message, "error");
+      return;
+    }
 
-      // 2. Build confirmation message
-      let msg = "Sind Sie sicher, dass Sie Ihr Konto dauerhaft löschen möchten?\n\n";
-      if (info.files > 0) {
-        msg += `⚠ Sie haben ${info.files} Dokument(e) in Ihrem Fall. Alle Dokumente und Analysen werden unwiderruflich gelöscht.\n\n`;
-      }
-      if (info.teamMembers > 0) {
-        msg += `⚠ ${info.teamMembers} Teammitglied(er) verlieren den Zugang zu Ihrem Fall.\n\n`;
-      }
-      msg += "Diese Aktion kann NICHT rückgängig gemacht werden.";
+    // 2. Populate impact box
+    const items = [];
+    items.push({ label: "Ihr Benutzerkonto", value: "wird entfernt" });
+    if (info.files > 0) {
+      items.push({ label: `${info.files} Dokument${info.files === 1 ? "" : "e"}`, value: "werden unwiderruflich gelöscht" });
+    }
+    if (info.teamMembers > 0) {
+      items.push({ label: `${info.teamMembers} Teammitglied${info.teamMembers === 1 ? "" : "er"}`, value: "verlieren den Zugang zum Fall" });
+    }
+    items.push({ label: "Alle KI-Analysen und gekaufte Credits", value: "sind danach nicht mehr abrufbar" });
 
-      if (!confirm(msg)) return;
+    impactBox.style.display = "";
+    impactList.innerHTML = items.map(it => `
+      <li><span class="del-impact-dot"></span><span><strong>${escapeHtml(it.label)}</strong> – ${escapeHtml(it.value)}</span></li>
+    `).join("");
 
-      // 3. Second confirmation
-      if (!confirm("Letzte Bestätigung: Konto, Dokumente und Team wirklich dauerhaft löschen?")) return;
+    // 3. Show modal
+    btn.disabled = false;
+    btn.textContent = "Konto und alle Daten löschen";
+    modal.classList.add("open");
+    setTimeout(() => confirmInput.focus(), 120);
+  });
 
-      // 4. Execute deletion
-      btn.disabled = true;
-      btn.textContent = "Wird gelöscht...";
+  okBtn.addEventListener("click", async () => {
+    if (confirmInput.value.trim().toUpperCase() !== CONFIRM_PHRASE) return;
 
+    okBtn.disabled = true;
+    okBtn.textContent = "Wird gelöscht…";
+    cancelBtn.disabled = true;
+    confirmInput.disabled = true;
+    errorBox.classList.remove("visible");
+
+    try {
       const delResp = await fetch(`${API}/users/me/account`, {
         method: "DELETE",
         headers: authHdr()
@@ -250,15 +333,20 @@ function validatePassword(pw) {
         throw new Error(err.error || "Löschung fehlgeschlagen.");
       }
 
-      // 5. Clear session and redirect
       sessionStorage.clear();
       localStorage.removeItem("dmski_remember_email");
-      alert("Ihr Konto wurde dauerhaft gelöscht. Vielen Dank für Ihr Vertrauen.");
-      window.location.replace("/");
+      showDmskiToast("Konto gelöscht. Vielen Dank für Ihr Vertrauen.", "success");
+      setTimeout(() => window.location.replace("/"), 1600);
     } catch (err) {
-      alert("Fehler: " + err.message);
-      btn.disabled = false;
-      btn.textContent = "Konto und alle Daten löschen";
+      okBtn.disabled = false;
+      okBtn.textContent = "Unwiderruflich löschen";
+      cancelBtn.disabled = false;
+      confirmInput.disabled = false;
+      showError(err.message);
     }
   });
 })();
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}

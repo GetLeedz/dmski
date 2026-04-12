@@ -563,22 +563,31 @@ router.delete("/me/account", requireAuth, async (req, res) => {
     const info = { files: 0, cases: [], teamMembers: 0 };
 
     if (userRole === "customer") {
-      // Count collaborators linked to this customer (team members that lose access)
-      const teamResult = await pool.query(
-        "SELECT DISTINCT collaborator_id FROM customer_users WHERE customer_id = $1",
-        [userId]
-      );
-      info.teamMembers = teamResult.rows.length;
+      // Count collaborators linked to this customer (team members that lose access).
+      // Resilient: if customer_users table doesn't exist yet (fresh install), default to 0.
+      try {
+        const teamResult = await pool.query(
+          "SELECT DISTINCT collaborator_id FROM customer_users WHERE customer_id = $1",
+          [userId]
+        );
+        info.teamMembers = teamResult.rows.length;
+      } catch (_) {
+        info.teamMembers = 0;
+      }
 
       // Count files across the case this user owns
-      const userCase = await pool.query("SELECT case_id FROM users WHERE id = $1", [userId]);
-      if (userCase.rows[0]?.case_id) {
-        const fileCount = await pool.query(
-          "SELECT COUNT(*) as cnt FROM case_documents WHERE case_id = $1",
-          [userCase.rows[0].case_id]
-        );
-        info.files = Number(fileCount.rows[0]?.cnt || 0);
-        info.cases.push(userCase.rows[0].case_id);
+      try {
+        const userCase = await pool.query("SELECT case_id FROM users WHERE id = $1", [userId]);
+        if (userCase.rows[0]?.case_id) {
+          const fileCount = await pool.query(
+            "SELECT COUNT(*) as cnt FROM case_documents WHERE case_id = $1",
+            [userCase.rows[0].case_id]
+          );
+          info.files = Number(fileCount.rows[0]?.cnt || 0);
+          info.cases.push(userCase.rows[0].case_id);
+        }
+      } catch (_) {
+        // Schema not ready or user has no case — zero files
       }
     }
 

@@ -3411,11 +3411,12 @@ async function ensureCaseOptionalColumns() {
           );
         }
         // Ensure customer_users exists for access-control queries
+        // users.id is UUID — so customer_id/collaborator_id must match
         await pool.query(`
           CREATE TABLE IF NOT EXISTS customer_users (
             id SERIAL PRIMARY KEY,
-            customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            collaborator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            customer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            collaborator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             function_label TEXT,
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             UNIQUE(customer_id, collaborator_id)

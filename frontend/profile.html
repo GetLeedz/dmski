@@ -532,6 +532,196 @@
       background: rgba(220,38,38,0.15);
       border-color: #dc2626;
     }
+
+    /* ── Delete Modal ── */
+    .del-modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 10000;
+      padding: 1rem;
+      animation: delFadeIn 180ms ease;
+    }
+    .del-modal-bg.open { display: flex; }
+    @keyframes delFadeIn { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes delSlideIn { from { opacity: 0; transform: translateY(12px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
+
+    .del-modal {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 25px 70px rgba(15,23,42,.25), 0 0 0 1px rgba(220,38,38,.1);
+      max-width: 460px; width: 100%;
+      padding: 1.75rem 1.9rem 1.65rem;
+      animation: delSlideIn 220ms cubic-bezier(.2,.9,.3,1);
+    }
+    .del-modal-hd { display: flex; gap: .85rem; align-items: flex-start; margin-bottom: 1.15rem; }
+    .del-modal-icon {
+      flex-shrink: 0;
+      width: 2.4rem; height: 2.4rem;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #dc2626, #991b1b);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(220,38,38,.35);
+    }
+    .del-modal-icon svg { width: 1.2rem; height: 1.2rem; }
+    .del-modal h2 {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: .12rem 0 .2rem;
+    }
+    .del-modal-sub {
+      font-size: .78rem;
+      color: #64748b;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .del-impact {
+      background: #fef2f2;
+      border: 1px solid rgba(220,38,38,.15);
+      border-radius: 10px;
+      padding: .85rem 1rem;
+      margin-bottom: 1.1rem;
+    }
+    .del-impact-title {
+      font-size: .72rem;
+      font-weight: 700;
+      color: #991b1b;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: .5rem;
+    }
+    .del-impact ul {
+      list-style: none;
+      padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: .35rem;
+    }
+    .del-impact li {
+      font-size: .85rem;
+      color: #475569;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .del-impact li strong { color: #0f172a; font-weight: 700; }
+    .del-impact-dot {
+      width: .32rem; height: .32rem;
+      border-radius: 50%;
+      background: #dc2626;
+      flex-shrink: 0;
+    }
+
+    .del-confirm-field {
+      margin-bottom: 1.2rem;
+    }
+    .del-confirm-field label {
+      display: block;
+      font-size: .76rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: .35rem;
+    }
+    .del-confirm-field label code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: .08rem .4rem;
+      font-size: .78rem;
+      font-weight: 700;
+      color: #dc2626;
+      letter-spacing: .04em;
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+    }
+    .del-confirm-input {
+      width: 100%;
+      padding: .6rem .85rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font: inherit;
+      font-size: .88rem;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .del-confirm-input:focus {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220,38,38,.12);
+    }
+
+    .del-modal-ft {
+      display: flex;
+      gap: .6rem;
+      justify-content: flex-end;
+    }
+    .del-btn {
+      padding: .62rem 1.15rem;
+      border-radius: 9px;
+      font: inherit;
+      font-size: .84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 160ms ease;
+      border: 1.5px solid transparent;
+    }
+    .del-btn-cancel {
+      background: #fff;
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+    .del-btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .del-btn-ok {
+      background: linear-gradient(135deg, #dc2626, #991b1b);
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(220,38,38,.3);
+    }
+    .del-btn-ok:hover:not(:disabled) { box-shadow: 0 5px 18px rgba(220,38,38,.45); }
+    .del-btn-ok:disabled {
+      background: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .del-error {
+      margin-top: .75rem;
+      padding: .6rem .8rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      font-size: .8rem;
+      color: #991b1b;
+      display: none;
+    }
+    .del-error.visible { display: block; }
+
+    /* ── Toast ── */
+    .dmski-toast {
+      position: fixed;
+      top: 1.3rem; right: 1.3rem;
+      z-index: 10001;
+      background: #0f172a;
+      color: #fff;
+      padding: .85rem 1.2rem .85rem 1rem;
+      border-radius: 11px;
+      font-size: .86rem;
+      font-weight: 500;
+      box-shadow: 0 12px 40px rgba(15,23,42,.3);
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      transform: translateX(calc(100% + 2rem));
+      transition: transform 300ms cubic-bezier(.2,.9,.3,1);
+      max-width: 380px;
+    }
+    .dmski-toast.show { transform: translateX(0); }
+    .dmski-toast.error { background: #991b1b; }
+    .dmski-toast.success { background: #065f46; }
+    .dmski-toast-icon {
+      flex-shrink: 0;
+      width: 1.1rem; height: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
   </style>
   <script>if(!sessionStorage.getItem("token"))window.location.replace("/login.html");</script>
 </head>
@@ -701,6 +891,50 @@
       <h3>Konto dauerhaft löschen</h3>
       <p>Alle Ihre Daten, Analysen und hochgeladenen Dokumente werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
       <button id="deleteAccountBtn" type="button" class="btn-danger">Konto und alle Daten löschen</button>
+    </div>
+
+    <!-- ══════ DELETE CONFIRM MODAL ══════ -->
+    <div class="del-modal-bg" id="delModal" role="dialog" aria-modal="true" aria-labelledby="delModalTitle">
+      <div class="del-modal">
+        <div class="del-modal-hd">
+          <div class="del-modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/>
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <h2 id="delModalTitle">Konto dauerhaft löschen?</h2>
+            <p class="del-modal-sub">Diese Aktion kann nicht rückgängig gemacht werden. Ihre Daten werden sofort und vollständig entfernt.</p>
+          </div>
+        </div>
+
+        <div class="del-impact" id="delImpact">
+          <div class="del-impact-title">Was gelöscht wird</div>
+          <ul id="delImpactList"></ul>
+        </div>
+
+        <div class="del-confirm-field">
+          <label for="delConfirmInput">Tippen Sie <code>LÖSCHEN</code> zur Bestätigung</label>
+          <input type="text" id="delConfirmInput" class="del-confirm-input" autocomplete="off" spellcheck="false" placeholder="LÖSCHEN" />
+        </div>
+
+        <div class="del-modal-ft">
+          <button type="button" class="del-btn del-btn-cancel" id="delCancelBtn">Abbrechen</button>
+          <button type="button" class="del-btn del-btn-ok" id="delOkBtn" disabled>Unwiderruflich löschen</button>
+        </div>
+
+        <div class="del-error" id="delError"></div>
+      </div>
+    </div>
+
+    <!-- ══════ TOAST ══════ -->
+    <div id="dmskiToast" class="dmski-toast" role="status" aria-live="polite">
+      <span class="dmski-toast-icon" id="dmskiToastIcon"></span>
+      <span id="dmskiToastText"></span>
     </div>
 
     <div id="site-footer"></div>
