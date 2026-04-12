@@ -409,6 +409,11 @@
     }
     .btn-save:hover { opacity:.9;box-shadow:0 5px 18px rgba(26,43,60,.4); }
     .btn-save:disabled { opacity:.5;cursor:default;box-shadow:none; }
+    .btn-save.btn-danger {
+      background:linear-gradient(135deg,#c8342b,#a02620);
+      box-shadow:0 3px 12px rgba(200,52,43,.35);
+    }
+    .btn-save.btn-danger:hover { box-shadow:0 5px 18px rgba(200,52,43,.5); }
 
     /* Form fields */
     .fg { display:flex;flex-direction:column;gap:.3rem; }
@@ -591,17 +596,13 @@
   <div class="modal-bg" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="modal" style="max-width:380px;padding:1.75rem 2rem 1.5rem;">
       <div class="modal-hd" style="margin-bottom:1rem;">
-        <div class="modal-hd-icon" style="background:linear-gradient(135deg,#1A2B3C,#1A2B3C);">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </div>
-        <h2 id="confirmTitle" style="font-size:.97rem;">Einladung senden</h2>
+        <div class="modal-hd-icon" id="confirmIcon" style="background:linear-gradient(135deg,#1A2B3C,#1A2B3C);"></div>
+        <h2 id="confirmTitle" style="font-size:.97rem;"></h2>
       </div>
       <p id="confirmText" style="color:#4a6672;font-size:.875rem;line-height:1.6;margin:0 0 1.25rem;"></p>
       <div class="modal-ft" style="margin-top:0;padding-top:0;border-top:none;">
         <button type="button" class="btn-cancel" id="confirmCancelBtn">Abbrechen</button>
-        <button type="button" class="btn-save" id="confirmOkBtn">Senden</button>
+        <button type="button" class="btn-save" id="confirmOkBtn"></button>
       </div>
     </div>
   </div>

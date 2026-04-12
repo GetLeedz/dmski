@@ -215,12 +215,27 @@ function renderList(rows) {
 
 // --- AKTIONEN ---
 
-function showConfirm(text, onOk) {
+const CONFIRM_ICONS = {
+    send: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>'
+};
+
+function showConfirm(text, onOk, opts = {}) {
+    const { title = "Bestätigung", okText = "OK", icon = "send", danger = false } = opts;
     const modal = byId("confirmModal");
+    byId("confirmTitle").textContent = title;
     byId("confirmText").textContent = text;
-    modal.classList.add("open");
+    byId("confirmIcon").innerHTML = CONFIRM_ICONS[icon] || CONFIRM_ICONS.send;
+    byId("confirmIcon").style.background = danger
+        ? "linear-gradient(135deg,#c8342b,#a02620)"
+        : "linear-gradient(135deg,#1A2B3C,#1A2B3C)";
 
     const okBtn = byId("confirmOkBtn");
+    okBtn.textContent = okText;
+    okBtn.classList.toggle("btn-danger", danger);
+
+    modal.classList.add("open");
+
     const cancelBtn = byId("confirmCancelBtn");
 
     // Clone and replace buttons to remove ALL previous event listeners.
@@ -246,23 +261,27 @@ async function sendInvite(targetUserId) {
         return;
     }
 
-    showConfirm("Einladungs-E-Mail jetzt an diesen Benutzer senden?", async () => {
-        const okBtn = byId("confirmOkBtn");
-        if (okBtn) { okBtn.disabled = true; okBtn.textContent = "Sendet …"; }
+    showConfirm(
+        "Einladungs-E-Mail jetzt an diesen Benutzer senden?",
+        async () => {
+            const okBtn = byId("confirmOkBtn");
+            if (okBtn) { okBtn.disabled = true; okBtn.textContent = "Sendet …"; }
 
-        try {
-            const res = await fetch(`${BASE_URL}/${myUserId}/users/${targetUserId}/send-invite`, {
-                method: "POST", headers: authHdr(), credentials: "include"
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || "Versand fehlgeschlagen");
-            showToast("✓ Einladung erfolgreich versendet.");
-        } catch (err) {
-            showToast("Fehler: " + err.message, true);
-        } finally {
-            if (okBtn) { okBtn.disabled = false; okBtn.textContent = "Senden"; }
-        }
-    });
+            try {
+                const res = await fetch(`${BASE_URL}/${myUserId}/users/${targetUserId}/send-invite`, {
+                    method: "POST", headers: authHdr(), credentials: "include"
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || "Versand fehlgeschlagen");
+                showToast("✓ Einladung erfolgreich versendet.");
+            } catch (err) {
+                showToast("Fehler: " + err.message, true);
+            } finally {
+                if (okBtn) { okBtn.disabled = false; okBtn.textContent = "Senden"; }
+            }
+        },
+        { title: "Einladung senden", okText: "Senden", icon: "send" }
+    );
 }
 
 function showToast(text, isError = false) {
@@ -374,23 +393,26 @@ async function handleSave() {
 }
 
 async function deleteUser(id) {
-    showConfirm("Benutzer wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.", async () => {
-        byId("confirmOkBtn").textContent = "Löscht …";
-        byId("confirmOkBtn").disabled = true;
-        try {
-            const res = await fetch(`${BASE_URL}/${id}`, {
-                method: "DELETE", headers: authHdr(), credentials: "include"
-            });
-            if (!res.ok) throw new Error("Löschen fehlgeschlagen");
-            await loadUsers();
-            showToast("Benutzer wurde gelöscht.");
-        } catch (err) {
-            showToast(err.message, true);
-        } finally {
-            byId("confirmOkBtn").textContent = "Senden";
-            byId("confirmOkBtn").disabled = false;
-        }
-    });
+    showConfirm(
+        "Benutzer wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        async () => {
+            const okBtn = byId("confirmOkBtn");
+            if (okBtn) { okBtn.textContent = "Löscht …"; okBtn.disabled = true; }
+            try {
+                const res = await fetch(`${BASE_URL}/${id}`, {
+                    method: "DELETE", headers: authHdr(), credentials: "include"
+                });
+                if (!res.ok) throw new Error("Löschen fehlgeschlagen");
+                await loadUsers();
+                showToast("Benutzer wurde gelöscht.");
+            } catch (err) {
+                showToast(err.message, true);
+            } finally {
+                if (okBtn) { okBtn.textContent = "Löschen"; okBtn.disabled = false; }
+            }
+        },
+        { title: "Benutzer löschen", okText: "Löschen", icon: "trash", danger: true }
+    );
 }
 
 // --- MODAL & FILTER ---
