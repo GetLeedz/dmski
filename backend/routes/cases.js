@@ -3990,6 +3990,9 @@ router.post("/", requireAuth, async (req, res) => {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const userRole = req.user.role;
+    // ?mine=1 zwingt Admin in den Customer-Pfad — damit im Dashboard-Dropdown
+    // nur die eigenen Fälle erscheinen, nicht die der Kunden.
+    const onlyMine = req.query.mine === "1" || req.query.mine === "true";
 
     // Team members (collaborators) only see their assigned case
     if (userRole === "collaborator") {
@@ -4006,13 +4009,13 @@ router.get("/", requireAuth, async (req, res) => {
       return res.json({ cases: caseRes.rows });
     }
 
-    // Admin sees all cases
-    if (userRole === "admin") {
+    // Admin ohne ?mine=1 sieht alle Fälle
+    if (userRole === "admin" && !onlyMine) {
       const cases = await listCasesCompat();
       return res.json({ cases });
     }
 
-    // Customer sees only their own cases (created_by or assigned via case_id)
+    // Customer (oder Admin mit ?mine=1) sieht nur eigene Fälle
     await ensureCaseOptionalColumns();
     const userId = req.user.sub;
     const ownedCases = await pool.query(
@@ -4026,6 +4029,33 @@ router.get("/", requireAuth, async (req, res) => {
     return res.json({ cases: ownedCases.rows });
   } catch (err) {
     console.error("List cases error:", err.message);
+    return res.status(500).json({ error: "Fallliste konnte nicht geladen werden." });
+  }
+});
+
+// Admin: Alle Fälle mit Owner-Info + File-Count für die Admin-Übersicht
+router.get("/admin/all", requireAuth, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Nur für Admins." });
+  }
+  try {
+    await ensureCaseOptionalColumns();
+    const result = await pool.query(`
+      SELECT c.id, c.case_name, c.protected_person_name, c.opposing_party,
+             c.country, c.region, c.city, c.created_at, c.created_by,
+             u.first_name AS owner_first_name,
+             u.last_name  AS owner_last_name,
+             u.email      AS owner_email,
+             u.deleted_at AS owner_deleted_at,
+             (SELECT COUNT(*) FROM case_documents cd WHERE cd.case_id = c.id) AS file_count
+        FROM cases c
+        LEFT JOIN users u ON u.id = c.created_by
+       ORDER BY c.created_at DESC
+       LIMIT 500
+    `);
+    return res.json({ cases: result.rows });
+  } catch (err) {
+    console.error("Admin list cases error:", err.message);
     return res.status(500).json({ error: "Fallliste konnte nicht geladen werden." });
   }
 });

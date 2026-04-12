@@ -39,10 +39,11 @@
   const teamIcon = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2 17c0-3.314 3.582-5 8-5s8 1.686 8 5"/></svg>`;
 
   const icons_log = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M7 8h6M7 11h4"/></svg>`;
+  const icons_cases = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6z"/><path d="M7 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M3 10h14"/></svg>`;
 
   let adminBlock = "";
   if (role === "admin") {
-    adminBlock = `<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Alle Benutzer", icons.users)}${sbLink("/admin-credits.html", "Credits-Verwaltung", icons.credits)}${sbLink("/log.html", "Aktivitätslog", icons_log)}`;
+    adminBlock = `<span class="sb-section">Verwaltung</span>${sbLink("/users.html?view=all", "Alle Benutzer", icons.users)}${sbLink("/admin-cases.html", "Alle Fälle", icons_cases)}${sbLink("/admin-credits.html", "Credits-Verwaltung", icons.credits)}${sbLink("/log.html", "Aktivitätslog", icons_log)}`;
   }
   // Team is now inside each case (files.html), not in sidebar
 
@@ -120,6 +121,11 @@
       title: "Credits-Verwaltung",
       sub: "Credit-Übersicht aller Benutzer und Einstellungen",
       icon: `<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3H9h4.5a1.5 1.5 0 0 1 0 3H9"/>`
+    },
+    "/admin-cases.html": {
+      title: "Alle Fälle",
+      sub: "Übersicht aller Kunden-Fälle — direkter Zugriff",
+      icon: `<path d="M3 7h18v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/>`
     }
   };
 

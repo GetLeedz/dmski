@@ -281,7 +281,9 @@ function formatCaseTimestamp(value) {
 
 async function loadCasesList() {
   try {
-    const res = await apiFetch(`${API_BASE}/cases`, {
+    // ?mine=1: auch Admins sehen im Dashboard-Dropdown nur eigene Fälle.
+    // Für die Kunden-Fälle gibt's den Admin-Menüpunkt "Alle Fälle".
+    const res = await apiFetch(`${API_BASE}/cases?mine=1`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 

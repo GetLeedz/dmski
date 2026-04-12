@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI – Alle Fälle</title>
+  <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    .ac-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.4rem 3rem;
+    }
+
+    .ac-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      margin: 1rem 0 1.2rem;
+      flex-wrap: wrap;
+    }
+    .ac-search {
+      flex: 1 1 280px;
+      position: relative;
+      min-width: 260px;
+    }
+    .ac-search input {
+      width: 100%;
+      padding: 0.75rem 0.9rem 0.75rem 2.4rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font: inherit;
+      font-size: 0.92rem;
+      background: #fff;
+      outline: none;
+      transition: border-color 140ms, box-shadow 140ms;
+    }
+    .ac-search input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(197,160,89,0.15);
+    }
+    .ac-search svg {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.05rem;
+      height: 1.05rem;
+      color: var(--ink-muted);
+      pointer-events: none;
+    }
+    .ac-count {
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+      font-weight: 600;
+    }
+
+    .ac-table-wrap {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 22px -18px rgba(15,23,42,.4);
+    }
+    .ac-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .ac-table thead th {
+      background: #f8fafc;
+      color: #475569;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .ac-table tbody td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+      vertical-align: middle;
+    }
+    .ac-table tbody tr:hover td {
+      background: rgba(197,160,89,0.05);
+    }
+    .ac-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ac-case-id {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      background: #f1f5f9;
+      padding: 0.22rem 0.55rem;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .ac-case-name {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .ac-parties {
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+    }
+    .ac-party-fokus {
+      color: #065f46;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .ac-party-gegen {
+      color: #991b1b;
+      font-size: 0.78rem;
+    }
+    .ac-party-dim { color: var(--ink-muted); font-weight: 400; font-style: italic; }
+
+    .ac-owner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+    }
+    .ac-owner-name { font-weight: 600; color: #0f172a; font-size: 0.85rem; }
+    .ac-owner-email { font-size: 0.75rem; color: var(--ink-muted); }
+    .ac-owner-deleted {
+      display: inline-block;
+      margin-top: 0.2rem;
+      padding: 0.08rem 0.45rem;
+      background: rgba(220,38,38,0.08);
+      color: #991b1b;
+      border: 1px solid rgba(220,38,38,0.22);
+      border-radius: 5px;
+      font-size: 0.66rem;
+      font-weight: 600;
+    }
+    .ac-file-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      background: rgba(59,130,246,0.08);
+      color: #1d4ed8;
+      border: 1px solid rgba(59,130,246,0.22);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .ac-file-count--empty {
+      background: #f1f5f9;
+      color: #94a3b8;
+      border-color: #e2e8f0;
+    }
+    .ac-date {
+      font-size: 0.8rem;
+      color: #64748b;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .ac-location {
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+    .ac-open-btn {
+      padding: 0.45rem 0.95rem;
+      background: linear-gradient(135deg, #1A2B3C, #243447);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 120ms, box-shadow 160ms;
+      box-shadow: 0 2px 8px rgba(26,43,60,0.25);
+    }
+    .ac-open-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(26,43,60,0.35);
+    }
+
+    .ac-empty, .ac-loading {
+      padding: 3rem 1rem;
+      text-align: center;
+      color: var(--ink-muted);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 880px) {
+      .ac-hide-md { display: none; }
+    }
+    @media (max-width: 640px) {
+      .ac-hide-sm { display: none; }
+      .ac-table tbody td { padding: 0.7rem 0.6rem; }
+    }
+  </style>
+  <script>if(!sessionStorage.getItem("token"))window.location.replace("/login.html");</script>
+</head>
+<body>
+
+  <div id="authGate" class="auth-gate">
+    <img src="assets/logo-dmski.png" alt="DMSKI" style="height:2.2rem;opacity:.7" />
+    <p style="margin:.8rem 0 0;color:#4a6672;font-size:.92rem">Sitzung wird geprüft…</p>
+  </div>
+
+  <main class="page" style="display:none" id="pageMain">
+
+    <div id="site-nav"></div>
+
+    <div class="ac-wrap">
+      <div class="ac-toolbar">
+        <div class="ac-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="acSearchInput" type="text" placeholder="Suche: Fall-ID, Fallname, Fokus/Gegenpartei, Kunde, E-Mail…" autocomplete="off" />
+        </div>
+        <span class="ac-count" id="acCount">—</span>
+      </div>
+
+      <div class="ac-table-wrap">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>Fall-ID</th>
+              <th>Fallname</th>
+              <th class="ac-hide-sm">Parteien</th>
+              <th>Besitzer</th>
+              <th class="ac-hide-md">Ort</th>
+              <th style="text-align:center">Files</th>
+              <th class="ac-hide-md">Erstellt</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="acTableBody">
+            <tr><td colspan="8" class="ac-loading">Lade Fallliste …</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="site-footer"></div>
+  </main>
+
+  <script src="nav.js"></script>
+  <script src="footer.js"></script>
+  <script>
+    const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+      ? "" : "https://lively-reverence-production-def3.up.railway.app";
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+    const role = sessionStorage.getItem("dmski_role");
+    if (!token || role !== "admin") {
+      window.location.replace("/dashboard.html");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("authGate").style.display = "none";
+      document.getElementById("pageMain").style.display = "";
+      loadAllCases();
+
+      document.getElementById("acSearchInput").addEventListener("input", (e) => {
+        applyFilter(e.target.value);
+      });
+    });
+
+    let allCases = [];
+
+    function esc(str) {
+      return String(str || "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return d.toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
+    }
+
+    async function loadAllCases() {
+      try {
+        const res = await fetch(`${API_BASE}/api/cases/admin/all`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Fehler beim Laden");
+        allCases = Array.isArray(data.cases) ? data.cases : [];
+        render(allCases);
+      } catch (err) {
+        document.getElementById("acTableBody").innerHTML =
+          `<tr><td colspan="8" class="ac-empty" style="color:#b33">⚠ ${esc(err.message)}</td></tr>`;
+        document.getElementById("acCount").textContent = "";
+      }
+    }
+
+    function applyFilter(query) {
+      const q = String(query || "").trim().toLowerCase();
+      if (!q) {
+        render(allCases);
+        return;
+      }
+      const filtered = allCases.filter(c => {
+        const haystack = [
+          c.id,
+          c.case_name,
+          c.protected_person_name,
+          c.opposing_party,
+          c.owner_first_name,
+          c.owner_last_name,
+          c.owner_email,
+          c.city,
+          c.region,
+          c.country
+        ].filter(Boolean).join(" ").toLowerCase();
+        return haystack.includes(q);
+      });
+      render(filtered);
+    }
+
+    function render(rows) {
+      const tbody = document.getElementById("acTableBody");
+      const countEl = document.getElementById("acCount");
+      countEl.textContent = `${rows.length} Fälle`;
+
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="ac-empty">Keine Fälle gefunden.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map(c => {
+        const ownerName = [c.owner_first_name, c.owner_last_name].filter(Boolean).join(" ") || "—";
+        const ownerEmail = c.owner_email || "";
+        const ownerDeleted = !!c.owner_deleted_at;
+        const fokus = c.protected_person_name ? esc(c.protected_person_name) : '<span class="ac-party-dim">Nicht gesetzt</span>';
+        const gegen = c.opposing_party ? esc(c.opposing_party) : '<span class="ac-party-dim">Nicht gesetzt</span>';
+        const location = [c.city, c.region].filter(Boolean).join(", ") || "—";
+        const fileCount = Number(c.file_count || 0);
+        const fileCountCls = fileCount === 0 ? "ac-file-count ac-file-count--empty" : "ac-file-count";
+
+        return `<tr>
+          <td><span class="ac-case-id">${esc(c.id)}</span></td>
+          <td><span class="ac-case-name">${esc(c.case_name || "Ohne Namen")}</span></td>
+          <td class="ac-hide-sm">
+            <div class="ac-parties">
+              <span class="ac-party-fokus">▸ ${fokus}</span>
+              <span class="ac-party-gegen">◂ ${gegen}</span>
+            </div>
+          </td>
+          <td>
+            <div class="ac-owner">
+              <span class="ac-owner-name">${esc(ownerName)}</span>
+              <span class="ac-owner-email">${esc(ownerEmail)}</span>
+              ${ownerDeleted ? '<span class="ac-owner-deleted">Kunde gelöscht</span>' : ""}
+            </div>
+          </td>
+          <td class="ac-hide-md"><span class="ac-location">${esc(location)}</span></td>
+          <td style="text-align:center"><span class="${fileCountCls}">${fileCount}</span></td>
+          <td class="ac-hide-md"><span class="ac-date">${fmtDate(c.created_at)}</span></td>
+          <td>
+            <button class="ac-open-btn" onclick="openCase('${esc(c.id)}')">Öffnen</button>
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    function openCase(caseId) {
+      if (!/^\d{6}$/.test(caseId)) return;
+      sessionStorage.setItem("currentCaseId", caseId);
+      window.location.href = "/files.html";
+    }
+  </script>
+</body>
+</html>
