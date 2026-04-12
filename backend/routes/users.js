@@ -81,9 +81,8 @@ function buildEmail({ greeting, bodyHtml, showPwdChange = false }) {
 
   <!-- Header -->
   <tr>
-    <td style="background:#1A2B3C;padding:28px 40px;text-align:center;">
-      <span style="color:#C5A059;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;">DMSKI SCRUTOR</span>
-      <p style="color:rgba(255,255,255,.5);font-size:11px;margin:5px 0 0;letter-spacing:.03em;">KI-gest&uuml;tzte forensische Fallanalyse</p>
+    <td style="background:#1A2B3C;padding:32px 40px;text-align:center;">
+      <img src="https://www.dmski.ch/assets/logo-dmski_gold.png" alt="DMSKI" width="140" style="display:inline-block;max-width:140px;height:auto;border:0;outline:none;text-decoration:none;" />
     </td>
   </tr>
 

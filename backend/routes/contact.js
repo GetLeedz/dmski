@@ -114,9 +114,9 @@ router.post("/", async (req, res) => {
   <tr><td style="height:2px;background:linear-gradient(90deg,transparent,#C5A059,#8b5cf6,#C5A059,transparent);font-size:0;line-height:0;">&nbsp;</td></tr>
 
   <tr>
-    <td style="background:#1A2B3C;padding:32px 40px 20px;text-align:center;">
-      <span style="color:#C5A059;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">DMSKI SCRUTOR</span>
-      <p style="color:rgba(255,255,255,.4);font-size:12px;margin:6px 0 0;">Neue Zugangsanfrage</p>
+    <td style="background:#1A2B3C;padding:32px 40px 24px;text-align:center;">
+      <img src="https://www.dmski.ch/assets/logo-dmski_gold.png" alt="DMSKI" width="140" style="display:inline-block;max-width:140px;height:auto;border:0;outline:none;text-decoration:none;" />
+      <p style="color:rgba(255,255,255,.5);font-size:12px;margin:10px 0 0;">Neue Zugangsanfrage</p>
     </td>
   </tr>
 
