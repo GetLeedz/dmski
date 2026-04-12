@@ -274,10 +274,13 @@ function showDmskiToast(text, variant = "success") {
     errorBox.classList.remove("visible");
     impactList.innerHTML = "";
 
-    // 1. Dry-run: get info about what will be deleted
+    // 1. Dry-run: get info about what will be deleted (same endpoint, DELETE method + ?dryrun=true)
     let info = {};
     try {
-      const resp = await fetch(`${API}/users/me/account?dryrun=true`, { headers: authHdr() });
+      const resp = await fetch(`${API}/users/me/account?dryrun=true`, {
+        method: "DELETE",
+        headers: authHdr()
+      });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
         throw new Error(err.error || "Konto­informationen konnten nicht geladen werden.");
