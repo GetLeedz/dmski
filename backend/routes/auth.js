@@ -182,16 +182,68 @@ router.post("/signup", async (req, res) => {
   try {
     await ensureUserSchema();
 
-    // Check if email already exists
-    const existing = await pool.query("SELECT id FROM users WHERE LOWER(TRIM(email)) = $1", [emailNorm]);
-    if (existing.rows.length > 0) {
-      return res.status(409).json({ error: "Diese E-Mail-Adresse ist bereits registriert." });
-    }
-
     const hash = await bcrypt.hash(String(password).trim(), 12);
     const verifyToken = crypto.randomBytes(32).toString("hex");
     const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+    const generic201 = { ok: true, message: "Registrierung erfolgreich. Bitte bestätigen Sie Ihre E-Mail-Adresse." };
 
+    // Check existing user (including soft-deleted)
+    const existing = await pool.query(
+      "SELECT id, deleted_at, role FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
+      [emailNorm]
+    );
+    const existingUser = existing.rows[0];
+
+    // Case A: Admin-Konten lassen wir unberührt (zusätzliche Safety-Schicht)
+    if (existingUser && existingUser.role === "admin") {
+      writeLog({ userId: null, email: emailNorm, action: "signup_blocked_admin", ip, userAgent: req.headers["user-agent"] });
+      return res.status(201).json(generic201);
+    }
+
+    // Case B: Aktiver Account existiert bereits → silent success, keine Info-Leakage,
+    // echter Besitzer erhält keine E-Mail. Account-Enumeration wird verhindert.
+    if (existingUser && !existingUser.deleted_at) {
+      writeLog({ userId: existingUser.id, email: emailNorm, action: "signup_silent_existing", ip, userAgent: req.headers["user-agent"] });
+      return res.status(201).json(generic201);
+    }
+
+    // Case C: Soft-gelöschter Account → reaktivieren mit neuem Passwort + Verify-Flow
+    if (existingUser && existingUser.deleted_at) {
+      await pool.query(
+        `UPDATE users
+            SET password_hash = $1,
+                first_name = $2,
+                last_name = $3,
+                role = 'customer',
+                email_verified = false,
+                email_verify_token = $4,
+                email_verify_expires = $5,
+                deleted_at = NULL,
+                invited_at = NULL,
+                last_login_at = NULL,
+                login_count = 0,
+                password_change_required = false
+          WHERE id = $6`,
+        [hash, first_name.trim(), (last_name || "").trim(), verifyToken, verifyExpires, existingUser.id]
+      );
+
+      const verifyUrl = `https://dmski.ch/verify.html?token=${verifyToken}`;
+      const resend = getResend();
+      if (resend) {
+        await resend.emails.send({
+          from: FROM_ADDRESS,
+          to: [emailNorm],
+          subject: "DMSKI – E-Mail bestätigen",
+          html: buildVerifyEmail(first_name.trim(), verifyUrl),
+        });
+      }
+
+      writeLog({ userId: existingUser.id, email: emailNorm, action: "signup_reactivated", ip, userAgent: req.headers["user-agent"] });
+      return res.status(201).json(generic201);
+    }
+
+    // Case D: Neuer Benutzer → Insert
     const insertResult = await pool.query(
       `INSERT INTO users (email, password_hash, first_name, last_name, role, email_verified, email_verify_token, email_verify_expires)
        VALUES ($1, $2, $3, $4, 'customer', false, $5, $6) RETURNING id`,
@@ -199,7 +251,6 @@ router.post("/signup", async (req, res) => {
     );
     const userId = insertResult.rows[0].id;
 
-    // Send verification email
     const verifyUrl = `https://dmski.ch/verify.html?token=${verifyToken}`;
     const resend = getResend();
     if (resend) {
@@ -211,10 +262,8 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
     writeLog({ userId, email: emailNorm, action: "signup", ip, userAgent: req.headers["user-agent"] });
-
-    res.status(201).json({ ok: true, message: "Registrierung erfolgreich. Bitte bestätigen Sie Ihre E-Mail-Adresse." });
+    res.status(201).json(generic201);
   } catch (err) {
     console.error("Signup error:", err.message);
     res.status(500).json({ error: "Registrierung fehlgeschlagen." });
