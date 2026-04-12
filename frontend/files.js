@@ -3752,8 +3752,8 @@ void loadCaseContext().then(() => {
   // Team members cannot run Master Scan – only case owner (customer) or admin
   if (currentUserRole === "team") {
     scanBtn.disabled = true;
-    scanBtn.title = "Nur Fall-Inhaber kann Fall-Analyse ausführen";
-    scanBtn.setAttribute("aria-label", "Nur Fall-Inhaber kann Fall-Analyse ausführen");
+    scanBtn.title = "Nur Fall-Inhaber kann Master-Scan KI ausführen";
+    scanBtn.setAttribute("aria-label", "Nur Fall-Inhaber kann Master-Scan KI ausführen");
   }
 
   // ── Load stored results from DB on page load ──
@@ -3771,7 +3771,7 @@ void loadCaseContext().then(() => {
         if (progressWrap) {
           progressWrap.classList.remove("hidden");
           if (progressFill) progressFill.style.width = "100%";
-          if (progressText) progressText.textContent = tsText || "Gespeicherte Fall-Analyse geladen";
+          if (progressText) progressText.textContent = tsText || "Gespeicherter Master-Scan KI geladen";
         }
       }
     } catch (e) {
@@ -3960,7 +3960,7 @@ void loadCaseContext().then(() => {
 
     const confirmed = await dmskiModal({
       icon: "info",
-      title: "Fall-Analyse starten?",
+      title: "Master-Scan KI starten?",
       body: `Alle <strong>${estFiles || "?"} Files</strong> werden forensisch analysiert und vernetzt.<br>Geschätzte Dauer: <strong>~${estMinutes} Minuten</strong>`,
       confirmLabel: "Analyse starten",
       cancelLabel: "Abbrechen",
@@ -4005,7 +4005,7 @@ void loadCaseContext().then(() => {
         }
         if (status.status === "done" && status.result) {
           // Full result already available (from cache)
-          setProgress(100, `Fall-Analyse abgeschlossen – ${status.result.analyzedCount || 0} Files`);
+          setProgress(100, `Master-Scan KI abgeschlossen – ${status.result.analyzedCount || 0} Files`);
           if (waveEl) waveEl.classList.add("hidden");
           renderForensicResults(status.result);
           return;
@@ -4059,14 +4059,14 @@ void loadCaseContext().then(() => {
           continue;
         }
         if (status.status === "done" && status.result) {
-          setProgress(100, "Fall-Analyse abgeschlossen");
+          setProgress(100, "Master-Scan KI abgeschlossen");
           if (waveEl) waveEl.classList.add("hidden");
           if (cancelBtn) cancelBtn.classList.add("hidden");
           renderForensicResults(status.result);
           // Success-Modal
           dmskiModal({
             icon: "success",
-            title: "Fall-Analyse abgeschlossen",
+            title: "Master-Scan KI abgeschlossen",
             body: `<strong>${status.result.analyzedCount || 0} Files</strong> analysiert und vernetzt.<br>Gesamt-Score: <strong>${status.result.combinedScore || status.result.totalScore}/100</strong> · Risiko: <strong>${status.result.gesamtRisiko || "–"}</strong>`,
             confirmLabel: "Ergebnisse ansehen",
             confirmClass: "is-primary"
@@ -4083,11 +4083,11 @@ void loadCaseContext().then(() => {
       if (waveEl) waveEl.classList.add("hidden");
       if (err.message === "ABORTED") {
         setProgress(0, "Analyse abgebrochen");
-        dmskiModal({ icon: "info", title: "Analyse abgebrochen", body: "Die Fall-Analyse wurde abgebrochen. Bereits analysierte Ergebnisse bleiben gespeichert.", confirmLabel: "OK" });
+        dmskiModal({ icon: "info", title: "Analyse abgebrochen", body: "Der Master-Scan KI wurde abgebrochen. Bereits analysierte Ergebnisse bleiben gespeichert.", confirmLabel: "OK" });
       } else {
         setProgress(100, `Fehler: ${err.message}`);
         if (resultsWrap) {
-          resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Fall-Analyse fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
+          resultsWrap.innerHTML = `<div class="forensic-fazit" style="border-left-color:#c0392b">Master-Scan KI fehlgeschlagen: ${escapeHtml(err.message)}</div>`;
           resultsWrap.classList.remove("hidden");
         }
       }

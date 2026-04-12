@@ -7448,6 +7448,263 @@ body.printing .upload-hero-wrap { display: none !important; }
 }
 
 /* ================================================================
+   MASTER-SCAN KI — Premium "Bugatti" Section
+   ================================================================ */
+.forensic-section.forensic-section--premium {
+  position: relative;
+  overflow: hidden;
+  margin: 2rem 0 1rem;
+  padding: 2rem 2.2rem 1.9rem;
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 80% at 10% 0%, rgba(197,160,89,0.09), transparent 55%),
+    radial-gradient(100% 60% at 100% 0%, rgba(197,160,89,0.05), transparent 60%),
+    linear-gradient(160deg, #0b1520 0%, #111f2e 40%, #0a141e 100%);
+  border: 1px solid rgba(197,160,89,0.22);
+  box-shadow:
+    0 28px 64px -22px rgba(0,0,0,0.55),
+    0 10px 26px -14px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 0 0 1px rgba(197,160,89,0.06);
+  isolation: isolate;
+}
+
+/* Subtle top shine line (like car body highlight) */
+.forensic-section--premium .ms-shine {
+  position: absolute;
+  top: 0; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(197,160,89,0.55), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Soft gold glow behind badge */
+.forensic-section--premium .ms-glow {
+  position: absolute;
+  top: -60px; left: -60px;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(197,160,89,0.22), transparent 65%);
+  filter: blur(20px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.forensic-section--premium .forensic-progress,
+.forensic-section--premium .forensic-results {
+  position: relative;
+  z-index: 2;
+}
+
+.ms-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ms-header-text {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+/* Badge — gold ring with number */
+.ms-badge {
+  position: relative;
+  width: 3.2rem;
+  height: 3.2rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ms-badge-num {
+  position: relative;
+  z-index: 2;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #c5a059;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+.ms-badge-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 140deg, #c5a059 0deg, #e8c878 90deg, #8c6a2a 180deg, #c5a059 360deg);
+  padding: 1.5px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  box-shadow: 0 0 24px rgba(197,160,89,0.25);
+}
+.ms-badge::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #1a2b3c, #0b1520 80%);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+}
+
+/* Title block */
+.ms-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+.ms-kicker {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(197,160,89,0.82);
+}
+.ms-title {
+  margin: 0;
+  font-family: "IBM Plex Serif", Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: #f6f7f9;
+  line-height: 1.1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.ms-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* Launch button — gold gradient with shine */
+.ms-launch-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.92rem 1.6rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #e8c878 0%, #c5a059 45%, #8c6a2a 100%);
+  color: #0b1520;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 220ms ease, filter 160ms ease;
+  box-shadow:
+    0 10px 28px -12px rgba(197,160,89,0.55),
+    0 4px 10px -3px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    inset 0 -2px 4px rgba(140,106,42,0.35);
+}
+.ms-launch-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 14px 34px -10px rgba(197,160,89,0.7),
+    0 6px 14px -4px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -2px 4px rgba(140,106,42,0.35);
+}
+.ms-launch-btn:active { transform: translateY(0); }
+.ms-launch-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+.ms-launch-icon {
+  display: inline-flex;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: #0b1520;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.3));
+}
+.ms-launch-icon svg { width: 100%; height: 100%; }
+.ms-launch-label {
+  position: relative;
+  z-index: 1;
+}
+/* Sheen sweep on hover */
+.ms-launch-sheen {
+  position: absolute;
+  top: 0;
+  left: -130%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+  transform: skewX(-18deg);
+  transition: left 700ms cubic-bezier(.2,.9,.3,1);
+  pointer-events: none;
+}
+.ms-launch-btn:hover .ms-launch-sheen {
+  left: 130%;
+}
+
+/* Cancel button variant inside premium */
+.forensic-section--premium .ki-action-btn--cancel {
+  background: rgba(220,38,38,0.12);
+  border: 1px solid rgba(220,38,38,0.4);
+  color: #fca5a5;
+}
+.forensic-section--premium .ki-action-btn--cancel:hover {
+  background: rgba(220,38,38,0.22);
+}
+
+/* Progress bar on dark */
+.forensic-section--premium .forensic-progress-bar {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(197,160,89,0.18);
+}
+.forensic-section--premium .forensic-progress-fill {
+  background: linear-gradient(90deg, #c5a059, #e8c878, #c5a059);
+  box-shadow: 0 0 12px rgba(197,160,89,0.4);
+}
+.forensic-section--premium .forensic-progress-text {
+  color: rgba(246,247,249,0.8);
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+
+/* Results area — keep readable on dark background */
+.forensic-section--premium .forensic-results {
+  margin-top: 1.4rem;
+  padding: 1.3rem 1.4rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.97);
+  box-shadow: 0 8px 26px -12px rgba(0,0,0,0.4);
+}
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .forensic-section--premium {
+    padding: 1.4rem 1.3rem 1.3rem;
+  }
+  .ms-title { font-size: 1.3rem; }
+  .ms-badge { width: 2.6rem; height: 2.6rem; }
+  .ms-badge-num { font-size: 0.85rem; }
+  .ms-launch-btn {
+    padding: 0.82rem 1.25rem;
+    font-size: 0.76rem;
+    width: 100%;
+    justify-content: center;
+  }
+  .ms-actions { width: 100%; }
+}
+
+/* ================================================================
    FORENSIC SCAN SECTION
    ================================================================ */
 .forensic-section {

@@ -341,29 +341,41 @@
     <div id="analysisReportTactics"></div>
     <div id="analysisReportAkteure"></div>
 
-    <!-- ── Section 8: Fall-Analyse (Results + Actions) ── -->
-    <section id="forensicSection" class="forensic-section">
-        <div class="forensic-header">
-          <div class="forensic-header-text">
-            <div class="forensic-section-badge">8</div>
-            <h3 class="forensic-title">Fall-Analyse</h3>
+    <!-- ── Section 8: Master-Scan KI (Premium Bugatti-Look) ── -->
+    <section id="forensicSection" class="forensic-section forensic-section--premium">
+        <div class="ms-shine" aria-hidden="true"></div>
+        <div class="ms-glow" aria-hidden="true"></div>
+        <div class="forensic-header ms-header">
+          <div class="forensic-header-text ms-header-text">
+            <div class="ms-badge">
+              <span class="ms-badge-num">08</span>
+              <span class="ms-badge-ring" aria-hidden="true"></span>
+            </div>
+            <div class="ms-title-block">
+              <p class="ms-kicker">KI · Cross-Document Intelligence</p>
+              <h3 class="ms-title">Master-Scan KI</h3>
+            </div>
           </div>
-          <div class="forensic-header-actions">
+          <div class="forensic-header-actions ms-actions">
             <div id="forensicWave" class="forensic-wave hidden" aria-hidden="true">
               <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
-            <button id="startForensicScanBtn" type="button" class="ki-action-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/><path d="M12 2c2.8 3.1 4.4 6.4 4.5 10-.1 3.6-1.7 6.9-4.5 10"/>
-              </svg>
-              Fall-Analyse starten
+            <button id="startForensicScanBtn" type="button" class="ms-launch-btn">
+              <span class="ms-launch-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                  <line x1="12" y1="2" x2="12" y2="12"/>
+                </svg>
+              </span>
+              <span class="ms-launch-label">Master-Scan KI starten</span>
+              <span class="ms-launch-sheen" aria-hidden="true"></span>
             </button>
             <button id="cancelForensicScanBtn" type="button" class="ki-action-btn ki-action-btn--cancel hidden">Abbrechen</button>
           </div>
         </div>
         <div id="forensicProgress" class="forensic-progress hidden">
           <div class="forensic-progress-bar"><div id="forensicProgressFill" class="forensic-progress-fill"></div></div>
-          <p id="forensicProgressText" class="forensic-progress-text">Analyse wird gestartet…</p>
+          <p id="forensicProgressText" class="forensic-progress-text">Master-Scan KI wird gestartet…</p>
         </div>
         <div id="forensicResults" class="forensic-results hidden"></div>
     </section>
