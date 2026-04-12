@@ -130,22 +130,55 @@
       <h2>7. Einsatz von Künstlicher Intelligenz (KI)</h2>
       <p>
         Im Rahmen der Nutzung von DMSKI werden von Ihnen hochgeladene Dokumente und Dateien (z.&nbsp;B. PDFs,
-        Bilder) mithilfe von Künstlicher Intelligenz (KI) automatisch analysiert und ausgewertet. Dabei wird
-        der Inhalt der Dateien an die OpenAI API (OpenAI, L.L.C., San Francisco, USA) übermittelt, um
-        Texterkennungs- und Analyseergebnisse zu erzeugen. OpenAI verarbeitet diese Daten ausschliesslich zur
-        Erbringung des Dienstes; eine Verwendung für das Training von KI-Modellen findet nicht statt
-        (Opt-out ist seitens GetLeedz GmbH aktiv gesetzt). Die Übermittlung erfolgt verschlüsselt über HTTPS.
+        Bilder) mithilfe von Künstlicher Intelligenz automatisch analysiert und ausgewertet. Dabei wird der
+        Inhalt der Dateien an die <strong>Anthropic API (Anthropic PBC, San Francisco, USA)</strong>
+        übermittelt, um Text­erkennungs- und Analyseergebnisse zu erzeugen. Anthropic verarbeitet die
+        übermittelten Inhalte ausschliesslich zur Erbringung des Dienstes; eine Verwendung für das Training
+        der KI-Modelle findet gemäss Anthropic&rsquo;s Commercial Terms of Service nicht statt. Die
+        Übermittlung erfolgt ausschliesslich verschlüsselt über HTTPS/TLS.
       </p>
       <p>
-        Bitte laden Sie keine Dokumente hoch, die besonders schützenswerte Personendaten (z.&nbsp;B.
-        Gesundheitsdaten, Ausweiskopien) enthalten, sofern dies nicht zwingend erforderlich ist.
+        <strong>DMSKI ist eine Analyse-Plattform, kein Archiv.</strong> Wir empfehlen ausdrücklich,
+        hochgeladene Dokumente nach Abschluss der Analyse selbst zu löschen. Wer möchte, kann vor dem Upload
+        Namen oder andere identifizierende Angaben in den Dokumenten anonymisieren — die KI arbeitet auch
+        mit Pseudonymen, solange diese in den Keywörtern (Fokus-Partei / Gegenpartei) des jeweiligen Falls
+        hinterlegt sind. Bitte laden Sie keine Dokumente hoch, die besonders schützenswerte Personendaten
+        (z.&nbsp;B. Gesundheitsdaten, Ausweiskopien Dritter) enthalten, sofern dies nicht zwingend
+        erforderlich ist.
       </p>
 
-      <h2>8. Datenspeicherung und Serverstandort</h2>
+      <h2>8. Datenspeicherung, Server­standorte und Dienstleister</h2>
       <p>
-        Ihre hochgeladenen Dateien sowie Kontodaten werden in der Schweiz gespeichert. Wir nutzen Supabase
-        (Supabase Inc.) als Datenbankdienst mit Serverstandort in der Schweiz (AWS eu-central-2, Zürich).
-        Die Datenbankverbindung sowie alle Dateiübertragungen sind durchgehend SSL/TLS-verschlüsselt.
+        DMSKI nutzt zwei voneinander getrennte Infrastruktur-Dienstleister, damit jedes Datenelement dort
+        liegt, wo es technisch sinnvoll und rechtlich vertretbar ist:
+      </p>
+      <ul>
+        <li>
+          <strong>Haupt-Datenbank (Benutzerkonten, Fall-Metadaten, Credits-Transaktionen):</strong>
+          Betrieben auf <strong>Railway Corp., San Francisco, USA</strong>. Die Daten werden in einem
+          PostgreSQL-Cluster verschlüsselt gespeichert und ausschliesslich über TLS übertragen. Eine
+          Übermittlung findet dabei in die USA statt; sie stützt sich auf die EU-Standard­vertrags­klauseln
+          sowie gleichwertige schweizerische Garantien.
+        </li>
+        <li>
+          <strong>File-Storage (hochgeladene Dokumente und Bilder):</strong>
+          Abgelegt in einem privaten Bucket bei <strong>Supabase Inc.</strong> mit Server­standort
+          <strong>AWS eu-central-2 (Zürich, Schweiz)</strong>. Der Bucket ist nicht öffentlich zugänglich;
+          Zugriffe erfolgen nur über signierte URLs und sind an Ihre Authentifizierung gebunden.
+        </li>
+      </ul>
+      <p>
+        <strong>Löschung durch DMSKI:</strong> Wir behalten uns vor, hochgeladene Files ohne vorherige
+        Rücksprache zu löschen, wenn konkrete Anhaltspunkte auf einen Verstoss gegen unsere
+        <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>, auf strafrechtlich relevante Inhalte
+        oder auf missbräuchliche Nutzung hindeuten. Wir informieren die betroffene Person, soweit dies
+        rechtlich zulässig ist.
+      </p>
+      <p>
+        <strong>Entwicklungsphase:</strong> DMSKI befindet sich in den ersten zwölf Monaten nach
+        Lancierung in aktiver Weiterentwicklung. In dieser Phase kann es zu kurzen Unterbrüchen,
+        Funktionsanpassungen oder gelegentlichen Migrationen von Datenstrukturen kommen. Wir arbeiten
+        daran, die Plattform Schritt für Schritt zu verbessern, und bitten um Verständnis.
       </p>
 
       <h2>9. Änderungen</h2>
@@ -155,7 +188,7 @@
         Vereinbarung mit Ihnen ist, werden wir Sie im Falle einer Aktualisierung über die Änderung per E-Mail
         oder auf andere geeignete Weise informieren.
       </p>
-      <p>Gültig ab 20.03.2026</p>
+      <p>Gültig ab 12.04.2026</p>
     </section>
 
   </main>
@@ -186,7 +219,7 @@
       <span class="footer-dot">&middot;</span>
       <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>
     </div>
-    <p class="footer-copyright">\&copy; <span id="copyrightYear"></span> GetLeedz GmbH</p>
+    <p class="footer-copyright">&copy; <span id="copyrightYear"></span> GetLeedz GmbH</p>
   </footer>
   <script>
     document.getElementById("copyrightYear").textContent=new Date().getFullYear();
