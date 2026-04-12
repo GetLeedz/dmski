@@ -557,8 +557,12 @@ router.delete("/:userId", requireAuth, requireAdmin, async (req, res) => {
 
 // DELETE /me – Self-service account deletion (non-admin)
 router.delete("/me/account", requireAuth, async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.sub || req.user.id;
   const userRole = req.user.role;
+
+  if (!userId) {
+    return res.status(401).json({ error: "Keine gültige Benutzer-ID im Token." });
+  }
 
   if (userRole === "admin") {
     return res.status(403).json({ error: "Admin-Konten können nicht selbst gelöscht werden." });
