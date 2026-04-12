@@ -9,6 +9,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    .ac-row-deleted td {
+      opacity: .55;
+      background: rgba(148,163,184,.05);
+    }
+    .ac-row-deleted td:first-child strong {
+      text-decoration: line-through;
+      text-decoration-color: rgba(148,163,184,.6);
+    }
+    .ac-deleted-badge {
+      display: inline-block;
+      padding: .14rem .5rem;
+      border-radius: 6px;
+      background: rgba(220,38,38,.08);
+      color: #991b1b;
+      border: 1px solid rgba(220,38,38,.25);
+      font-size: .68rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+  </style>
 </head>
 <body>
   <div id="site-nav"></div>
@@ -83,13 +104,21 @@
           tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">Keine Kunden.</td></tr>';
           return;
         }
+        const fmtDate = (iso) => iso
+          ? new Date(iso).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+          : "—";
+
         tbody.innerHTML = customers.map(u => {
           const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || "—";
           const roleLabel = "Fallinhaber";
-          const lastLogin = u.last_login_at
-            ? new Date(u.last_login_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
-            : "—";
-          return `<tr>
+          const isDeleted = !!u.deleted_at;
+          const lastLogin = isDeleted
+            ? `<span class="ac-deleted-badge" title="Konto gelöscht am ${fmtDate(u.deleted_at)}">Gelöscht · ${fmtDate(u.deleted_at)}</span>`
+            : (u.last_login_at ? new Date(u.last_login_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—");
+          const action = isDeleted
+            ? '<span style="color:rgba(26,43,60,.3);font-size:.78rem">—</span>'
+            : `<button class="admin-grant-btn" onclick="grantCredits('${u.id}','${name.replace(/'/g, "&#39;")}')">+ Credits</button>`;
+          return `<tr${isDeleted ? ' class="ac-row-deleted"' : ""}>
             <td><strong>${name}</strong></td>
             <td>${u.email}</td>
             <td>${roleLabel}</td>
@@ -98,7 +127,7 @@
             <td>${u.total_spent}</td>
             <td>${u.file_count || 0}</td>
             <td>${lastLogin}</td>
-            <td><button class="admin-grant-btn" onclick="grantCredits('${u.id}','${name}')">+ Credits</button></td>
+            <td>${action}</td>
           </tr>`;
         }).join("");
       } catch (err) {

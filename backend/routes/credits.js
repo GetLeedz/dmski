@@ -391,14 +391,14 @@ router.get("/admin/overview", requireAuth, async (req, res) => {
   try {
     await ensureSchema();
     const r = await pool.query(`
-      SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.last_login_at,
+      SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.last_login_at, u.deleted_at,
              COALESCE(uc.balance, 0) AS balance,
              COALESCE(uc.total_purchased, 0) AS total_purchased,
              COALESCE(uc.total_spent, 0) AS total_spent,
              (SELECT COUNT(*) FROM case_documents cd JOIN cases c ON cd.case_id = c.id WHERE EXISTS (SELECT 1 FROM users u2 WHERE u2.id = u.id AND u2.case_id = c.id)) AS file_count
       FROM users u
       LEFT JOIN user_credits uc ON uc.user_id = u.id
-      ORDER BY COALESCE(uc.total_purchased, 0) DESC
+      ORDER BY u.deleted_at ASC NULLS FIRST, COALESCE(uc.total_purchased, 0) DESC
     `);
     const settings = await getSettings();
     res.json({ users: r.rows, settings });
