@@ -35,7 +35,7 @@ async function ensureTrackingSchema() {
   }
 }
 
-const LOGIN_URL = "https://dmski.ch";
+const LOGIN_URL = "https://dmski.ch/login.html";
 const FROM_ADDRESS = "DMSKI <info@dmski.ch>";
 
 function getResend() {
