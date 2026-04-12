@@ -630,6 +630,12 @@ router.delete("/me/account", requireAuth, async (req, res) => {
       await pool.query("DELETE FROM customer_users WHERE collaborator_id = $1", [userId]).catch(() => {});
     }
 
+    // Credit-Daten hart löschen (Balance + Transaktionshistorie).
+    // Bei einer eventuellen Re-Registrierung mit derselben E-Mail startet
+    // der Benutzer mit null Credits und erhält nach Verify wieder den Bonus.
+    await pool.query("DELETE FROM user_credits WHERE user_id = $1", [userId]).catch(() => {});
+    await pool.query("DELETE FROM credit_transactions WHERE user_id = $1", [userId]).catch(() => {});
+
     // Soft-Delete: Benutzerzeile bleibt für Admin-Übersicht erhalten,
     // Daten (Cases, Files, Team) wurden oben bereits hart gelöscht.
     const updateResult = await pool.query(

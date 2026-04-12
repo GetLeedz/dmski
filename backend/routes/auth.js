@@ -295,20 +295,28 @@ router.post("/verify-email", async (req, res) => {
       [user.id]
     );
 
-    // Grant free signup credits
+    // Grant free signup credits — idempotent: nur wenn noch kein Bonus gebucht ist
     try {
       await ensureCreditsSchema();
-      const settingsRes = await pool.query(`SELECT free_signup_credits FROM credit_settings WHERE id = 1`);
-      const freeCredits = settingsRes.rows[0]?.free_signup_credits ?? 10;
-      if (freeCredits > 0) {
-        await pool.query(
-          `INSERT INTO user_credits (user_id, balance, total_purchased) VALUES ($1, $2, 0) ON CONFLICT (user_id) DO UPDATE SET balance = user_credits.balance + $2`,
-          [user.id, freeCredits]
-        );
-        await pool.query(
-          `INSERT INTO credit_transactions (user_id, type, amount, balance_after, description) VALUES ($1, 'signup_bonus', $2, $2, $3)`,
-          [user.id, freeCredits, `${freeCredits} Willkommens-Credits`]
-        );
+      const alreadyGranted = await pool.query(
+        `SELECT 1 FROM credit_transactions WHERE user_id = $1 AND type = 'signup_bonus' LIMIT 1`,
+        [user.id]
+      );
+      if (alreadyGranted.rows.length === 0) {
+        const settingsRes = await pool.query(`SELECT free_signup_credits FROM credit_settings WHERE id = 1`);
+        const freeCredits = settingsRes.rows[0]?.free_signup_credits ?? 10;
+        if (freeCredits > 0) {
+          await pool.query(
+            `INSERT INTO user_credits (user_id, balance, total_purchased) VALUES ($1, $2, 0) ON CONFLICT (user_id) DO UPDATE SET balance = user_credits.balance + $2`,
+            [user.id, freeCredits]
+          );
+          await pool.query(
+            `INSERT INTO credit_transactions (user_id, type, amount, balance_after, description) VALUES ($1, 'signup_bonus', $2, $2, $3)`,
+            [user.id, freeCredits, `${freeCredits} Willkommens-Credits`]
+          );
+        }
+      } else {
+        console.log(`[verify] Signup bonus already granted for user ${user.id} — skipped.`);
       }
     } catch (creditErr) {
       console.warn("[auth] Could not grant signup credits:", creditErr.message);
