@@ -46,14 +46,30 @@
             <input id="caseName" name="caseName" type="text" class="field-input" placeholder="z. B. Sorgerechtsverfahren Müller" aria-label="Fallname" required />
           </div>
 
+          <div class="parties-intro">
+            <span class="parties-intro-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4"/>
+                <circle cx="12" cy="8" r=".5" fill="currentColor"/>
+              </svg>
+            </span>
+            <p>
+              <strong>Wer soll analysiert werden?</strong>
+              Tragen Sie alle Namen, Rufnamen und Rollen ein, <u>genau wie sie in Ihren Dokumenten vorkommen</u>. Die KI nutzt diese Keywörter, um in jedem File zuverlässig zu erkennen, wer wer ist. <em>Mehrere Einträge mit Komma trennen.</em>
+            </p>
+          </div>
+
           <div class="field-row">
             <div class="field-group">
               <label class="field-label" for="protectedPersonName">Fokus-Partei</label>
-              <input id="protectedPersonName" name="protectedPersonName" type="text" class="field-input" placeholder="Name, Alias …" aria-label="Fokus-Partei" />
+              <input id="protectedPersonName" name="protectedPersonName" type="text" class="field-input" placeholder="z. B. Max Müller, Max, Vater, Kindesvater" aria-label="Fokus-Partei" />
+              <small class="field-help">Die Person, deren Situation die KI untersuchen soll</small>
             </div>
             <div class="field-group">
               <label class="field-label" for="opposingPartyName">Gegenpartei</label>
-              <input id="opposingPartyName" name="opposingPartyName" type="text" class="field-input" placeholder="Name, Behörde …" aria-label="Gegenpartei" />
+              <input id="opposingPartyName" name="opposingPartyName" type="text" class="field-input" placeholder="z. B. Anna Müller, Anna, Mutter, Kindsmutter" aria-label="Gegenpartei" />
+              <small class="field-help">Die Gegenseite im Verfahren</small>
             </div>
           </div>
 
