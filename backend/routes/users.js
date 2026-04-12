@@ -563,19 +563,14 @@ router.delete("/me/account", requireAuth, async (req, res) => {
     const info = { files: 0, cases: [], teamMembers: 0 };
 
     if (userRole === "customer") {
-      // Find all cases owned by this user
-      const casesResult = await pool.query(
-        "SELECT id, case_name FROM cases WHERE id IN (SELECT case_id FROM users WHERE id = $1 AND case_id IS NOT NULL) OR id IN (SELECT DISTINCT c.id FROM cases c JOIN case_documents cd ON cd.case_id = c.id WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = $1 AND u.case_id = c.id))",
+      // Count collaborators linked to this customer (team members that lose access)
+      const teamResult = await pool.query(
+        "SELECT DISTINCT collaborator_id FROM customer_users WHERE customer_id = $1",
         [userId]
       );
-      // Actually: cases where this user is the owner — find via customer_users
-      const ownedCases = await pool.query(
-        "SELECT DISTINCT cu.collaborator_id FROM customer_users WHERE customer_id = $1",
-        [userId]
-      );
-      info.teamMembers = ownedCases.rows.length;
+      info.teamMembers = teamResult.rows.length;
 
-      // Count files across all cases this user owns
+      // Count files across the case this user owns
       const userCase = await pool.query("SELECT case_id FROM users WHERE id = $1", [userId]);
       if (userCase.rows[0]?.case_id) {
         const fileCount = await pool.query(
