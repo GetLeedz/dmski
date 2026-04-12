@@ -172,6 +172,12 @@
       font-size: 0.78rem;
       color: #64748b;
     }
+    .ac-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
     .ac-open-btn {
       padding: 0.45rem 0.95rem;
       background: linear-gradient(135deg, #1A2B3C, #243447);
@@ -184,11 +190,286 @@
       cursor: pointer;
       transition: transform 120ms, box-shadow 160ms;
       box-shadow: 0 2px 8px rgba(26,43,60,0.25);
+      white-space: nowrap;
     }
     .ac-open-btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 4px 14px rgba(26,43,60,0.35);
     }
+    .ac-icon-btn {
+      width: 2rem;
+      height: 2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      border-radius: 8px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 140ms ease;
+      flex-shrink: 0;
+    }
+    .ac-icon-btn svg { width: 1rem; height: 1rem; }
+    .ac-icon-btn:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    .ac-icon-btn--edit:hover {
+      background: rgba(197,160,89,0.08);
+      border-color: rgba(197,160,89,0.4);
+      color: #96700a;
+    }
+    .ac-icon-btn--delete:hover {
+      background: rgba(220,38,38,0.08);
+      border-color: rgba(220,38,38,0.4);
+      color: #991b1b;
+    }
+
+    /* ── Modal ── */
+    .ac-modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,0.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 1rem;
+      animation: acFadeIn 180ms ease;
+    }
+    .ac-modal-bg.open { display: flex; }
+    @keyframes acFadeIn { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes acSlideIn { from { opacity: 0; transform: translateY(12px) scale(.98) } to { opacity: 1; transform: translateY(0) scale(1) } }
+
+    .ac-modal {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 25px 70px rgba(15,23,42,0.25), 0 0 0 1px rgba(15,23,42,0.06);
+      max-width: 560px;
+      width: 100%;
+      animation: acSlideIn 220ms cubic-bezier(.2,.9,.3,1);
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+    .ac-modal--danger {
+      box-shadow: 0 25px 70px rgba(15,23,42,0.25), 0 0 0 1px rgba(220,38,38,0.15);
+      max-width: 460px;
+    }
+    .ac-modal-hd {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      padding: 1.6rem 1.8rem 1rem;
+      position: relative;
+    }
+    .ac-modal-icon {
+      flex-shrink: 0;
+      width: 2.4rem; height: 2.4rem;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .ac-modal-icon--edit {
+      background: linear-gradient(135deg, #c5a059, #8c6a2a);
+      box-shadow: 0 4px 14px rgba(197,160,89,0.35);
+    }
+    .ac-modal-icon--danger {
+      background: linear-gradient(135deg, #dc2626, #991b1b);
+      box-shadow: 0 4px 14px rgba(220,38,38,0.35);
+    }
+    .ac-modal h2 {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0.12rem 0 0.25rem;
+    }
+    .ac-modal-sub {
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.45;
+      margin: 0;
+    }
+    .ac-modal-x {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      width: 1.9rem; height: 1.9rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: #94a3b8;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 140ms;
+    }
+    .ac-modal-x:hover { background: #f1f5f9; color: #0f172a; }
+
+    .ac-modal-body {
+      padding: 0.4rem 1.8rem 1.6rem;
+    }
+
+    .ac-edit-caseid {
+      font-size: 0.74rem;
+      color: #64748b;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0.75rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .ac-edit-caseid strong {
+      color: #0f172a;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .ac-field {
+      margin-bottom: 0.95rem;
+    }
+    .ac-field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.35rem;
+    }
+    .ac-field label code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 0.08rem 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #dc2626;
+      text-transform: none;
+    }
+    .ac-field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 0.2rem;
+    }
+    .ac-field-row .ac-field { margin-bottom: 0.95rem; }
+    @media (max-width: 560px) {
+      .ac-field-row { grid-template-columns: 1fr; }
+    }
+    .ac-input {
+      width: 100%;
+      padding: 0.62rem 0.85rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 9px;
+      font: inherit;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 160ms, box-shadow 160ms;
+      background: #fff;
+    }
+    .ac-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(197,160,89,0.15);
+    }
+    .ac-modal--danger .ac-input:focus {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+    }
+
+    .ac-del-impact {
+      background: #fef2f2;
+      border: 1px solid rgba(220,38,38,0.15);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+    }
+    .ac-del-label {
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #991b1b;
+      margin-bottom: 0.3rem;
+    }
+    .ac-del-value {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.92rem;
+    }
+
+    .ac-modal-ft {
+      display: flex;
+      gap: 0.55rem;
+      justify-content: flex-end;
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #f1f5f9;
+    }
+    .ac-btn {
+      padding: 0.62rem 1.15rem;
+      border-radius: 9px;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: all 160ms;
+    }
+    .ac-btn-cancel {
+      background: #fff;
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+    .ac-btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .ac-btn-save {
+      background: linear-gradient(135deg, #1A2B3C, #243447);
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(26,43,60,0.25);
+    }
+    .ac-btn-save:hover:not(:disabled) { box-shadow: 0 5px 18px rgba(26,43,60,0.35); }
+    .ac-btn-danger {
+      background: linear-gradient(135deg, #dc2626, #991b1b);
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(220,38,38,0.3);
+    }
+    .ac-btn-danger:hover:not(:disabled) { box-shadow: 0 5px 18px rgba(220,38,38,0.45); }
+    .ac-btn:disabled {
+      background: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ── Toast ── */
+    .ac-toast {
+      position: fixed;
+      top: 1.3rem; right: 1.3rem;
+      z-index: 10001;
+      background: #0f172a;
+      color: #fff;
+      padding: 0.85rem 1.2rem 0.85rem 1rem;
+      border-radius: 11px;
+      font-size: 0.86rem;
+      font-weight: 500;
+      box-shadow: 0 12px 40px rgba(15,23,42,0.3);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      transform: translateX(calc(100% + 2rem));
+      transition: transform 300ms cubic-bezier(.2,.9,.3,1);
+      max-width: 380px;
+    }
+    .ac-toast.show { transform: translateX(0); }
+    .ac-toast.error { background: #991b1b; }
+    .ac-toast.success { background: #065f46; }
+    .ac-toast-icon {
+      flex-shrink: 0;
+      width: 1.1rem; height: 1.1rem;
+      display: flex;
+    }
+    .ac-toast-icon svg { width: 100%; height: 100%; }
 
     .ac-empty, .ac-loading {
       padding: 3rem 1rem;
@@ -248,11 +529,113 @@
       </div>
     </div>
 
-    <div id="site-footer"></div>
   </main>
 
+  <!-- ══════ EDIT MODAL ══════ -->
+  <div class="ac-modal-bg" id="acEditModal" role="dialog" aria-modal="true" aria-labelledby="acEditTitle">
+    <div class="ac-modal">
+      <div class="ac-modal-hd">
+        <div class="ac-modal-icon ac-modal-icon--edit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 id="acEditTitle">Fall bearbeiten</h2>
+          <p class="ac-modal-sub">Änderungen werden sofort gespeichert.</p>
+        </div>
+        <button class="ac-modal-x" id="acEditClose" aria-label="Schliessen">&times;</button>
+      </div>
+
+      <div class="ac-modal-body">
+        <div class="ac-edit-caseid">Fall-ID: <strong id="acEditCaseId">—</strong></div>
+
+        <div class="ac-field">
+          <label>Fallname</label>
+          <input type="text" id="acFieldName" class="ac-input" />
+        </div>
+
+        <div class="ac-field-row">
+          <div class="ac-field">
+            <label>Fokus-Partei</label>
+            <input type="text" id="acFieldFokus" class="ac-input" placeholder="Max Müller, Max, Vater" />
+          </div>
+          <div class="ac-field">
+            <label>Gegenpartei</label>
+            <input type="text" id="acFieldGegen" class="ac-input" placeholder="Anna Müller, Anna, Mutter" />
+          </div>
+        </div>
+
+        <div class="ac-field-row">
+          <div class="ac-field">
+            <label>Land</label>
+            <input type="text" id="acFieldCountry" class="ac-input" />
+          </div>
+          <div class="ac-field">
+            <label>Kanton / Region</label>
+            <input type="text" id="acFieldRegion" class="ac-input" />
+          </div>
+          <div class="ac-field">
+            <label>Ort</label>
+            <input type="text" id="acFieldCity" class="ac-input" />
+          </div>
+        </div>
+
+        <div class="ac-modal-ft">
+          <button class="ac-btn ac-btn-cancel" id="acEditCancel">Abbrechen</button>
+          <button class="ac-btn ac-btn-save" id="acEditSave">Änderungen speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ DELETE CONFIRM MODAL ══════ -->
+  <div class="ac-modal-bg" id="acDeleteModal" role="dialog" aria-modal="true" aria-labelledby="acDeleteTitle">
+    <div class="ac-modal ac-modal--danger">
+      <div class="ac-modal-hd">
+        <div class="ac-modal-icon ac-modal-icon--danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+        </div>
+        <div>
+          <h2 id="acDeleteTitle">Fall unwiderruflich löschen?</h2>
+          <p class="ac-modal-sub">Alle Files, KI-Analysen und Metadaten des Falls werden entfernt. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        </div>
+        <button class="ac-modal-x" id="acDeleteClose" aria-label="Schliessen">&times;</button>
+      </div>
+
+      <div class="ac-modal-body">
+        <div class="ac-del-impact">
+          <div class="ac-del-label">Fall</div>
+          <div class="ac-del-value" id="acDelValue">—</div>
+        </div>
+
+        <div class="ac-field" style="margin-top:1rem">
+          <label>Tippen Sie <code>LÖSCHEN</code> zur Bestätigung</label>
+          <input type="text" id="acDelConfirm" class="ac-input" autocomplete="off" spellcheck="false" placeholder="LÖSCHEN" />
+        </div>
+
+        <div class="ac-modal-ft">
+          <button class="ac-btn ac-btn-cancel" id="acDeleteCancel">Abbrechen</button>
+          <button class="ac-btn ac-btn-danger" id="acDeleteConfirmBtn" disabled>Unwiderruflich löschen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ TOAST ══════ -->
+  <div id="acToast" class="ac-toast" role="status" aria-live="polite">
+    <span class="ac-toast-icon" id="acToastIcon"></span>
+    <span id="acToastText"></span>
+  </div>
+
   <script src="nav.js"></script>
-  <script src="footer.js"></script>
   <script>
     const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
       ? "" : "https://lively-reverence-production-def3.up.railway.app";
@@ -270,7 +653,38 @@
       document.getElementById("acSearchInput").addEventListener("input", (e) => {
         applyFilter(e.target.value);
       });
+
+      // ── Edit Modal Handlers ──
+      document.getElementById("acEditClose").addEventListener("click", closeEditModal);
+      document.getElementById("acEditCancel").addEventListener("click", closeEditModal);
+      document.getElementById("acEditSave").addEventListener("click", saveEdit);
+      document.getElementById("acEditModal").addEventListener("click", (e) => {
+        if (e.target.id === "acEditModal") closeEditModal();
+      });
+
+      // ── Delete Modal Handlers ──
+      document.getElementById("acDeleteClose").addEventListener("click", closeDeleteModal);
+      document.getElementById("acDeleteCancel").addEventListener("click", closeDeleteModal);
+      document.getElementById("acDeleteConfirmBtn").addEventListener("click", confirmDelete);
+      document.getElementById("acDeleteModal").addEventListener("click", (e) => {
+        if (e.target.id === "acDeleteModal") closeDeleteModal();
+      });
+      document.getElementById("acDelConfirm").addEventListener("input", (e) => {
+        document.getElementById("acDeleteConfirmBtn").disabled =
+          e.target.value.trim().toUpperCase() !== "LÖSCHEN";
+      });
+
+      // ESC closes both modals
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeEditModal();
+          closeDeleteModal();
+        }
+      });
     });
+
+    let editingCase = null;
+    let deletingCase = null;
 
     let allCases = [];
 
@@ -366,7 +780,15 @@
           <td style="text-align:center"><span class="${fileCountCls}">${fileCount}</span></td>
           <td class="ac-hide-md"><span class="ac-date">${fmtDate(c.created_at)}</span></td>
           <td>
-            <button class="ac-open-btn" onclick="openCase('${esc(c.id)}')">Öffnen</button>
+            <div class="ac-actions">
+              <button class="ac-icon-btn ac-icon-btn--edit" onclick="openEditModal('${esc(c.id)}')" title="Bearbeiten" aria-label="Fall bearbeiten">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+              </button>
+              <button class="ac-icon-btn ac-icon-btn--delete" onclick="openDeleteModal('${esc(c.id)}')" title="Löschen" aria-label="Fall löschen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+              <button class="ac-open-btn" onclick="openCase('${esc(c.id)}')">Öffnen</button>
+            </div>
           </td>
         </tr>`;
       }).join("");
@@ -376,6 +798,138 @@
       if (!/^\d{6}$/.test(caseId)) return;
       sessionStorage.setItem("currentCaseId", caseId);
       window.location.href = "/files.html";
+    }
+
+    // ══════ EDIT ══════
+    function openEditModal(caseId) {
+      const c = allCases.find(x => String(x.id) === String(caseId));
+      if (!c) return;
+      editingCase = c;
+      document.getElementById("acEditCaseId").textContent = c.id;
+      document.getElementById("acFieldName").value = c.case_name || "";
+      document.getElementById("acFieldFokus").value = c.protected_person_name || "";
+      document.getElementById("acFieldGegen").value = c.opposing_party || "";
+      document.getElementById("acFieldCountry").value = c.country || "";
+      document.getElementById("acFieldRegion").value = c.region || "";
+      document.getElementById("acFieldCity").value = c.city || "";
+      document.getElementById("acEditModal").classList.add("open");
+      setTimeout(() => document.getElementById("acFieldName").focus(), 120);
+    }
+
+    function closeEditModal() {
+      document.getElementById("acEditModal").classList.remove("open");
+      editingCase = null;
+    }
+
+    async function saveEdit() {
+      if (!editingCase) return;
+      const saveBtn = document.getElementById("acEditSave");
+      const payload = {
+        case_name: document.getElementById("acFieldName").value.trim(),
+        protected_person_name: document.getElementById("acFieldFokus").value.trim(),
+        opposing_party: document.getElementById("acFieldGegen").value.trim(),
+        country: document.getElementById("acFieldCountry").value.trim(),
+        region: document.getElementById("acFieldRegion").value.trim(),
+        city: document.getElementById("acFieldCity").value.trim()
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Speichert …";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/cases/${editingCase.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Speichern fehlgeschlagen");
+
+        // Update local cache
+        const idx = allCases.findIndex(x => x.id === editingCase.id);
+        if (idx !== -1) {
+          allCases[idx] = { ...allCases[idx], ...payload };
+          render(allCases.filter(c => {
+            const q = document.getElementById("acSearchInput").value.trim().toLowerCase();
+            if (!q) return true;
+            return [c.id, c.case_name, c.protected_person_name, c.opposing_party, c.owner_first_name, c.owner_last_name, c.owner_email, c.city, c.region, c.country].filter(Boolean).join(" ").toLowerCase().includes(q);
+          }));
+        }
+
+        closeEditModal();
+        showToast("Fall aktualisiert.", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Änderungen speichern";
+      }
+    }
+
+    // ══════ DELETE ══════
+    function openDeleteModal(caseId) {
+      const c = allCases.find(x => String(x.id) === String(caseId));
+      if (!c) return;
+      deletingCase = c;
+      const label = `${c.id} — ${c.case_name || "Ohne Namen"}`;
+      document.getElementById("acDelValue").textContent = label;
+      document.getElementById("acDelConfirm").value = "";
+      document.getElementById("acDeleteConfirmBtn").disabled = true;
+      document.getElementById("acDeleteConfirmBtn").textContent = "Unwiderruflich löschen";
+      document.getElementById("acDeleteModal").classList.add("open");
+      setTimeout(() => document.getElementById("acDelConfirm").focus(), 120);
+    }
+
+    function closeDeleteModal() {
+      document.getElementById("acDeleteModal").classList.remove("open");
+      deletingCase = null;
+    }
+
+    async function confirmDelete() {
+      if (!deletingCase) return;
+      const btn = document.getElementById("acDeleteConfirmBtn");
+      btn.disabled = true;
+      btn.textContent = "Wird gelöscht …";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/cases/${deletingCase.id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Löschen fehlgeschlagen");
+
+        // Remove from local cache
+        allCases = allCases.filter(c => c.id !== deletingCase.id);
+        const q = document.getElementById("acSearchInput").value;
+        applyFilter(q);
+
+        closeDeleteModal();
+        showToast("Fall gelöscht.", "success");
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Unwiderruflich löschen";
+        showToast(err.message, "error");
+      }
+    }
+
+    // ══════ TOAST ══════
+    function showToast(text, variant = "success") {
+      const toast = document.getElementById("acToast");
+      const icon = document.getElementById("acToastIcon");
+      const textEl = document.getElementById("acToastText");
+      const icons = {
+        success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+      };
+      icon.innerHTML = icons[variant] || icons.success;
+      textEl.textContent = text;
+      toast.className = `ac-toast ${variant} show`;
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("show"), 3600);
     }
   </script>
 </body>
