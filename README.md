@@ -11,11 +11,11 @@ Monorepo mit einfachem Node-Backend und statischem Frontend (Login UI).
 
 - Node.js 20+
 - npm 10+
-- Optional: PostgreSQL fuer Migrationen
+- Optional: PostgreSQL für Migrationen
 
 ## Schnellstart
 
-### 1) Abhaengigkeiten installieren
+### 1) Abhängigkeiten installieren
 
 ```bash
 cd backend
@@ -91,7 +91,7 @@ Beispiel:
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/dmski
 ```
 
-Migrationen ausfuehren:
+Migrationen ausführen:
 
 ```bash
 cd backend

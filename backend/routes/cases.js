@@ -1383,7 +1383,7 @@ function extractPeopleFromContextPhrases(rawText, blockedNames = new Set()) {
   const text = String(rawText || "");
   const candidates = [];
   const patterns = [
-    /\b(?:fuer|für|gegen|zulasten von|zu lasten von|betreffend)\s+([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+)/giu,
+    /\b(?:für|für|gegen|zulasten von|zu lasten von|betreffend)\s+([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+)/giu,
     /\b([A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+\s+[A-ZÄÖÜ][A-Za-zÀ-ÖØ-öø-ÿ'’-]+)\s+ist\s+/giu
   ];
 
@@ -1416,7 +1416,7 @@ function extractLabeledValue(rawText, labels) {
 }
 
 function extractPeopleFromLabeledFields(rawText, blockedNames = new Set()) {
-  const recipients = extractLabeledValue(rawText, ["An", "To", "Empfänger", "Empfaenger", "Cc", "Kopie"]);
+  const recipients = extractLabeledValue(rawText, ["An", "To", "Empfänger", "Empfänger", "Cc", "Kopie"]);
   if (!recipients) {
     return [];
   }
@@ -1499,7 +1499,7 @@ function extractDisadvantagedPerson(rawText, people = [], author = "") {
     "Benachteiligter",
     "Betroffene Person",
     "Zu benachteiligen",
-    "Nachteil fuer",
+    "Nachteil für",
     "Zulasten von"
   ]);
 
@@ -1508,7 +1508,7 @@ function extractDisadvantagedPerson(rawText, people = [], author = "") {
   }
 
   const text = String(rawText || "");
-  const phraseMatch = text.match(/(?:benachteiligt(?:e|en)?|zulasten von|zu lasten von|nachteil(?:ig)? fuer)\s*[:\-]?\s*([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\s+[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)/u);
+  const phraseMatch = text.match(/(?:benachteiligt(?:e|en)?|zulasten von|zu lasten von|nachteil(?:ig)? für)\s*[:\-]?\s*([A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+\s+[A-Z├ä├û├£][a-z├ñ├Â├╝├ƒ'-]+)/u);
   if (phraseMatch && looksLikePersonName(phraseMatch[1]) && phraseMatch[1].toLowerCase() !== authorKey) {
     return normalizeWhitespace(phraseMatch[1]);
   }
@@ -1622,7 +1622,7 @@ function classifyMentionPolarity(text) {
   }
 
   const negative = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert)/.test(lower);
-  const positive = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher)/.test(lower);
+  const positive = /(unterstütz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher)/.test(lower);
 
   if (negative && !positive) {
     return "negative";
@@ -1639,8 +1639,8 @@ function countPolaritySignals(text) {
     return { positive: 0, negative: 0 };
   }
 
-  const negativeRegex = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert|unkooperativ|defizit|untauglich|ungeeignet|vorwurf|durchbox|mehr\s+muehe|muehe\s+.*akzept|nicht\s+.*interessen\s+.*kinder|konfliktarsenal|unp[uü]nkt|selten\s+gelingt|immer\s+wieder\s+nicht|egozentrisch|narziss|rigide?\b|stur\b|uneinsicht|unflexib|wenig\s+kompromiss|nicht\s+in\s+der\s+lage|instrumentalis|mangel|es\s+fehlt\s+an|kein\s+verstaendnis|ohne\s+einsicht|eingeschraenkt\s+.*faehig|kaum\s+.*bereit|destruktiv|feindsel|eskalier|blockier|provozi|entwert|herabsetz|diskreditier|unverantwort|r[uü]cksichtslos|manipulat|grenzueberschreit|parentifizier|kindswohl.*gefaehrd|obstrukt|verweigerungshalt|loyalit[aä]tskonflikt|entfremd)/g;
-  const positiveRegex = /(unterstuetz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher|kompetent|kooperativ|konstruktiv|empath|nimmt\s+.*aufgaben\s+.*wahr|zugetraut|in\s+der\s+lage|gute\s+argumente|kontinuitaet|beibehaltung\s+.*obhut|alleinzuweisung|geeignet|faehig|flexibil|umsetzung\s+von\s+empfehl|reflektiert|stabil|zuverl[aä]ssig|engagiert|stabilisier|verantwortungsvoll|dem\s+wohl\s+.*dienlich|liebevoll|foerderlich|warmherzig|beziehungsf[aä]hig|bindungstol|einfuehlsam|selbstreflekt|ausgewogen|kindgerecht|altersgerecht|ressourcenorient|loesungsorient|wertschaetz|verlaesslich|aufmerksam|f[uü]rsorglich)/g;
+  const negativeRegex = /(benachteilig|beleidig|droh|diffam|anschwarz|angriff|verletz|abwert|schlecht|nachteil|zulasten|zu lasten|konkurs|kuendigung|sanktion|verweigert|unkooperativ|defizit|untauglich|ungeeignet|vorwurf|durchbox|mehr\s+muehe|muehe\s+.*akzept|nicht\s+.*interessen\s+.*kinder|konfliktarsenal|unp[uü]nkt|selten\s+gelingt|immer\s+wieder\s+nicht|egozentrisch|narziss|rigide?\b|stur\b|uneinsicht|unflexib|wenig\s+kompromiss|nicht\s+in\s+der\s+lage|instrumentalis|mangel|es\s+fehlt\s+an|kein\s+verstaendnis|ohne\s+einsicht|eingeschraenkt\s+.*faehig|kaum\s+.*bereit|destruktiv|feindsel|eskalier|blockier|provozi|entwert|herabsetz|diskreditier|unverantwort|r[uü]cksichtslos|manipulat|grenzüberschreit|parentifizier|kindswohl.*gefaehrd|obstrukt|verweigerungshalt|loyalit[aä]tskonflikt|entfremd)/g;
+  const positiveRegex = /(unterstütz|hilf|lieb|freundlich|respekt|fair|gut|positiv|stark|foerder|ermutig|sicher|kompetent|kooperativ|konstruktiv|empath|nimmt\s+.*aufgaben\s+.*wahr|zugetraut|in\s+der\s+lage|gute\s+argumente|kontinuitaet|beibehaltung\s+.*obhut|alleinzuweisung|geeignet|faehig|flexibil|umsetzung\s+von\s+empfehl|reflektiert|stabil|zuverl[aä]ssig|engagiert|stabilisier|verantwortungsvoll|dem\s+wohl\s+.*dienlich|liebevoll|foerderlich|warmherzig|beziehungsf[aä]hig|bindungstol|einfuehlsam|selbstreflekt|ausgewogen|kindgerecht|altersgerecht|ressourcenorient|loesungsorient|wertschaetz|verlaesslich|aufmerksam|f[uü]rsorglich)/g;
 
   return {
     negative: (lower.match(negativeRegex) || []).length,
@@ -2518,62 +2518,62 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
 
   return [
     "Du bist ein neutraler forensischer Profiler.",
-    "Deine Aufgabe ist die mathematisch praezise Erfassung von positiven und negativen Zuschreibungen fuer BEIDE Parteien im Dokument.",
+    "Deine Aufgabe ist die mathematisch präzise Erfassung von positiven und negativen Zuschreibungen für BEIDE Parteien im Dokument.",
     "",
     "### 1. ROLLEN-IDENTIFIKATION:",
     "- Identifiziere die Fokus-Partei und die Gegenpartei aus dem Kontext und den Alias-Listen.",
     `- FOKUS_PARTEI_KEYWORDS = [${focusKeywords}]`,
     `- GEGENPARTEI_KEYWORDS = [${referenceKeywords}]`,
-    "- Extrahiere alle Namen (inkl. Kinder) und den Absender (Behoerde/Amt).",
-    "- WICHTIG: Fuehre auch den VERFASSER/AUTOR des Dokuments in der personen-Liste auf (z.B. Berufsbeistand, Gerichtspräsident, Anwalt, Gutachter, Psychologe, Leiter Jugendforensik), mit seiner Funktion als 'rolle'.",
-    "- WICHTIG: Die Person UEBER DIE das Dokument handelt (Patient, Kind, Betroffener) MUSS in der personen-Liste stehen!",
+    "- Extrahiere alle Namen (inkl. Kinder) und den Absender (Behörde/Amt).",
+    "- WICHTIG: Führe auch den VERFASSER/AUTOR des Dokuments in der personen-Liste auf (z.B. Berufsbeistand, Gerichtspräsident, Anwalt, Gutachter, Psychologe, Leiter Jugendforensik), mit seiner Funktion als 'rolle'.",
+    "- WICHTIG: Die Person ÜBER DIE das Dokument handelt (Patient, Kind, Betroffener) MUSS in der personen-Liste stehen!",
     "- STRIKTE NAMENREGEL: Im 'name'-Feld NUR den echten Personennamen (Vorname Nachname).",
     "  KEINE Funktion, KEINEN Titel, KEINE Institution, KEIN Geburtsdatum im Namen.",
     "  Falsch: {name: 'Jugendforensik Max Muster Leiter'} | Richtig: {name: 'Max Muster', rolle: 'Leiter Jugendforensik'}",
     "  Falsch: {name: 'Muster Hans, geb. 01.01.2010, m'} | Richtig: {name: 'Muster Hans', rolle: 'Kind'}",
     "- NUR echte Menschennamen! KEINE Institutionen (UKBB, KESB, Gericht, Universitaets-Kinderspital, Polizei, Kantonsgericht), KEINE Themen, KEINE Dokumenttitel, KEINE Fachbegriffe (Medizinisches Rezept, Ergotherapie, Sozialkompetenztraining).",
-    "- ALIAS-ERKENNUNG: Schweizer Kurzformen zusammenfuehren: Ruedi=Rudolf, Roli=Roland, Susi=Susanne, Urs=Ursus, Res=Andreas, Sepp=Josef, Toni=Anton, Köbi=Jakob, Vreni=Verena, Röbi=Robert, Kari=Karl, Fredi=Alfred, Ueli=Ulrich, Werni=Werner, Heiri=Heinrich.",
-    "  Wenn nur ein Vorname erscheint (z.B. 'Timur'), trotzdem als Person auffuehren.",
-    "  Gleiche Person mit verschiedenen Namensvarianten nur EINMAL auffuehren (laengste/vollstaendigste Form waehlen).",
-    "- BEMERKUNG (Pflichtfeld): Fasse in 1 Satz zusammen, was diese Person im Dokument KONKRET tut oder was ueber sie gesagt wird.",
-    "  Fokus auf Handlungen GEGEN oder FUER die Fokus-Partei. Beispiele:",
+    "- ALIAS-ERKENNUNG: Schweizer Kurzformen zusammenführen: Ruedi=Rudolf, Roli=Roland, Susi=Susanne, Urs=Ursus, Res=Andreas, Sepp=Josef, Toni=Anton, Köbi=Jakob, Vreni=Verena, Röbi=Robert, Kari=Karl, Fredi=Alfred, Ueli=Ulrich, Werni=Werner, Heiri=Heinrich.",
+    "  Wenn nur ein Vorname erscheint (z.B. 'Timur'), trotzdem als Person aufführen.",
+    "  Gleiche Person mit verschiedenen Namensvarianten nur EINMAL aufführen (längste/vollständigste Form wählen).",
+    "- BEMERKUNG (Pflichtfeld): Fasse in 1 Satz zusammen, was diese Person im Dokument KONKRET tut oder was über sie gesagt wird.",
+    "  Fokus auf Handlungen GEGEN oder FÜR die Fokus-Partei. Beispiele:",
     "  'Verfasst negativen Bericht', 'Ordnet Kontaktsperre an', 'Wird als kooperativ beschrieben'.",
     "- Bestimme die Rolle aus dem Kontext: Vater, Mutter, Kind, Arzt, Therapeut, Anwalt, Beistand, Richter, etc.",
-    `- Wenn eine Person zur FOKUS-PARTEI [${focusKeywords}] gehoert: Rolle aus dem Kontext (z.B. Vater, Mutter).`,
-    `- Wenn eine Person zur GEGENPARTEI [${referenceKeywords}] gehoert: Rolle aus dem Kontext (z.B. Mutter, Vater).`,
+    `- Wenn eine Person zur FOKUS-PARTEI [${focusKeywords}] gehört: Rolle aus dem Kontext (z.B. Vater, Mutter).`,
+    `- Wenn eine Person zur GEGENPARTEI [${referenceKeywords}] gehört: Rolle aus dem Kontext (z.B. Mutter, Vater).`,
     "",
     "### 1b. MITTEILUNG AN / VERTEILER – ROLLENBESTIMMUNG AUS KONTEXT:",
     "Wenn im Dokument 'Mitteilung an:', 'Verteiler:', 'An:', 'Zustellung:' vorkommt:",
-    "- 'Vorname Nachname, Advokat ... (fuer sich und die Kinder)' → rolle: 'Kinderanwalt'",
-    "- 'Vorname Nachname, Advokatur ... (fuer sich und [Person])' → rolle: 'Anwalt von [Person]'",
+    "- 'Vorname Nachname, Advokat ... (für sich und die Kinder)' → rolle: 'Kinderanwalt'",
+    "- 'Vorname Nachname, Advokatur ... (für sich und [Person])' → rolle: 'Anwalt von [Person]'",
     "- 'Vorname Nachname, Beistaendin' → rolle: 'Beiständin'",
-    "- Person mit 'klin. Heilpaedagogin, Behoerdenmitglied' → rolle: 'Behördenmitglied'",
+    "- Person mit 'klin. Heilpaedagogin, Behördenmitglied' → rolle: 'Behördenmitglied'",
     "WICHTIG: Diese Rollenzuordnung hat hoechste Prioritaet.",
     "",
     "### 2. SYMMETRISCHES ZAEHLVERFAHREN (KEYWORD-TRAINING):",
     "- Untersuche jede Zeile bzw. jede klare Sinn-Einheit.",
-    "- Erhoehe die Zaehler nur bei expliziten positiven oder negativen Zuschreibungen.",
-    "- Alle Aliase einer Liste gehoeren zu genau einer Partei und duerfen nicht als separate Personen behandelt werden.",
+    "- Erhoehe die Zähler nur bei expliziten positiven oder negativen Zuschreibungen.",
+    "- Alle Aliase einer Liste gehören zu genau einer Partei und dürfen nicht als separate Personen behandelt werden.",
     "",
-    "A) FUER DIE FOKUS-PARTEI:",
+    "A) FÜR DIE FOKUS-PARTEI:",
     "- ROT (+1 Negativ): Kritik, Vorwuerfe, Unterstellung von Defiziten, fehlende Kooperation, Unpuenktlichkeit, Durchsetzen eigener Interessen.",
-    "- GRUEN (+1 Positiv): Lob, Bestaetigung von Kompetenz, Wohlwollen, Bemuehen, Kooperation, liebevoller Umgang.",
+    "- GRUEN (+1 Positiv): Lob, Bestätigung von Kompetenz, Wohlwollen, Bemühen, Kooperation, liebevoller Umgang.",
     "",
-    "WICHTIG: Zaehle NUR fuer die Fokus-Partei. KEINE Zaehlung fuer die Gegenpartei (spart Tokens, irrelevant).",
+    "WICHTIG: Zähle NUR für die Fokus-Partei. KEINE Zählung für die Gegenpartei (spart Tokens, irrelevant).",
     "",
     "### 2b. E-MAIL-ERKENNUNG:",
-    "Wenn das Dokument E-Mail-Header enthaelt (z.B. 'Von:', 'From:', 'Gesendet:', 'Sent:', 'An:', 'To:', 'Betreff:', 'Subject:', 'CC:', 'BCC:'):",
+    "Wenn das Dokument E-Mail-Header enthält (z.B. 'Von:', 'From:', 'Gesendet:', 'Sent:', 'An:', 'To:', 'Betreff:', 'Subject:', 'CC:', 'BCC:'):",
     "- documentType MUSS 'E-Mail' sein (NICHT 'Chat', NICHT 'Brief').",
     "- verfasser = Absender aus dem 'Von:'/'From:' Feld (nur Name, keine E-Mail-Adresse).",
     "- datum = Datum aus 'Gesendet:'/'Sent:'/'Date:' Feld. Format: TT.MM.JJJJ oder wie angegeben.",
     "- absender = Organisation/Institution des Absenders (z.B. 'Polizei Basel-Landschaft', 'KESB Leimental').",
-    "- Empfaenger aus 'An:'/'To:' als Person mit rolle 'Empfaenger' auffuehren.",
+    "- Empfänger aus 'An:'/'To:' als Person mit rolle 'Empfänger' aufführen.",
     "- E-Mails sind KEINE Chats. Chats haben Sprechblasen und Messenger-UI-Elemente.",
     "",
     "### 2c. DOKUMENTTYP-KLASSIFIKATION:",
     "Bestimme den documentType anhand des Inhalts:",
-    "- 'Verfuegung' = amtliche Anordnung einer Behoerde",
-    "- 'Superprovisorische Massnahme' = dringliche Massnahme ohne Anhoerung",
+    "- 'Verfügung' = amtliche Anordnung einer Behörde",
+    "- 'Superprovisorische Massnahme' = dringliche Massnahme ohne Anhörung",
     "- 'Brief' = formelles Schreiben (Briefkopf, Anrede, Grussformel)",
     "- 'E-Mail' = elektronische Korrespondenz (Von/An/Betreff Header)",
     "- 'Gutachten' = fachliche Beurteilung durch Experte",
@@ -2585,72 +2585,72 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     "",
     "### 2d. MUSTER SYSTEMATISCHER ZERSTOERUNG (HOHE GEWICHTUNG):",
     "Die Gegenpartei kann die Fokus-Partei durch wiederholte institutionelle Attacken zerstoeren.",
-    "Diese Muster sind STARK NEGATIV fuer die Gegenpartei und STARK NEGATIV fuer die Fokus-Partei (als Opfer):",
+    "Diese Muster sind STARK NEGATIV für die Gegenpartei und STARK NEGATIV für die Fokus-Partei (als Opfer):",
     "",
-    "POLIZEI-MUSTER (Negativ fuer Fokus-Partei):",
+    "POLIZEI-MUSTER (Negativ für Fokus-Partei):",
     "- Wiederholte Polizeianzeigen, Polizeibesuche, Polizeieinsaetze gegen die Fokus-Partei",
     "- Anrufe bei der Polizei wegen angeblicher Bedrohung, Gewalt, Belästigung",
     "- Bedrohungsmanagement-Meldungen, Gefaehrdungsmeldungen an KESB",
     "- AUCH wenn die Polizei keine Fallerroeffnung, keine strafbaren Handlungen feststellt",
-    "- Die BLOSSE EXISTENZ solcher Korrespondenz/Akten schadet der Person bei Gericht und Behoerden",
+    "- Die BLOSSE EXISTENZ solcher Korrespondenz/Akten schadet der Person bei Gericht und Behörden",
     "- Ergebnis 'keine Fallerroeffnung / keine strafbaren Handlungen' = ENTLASTUNG der Fokus-Partei (+2 Positiv)",
     "",
-    "INSTITUTIONELLE ATTACKEN (Negativ fuer Fokus-Partei):",
+    "INSTITUTIONELLE ATTACKEN (Negativ für Fokus-Partei):",
     "- Meldungen an KESB, Jugendamt, Schule mit unbelegten Vorwuerfen",
     "- Superprovisorische Massnahmen ohne ausreichende Beweislage",
-    "- Anwaeltliche Eingaben mit sachfremden Persoenlichkeitsangriffen",
+    "- Anwältliche Eingaben mit sachfremden Persönlichkeitsangriffen",
     "- Wiederholte Antraege auf Kontaktbeschraenkungen oder Entzug von Sorgerechten",
     "",
     "WARUM HOHE GEWICHTUNG:",
     "- Jeder Polizeieinsatz hinterlaesst Spuren in Datenbanken (Bedrohungsmanagement, RIPOL, HOOGAN etc.)",
     "- Behoearden und Gerichte sehen diese Eintraege und bilden sich ein (falsches) Bild",
-    "- Selbst wenn NICHTS bestaetigt wird, schadet die Haeufung enorm",
+    "- Selbst wenn NICHTS bestätigt wird, schadet die Häufung enorm",
     "- Dies ist ein bekanntes Muster der systematischen Zerstoerung einer Person im Familienrecht",
     "- Die KI muss dieses Muster erkennen und in der Gesamtanalyse gewichten",
     "",
     "### 3. FORENSISCHE REGELN:",
     "- PERSONEN-REGEL: Liste in 'personen' NUR Namen auf, die EXPLIZIT im Dokumenttext vorkommen. Fuege NIEMALS die Keywords aus FOKUS_PARTEI_KEYWORDS oder GEGENPARTEI_KEYWORDS als Personen hinzu, es sei denn diese Namen tauchen tatsaechlich im Dokumenttext auf.",
-    "- Sei extrem kritisch: Wenn der Autor eine Partei nur lobt und die andere nur kritisiert, zaehle jeden einzelnen klaren Bewertungsunterschied.",
+    "- Sei extrem kritisch: Wenn der Autor eine Partei nur lobt und die andere nur kritisiert, zähle jeden einzelnen klaren Bewertungsunterschied.",
     "- Ignoriere neutrale Fakten, Adressen, reine Chronologie und Verfahrensgeschichte ohne Wertung.",
-    "- Empfehlungen oder Rechtfertigungen zugunsten einer Partei zaehlen als positiv fuer diese Partei.",
-    "- Zaehle Kinder als Personen im Dokument auf (Name, Vorname, Geburtsdatum wie im Text angegeben), aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
-    "- WICHTIG: Kinder MUESSEN die rolle 'Kind' erhalten. Auch wenn ein Kind den Nachnamen der Gegenpartei traegt, ist es KEIN Gegner.",
-    "- SENTIMENT PRO PERSON (Pflichtfeld): Bestimme fuer JEDE Person in 'personen' ein 'sentiment'-Feld:",
-    "  'positiv' = Person unterstuetzt oder schreibt wohlwollend ueber die Fokus-Partei",
+    "- Empfehlungen oder Rechtfertigungen zugunsten einer Partei zählen als positiv für diese Partei.",
+    "- Zähle Kinder als Personen im Dokument auf (Name, Vorname, Geburtsdatum wie im Text angegeben), aber nicht als Fokus- oder Gegenpartei, ausser der Text bewertet sie ausdruecklich als Partei.",
+    "- WICHTIG: Kinder MÜSSEN die rolle 'Kind' erhalten. Auch wenn ein Kind den Nachnamen der Gegenpartei trägt, ist es KEIN Gegner.",
+    "- SENTIMENT PRO PERSON (Pflichtfeld): Bestimme für JEDE Person in 'personen' ein 'sentiment'-Feld:",
+    "  'positiv' = Person unterstützt oder schreibt wohlwollend über die Fokus-Partei",
     "  'negativ' = Person schreibt kritisch, belastend oder feindlich gegen die Fokus-Partei",
-    "  'neutral' = Person ist weder fuer noch gegen die Fokus-Partei (z.B. Richter, neutrale Fachperson)",
+    "  'neutral' = Person ist weder für noch gegen die Fokus-Partei (z.B. Richter, neutrale Fachperson)",
     "  Kinder der Fokus-Partei oder gemeinsame Kinder erhalten immer 'neutral' (sie sind keine Partei).",
-    "  Der Verfasser/Autor: Bewerte anhand des Tons gegenueber der Fokus-Partei im Dokument.",
-    "- POLIZEI/BEHOERDEN-KORRESPONDENZ: Wenn ein Dokument eine Polizeiantwort, Bedrohungsmanagement-Mitteilung oder KESB-Meldung ist, werte dies IMMER als Belastungsmuster – auch wenn 'keine strafbaren Handlungen' oder 'kein Einsatz' steht. Die Existenz solcher Dokumente im Dossier ist selbst der Beweis fuer systematische Attacken.",
+    "  Der Verfasser/Autor: Bewerte anhand des Tons gegenüber der Fokus-Partei im Dokument.",
+    "- POLIZEI/BEHÖRDEN-KORRESPONDENZ: Wenn ein Dokument eine Polizeiantwort, Bedrohungsmanagement-Mitteilung oder KESB-Meldung ist, werte dies IMMER als Belastungsmuster – auch wenn 'keine strafbaren Handlungen' oder 'kein Einsatz' steht. Die Existenz solcher Dokumente im Dossier ist selbst der Beweis für systematische Attacken.",
     "  → Mindestens benachteiligte_person.negativ: 1 (Existenz schadet der Fokus-Partei in Datenbanken)",
-    "  → Wenn Entlastung ('keine Straftat' etc.): zusaetzlich benachteiligte_person.positiv: 1",
+    "  → Wenn Entlastung ('keine Straftat' etc.): zusätzlich benachteiligte_person.positiv: 1",
     "",
     "### 3b. MANIPULATIONS- UND NARZISSMUS-ERKENNUNG (DMSKI-Checkliste):",
-    "Scanne den Text auf folgende 10 Indikatoren. Fuer JEDEN erkannten Indikator: gib den Typ und ein konkretes Zitat/Beleg aus dem Text an.",
+    "Scanne den Text auf folgende 10 Indikatoren. Für JEDEN erkannten Indikator: gib den Typ und ein konkretes Zitat/Beleg aus dem Text an.",
     "NUR melden wenn TATSAECHLICH im Text erkennbar – keine Vermutungen!",
     "",
     "1. GASLIGHTING: Verdrehen von Fakten, um die Gegenseite als 'verwirrt' oder 'psychisch labil' darzustellen.",
-    "2. PROJEKTION: Beschuldigungen, die eigentlich auf den Absender zutreffen (Taeter-Opfer-Umkehr / DARVO).",
+    "2. PROJEKTION: Beschuldigungen, die eigentlich auf den Absender zutreffen (Täter-Opfer-Umkehr / DARVO).",
     "3. ISOLATIONSTAKTIK: Versuche, die Fokus-Partei von Familie (Bruder, Eltern) oder Helfern zu trennen.",
     "4. MACHTMISSBRAUCH_GELD: Verstecken von Vermoegen oder manipulative Unterhaltsforderungen.",
     "5. TRIANGULATION: Einbeziehung Dritter (fliegende Affen), um Druck aufzubauen.",
     "6. AD_HOMINEM: Charakterangriffe und Abwertungen statt sachlicher Argumente.",
-    "7. EMPATHIELOSIGKEIT: Kuehle, objektifizierende Sprache ueber Kinder oder nahe Angehoerige.",
+    "7. EMPATHIELOSIGKEIT: Kühle, objektifizierende Sprache über Kinder oder nahe Angehörige.",
     "8. SABOTAGE: Gezieltes Blockieren von gerichtlichen oder medizinischen Massnahmen.",
-    "9. ABSOLUTE_SPRACHE: Exzessive Nutzung von 'immer', 'nie', 'voellig', um Grauzonen zu eliminieren.",
+    "9. ABSOLUTE_SPRACHE: Exzessive Nutzung von 'immer', 'nie', 'völlig', um Grauzonen zu eliminieren.",
     "10. WORTSALAT: Komplizierte, kreisende Formulierungen, die vom eigentlichen Kern ablenken.",
     "",
     "### 3c. VERFASSER-BIAS-ELIMINIERUNG (KRITISCH):",
-    "- Fokus-Partei ist Verfasser: Selbstlob NICHT als positiv zaehlen. Eigene Briefe verzerren sonst das Ergebnis.",
-    "- Gegenpartei ist Verfasser: Was sie NEGATIV ueber Fokus-Partei schreibt, zaehlt als Negativ fuer Fokus-Partei.",
-    "- Neutrale Dritte (Behoerden, Gerichte, Gutachter) zaehlen normal.",
+    "- Fokus-Partei ist Verfasser: Selbstlob NICHT als positiv zählen. Eigene Briefe verzerren sonst das Ergebnis.",
+    "- Gegenpartei ist Verfasser: Was sie NEGATIV über Fokus-Partei schreibt, zählt als Negativ für Fokus-Partei.",
+    "- Neutrale Dritte (Behörden, Gerichte, Gutachter) zählen normal.",
     "",
     "### 4. OUTPUT-STRUKTUR:",
     "- TITEL, VERFASSER, DATUM, ABSENDER, PERSONEN, DOKUMENTTYP extrahieren.",
     "- ZUSAMMENFASSUNG: Beschreibe die psychologische Schieflage oder Ausgewogenheit in maximal 2 Saetzen.",
-    "- DARSTELLUNG: Am Ende nur die nackten Summen fuer die Fokus-Person.",
+    "- DARSTELLUNG: Am Ende nur die nackten Summen für die Fokus-Person.",
     "- Wenn ein Wert 0 ist, bleibt er 0.",
-    "- Gib fuer die API trotzdem NUR valides JSON gemaess Schema zurueck.",
+    "- Gib für die API trotzdem NUR valides JSON gemäss Schema zurück.",
     "",
     "### JSON-SCHEMA (exakt einhalten):",
     "{",
@@ -2658,7 +2658,7 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '  "verfasser": "",',
     '  "datum": "TT.MM.JJJJ oder wie im Dokument angegeben",',
     '  "absender": "",',
-    '  "documentType": "Verfuegung|Brief|E-Mail|Gutachten|Bericht|Protokoll|Eingabe|Urteil|Superprovisorische Massnahme|Chat",',
+    '  "documentType": "Verfügung|Brief|E-Mail|Gutachten|Bericht|Protokoll|Eingabe|Urteil|Superprovisorische Massnahme|Chat",',
     '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion z.B. Berufsbeistand/Anwältin/Gerichtspräsident/Kind", "sentiment": "positiv|negativ|neutral", "bemerkung": "Was tut diese Person im Dokument? 1 Satz."}],',
     '  "benachteiligte_person": {',
     '    "positiv": 0,',
@@ -2668,8 +2668,8 @@ function buildQuantitativeForensicPrompt(protectedPersonName = "", opposingParty
     '  "manipulationsmuster": [{"typ": "GASLIGHTING|PROJEKTION|ISOLATIONSTAKTIK|MACHTMISSBRAUCH_GELD|TRIANGULATION|AD_HOMINEM|EMPATHIELOSIGKEIT|SABOTAGE|ABSOLUTE_SPRACHE|WORTSALAT", "beleg": "Zitat oder Paraphrase aus dem Text"}]',
     "}",
     "",
-    "WICHTIG: 'manipulationsmuster' ist ein Array. Nur erkannte Muster auffuehren. Leeres Array [] wenn keine erkannt.",
-    "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
+    "WICHTIG: 'manipulationsmuster' ist ein Array. Nur erkannte Muster aufführen. Leeres Array [] wenn keine erkannt.",
+    "NUR JSON. Kein Markdown. Kein zusätzlicher Text."
   ].join("\n");
 }
 
@@ -2792,7 +2792,7 @@ async function analyzeTextWithAi(documentText, fallback = {}, protectedPersonNam
       [
         buildQuantitativeForensicPrompt(protectedPersonName, opposingPartyName),
         "",
-        "KORREKTURHINWEIS: Erzeuge NUR valides JSON gemass Schema. Keine Erklaerung."
+        "KORREKTURHINWEIS: Erzeuge NUR valides JSON gemäss Schema. Keine Erklärung."
       ].join("\n"),
       userContent,
       2000
@@ -2838,7 +2838,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
 
   const systemPrompt = isChatHint
     ? [
-      "Du bist ein forensischer Analyst fuer Kommunikationspruefung.",
+      "Du bist ein forensischer Analyst für Kommunikationsprüfung.",
       "Analysiere den Chat-Dialog und quantifiziere die Dynamik.",
       "OUTPUT: Strenges JSON:",
       "{",
@@ -2856,28 +2856,28 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "NUR JSON."
     ].join("\n")
     : [
-      "Du bist ein forensischer Dokumenten-Analyst fuer Familienrecht.",
+      "Du bist ein forensischer Dokumenten-Analyst für Familienrecht.",
       "Deine Aufgabe: Lies das Bild VOLLSTAENDIG, auch wenn es schraeg fotografiert ist.",
-      "Lies JEDEN sichtbaren Text Zeile fuer Zeile. Erfinde NICHTS.",
+      "Lies JEDEN sichtbaren Text Zeile für Zeile. Erfinde NICHTS.",
       "",
       "### SCHRITT 1 – DOKUMENT SEGMENTIEREN:",
       "Teile das Dokument in diese Zonen ein:",
       "A) BRIEFKOPF/LOGO: Institution, Adresse → absender",
-      "B) EMPFAENGERBLOCK: 'An:', Anschrift, Titel → Empfaenger als Person",
-      "C) BETREFFZEILE: Ueberschrift, Titel des Dokuments → titel",
+      "B) EMPFAENGERBLOCK: 'An:', Anschrift, Titel → Empfänger als Person",
+      "C) BETREFFZEILE: Überschrift, Titel des Dokuments → titel",
       "D) ANREDE: 'Sehr geehrter Herr Dr. med. X' → Person + Rolle",
       "E) TEXTKÖRPER: Namentlich genannte Personen mit Kontext → Personen",
       "F) UNTERZEICHNER: Unterschrift, Ersteller → verfasser",
       "",
       "### DATUMSFORMAT (PFLICHT):",
-      "- Alle Datumsangaben MUESSEN im Format TT.MM.JJJJ zurueckgegeben werden.",
+      "- Alle Datumsangaben MÜSSEN im Format TT.MM.JJJJ zurückgegeben werden.",
       "- 2-stellige Jahreszahl konvertieren: 24.06.23 → 24.06.2023",
       "- Kein Datum erkennbar → '-'",
       "",
       "### SCHRITT 2 – PERSONEN-EXTRAKTION (STRIKTE REGELN):",
       "",
-      "Das Array 'personen' ist AUSSCHLIESSLICH fuer echte menschliche Individuen reserviert.",
-      "Nutze dein semantisches Verstaendnis:",
+      "Das Array 'personen' ist AUSSCHLIESSLICH für echte menschliche Individuen reserviert.",
+      "Nutze dein semantisches Verständnis:",
       "",
       "WAS IST EIN EIGENNAME? → Vorname und/oder Nachname eines Menschen.",
       "  Richtig: 'Alexandra Schifferli', 'Ayhan Ergen', 'Dr. med. Brotzmann', 'Timur'",
@@ -2893,70 +2893,70 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "",
       "WAS GEHOERT NICHT IN PERSONEN? → ALLES was kein Mensch ist:",
       "  - Organisationen/Institutionen: UKBB, KESB, Gericht, Spital, Kinderspital,",
-      "    Universitaets-Kinderspital, Kantonsgericht, Polizei, Sozialamt → gehoeren in 'absender'",
-      "  - Dokumenttypen: Medizinisches Rezept, Gutachten, Verfuegung, Bericht → NICHT in personen",
+      "    Universitaets-Kinderspital, Kantonsgericht, Polizei, Sozialamt → gehören in 'absender'",
+      "  - Dokumenttypen: Medizinisches Rezept, Gutachten, Verfügung, Bericht → NICHT in personen",
       "  - Fachbegriffe: Ergotherapie, Sozialkompetenztraining, Diagnose → NICHT in personen",
-      "  - Psychologische Begriffe: Triangulation, Gaslighting, DARVO → gehoeren in 'manipulationsmuster'",
+      "  - Psychologische Begriffe: Triangulation, Gaslighting, DARVO → gehören in 'manipulationsmuster'",
       "  - Generische Rollen ohne Namen (die Mutter, der Vater) → NUR wenn der Name bekannt ist",
       "",
       "WENN KEINE echten Personennamen gefunden werden → personen-Array LEER lassen: []",
       "",
-      "ALIAS-ERKENNUNG: Schweizer Kurzformen zusammenfuehren:",
+      "ALIAS-ERKENNUNG: Schweizer Kurzformen zusammenführen:",
       "  Ruedi=Rudolf, Roli=Roland, Susi=Susanne, Res=Andreas, Sepp=Josef, Toni=Anton,",
       "  Köbi=Jakob, Vreni=Verena, Röbi=Robert, Kari=Karl, Fredi=Alfred, Ueli=Ulrich.",
-      "  Gleiche Person mit verschiedenen Namensvarianten nur EINMAL auffuehren (vollstaendigste Form).",
+      "  Gleiche Person mit verschiedenen Namensvarianten nur EINMAL aufführen (vollständigste Form).",
       "",
       "NAMENSFORMAT: {name: 'Vorname Nachname', rolle: 'Funktion aus dem Kontext', bemerkung: 'Was tut die Person?'}",
       "  - Kein Geburtsdatum im Namen, kein Geschlecht, keine Institution",
-      "  - rolle = was die Person IST: Vater, Mutter, Kind, Arzt, Anwalt, Empfaenger, etc.",
-      "  - bemerkung = 1 Satz: was die Person im Dokument tut/was ueber sie gesagt wird (Fokus auf Handlungen gegen/fuer Fokus-Partei)",
-      `  - Wenn Person zur FOKUS-PARTEI [${focusKeywords}] gehoert: Rolle aus Kontext (z.B. Vater)`,
-      `  - Wenn Person zur GEGENPARTEI [${referenceKeywords}] gehoert: Rolle aus Kontext (z.B. Mutter)`,
+      "  - rolle = was die Person IST: Vater, Mutter, Kind, Arzt, Anwalt, Empfänger, etc.",
+      "  - bemerkung = 1 Satz: was die Person im Dokument tut/was über sie gesagt wird (Fokus auf Handlungen gegen/für Fokus-Partei)",
+      `  - Wenn Person zur FOKUS-PARTEI [${focusKeywords}] gehört: Rolle aus Kontext (z.B. Vater)`,
+      `  - Wenn Person zur GEGENPARTEI [${referenceKeywords}] gehört: Rolle aus Kontext (z.B. Mutter)`,
       "",
       "PFLICHT: Extrahiere ALLE namentlich genannten Personen im Dokument.",
-      "Auch die Person UEBER DIE geschrieben wird (Patient/Kind/Betroffener).",
+      "Auch die Person ÜBER DIE geschrieben wird (Patient/Kind/Betroffener).",
       "Auch Personen aus informellen Anreden ('Hallo Ayhan' → Ayhan).",
       "",
       "### SCHRITT 3 – SENTIMENT PRO PERSON:",
-      "- 'positiv' = unterstuetzend gegenueber der Fokus-Partei",
+      "- 'positiv' = unterstützend gegenüber der Fokus-Partei",
       "- 'negativ' = kritisch/belastend gegen die Fokus-Partei",
-      "- 'neutral' = Kinder, neutrale Fachpersonen, Empfaenger ohne Wertung",
+      "- 'neutral' = Kinder, neutrale Fachpersonen, Empfänger ohne Wertung",
       "",
       "### SCHRITT 4 – FORENSISCHE ZAEHLUNG:",
       `- FOKUS-PARTEI = [${focusKeywords}]`,
       `- GEGENPARTEI = [${referenceKeywords}]`,
-      "- Zaehle positive Aussagen ueber die Fokus-Partei → benachteiligte_person.positiv",
-      "- Zaehle negative Aussagen → benachteiligte_person.negativ",
+      "- Zähle positive Aussagen über die Fokus-Partei → benachteiligte_person.positiv",
+      "- Zähle negative Aussagen → benachteiligte_person.negativ",
       "",
       "### SCHRITT 5 – PSYCHOLOGISCHE MANIPULATION (FBI-Profiling + Narzissmus-Analyse):",
       "Analysiere das Dokument mit FBI Behavioral Analysis und klinischer Narzissmus-Diagnostik.",
-      "Pruefe auf diese Manipulationsmuster:",
+      "Prüfe auf diese Manipulationsmuster:",
       "",
       "DARVO (Deny-Attack-Reverse Victim/Offender):",
       "- Verfasser leugnet eigenes Fehlverhalten, greift die andere Partei an,",
-      "  stellt sich selbst als Opfer dar. Klassisches Taeter-Opfer-Umkehr-Muster.",
+      "  stellt sich selbst als Opfer dar. Klassisches Täter-Opfer-Umkehr-Muster.",
       "",
       "GASLIGHTING:",
       "- Verdrehung von Tatsachen, Leugnung dokumentierter Ereignisse,",
-      "  Unterstellung von Wahrnehmungsstoerungen beim Gegenueber.",
+      "  Unterstellung von Wahrnehmungsstoerungen beim Gegenüber.",
       "",
       "TRIANGULATION:",
-      "- Instrumentalisierung von Behoerden, Kindern oder Dritten als Waffe",
+      "- Instrumentalisierung von Behörden, Kindern oder Dritten als Waffe",
       "  gegen die andere Partei. Einschaltung von Institutionen als Druckmittel.",
       "",
       "PROJEKTION:",
       "- Eigenes Fehlverhalten wird dem anderen vorgeworfen.",
-      "  'Du zahlst nicht' (obwohl man selbst blockiert). 'Du eskalierst' (waehrend man droht).",
+      "  'Du zahlst nicht' (obwohl man selbst blockiert). 'Du eskalierst' (während man droht).",
       "",
       "SCHULDZUWEISUNG / Blame-Shifting:",
       "- Alles ist die Schuld der anderen Person. Null Selbstreflexion.",
-      "  'Deswegen sind die Behoerden jetzt zustaendig' = Drohung + Schuldzuweisung.",
+      "  'Deswegen sind die Behörden jetzt zuständig' = Drohung + Schuldzuweisung.",
       "",
       "DROHUNG / Coercive Control:",
-      "- Rechtliche Schritte, Behoerdeneinschaltung, finanzielle Drohungen als Machtmittel.",
+      "- Rechtliche Schritte, Behördeneinschaltung, finanzielle Drohungen als Machtmittel.",
       "",
       "Wenn Muster erkannt: Beschreibe sie konkret mit ZITAT aus dem Text.",
-      "Benenne das Muster beim Namen und erklaere die psychologische Dynamik.",
+      "Benenne das Muster beim Namen und erkläre die psychologische Dynamik.",
       "",
       "### SCHRITT 6 – ZUSAMMENFASSUNG (Forensisches Fazit):",
       "3-5 Saetze mit klinischer Praezision:",
@@ -2965,15 +2965,15 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "3. Wie wirkt sich das Dokument auf die Fokus-Partei aus?",
       "Wenn Manipulation erkannt: Beschreibe die psychologische Dynamik konkret.",
       "Beispiel: '[Verfasser] zeigt klassisches DARVO-Muster: Sie/Er wirft [Fokus-Partei] vor...",
-      "waehrend sie/er selbst blockiert. Dies ist typisch fuer narzisstische Projektion.'",
+      "während sie/er selbst blockiert. Dies ist typisch für narzisstische Projektion.'",
       "",
       "### JSON-SCHEMA (exakt einhalten):",
       "{",
       '  "titel": "Dokumenttitel oder Betreff",',
-      '  "verfasser": "Unterzeichner/Ersteller (NICHT der Empfaenger!)",',
+      '  "verfasser": "Unterzeichner/Ersteller (NICHT der Empfänger!)",',
       '  "datum": "TT.MM.JJJJ",',
       '  "absender": "Institution/Organisation aus dem Briefkopf",',
-      '  "documentType": "Bericht|Brief|E-Mail|Verfuegung|Gutachten|Protokoll|Eingabe|Urteil|Chat",',
+      '  "documentType": "Bericht|Brief|E-Mail|Verfügung|Gutachten|Protokoll|Eingabe|Urteil|Chat",',
       '  "personen": [{"name": "Vorname Nachname", "rolle": "Funktion", "sentiment": "positiv|negativ|neutral", "bemerkung": "Was tut diese Person im Dokument? 1 Satz."}],',
       '  "benachteiligte_person": {"positiv": 0, "negativ": 0},',
       '  "manipulationsmuster": [{"muster": "DARVO|Gaslighting|Triangulation|Isolation|Schuldzuweisung|Drohung", "beleg": "Zitat oder Beschreibung aus dem Text"}],',
@@ -2981,22 +2981,22 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       "}",
       "",
       "WICHTIG: verfasser = wer das Dokument GESCHRIEBEN/UNTERSCHRIEBEN hat.",
-      "Der Empfaenger (z.B. 'Sehr geehrter Herr X') ist NICHT der Verfasser!",
+      "Der Empfänger (z.B. 'Sehr geehrter Herr X') ist NICHT der Verfasser!",
       "",
-      "VERFASSER-REGEL BEI BEHOERDEN/INSTITUTIONEN:",
-      "Wenn das Dokument von einer Behoerde stammt (KESB, Gericht, Amt, Spital, Schule):",
+      "VERFASSER-REGEL BEI BEHÖRDEN/INSTITUTIONEN:",
+      "Wenn das Dokument von einer Behörde stammt (KESB, Gericht, Amt, Spital, Schule):",
       "  - verfasser = die INSTITUTION (z.B. 'KESB Leimental'), NICHT das Behördenmitglied",
       "  - Das Behördenmitglied (z.B. 'Susanne Angst, Behördenmitglied') → in personen-Liste",
-      "  - absender = die Institution (gleich wie verfasser bei Behoerden)",
+      "  - absender = die Institution (gleich wie verfasser bei Behörden)",
       "Nur bei privaten Briefen/E-Mails: verfasser = die schreibende Person.",
-      "NUR JSON. Kein Markdown. Kein zusaetzlicher Text."
+      "NUR JSON. Kein Markdown. Kein zusätzlicher Text."
     ].join("\n");
 
   const userText = [
     `Analysiere dieses Dokument-Bild gruendlich. Dateiname: "${originalName}".`,
     "Lies den GESAMTEN sichtbaren Text, auch wenn das Bild schraeg oder perspektivisch verzerrt ist.",
     "Extrahiere Titel, Verfasser, Datum, Institution, alle Personen mit Rollen.",
-    "Zaehle positive und negative Aussagen ueber die Fokus-Partei.",
+    "Zähle positive und negative Aussagen über die Fokus-Partei.",
     "Schreibe ein aussagekraeftiges Fazit (zusammenfassung)."
   ].join("\n");
 
@@ -3062,7 +3062,7 @@ async function extractTitleFromImageWithAi(fileBuffer, mimeType, originalName = 
       return {
         status: "needs-config",
         title: "", author: "", authoredDate: "", people: [], disadvantagedPerson: "",
-        message: "API-Limit erreicht. Bitte spaeter erneut versuchen."
+        message: "API-Limit erreicht. Bitte später erneut versuchen."
       };
     }
     throw error;
@@ -3152,23 +3152,23 @@ async function analyzePdfWithVision(fileBuffer, documentTitle = "", protectedPer
   const referenceKeywords = referenceAliases.aliases.length > 0 ? referenceAliases.aliases.join(", ") : "(keine)";
 
   const systemPrompt = [
-    "Du bist ein forensischer Dokumenten-Analyst fuer Familienrecht.",
+    "Du bist ein forensischer Dokumenten-Analyst für Familienrecht.",
     "Deine Aufgabe: Lies die PDF-Seiten VOLLSTAENDIG, auch handschriftlichen Text.",
-    "Lies JEDEN sichtbaren Text Zeile fuer Zeile. Erfinde NICHTS.",
+    "Lies JEDEN sichtbaren Text Zeile für Zeile. Erfinde NICHTS.",
     "",
     "### DATUMSFORMAT (PFLICHT):",
-    "- Alle Datumsangaben im Format TT.MM.JJJJ zurueckgeben.",
+    "- Alle Datumsangaben im Format TT.MM.JJJJ zurückgeben.",
     "- 2-stellige Jahreszahl konvertieren: 24.06.23 → 24.06.2023",
     "- Kein Datum erkennbar → '-'",
     "",
     "### PERSONEN-EXTRAKTION (PFLICHT – STRIKTE REGELN):",
-    "Das Array 'personen' ist AUSSCHLIESSLICH fuer echte menschliche Individuen.",
+    "Das Array 'personen' ist AUSSCHLIESSLICH für echte menschliche Individuen.",
     "Lies das GESAMTE Dokument und extrahiere ALLE Personennamen.",
-    "AUCH handschriftlich geschriebene Namen muessen extrahiert werden!",
+    "AUCH handschriftlich geschriebene Namen müssen extrahiert werden!",
     "",
     "REGELN:",
     "- NUR echte Menschennamen (Vorname und/oder Nachname).",
-    "- KEINE Institutionen (UKBB, KESB, Gericht, Spital, Kinderspital) → gehoeren in 'absender'.",
+    "- KEINE Institutionen (UKBB, KESB, Gericht, Spital, Kinderspital) → gehören in 'absender'.",
     "- KEINE Dokumenttypen (Medizinisches Rezept, Gutachten) → NICHT in personen.",
     "- KEINE Fachbegriffe (Ergotherapie, Diagnose) → NICHT in personen.",
     "- Handschriftliche Namen besonders sorgfaeltig lesen.",
@@ -3189,13 +3189,13 @@ async function analyzePdfWithVision(fileBuffer, documentTitle = "", protectedPer
     "  ],",
     '  "findings": [',
     '    {"typ": "<widerspruch|manipulation|fehlende_evidenz|suggestive_sprache|framing|benachteiligung>",',
-    '     "stelle": "<Zitat>", "analyse": "<Erklaerung>", "schweregrad": "<niedrig|mittel|hoch|kritisch>"}',
+    '     "stelle": "<Zitat>", "analyse": "<Erklärung>", "schweregrad": "<niedrig|mittel|hoch|kritisch>"}',
     "  ],",
     '  "statistik": {"widersprueche": 0, "manipulationen": 0, "fehlende_belege": 0, "suggestive_formulierungen": 0},',
     '  "fazit": "<Zusammenfassung, max 4 Saetze>"',
     "}",
     "",
-    "NUR JSON. Kein Markdown. Kein zusaetzlicher Text. Keine Codeblocks."
+    "NUR JSON. Kein Markdown. Kein zusätzlicher Text. Keine Codeblocks."
   ].join("\n");
 
   const imageContent = renderedPages.map(buf => ({
@@ -3373,7 +3373,7 @@ async function analyzeImageWithFallback(fileBuffer, mimeType, originalName = "",
           authoredDate: "",
           people: [],
           disadvantagedPerson: "",
-          message: "OpenAI-Bildanalyse nicht verfuegbar und OCR ohne klaren Text."
+          message: "OpenAI-Bildanalyse nicht verfügbar und OCR ohne klaren Text."
         };
       }
       throw error;
@@ -4032,7 +4032,7 @@ router.get("/", requireAuth, async (req, res) => {
 router.patch("/:caseId", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
 
   const allowedFields = ["case_name", "protected_person_name", "opposing_party", "country", "region", "city", "locality"];
@@ -4078,7 +4078,7 @@ router.patch("/:caseId", requireAuth, requireCaseAccess("write"), async (req, re
 router.delete("/:caseId", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
 
   // Only admin or customer (case owner) can delete a case
@@ -4130,7 +4130,7 @@ router.post("/:caseId/files", requireAuth, requireCaseAccess("write"), (req, res
 
     const caseId = String(req.params.caseId || "").trim();
     if (!/^\d{6}$/.test(caseId)) {
-      return res.status(400).json({ error: "Ungueltige Fall-ID." });
+      return res.status(400).json({ error: "Ungültige Fall-ID." });
     }
 
     if (!req.files || req.files.length === 0) {
@@ -4470,7 +4470,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, requireCaseAccess("re
               disadvantagedPerson: "",
               message: pdfParse
                 ? "PDF-Inhalt konnte nicht gelesen werden (möglicherweise Scan oder defekter Textlayer)."
-                : "PDF-Parser ist aktuell nicht verfuegbar und OCR lieferte keinen klaren Text."
+                : "PDF-Parser ist aktuell nicht verfügbar und OCR lieferte keinen klaren Text."
             };
             await saveDocumentAnalysis(file.id, emptyResult);
             return res.json(withAnalysisRuntimeMeta(emptyResult));
@@ -4734,7 +4734,7 @@ router.get("/:caseId/files/:fileId/forensic", requireAuth, requireCaseAccess("re
   const forceRefresh = ["1", "true", "yes"].includes(String(req.query.refresh || "").toLowerCase());
 
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
 
   try {
@@ -4762,7 +4762,7 @@ router.get("/:caseId/files/:fileId/forensic", requireAuth, requireCaseAccess("re
         status: "unsupported",
         score: 0,
         findings: [],
-        fazit: "Forensische Analyse ist nur fuer PDF- und Bild-Dateien verfuegbar."
+        fazit: "Forensische Analyse ist nur für PDF- und Bild-Dateien verfügbar."
       });
     }
 
@@ -4854,7 +4854,7 @@ router.get("/:caseId/files/:fileId/forensic", requireAuth, requireCaseAccess("re
       return res.status(err.statusCode).json({ error: err.message });
     }
     console.error("Forensic analysis error:", err.message);
-    return res.status(500).json({ error: "Forensische Analyse konnte nicht durchgefuehrt werden." });
+    return res.status(500).json({ error: "Forensische Analyse konnte nicht durchgeführt werden." });
   }
 });
 
@@ -4931,7 +4931,7 @@ router.get("/:caseId/forensic/stored", requireAuth, requireCaseAccess("read"), a
 router.post("/:caseId/forensic/start", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
   const existing = forensicJobs.get(caseId);
   if (existing && existing.status === "running") {
@@ -4950,7 +4950,7 @@ router.post("/:caseId/forensic/start", requireAuth, requireCaseAccess("write"), 
 router.post("/:caseId/forensic/crossdoc", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
   const existing = forensicJobs.get(caseId);
   if (existing && existing.status === "running") {
@@ -5019,7 +5019,7 @@ async function runForensicStep1(caseId) {
           score: 0,
           risikoStufe: "niedrig",
           findingsCount: 0,
-          fazit: "Nur PDF-Analyse verfuegbar."
+          fazit: "Nur PDF-Analyse verfügbar."
         });
         continue;
       }
@@ -5282,7 +5282,7 @@ router.delete("/:caseId/files/:fileId", requireAuth, requireCaseAccess("write"),
 router.post("/:caseId/reanalyze", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
 
   try {
@@ -5359,7 +5359,7 @@ async function loadConsolidatedPersons(caseId) {
 router.get("/:caseId/consolidated-persons", requireAuth, requireCaseAccess("read"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
   try {
     const stored = await loadConsolidatedPersons(caseId);
@@ -5382,7 +5382,7 @@ router.get("/:caseId/consolidated-persons", requireAuth, requireCaseAccess("read
 router.post("/:caseId/consolidate-persons", requireAuth, requireCaseAccess("write"), async (req, res) => {
   const caseId = String(req.params.caseId || "").trim();
   if (!/^\d{6}$/.test(caseId)) {
-    return res.status(400).json({ error: "Ungueltige Fall-ID." });
+    return res.status(400).json({ error: "Ungültige Fall-ID." });
   }
 
   try {

@@ -555,7 +555,7 @@ router.delete("/me/account", requireAuth, async (req, res) => {
   const userRole = req.user.role;
 
   if (userRole === "admin") {
-    return res.status(403).json({ error: "Admin-Konten koennen nicht selbst geloescht werden." });
+    return res.status(403).json({ error: "Admin-Konten können nicht selbst gelöscht werden." });
   }
 
   try {
