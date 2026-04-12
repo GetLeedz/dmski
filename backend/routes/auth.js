@@ -100,11 +100,13 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Ungültige E-Mail oder Passwort." });
     }
 
-    // Soft-gelöschte Benutzer können sich nicht mehr einloggen
+    // Soft-gelöschte Benutzer können sich nicht mehr einloggen.
+    // Sicherheit: gleiche generische Meldung wie bei unbekannter E-Mail,
+    // damit Angreifer nicht herausfinden können, ob ein Konto existiert(e).
     if (user.deleted_at) {
       const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
       writeLog({ userId: user.id, email: emailNorm, action: "login_blocked_deleted", ip, userAgent: req.headers["user-agent"] });
-      return res.status(403).json({ error: "Dieses Konto wurde gelöscht." });
+      return res.status(401).json({ error: "Ungültige E-Mail oder Passwort." });
     }
 
     // Login-Tracking: Zeitstempel und Zähler aktualisieren
