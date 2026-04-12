@@ -48,7 +48,7 @@
       .then(res => res.json())
       .then(data => {
         if (data.ok) {
-          el.innerHTML = '<p style="color:#34d058;font-size:1.1rem;font-weight:600;">E-Mail erfolgreich bestätigt!</p><p style="color:rgba(255,255,255,.55);margin-top:.8rem;">Sie haben 7 Willkommens-Credits erhalten.<br>Sie können sich jetzt anmelden.</p>';
+          el.innerHTML = '<p style="color:#34d058;font-size:1.1rem;font-weight:600;">E-Mail erfolgreich bestätigt!</p><p style="color:rgba(255,255,255,.55);margin-top:.8rem;">Sie haben 10 Willkommens-Credits erhalten.<br>Sie können sich jetzt anmelden.</p>';
         } else {
           el.innerHTML = `<p style="color:#ff6b6b;">${data.error || "Verifizierung fehlgeschlagen."}</p>`;
         }

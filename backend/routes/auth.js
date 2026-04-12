@@ -240,7 +240,7 @@ router.post("/verify-email", async (req, res) => {
     try {
       await ensureCreditsSchema();
       const settingsRes = await pool.query(`SELECT free_signup_credits FROM credit_settings WHERE id = 1`);
-      const freeCredits = settingsRes.rows[0]?.free_signup_credits ?? 7;
+      const freeCredits = settingsRes.rows[0]?.free_signup_credits ?? 10;
       if (freeCredits > 0) {
         await pool.query(
           `INSERT INTO user_credits (user_id, balance, total_purchased) VALUES ($1, $2, 0) ON CONFLICT (user_id) DO UPDATE SET balance = user_credits.balance + $2`,
