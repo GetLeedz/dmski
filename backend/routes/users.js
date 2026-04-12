@@ -565,6 +565,9 @@ router.delete("/me/account", requireAuth, async (req, res) => {
   }
 
   try {
+    // Ensure deleted_at column exists before anything else
+    await ensureTrackingSchema();
+
     // 1. Gather info about what will be deleted
     const info = { files: 0, cases: [], teamMembers: 0 };
 
@@ -625,13 +628,20 @@ router.delete("/me/account", requireAuth, async (req, res) => {
 
     // Soft-Delete: Benutzerzeile bleibt für Admin-Übersicht erhalten,
     // Daten (Cases, Files, Team) wurden oben bereits hart gelöscht.
-    await pool.query(
-      "UPDATE users SET deleted_at = NOW() WHERE id = $1 AND role != 'admin'",
+    const updateResult = await pool.query(
+      "UPDATE users SET deleted_at = NOW() WHERE id = $1 AND role != 'admin' AND deleted_at IS NULL",
       [userId]
     );
 
-    console.log(`[self-delete] User ${userId} (${userRole}) deleted their account`);
-    res.json({ ok: true });
+    const rowsAffected = updateResult.rowCount || 0;
+    console.log(`[self-delete] User ${userId} (${userRole}) soft-deleted. Rows affected: ${rowsAffected}`);
+
+    if (rowsAffected === 0) {
+      console.error(`[self-delete] UPDATE affected 0 rows for userId=${userId}. User may have been already deleted or role check failed.`);
+      return res.status(500).json({ error: "Kontolöschung unvollständig — bitte Support kontaktieren." });
+    }
+
+    res.json({ ok: true, rowsAffected });
   } catch (err) {
     console.error("[self-delete] Error:", err.message);
     res.status(500).json({ error: "Kontolöschung fehlgeschlagen." });
