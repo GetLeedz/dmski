@@ -186,7 +186,6 @@
 
         <div class="dmski-footer-col">
           <strong>Rechtliches</strong>
-          <a href="/zugang.html">Zugang anfragen</a>
           <a href="/impressum.html">Impressum</a>
           <a href="/datenschutz.html">Datenschutz</a>
           <a href="/nutzungsbedingungen.html">Nutzungsbedingungen</a>
@@ -195,7 +194,7 @@
 
       <div class="dmski-footer-bottom">
         <span>&copy; ${year} GetLeedz GmbH</span>
-        <span class="dmski-footer-hosted">v${version} &nbsp;&middot;&nbsp; &#127464;&#127469; Daten in Zürich &nbsp;&middot;&nbsp; &#127466;&#127482; Server in Amsterdam</span>
+        <span class="dmski-footer-hosted">v${version} &nbsp;&middot;&nbsp; &#127464;&#127469; Files in Zürich &nbsp;&middot;&nbsp; &#127482;&#127480; KI-Analyse via Anthropic (USA)</span>
       </div>
     </footer>
   `;

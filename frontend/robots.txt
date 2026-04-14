@@ -6,5 +6,11 @@ Disallow: /upload.html
 Disallow: /report.html
 Disallow: /profile.html
 Disallow: /users.html
+Disallow: /credits.html
+Disallow: /consent.html
+Disallow: /log.html
+Disallow: /admin-cases.html
+Disallow: /admin-credits.html
+Disallow: /verify.html
 
 Sitemap: https://www.dmski.ch/sitemap.xml
