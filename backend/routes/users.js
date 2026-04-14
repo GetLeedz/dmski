@@ -382,7 +382,7 @@ router.get("/:userId/users", requireAuth, requireAdminOrSelf("userId"), async (r
 
 // POST /:adminId/users – Neuen Benutzer anlegen (Admin or case owner)
 router.post("/:adminId/users", requireAuth, async (req, res) => {
-  const requesterId = req.user.id;
+  const requesterId = req.user.sub;
   const isAdmin = req.user.role === "admin";
   const isSelf = String(requesterId) === String(req.params.adminId);
 

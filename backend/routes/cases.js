@@ -4181,7 +4181,7 @@ router.post("/:caseId/files", requireAuth, requireCaseAccess("write"), (req, res
 
       // ── Credit check: 1 Credit per file for KI-File-Analyse ──
       const fileCount = req.files.length;
-      const userId = req.user.id;
+      const userId = req.user.sub;
       const creditResult = await deductCredits(userId, fileCount, `KI-File-Analyse: ${fileCount} File${fileCount > 1 ? "s" : ""} (Fall ${caseId})`);
       if (!creditResult.success) {
         return res.status(402).json({
@@ -5322,7 +5322,7 @@ router.post("/:caseId/reanalyze", requireAuth, requireCaseAccess("write"), async
     const totalFiles = parseInt(fileCount.rows[0]?.count || "0", 10);
     if (totalFiles > 0) {
       const creditsNeeded = Math.max(1, Math.ceil(totalFiles / 5));
-      const creditResult = await deductCredits(req.user.id, creditsNeeded, `KI-Master-Scan: ${totalFiles} Files (Fall ${caseId})`);
+      const creditResult = await deductCredits(req.user.sub, creditsNeeded, `KI-Master-Scan: ${totalFiles} Files (Fall ${caseId})`);
       if (!creditResult.success) {
         return res.status(402).json({
           error: `Nicht genügend Credits. Benötigt: ${creditsNeeded}, verfügbar: ${creditResult.balance}.`,
@@ -5429,7 +5429,7 @@ router.post("/:caseId/consolidate-persons", requireAuth, requireCaseAccess("writ
 
     // ── Credit check: 1 Credit per 5 files for KI-Personen-Analyse ──
     const creditsNeeded = Math.max(1, Math.ceil(docs.length / 5));
-    const creditResult = await deductCredits(req.user.id, creditsNeeded, `KI-Personen-Analyse: ${docs.length} Files (Fall ${caseId})`);
+    const creditResult = await deductCredits(req.user.sub, creditsNeeded, `KI-Personen-Analyse: ${docs.length} Files (Fall ${caseId})`);
     if (!creditResult.success) {
       return res.status(402).json({
         error: `Nicht genügend Credits. Benötigt: ${creditsNeeded}, verfügbar: ${creditResult.balance}.`,
