@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMSKI – Nutzungsbedingungen akzeptieren</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>if(!sessionStorage.getItem("token"))window.location.replace("/login.html");</script>
+  <style>
+    .consent-page {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: start center;
+      padding: clamp(5.5rem, 9vw, 6.5rem) var(--space-page) clamp(2rem, 4vw, 3rem);
+    }
+    .consent-shell {
+      width: min(860px, 100%);
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(15,23,42,0.62);
+      backdrop-filter: blur(40px) saturate(1.4);
+      -webkit-backdrop-filter: blur(40px) saturate(1.4);
+      border-radius: clamp(18px, 3vw, 26px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+      overflow: hidden;
+      animation: consent-rise 600ms cubic-bezier(.2,.8,.25,1) forwards;
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    @keyframes consent-rise { to { opacity: 1; transform: translateY(0); } }
+    .consent-head {
+      padding: clamp(1.8rem, 3.5vw, 2.6rem) clamp(1.6rem, 3.5vw, 2.6rem) clamp(0.6rem, 1.5vw, 1rem);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(180deg, rgba(197,160,89,0.05), transparent);
+    }
+    .consent-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.9rem;
+      padding: 0.35rem 0.9rem;
+      border: 1px solid rgba(197,160,89,0.32);
+      border-radius: 100px;
+      background: rgba(197,160,89,0.08);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .consent-eyebrow svg { width: 0.9rem; height: 0.9rem; }
+    .consent-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin: 0 0 0.5rem;
+    }
+    .consent-title strong {
+      background: linear-gradient(135deg, #dfc07a, var(--gold) 50%, #e8d5a0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+    .consent-lede {
+      font-size: 0.98rem;
+      line-height: 1.65;
+      color: var(--ink-soft);
+      margin: 0;
+      max-width: 62ch;
+    }
+
+    .consent-body {
+      padding: clamp(1.4rem, 3vw, 2rem) clamp(1.6rem, 3.5vw, 2.6rem);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1.1rem, 2vw, 1.4rem);
+    }
+
+    .consent-block {
+      padding: clamp(1rem, 2vw, 1.3rem) clamp(1.1rem, 2.2vw, 1.4rem);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+    }
+    .consent-block-head {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 0.6rem;
+    }
+    .consent-block-icon {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(197,160,89,0.1);
+      border: 1px solid rgba(197,160,89,0.22);
+      color: var(--gold);
+    }
+    .consent-block-icon svg { width: 1.05rem; height: 1.05rem; }
+    .consent-block-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: #fff;
+      margin: 0;
+    }
+    .consent-block p,
+    .consent-block li {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+    .consent-block p + p { margin-top: 0.55rem; }
+    .consent-block ul {
+      list-style: none;
+      padding: 0;
+      margin: 0.4rem 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .consent-block li {
+      position: relative;
+      padding-left: 1.2rem;
+    }
+    .consent-block li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.65em;
+      width: 5px;
+      height: 5px;
+      background: var(--gold);
+      border-radius: 50%;
+      opacity: 0.75;
+    }
+    .consent-flow {
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 0.6rem;
+      padding: 0.85rem 1rem;
+      background: rgba(0,0,0,0.22);
+      border-radius: 10px;
+      border: 1px dashed rgba(255,255,255,0.08);
+    }
+    .consent-flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      line-height: 1.55;
+    }
+    .consent-flow-step strong { color: #fff; font-weight: 600; }
+    .consent-flow-num {
+      flex-shrink: 0;
+      width: 1.35rem;
+      height: 1.35rem;
+      display: grid;
+      place-items: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 50%;
+      background: rgba(197,160,89,0.18);
+      border: 1px solid rgba(197,160,89,0.35);
+      color: var(--gold);
+    }
+    .consent-flow-geo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-left: 0.4rem;
+      padding: 0.08rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--ink-soft);
+    }
+    .consent-flow-geo.is-ch { color: #8ac7e6; background: rgba(138,199,230,0.08); border-color: rgba(138,199,230,0.22); }
+    .consent-flow-geo.is-us { color: #e6b58a; background: rgba(230,181,138,0.08); border-color: rgba(230,181,138,0.22); }
+
+    .consent-note-warn {
+      display: flex;
+      gap: 0.7rem;
+      align-items: flex-start;
+      padding: 0.9rem 1rem;
+      border-radius: 12px;
+      background: rgba(230,170,70,0.06);
+      border: 1px solid rgba(230,170,70,0.25);
+    }
+    .consent-note-warn svg { width: 1.2rem; height: 1.2rem; flex-shrink: 0; color: #e6aa46; margin-top: 0.15em; }
+    .consent-note-warn p {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--ink-soft);
+    }
+    .consent-note-warn strong { color: #f0c87a; }
+
+    .consent-checks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .consent-check {
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      padding: 0.95rem 1.05rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+    .consent-check:hover { border-color: rgba(197,160,89,0.3); background: rgba(197,160,89,0.03); }
+    .consent-check input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-top: 0.1em;
+      border: 1.5px solid rgba(255,255,255,0.35);
+      border-radius: 5px;
+      background: rgba(0,0,0,0.25);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 180ms ease;
+    }
+    .consent-check input[type="checkbox"]:checked {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+    .consent-check input[type="checkbox"]:checked::after {
+      content: "";
+      width: 0.4rem;
+      height: 0.7rem;
+      border-right: 2px solid #0f172a;
+      border-bottom: 2px solid #0f172a;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .consent-check-text {
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: var(--ink-soft);
+    }
+    .consent-check-text strong { color: #fff; font-weight: 600; }
+    .consent-check-text a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+    .consent-check-text a:hover { color: #f0c87a; }
+
+    .consent-actions {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+      flex-wrap: wrap;
+      padding-top: 0.4rem;
+    }
+    .consent-btn {
+      flex: 1 1 auto;
+      min-width: 220px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      min-height: 52px;
+      padding: 0.85rem 1.8rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-strong));
+      color: #0f172a;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(197,160,89,0.3);
+      transition: all 200ms ease;
+    }
+    .consent-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(197,160,89,0.45);
+    }
+    .consent-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .consent-btn svg { width: 1.15rem; height: 1.15rem; }
+    .consent-decline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      min-height: 52px;
+      padding: 0.85rem 1.4rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      color: var(--ink-muted);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+    .consent-decline:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .consent-msg {
+      display: none;
+      margin-top: 0.8rem;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .consent-msg.is-error { display: block; background: rgba(240,80,80,0.08); border: 1px solid rgba(240,80,80,0.25); color: #f08a8a; }
+
+    .consent-meta {
+      padding: 1rem clamp(1.6rem, 3.5vw, 2.6rem) 1.3rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.15);
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      text-align: center;
+      line-height: 1.55;
+    }
+    .consent-meta a { color: var(--gold); text-decoration: none; }
+    .consent-meta a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      .consent-btn { min-width: 100%; }
+      .consent-actions { flex-direction: column-reverse; }
+      .consent-decline { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <a href="/" class="top-bar-logo" aria-label="Zur Startseite">
+      <img src="/assets/logo-dmski_gold.png" alt="DMSKI" />
+    </a>
+    <nav class="top-bar-nav">
+      <a href="/datenschutz.html" class="top-bar-link" target="_blank" rel="noopener">Datenschutz</a>
+      <a href="/nutzungsbedingungen.html" class="top-bar-link" target="_blank" rel="noopener">Nutzungsbedingungen</a>
+      <button id="consentLogoutBtn" type="button" class="top-bar-login">Abmelden</button>
+    </nav>
+  </header>
+
+  <main class="consent-page">
+    <section class="consent-shell" role="dialog" aria-labelledby="consentTitle" aria-describedby="consentLede">
+      <div class="consent-head">
+        <span class="consent-eyebrow">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2 3 5v5c0 4 3 7 7 8 4-1 7-4 7-8V5l-7-3Z"/><path d="m7 10 2 2 4-4"/></svg>
+          Rechtliche Einwilligung
+        </span>
+        <h1 id="consentTitle" class="consent-title">
+          Bevor es losgeht — <strong>einmalige Zustimmung</strong>
+        </h1>
+        <p id="consentLede" class="consent-lede">
+          DMSKI arbeitet mit Ihren sensiblen Unterlagen. Damit Sie und wir rechtlich auf sicherem
+          Boden stehen, bitten wir Sie einmalig, die wichtigsten Punkte zur Datenverarbeitung
+          ausdrücklich zur Kenntnis zu nehmen.
+        </p>
+      </div>
+
+      <div class="consent-body">
+
+        <div class="consent-block">
+          <div class="consent-block-head">
+            <span class="consent-block-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6Z"/><path d="M7 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M3 10h14"/></svg>
+            </span>
+            <h2 class="consent-block-title">DMSKI ist eine Analyse-Plattform, kein Archiv</h2>
+          </div>
+          <p>
+            Hochgeladene Files dienen ausschliesslich der KI-gestützten Auswertung Ihres Falls.
+            Wir empfehlen ausdrücklich, Files nach abgeschlossener Analyse <strong>selbst
+            zu löschen</strong>. DMSKI behält sich vor, Files ohne vorherige Rücksprache zu
+            entfernen, wenn konkrete Anhaltspunkte auf strafrechtlich relevante oder
+            missbräuchliche Inhalte bestehen.
+          </p>
+        </div>
+
+        <div class="consent-block">
+          <div class="consent-block-head">
+            <span class="consent-block-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15"/><path d="M10 2.5c2.5 2.5 2.5 12.5 0 15M10 2.5c-2.5 2.5-2.5 12.5 0 15"/></svg>
+            </span>
+            <h2 class="consent-block-title">So fliessen Ihre Daten — transparent nachvollziehbar</h2>
+          </div>
+          <p>
+            Wir trennen bewusst, wo welches Datenelement liegt. Sensible Files bleiben in der
+            Schweiz, die KI-Analyse läuft über einen US-Anbieter (Anthropic), der vertraglich
+            zusichert, Inhalte nicht zum Modell-Training zu verwenden.
+          </p>
+          <div class="consent-flow">
+            <div class="consent-flow-step">
+              <span class="consent-flow-num">1</span>
+              <div>
+                <strong>Files hochladen</strong> → verschlüsselt (TLS) an den privaten Bucket
+                <span class="consent-flow-geo is-ch">🇨🇭 Schweiz · Zürich</span>
+                <br /><span style="opacity:.75;font-size:.8rem">Supabase Storage, AWS eu-central-2 — nicht öffentlich zugänglich</span>
+              </div>
+            </div>
+            <div class="consent-flow-step">
+              <span class="consent-flow-num">2</span>
+              <div>
+                <strong>KI liest den File-Inhalt</strong> → Text/Bild wird temporär an die KI-Schnittstelle übergeben
+                <span class="consent-flow-geo is-us">🇺🇸 USA</span>
+                <br /><span style="opacity:.75;font-size:.8rem">Anthropic API (Anthropic PBC, San Francisco) — kein Training auf Ihren Daten</span>
+              </div>
+            </div>
+            <div class="consent-flow-step">
+              <span class="consent-flow-num">3</span>
+              <div>
+                <strong>Analyse-Ergebnis zurück</strong> → wird in der Haupt-DB neben den Fall-Metadaten abgelegt
+                <span class="consent-flow-geo is-us">🇺🇸 USA</span>
+                <br /><span style="opacity:.75;font-size:.8rem">Railway PostgreSQL (San Francisco) — verschlüsselt, EU-Standard­vertrags­klauseln</span>
+              </div>
+            </div>
+            <div class="consent-flow-step">
+              <span class="consent-flow-num">4</span>
+              <div>
+                <strong>Sie sehen das Resultat</strong> → angemeldet im Browser, nur für Ihr Konto
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="consent-block">
+          <div class="consent-block-head">
+            <span class="consent-block-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="m13.5 8-5 5-2-2"/></svg>
+            </span>
+            <h2 class="consent-block-title">Sie behalten die Kontrolle vor dem Upload</h2>
+          </div>
+          <p>Sie entscheiden, welche Informationen die KI überhaupt zu Gesicht bekommt:</p>
+          <ul>
+            <li>Namen in Ihren Dokumenten <strong>schwärzen</strong> oder vor dem Upload durch <strong>Pseudonyme ersetzen</strong> (z.&nbsp;B. «Hans Muster» statt echtem Namen).</li>
+            <li>Die KI arbeitet mit den Pseudonymen gleichwertig, solange Sie diese als Fokus-Partei / Gegenpartei im Fall hinterlegen.</li>
+            <li>Besonders schützenswerte Angaben (Gesundheitsdaten, Ausweiskopien Dritter) nur hochladen, wenn zwingend erforderlich.</li>
+          </ul>
+        </div>
+
+        <div class="consent-note-warn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 2 17h16L10 2.5Z"/><path d="M10 8v4"/><circle cx="10" cy="14.5" r=".5" fill="currentColor"/></svg>
+          <p>
+            <strong>KI ist ein Werkzeug, keine Urteilsquelle.</strong> DMSKI bemüht sich kontinuierlich,
+            die Fehlerrate tief zu halten — Hundertprozent gibt es jedoch nicht. <strong>Lassen Sie jedes
+            KI-Resultat von einem Anwalt oder einer Anwältin prüfen</strong>, bevor Sie daraus rechtliche
+            Konsequenzen ziehen. DMSKI übernimmt keine Haftung für Entscheidungen auf Basis von
+            KI-Analysen.
+          </p>
+        </div>
+
+        <div class="consent-checks">
+          <label class="consent-check">
+            <input type="checkbox" id="checkTerms" />
+            <span class="consent-check-text">
+              Ich habe die <a href="/nutzungsbedingungen.html" target="_blank" rel="noopener"><strong>Nutzungsbedingungen</strong></a>
+              und die <a href="/datenschutz.html" target="_blank" rel="noopener"><strong>Datenschutzerklärung</strong></a>
+              gelesen und akzeptiere diese ausdrücklich — einschliesslich der oben beschriebenen
+              Datenübermittlung in die USA zur KI-Analyse.
+            </span>
+          </label>
+          <label class="consent-check">
+            <input type="checkbox" id="checkAi" />
+            <span class="consent-check-text">
+              Ich verstehe, dass DMSKI <strong>kein Archiv</strong> ist, dass die KI <strong>Fehler
+              machen kann</strong> und dass ich <strong>jedes KI-Ergebnis durch einen Anwalt prüfen lasse</strong>,
+              bevor ich rechtliche Schritte darauf stütze.
+            </span>
+          </label>
+        </div>
+
+        <div class="consent-actions">
+          <a href="/login.html" id="consentDecline" class="consent-decline">Ablehnen &amp; Abmelden</a>
+          <button id="consentAccept" type="button" class="consent-btn" disabled>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 10 4 4 8-9"/></svg>
+            Einverstanden — jetzt loslegen
+          </button>
+        </div>
+        <p id="consentMsg" class="consent-msg"></p>
+      </div>
+
+      <div class="consent-meta">
+        Version 2026-04-14 · Ihre Zustimmung wird mit Zeitstempel, IP-Adresse und Browser-Kennung
+        dokumentiert und kann jederzeit durch Abmeldung widerrufen werden.
+        Bei Fragen: <a href="mailto:info@dmski.ch">info@dmski.ch</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const TERMS_VERSION = "2026-04-14";
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host === "127.0.0.1";
+      const API_BASE = isLocal ? "" : "https://lively-reverence-production-def3.up.railway.app";
+
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+      if (!token) { window.location.replace("/login.html"); return; }
+
+      const checkTerms = document.getElementById("checkTerms");
+      const checkAi = document.getElementById("checkAi");
+      const btn = document.getElementById("consentAccept");
+      const msg = document.getElementById("consentMsg");
+      const declineLink = document.getElementById("consentDecline");
+      const logoutBtn = document.getElementById("consentLogoutBtn");
+
+      function updateBtn() {
+        btn.disabled = !(checkTerms.checked && checkAi.checked);
+      }
+      checkTerms.addEventListener("change", updateBtn);
+      checkAi.addEventListener("change", updateBtn);
+
+      async function doLogout() {
+        try {
+          await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        } catch (_) { /* best-effort */ }
+        sessionStorage.clear();
+        localStorage.removeItem("token");
+        window.location.href = "/login.html";
+      }
+
+      declineLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        doLogout();
+      });
+      logoutBtn.addEventListener("click", doLogout);
+
+      btn.addEventListener("click", async function () {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.textContent = "Wird gespeichert…";
+        msg.className = "consent-msg";
+        try {
+          const r = await fetch(`${API_BASE}/api/auth/accept-terms`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ version: TERMS_VERSION })
+          });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.error || "Annahme fehlgeschlagen.");
+          sessionStorage.setItem("dmski_terms_accepted", "1");
+          window.location.href = "/dashboard.html";
+        } catch (err) {
+          msg.textContent = err.message || "Annahme konnte nicht gespeichert werden. Bitte erneut versuchen.";
+          msg.className = "consent-msg is-error";
+          btn.disabled = false;
+          btn.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 10 4 4 8-9"/></svg> Einverstanden — jetzt loslegen';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

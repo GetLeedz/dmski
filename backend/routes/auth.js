@@ -47,6 +47,10 @@ async function ensureUserSchema() {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verify_token TEXT");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verify_expires TIMESTAMPTZ");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_version TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_ip TEXT");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_user_agent TEXT");
     const adminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
     if (adminEmail) {
       await pool.query("UPDATE users SET role = 'admin' WHERE LOWER(TRIM(email)) = $1", [adminEmail]);
@@ -80,7 +84,7 @@ router.post("/login", async (req, res) => {
     
     // WICHTIG: Nutze LOWER(TRIM()) auch hier in der Abfrage!
     const result = await pool.query(
-      "SELECT id, email, password_hash, role, password_change_required, first_name, email_verified, deleted_at FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
+      "SELECT id, email, password_hash, role, password_change_required, first_name, email_verified, deleted_at, terms_accepted_at, terms_version FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
       [emailNorm]
     );
 
@@ -140,10 +144,45 @@ router.post("/login", async (req, res) => {
       first_name: user.first_name || "",
       credit_balance: credits.balance || 0,
       password_change_required: user.password_change_required || false,
+      terms_accepted_at: user.terms_accepted_at || null,
+      terms_version: user.terms_version || null,
     });
   } catch (err) {
     console.error("Login error:", err.message);
     return res.status(500).json({ error: "Serverfehler." });
+  }
+});
+
+// POST /auth/accept-terms – User akzeptiert Nutzungsbedingungen + Datenschutz
+router.post("/accept-terms", requireAuth, async (req, res) => {
+  try {
+    await ensureUserSchema();
+    const version = String(req.body?.version || "").trim() || "2026-04-14";
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "";
+    const userAgent = String(req.headers["user-agent"] || "").slice(0, 500);
+
+    await pool.query(
+      `UPDATE users
+          SET terms_accepted_at = NOW(),
+              terms_version = $1,
+              terms_accepted_ip = $2,
+              terms_accepted_user_agent = $3
+        WHERE id = $4`,
+      [version, ip, userAgent, req.user.sub]
+    );
+
+    writeLog({
+      userId: req.user.sub,
+      email: req.user.email,
+      action: `terms_accepted:${version}`,
+      ip,
+      userAgent
+    });
+
+    return res.json({ ok: true, terms_accepted_at: new Date().toISOString(), terms_version: version });
+  } catch (err) {
+    console.error("accept-terms error:", err.message);
+    return res.status(500).json({ error: "Annahme konnte nicht gespeichert werden." });
   }
 });
 

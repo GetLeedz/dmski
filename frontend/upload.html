@@ -37,6 +37,35 @@
         </a>
       </div>
 
+      <!-- Pre-upload legal hints -->
+      <div class="upload-hints" role="group" aria-label="Wichtige Hinweise vor dem Upload">
+        <div class="upload-hint upload-hint--redact">
+          <span class="upload-hint-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M6 8h8M6 11h5"/><path d="m13.5 11.5 3.5 3.5"/></svg>
+          </span>
+          <div class="upload-hint-body">
+            <p class="upload-hint-title">Sie entscheiden, was die KI sieht</p>
+            <p class="upload-hint-text">
+              Vor dem Upload können Sie Namen in Ihren Files <strong>schwärzen</strong> oder durch
+              <strong>Pseudonyme</strong> ersetzen (z.&nbsp;B. «Hans Muster»). Die KI arbeitet
+              damit gleichwertig, solange die Pseudonyme als Fokus-Partei / Gegenpartei im Fall hinterlegt sind.
+            </p>
+          </div>
+        </div>
+        <div class="upload-hint upload-hint--ai">
+          <span class="upload-hint-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 2 17h16L10 2.5Z"/><path d="M10 8v4"/><circle cx="10" cy="14.5" r=".5" fill="currentColor"/></svg>
+          </span>
+          <div class="upload-hint-body">
+            <p class="upload-hint-title">KI ist ein Werkzeug, keine Urteilsquelle</p>
+            <p class="upload-hint-text">
+              DMSKI bemüht sich, die Fehlerrate tief zu halten — Hundertprozent gibt es jedoch nicht.
+              <strong>Lassen Sie das Ergebnis von einem Anwalt prüfen</strong>, bevor Sie rechtliche Schritte darauf stützen.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Big upload dropzone -->
       <div id="dropzone" class="dropzone-hero" tabindex="0" role="button" aria-label="Files hochladen – klicken oder per Drag & Drop">
         <input id="fileInput" type="file" multiple

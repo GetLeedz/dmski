@@ -7144,6 +7144,100 @@ select.toolbar-input {
 }
 
 /* ================================================================
+   AI DISCLAIMER – persistent banner on analysis pages
+   ================================================================ */
+.ai-disclaimer {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0.4rem auto 1.2rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fef8e9, #fbf0d1);
+  border: 1px solid #ecd599;
+  box-shadow: 0 1px 2px rgba(167,118,24,0.06);
+}
+.ai-disclaimer-icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #fff;
+  color: #a77618;
+  border: 1px solid #ecd599;
+}
+.ai-disclaimer-icon svg { width: 1.1rem; height: 1.1rem; }
+.ai-disclaimer p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: #5c4410;
+}
+.ai-disclaimer strong { color: #3d2b04; font-weight: 700; }
+
+/* ================================================================
+   UPLOAD PRE-FLIGHT HINTS – anonymisation + AI-disclaimer
+   ================================================================ */
+.upload-hints {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.85rem;
+  margin: 1.1rem 0 1.4rem;
+}
+.upload-hint {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 0.95rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid #dbe9f0;
+  background: linear-gradient(180deg, #f7fbfd, #eff6fa);
+  box-shadow: 0 1px 2px rgba(18,42,62,0.04);
+}
+.upload-hint--redact {
+  border-color: #c9e2ec;
+  background: linear-gradient(180deg, #f3fafd, #e8f4f9);
+}
+.upload-hint--ai {
+  border-color: #f1d9ad;
+  background: linear-gradient(180deg, #fdf8ec, #faf0d6);
+}
+.upload-hint-icon {
+  flex-shrink: 0;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid rgba(18,42,62,0.06);
+}
+.upload-hint-icon svg { width: 1.15rem; height: 1.15rem; }
+.upload-hint--redact .upload-hint-icon { color: #1b6a85; }
+.upload-hint--ai .upload-hint-icon { color: #a77618; }
+.upload-hint-body { min-width: 0; }
+.upload-hint-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: #122a3e;
+}
+.upload-hint-text {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #3d5a6b;
+}
+.upload-hint-text strong { color: #122a3e; font-weight: 700; }
+@media (max-width: 640px) {
+  .upload-hints { grid-template-columns: 1fr; }
+}
+
+/* ================================================================
    DROPZONE HERO – big redesigned dropzone for upload.html
    ================================================================ */
 .dropzone-hero {

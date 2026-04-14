@@ -11,6 +11,14 @@
     return;
   }
 
+  // ── Enforce terms acceptance: redirect to consent page if not yet accepted ──
+  const termsAccepted = sessionStorage.getItem("dmski_terms_accepted") === "1";
+  const isConsentPage = path.endsWith("consent.html");
+  if (!termsAccepted && !isConsentPage) {
+    window.location.replace("/consent.html");
+    return;
+  }
+
   function isActive(href) {
     return path === href || path.endsWith(href.replace(/^\//, ""));
   }

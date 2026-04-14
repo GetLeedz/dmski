@@ -86,6 +86,7 @@ loginForm?.addEventListener("submit", async (event) => {
         sessionStorage.setItem("dmski_first_name", data.first_name || "");
         sessionStorage.setItem("dmski_credit_balance", String(data.credit_balance || 0));
         sessionStorage.setItem("dmski_pwd_change", data.password_change_required ? "1" : "0");
+        sessionStorage.setItem("dmski_terms_accepted", data.terms_accepted_at ? "1" : "0");
 
         if (rememberInput.checked) {
             localStorage.setItem(REMEMBER_KEY, email);
@@ -100,6 +101,11 @@ loginForm?.addEventListener("submit", async (event) => {
             // Passwort-Änderung erzwingen
             if (data.password_change_required) {
                 window.location.href = "/profile.html?mustchange=1";
+                return;
+            }
+            // Nutzungsbedingungen + Datenschutz müssen zuerst akzeptiert werden
+            if (!data.terms_accepted_at) {
+                window.location.href = "/consent.html";
                 return;
             }
             window.location.href = "/dashboard.html";
