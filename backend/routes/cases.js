@@ -4430,6 +4430,18 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, requireCaseAccess("re
       }
     }
 
+    // Deduct 1 credit for manual re-analysis
+    if (forceRefresh) {
+      const creditResult = await deductCredits(req.user.sub, 1, `File KI-Analyse: ${file.original_name} (Fall ${caseId})`);
+      if (!creditResult.ok) {
+        return res.status(402).json({
+          error: `Nicht genügend Credits. Benötigt: 1, verfügbar: ${creditResult.balance}.`,
+          needed: 1,
+          balance: creditResult.balance
+        });
+      }
+    }
+
     const fileBuffer = await downloadStorageFile(caseId, file.stored_name);
 
     if (String(file.mime_type || "").includes("pdf")) {
