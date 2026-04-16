@@ -7880,31 +7880,35 @@ body.printing .upload-hero-wrap { display: none !important; }
 .ms-launch-cost:empty,
 .btn-credit-cost:empty { display: none; }
 
-/* ── Gold Action Button (for Reanalyze, Personen-Update) ── */
-.fp-action--gold {
-  border-color: rgba(197,160,89,0.35) !important;
-  background: rgba(197,160,89,0.08) !important;
-  color: #C5A059 !important;
-}
-.fp-action--gold:hover {
-  background: rgba(197,160,89,0.15) !important;
-  border-color: rgba(197,160,89,0.55) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(197,160,89,0.15);
-}
-.fp-action--gold svg { stroke: #C5A059; }
-
-/* ── Akteure Personen-Update upgrade ── */
+/* ── KI-Analyse Gold Button (einheitlich für alle KI-Actions) ── */
 .ki-action-btn--gold {
-  background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.06));
-  border-color: rgba(197,160,89,0.4);
+  background: linear-gradient(135deg, rgba(197,160,89,0.15), rgba(197,160,89,0.06));
+  border: 1px solid rgba(197,160,89,0.45);
   color: #C5A059;
   font-weight: 700;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.84rem;
+  box-shadow: 0 2px 8px rgba(197,160,89,0.08);
+  transition: all 200ms ease;
 }
 .ki-action-btn--gold:hover {
-  background: rgba(197,160,89,0.2);
-  border-color: rgba(197,160,89,0.6);
-  box-shadow: 0 4px 16px rgba(197,160,89,0.15);
+  background: linear-gradient(135deg, rgba(197,160,89,0.25), rgba(197,160,89,0.12));
+  border-color: rgba(197,160,89,0.7);
+  box-shadow: 0 6px 20px rgba(197,160,89,0.2);
+  transform: translateY(-1px);
+}
+.ki-action-btn--gold:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(197,160,89,0.1);
+}
+.ki-action-btn--gold:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.ki-action-btn--gold svg {
+  stroke: #C5A059;
 }
 
 /* ── Credit insufficient overlay in modals ── */

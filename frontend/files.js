@@ -1255,7 +1255,7 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
     ? `<div class="akteure-refresh-wrap">
         <button id="consolidatePersonsBtn" type="button" class="ki-action-btn ki-action-btn--gold" title="KI: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           KI Personen-Update ${personCostLabel}
         </button>
         <span id="consolidateTimestamp" class="akteure-timestamp"></span>
@@ -1667,7 +1667,7 @@ async function refreshAnalysisReport(files = allFiles) {
             return;
           }
           consolidateBtn.disabled = true;
-          consolidateBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI analysiert…`;
+          consolidateBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> KI analysiert…`;
           try {
             const tkn = sessionStorage.getItem("token") || "";
             const resp = await fetch(`${API_BASE}/cases/${currentCaseId}/consolidate-persons`, {
@@ -3478,7 +3478,7 @@ reanalyzeAllBtn?.addEventListener("click", async () => {
   if (!raHasCreds) { window.location.href = "/credits.html"; return; }
 
   reanalyzeAllBtn.disabled = true;
-  reanalyzeAllBtn.textContent = "Wird zurückgesetzt...";
+  reanalyzeAllBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Wird analysiert…`;
 
   try {
     const res = await apiFetch(`${API_BASE}/cases/${currentCaseId}/reanalyze`, {
@@ -3513,7 +3513,8 @@ reanalyzeAllBtn?.addEventListener("click", async () => {
     }
   } finally {
     reanalyzeAllBtn.disabled = false;
-    reanalyzeAllBtn.textContent = "Alle neu analysieren";
+    const raCostLabel = calcCreditCost();
+    reanalyzeAllBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Alle neu analysieren <span class="btn-credit-cost">${raCostLabel > 0 ? raCostLabel + " Credit" + (raCostLabel !== 1 ? "s" : "") : ""}</span>`;
   }
 });
 
