@@ -7799,6 +7799,162 @@ body.printing .upload-hero-wrap { display: none !important; }
 }
 
 /* ================================================================
+   CREDIT CHIP (Fall-Header)
+   ================================================================ */
+.credit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem 0.45rem 0.65rem;
+  border-radius: 99px;
+  background: rgba(197,160,89,0.10);
+  border: 1px solid rgba(197,160,89,0.30);
+  color: #C5A059;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 200ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.credit-chip:hover {
+  background: rgba(197,160,89,0.18);
+  border-color: rgba(197,160,89,0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(197,160,89,0.2);
+}
+.credit-chip-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+.credit-chip-balance {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.credit-chip-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+.credit-chip--low {
+  border-color: rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.08);
+  color: #fca5a5;
+}
+.credit-chip--low .credit-chip-balance { color: #fca5a5; }
+.credit-chip--low:hover {
+  background: rgba(239,68,68,0.14);
+  border-color: rgba(239,68,68,0.6);
+  box-shadow: 0 4px 16px rgba(239,68,68,0.15);
+}
+
+/* ── Credit Cost Badges (inline in buttons) ── */
+.ms-launch-cost,
+.btn-credit-cost {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 99px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+.ms-launch-cost {
+  background: rgba(15,23,42,0.35);
+  color: rgba(255,255,255,0.85);
+  margin-left: 0.35rem;
+}
+.btn-credit-cost {
+  background: rgba(197,160,89,0.2);
+  color: #C5A059;
+  margin-left: 0.35rem;
+}
+.ms-launch-cost:empty,
+.btn-credit-cost:empty { display: none; }
+
+/* ── Gold Action Button (for Reanalyze, Personen-Update) ── */
+.fp-action--gold {
+  border-color: rgba(197,160,89,0.35) !important;
+  background: rgba(197,160,89,0.08) !important;
+  color: #C5A059 !important;
+}
+.fp-action--gold:hover {
+  background: rgba(197,160,89,0.15) !important;
+  border-color: rgba(197,160,89,0.55) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(197,160,89,0.15);
+}
+.fp-action--gold svg { stroke: #C5A059; }
+
+/* ── Akteure Personen-Update upgrade ── */
+.ki-action-btn--gold {
+  background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.06));
+  border-color: rgba(197,160,89,0.4);
+  color: #C5A059;
+  font-weight: 700;
+}
+.ki-action-btn--gold:hover {
+  background: rgba(197,160,89,0.2);
+  border-color: rgba(197,160,89,0.6);
+  box-shadow: 0 4px 16px rgba(197,160,89,0.15);
+}
+
+/* ── Credit insufficient overlay in modals ── */
+.credit-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(197,160,89,0.06);
+  border: 1px solid rgba(197,160,89,0.2);
+  font-size: 0.85rem;
+}
+.credit-info-row.is-insufficient {
+  border-color: rgba(239,68,68,0.3);
+  background: rgba(239,68,68,0.06);
+}
+.credit-info-needed { font-weight: 700; color: #C5A059; }
+.credit-info-row.is-insufficient .credit-info-needed { color: #fca5a5; }
+.credit-info-available { color: rgba(255,255,255,0.6); font-size: 0.78rem; }
+.credit-buy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #C5A059, #B8904A);
+  color: #0f172a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 180ms ease;
+}
+.credit-buy-link:hover {
+  box-shadow: 0 4px 16px rgba(197,160,89,0.35);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .credit-chip {
+    padding: 0.35rem 0.65rem 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  .credit-chip-balance { font-size: 0.88rem; }
+  .credit-info-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+}
+
+/* ================================================================
    FORENSIC SCAN SECTION
    ================================================================ */
 .forensic-section {

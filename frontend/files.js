@@ -188,6 +188,59 @@ let currentSortOrder = "desc";      // "asc" | "desc"
 
 listTitle.textContent = "";
 
+// ── Credit System Integration ──
+let creditBalance = null;
+
+async function loadCreditBalance() {
+  try {
+    const res = await apiFetch(`${API_BASE}/credits/balance`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    creditBalance = data.balance ?? 0;
+    updateCreditChip();
+    updateCreditCosts();
+  } catch (e) {
+    if (e.message !== "AUTH_REDIRECT") console.warn("Credit balance load:", e.message);
+  }
+}
+
+function calcCreditCost() {
+  return Math.ceil((allFiles.length || 0) / 5);
+}
+
+function updateCreditChip() {
+  const chip = document.getElementById("creditChip");
+  const balEl = document.getElementById("creditBalance");
+  if (!chip || !balEl || creditBalance === null) return;
+  balEl.textContent = creditBalance;
+  chip.classList.toggle("credit-chip--low", creditBalance < 5);
+}
+
+function updateCreditCosts() {
+  const cost = calcCreditCost();
+  const costLabel = cost > 0 ? `${cost} Credit${cost !== 1 ? "s" : ""}` : "";
+  const masterCostEl = document.getElementById("masterScanCost");
+  if (masterCostEl) masterCostEl.textContent = costLabel;
+  const reanalyzeCostEl = document.getElementById("reanalyzeCost");
+  if (reanalyzeCostEl) reanalyzeCostEl.textContent = costLabel;
+}
+
+function creditInfoHtml(cost) {
+  if (creditBalance === null) return "";
+  const sufficient = creditBalance >= cost;
+  return `<div class="credit-info-row ${sufficient ? "" : "is-insufficient"}">
+    <div>
+      <span class="credit-info-needed">${cost} Credit${cost !== 1 ? "s" : ""} benötigt</span>
+      <span class="credit-info-available"> · Guthaben: ${creditBalance}</span>
+    </div>
+    ${sufficient ? "" : `<a href="/credits.html" class="credit-buy-link">Credits kaufen →</a>`}
+  </div>`;
+}
+
+loadCreditBalance();
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -1197,11 +1250,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
     `;
   }).join("");
 
+  const personCost = calcCreditCost();
+  const personCostLabel = personCost > 0 ? `<span class="btn-credit-cost">${personCost} Credit${personCost !== 1 ? "s" : ""}</span>` : "";
   const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
     ? `<div class="akteure-refresh-wrap">
-        <button id="consolidatePersonsBtn" type="button" class="ki-action-btn" title="KI: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
+        <button id="consolidatePersonsBtn" type="button" class="ki-action-btn ki-action-btn--gold" title="KI: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-          KI Personen-Update
+          KI Personen-Update ${personCostLabel}
         </button>
         <span id="consolidateTimestamp" class="akteure-timestamp"></span>
       </div>`
@@ -1598,6 +1653,19 @@ async function refreshAnalysisReport(files = allFiles) {
       const consolidateBtn = document.getElementById("consolidatePersonsBtn");
       if (consolidateBtn) {
         consolidateBtn.addEventListener("click", async () => {
+          const pCost = calcCreditCost();
+          if (creditBalance !== null && creditBalance < pCost) {
+            const goToBuy = await dmskiModal({
+              icon: "info",
+              title: "Nicht genügend Credits",
+              body: `Für das Personen-Update werden <strong>${pCost} Credits</strong> benötigt.${creditInfoHtml(pCost)}`,
+              confirmLabel: "Credits kaufen",
+              cancelLabel: "Abbrechen",
+              confirmClass: "is-primary"
+            });
+            if (goToBuy) window.location.href = "/credits.html";
+            return;
+          }
           consolidateBtn.disabled = true;
           consolidateBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI analysiert…`;
           try {
@@ -3226,6 +3294,7 @@ async function loadFiles() {
     allFiles = data.files || [];
     renderFiles(filterFiles(allFiles));
     void refreshAnalysisReport(allFiles);
+    updateCreditCosts();
     return;
   }
 
@@ -3395,15 +3464,18 @@ document.querySelectorAll(".fp-sort-btn[data-sort-field]").forEach(btn => {
 downloadAllFilesBtn?.addEventListener("click", () => void downloadAllFilesAsPdf());
 
 reanalyzeAllBtn?.addEventListener("click", async () => {
+  const raCost = calcCreditCost();
+  const raHasCreds = creditBalance === null || creditBalance >= raCost;
   const confirmed = await dmskiModal({
     icon: "info",
     title: "Alle Analysen neu starten?",
     body: `<p>Alle ${allFiles.length} gespeicherten KI-Analysen werden gelöscht und mit der aktuellen Engine neu erstellt.</p>
-           <p style="margin-top:0.5rem">Dies kann einige Minuten dauern.</p>`,
-    confirmLabel: "Neu analysieren",
+           <p style="margin-top:0.5rem">Dies kann einige Minuten dauern.</p>${creditInfoHtml(raCost)}`,
+    confirmLabel: raHasCreds ? "Neu analysieren" : "Credits kaufen",
     cancelLabel: "Abbrechen"
   });
   if (!confirmed) return;
+  if (!raHasCreds) { window.location.href = "/credits.html"; return; }
 
   reanalyzeAllBtn.disabled = true;
   reanalyzeAllBtn.textContent = "Wird zurückgesetzt...";
@@ -3420,11 +3492,24 @@ reanalyzeAllBtn?.addEventListener("click", async () => {
     analysisCache.clear();
     analysisPromiseCache.clear();
 
+    loadCreditBalance();
     setMessage(listMessage, `${data.invalidated || 0} Analysen zurückgesetzt. Seite wird neu geladen...`, "success");
     setTimeout(() => window.location.reload(), 1500);
   } catch (err) {
     if (err.message !== "AUTH_REDIRECT") {
-      setMessage(listMessage, err.message || "Fehler beim Zurücksetzen.", "error");
+      const msg = err.message || "Fehler beim Zurücksetzen.";
+      if (msg.includes("Nicht genügend Credits")) {
+        dmskiModal({
+          icon: "info",
+          title: "Nicht genügend Credits",
+          body: `${escapeHtml(msg)}${creditInfoHtml(calcCreditCost())}`,
+          confirmLabel: "Credits kaufen",
+          cancelLabel: "Schliessen",
+          confirmClass: "is-primary"
+        }).then(go => { if (go) window.location.href = "/credits.html"; });
+      } else {
+        setMessage(listMessage, msg, "error");
+      }
     }
   } finally {
     reanalyzeAllBtn.disabled = false;
@@ -3958,15 +4043,18 @@ void loadCaseContext().then(() => {
     const estFiles = parseInt(fileCountEl?.textContent) || 0;
     const estMinutes = estFiles > 0 ? Math.ceil((estFiles * 2.3 + 60) / 60) : 3;
 
+    const scanCost = calcCreditCost();
+    const hasCreds = creditBalance === null || creditBalance >= scanCost;
     const confirmed = await dmskiModal({
       icon: "info",
       title: "Master-Scan KI starten?",
-      body: `Alle <strong>${estFiles || "?"} Files</strong> werden forensisch analysiert und vernetzt.<br>Geschätzte Dauer: <strong>~${estMinutes} Minuten</strong>`,
-      confirmLabel: "Analyse starten",
+      body: `Alle <strong>${estFiles || "?"} Files</strong> werden forensisch analysiert und vernetzt.<br>Geschätzte Dauer: <strong>~${estMinutes} Minuten</strong>${creditInfoHtml(scanCost)}`,
+      confirmLabel: hasCreds ? "Analyse starten" : "Credits kaufen",
       cancelLabel: "Abbrechen",
       confirmClass: "is-primary"
     });
     if (!confirmed) { scanBtn.disabled = false; return; }
+    if (!hasCreds) { scanBtn.disabled = false; window.location.href = "/credits.html"; return; }
 
     aborted = false;
     if (cancelBtn) {
@@ -4063,7 +4151,7 @@ void loadCaseContext().then(() => {
           if (waveEl) waveEl.classList.add("hidden");
           if (cancelBtn) cancelBtn.classList.add("hidden");
           renderForensicResults(status.result);
-          // Success-Modal
+          loadCreditBalance();
           dmskiModal({
             icon: "success",
             title: "Master-Scan KI abgeschlossen",
@@ -4084,6 +4172,17 @@ void loadCaseContext().then(() => {
       if (err.message === "ABORTED") {
         setProgress(0, "Analyse abgebrochen");
         dmskiModal({ icon: "info", title: "Analyse abgebrochen", body: "Der Master-Scan KI wurde abgebrochen. Bereits analysierte Ergebnisse bleiben gespeichert.", confirmLabel: "OK" });
+      } else if (err.message && err.message.includes("Nicht genügend Credits")) {
+        setProgress(0, "");
+        const buyNow = await dmskiModal({
+          icon: "info",
+          title: "Nicht genügend Credits",
+          body: `${escapeHtml(err.message)}${creditInfoHtml(calcCreditCost())}`,
+          confirmLabel: "Credits kaufen",
+          cancelLabel: "Abbrechen",
+          confirmClass: "is-primary"
+        });
+        if (buyNow) window.location.href = "/credits.html";
       } else {
         setProgress(100, `Fehler: ${err.message}`);
         if (resultsWrap) {
