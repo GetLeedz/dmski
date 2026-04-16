@@ -1695,8 +1695,8 @@ a.ghost:hover {
 .analysis-box .queue-analysis {
   margin-top: 0.55rem;
   padding: 0.55rem 0.7rem;
-  background: linear-gradient(135deg, rgba(241,248,251,0.97), rgba(228,244,245,0.9));
-  border: 1px solid #d4e4ea;
+  background: linear-gradient(135deg, rgba(248,249,250,0.97), rgba(240,243,247,0.95));
+  border: 1px solid rgba(26,43,60,0.10);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -2176,8 +2176,8 @@ a.ghost:hover {
   gap: 0.75rem;
   padding: 0.65rem 0.7rem;
   margin-top: 0.55rem;
-  background: linear-gradient(135deg, rgba(241,248,251,0.97), rgba(228,244,245,0.9));
-  border: 1px solid #d4e4ea;
+  background: linear-gradient(135deg, rgba(248,249,250,0.97), rgba(240,243,247,0.95));
+  border: 1px solid rgba(26,43,60,0.10);
   border-radius: 8px;
   color: var(--accent);
   font-size: 0.8rem;
@@ -2212,8 +2212,8 @@ a.ghost:hover {
 .queue-item.done .queue-analysis {
   margin-top: 0.55rem;
   padding: 0.55rem 0.7rem;
-  background: linear-gradient(135deg, rgba(241,248,251,0.97), rgba(228,244,245,0.9));
-  border: 1px solid #d4e4ea;
+  background: linear-gradient(135deg, rgba(248,249,250,0.97), rgba(240,243,247,0.95));
+  border: 1px solid rgba(26,43,60,0.10);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -7799,58 +7799,49 @@ body.printing .upload-hero-wrap { display: none !important; }
 }
 
 /* ================================================================
-   CREDIT CHIP (Fall-Header)
+   KI FILE-SCAN BUTTON (per-file analysis trigger)
    ================================================================ */
-.credit-chip {
+.ki-file-scan-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.9rem 0.45rem 0.65rem;
-  border-radius: 99px;
-  background: rgba(197,160,89,0.10);
-  border: 1px solid rgba(197,160,89,0.30);
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(197,160,89,0.4);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.04));
   color: #C5A059;
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-decoration: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 200ms ease;
   white-space: nowrap;
-  flex-shrink: 0;
 }
-.credit-chip:hover {
-  background: rgba(197,160,89,0.18);
-  border-color: rgba(197,160,89,0.5);
+.ki-file-scan-btn:hover {
+  background: linear-gradient(135deg, rgba(197,160,89,0.22), rgba(197,160,89,0.10));
+  border-color: rgba(197,160,89,0.65);
+  box-shadow: 0 4px 14px rgba(197,160,89,0.18);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(197,160,89,0.2);
 }
-.credit-chip-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+.ki-file-scan-btn:active { transform: translateY(0); }
+.ki-file-scan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.ki-file-scan-btn.is-loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+.ki-file-scan-btn svg {
+  width: 0.9rem;
+  height: 0.9rem;
   flex-shrink: 0;
+  stroke: #C5A059;
 }
-.credit-chip-balance {
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: #fff;
-}
-.credit-chip-label {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.75;
-}
-.credit-chip--low {
-  border-color: rgba(239,68,68,0.4);
-  background: rgba(239,68,68,0.08);
-  color: #fca5a5;
-}
-.credit-chip--low .credit-chip-balance { color: #fca5a5; }
-.credit-chip--low:hover {
-  background: rgba(239,68,68,0.14);
-  border-color: rgba(239,68,68,0.6);
-  box-shadow: 0 4px 16px rgba(239,68,68,0.15);
+.ki-file-scan-label {
+  line-height: 1;
 }
 
 /* ── Credit Cost Badges (inline in buttons) ── */

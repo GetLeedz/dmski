@@ -161,7 +161,6 @@ const dateToFilter = document.getElementById("dateToFilter");
 const sortUploadDateBtn = document.getElementById("sortUploadDateBtn");
 const sortFileDateBtn = document.getElementById("sortFileDateBtn");
 const downloadAllFilesBtn = document.getElementById("downloadAllFilesBtn");
-const reanalyzeAllBtn = document.getElementById("reanalyzeAllBtn");
 
 let allFiles = [];
 const previewUrlCache = new Map();
@@ -211,11 +210,8 @@ function calcCreditCost() {
 }
 
 function updateCreditChip() {
-  const chip = document.getElementById("creditChip");
-  const balEl = document.getElementById("creditBalance");
-  if (!chip || !balEl || creditBalance === null) return;
-  balEl.textContent = creditBalance;
-  chip.classList.toggle("credit-chip--low", creditBalance < 5);
+  const badge = document.querySelector(".sb-credit-badge span");
+  if (badge && creditBalance !== null) badge.textContent = creditBalance + " Credits";
 }
 
 function updateCreditCosts() {
@@ -223,8 +219,6 @@ function updateCreditCosts() {
   const costLabel = cost > 0 ? `${cost} Credit${cost !== 1 ? "s" : ""}` : "";
   const masterCostEl = document.getElementById("masterScanCost");
   if (masterCostEl) masterCostEl.textContent = costLabel;
-  const reanalyzeCostEl = document.getElementById("reanalyzeCost");
-  if (reanalyzeCostEl) reanalyzeCostEl.textContent = costLabel;
 }
 
 function creditInfoHtml(cost) {
@@ -3017,10 +3011,11 @@ function renderFiles(files) {
       </td>
       <td class="analysis-cell">
         <div class="analysis-cell-top">
-          <button type="button" class="row-action-btn refresh" data-action="refresh-analysis" data-id="${file.id}" title="Analyse neu laden" aria-label="Analyse neu laden">
+          <button type="button" class="ki-file-scan-btn" data-action="refresh-analysis" data-id="${file.id}" title="File KI-Analyse starten · 1 Credit" aria-label="File KI-Analyse starten">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
+            <span class="ki-file-scan-label">KI-Analyse</span>
           </button>
         </div>
         <div class="analysis-box" data-file-id="${file.id}"></div>
@@ -3399,7 +3394,20 @@ filesTableBody.addEventListener("click", async (event) => {
   const rowActions = target.closest(".row-actions");
 
   if (action === "refresh-analysis" && fileId) {
+    if (creditBalance !== null && creditBalance < 1) {
+      const goToBuy = await dmskiModal({
+        icon: "info",
+        title: "Nicht genügend Credits",
+        body: `Für die File-Analyse wird <strong>1 Credit</strong> benötigt.${creditInfoHtml(1)}`,
+        confirmLabel: "Credits kaufen",
+        cancelLabel: "Abbrechen",
+        confirmClass: "is-primary"
+      });
+      if (goToBuy) window.location.href = "/credits.html";
+      return;
+    }
     await refreshAnalysis(fileId, actionElement instanceof HTMLButtonElement ? actionElement : null);
+    loadCreditBalance();
     return;
   }
 
@@ -3462,61 +3470,6 @@ document.querySelectorAll(".fp-sort-btn[data-sort-field]").forEach(btn => {
 });
 
 downloadAllFilesBtn?.addEventListener("click", () => void downloadAllFilesAsPdf());
-
-reanalyzeAllBtn?.addEventListener("click", async () => {
-  const raCost = calcCreditCost();
-  const raHasCreds = creditBalance === null || creditBalance >= raCost;
-  const confirmed = await dmskiModal({
-    icon: "info",
-    title: "Alle Analysen neu starten?",
-    body: `<p>Alle ${allFiles.length} gespeicherten KI-Analysen werden gelöscht und mit der aktuellen Engine neu erstellt.</p>
-           <p style="margin-top:0.5rem">Dies kann einige Minuten dauern.</p>${creditInfoHtml(raCost)}`,
-    confirmLabel: raHasCreds ? "Neu analysieren" : "Credits kaufen",
-    cancelLabel: "Abbrechen"
-  });
-  if (!confirmed) return;
-  if (!raHasCreds) { window.location.href = "/credits.html"; return; }
-
-  reanalyzeAllBtn.disabled = true;
-  reanalyzeAllBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Wird analysiert…`;
-
-  try {
-    const res = await apiFetch(`${API_BASE}/cases/${currentCaseId}/reanalyze`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Fehler");
-
-    // Clear frontend caches
-    analysisCache.clear();
-    analysisPromiseCache.clear();
-
-    loadCreditBalance();
-    setMessage(listMessage, `${data.invalidated || 0} Analysen zurückgesetzt. Seite wird neu geladen...`, "success");
-    setTimeout(() => window.location.reload(), 1500);
-  } catch (err) {
-    if (err.message !== "AUTH_REDIRECT") {
-      const msg = err.message || "Fehler beim Zurücksetzen.";
-      if (msg.includes("Nicht genügend Credits")) {
-        dmskiModal({
-          icon: "info",
-          title: "Nicht genügend Credits",
-          body: `${escapeHtml(msg)}${creditInfoHtml(calcCreditCost())}`,
-          confirmLabel: "Credits kaufen",
-          cancelLabel: "Schliessen",
-          confirmClass: "is-primary"
-        }).then(go => { if (go) window.location.href = "/credits.html"; });
-      } else {
-        setMessage(listMessage, msg, "error");
-      }
-    }
-  } finally {
-    reanalyzeAllBtn.disabled = false;
-    const raCostLabel = calcCreditCost();
-    reanalyzeAllBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Alle neu analysieren <span class="btn-credit-cost">${raCostLabel > 0 ? raCostLabel + " Credit" + (raCostLabel !== 1 ? "s" : "") : ""}</span>`;
-  }
-});
 
 goToUploadBtnHero?.addEventListener("click", () => {
   window.location.href = "/upload.html";
