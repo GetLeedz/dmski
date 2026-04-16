@@ -218,10 +218,11 @@ function updateCreditChip() {
 }
 
 function updateCreditCosts() {
-  const cost = calcCreditCost();
-  const costLabel = cost > 0 ? `${cost} Credit${cost !== 1 ? "s" : ""}` : "";
+  if (creditBalance === null) return;
+  const label = `${creditBalance} Credit${creditBalance !== 1 ? "s" : ""}`;
   const masterCostEl = document.getElementById("masterScanCost");
-  if (masterCostEl) masterCostEl.textContent = costLabel;
+  if (masterCostEl) masterCostEl.textContent = label;
+  document.querySelectorAll(".ki-scan-cost").forEach(el => { el.textContent = label; });
 }
 
 function creditInfoHtml(cost) {
@@ -1247,14 +1248,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
     `;
   }).join("");
 
-  const personCost = calcCreditCost();
-  const personCostLabel = personCost > 0 ? `<span class="ki-scan-cost">${personCost} Credit${personCost !== 1 ? "s" : ""}</span>` : "";
+  const balLabel = creditBalance !== null ? `<span class="ki-scan-cost">${creditBalance} Credit${creditBalance !== 1 ? "s" : ""}</span>` : "";
   const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
     ? `<div class="akteure-refresh-wrap">
         <button id="consolidatePersonsBtn" type="button" class="ki-scan-btn" title="Personen KI-Analyse: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <span>Personen KI-Analyse</span>
-          ${personCostLabel}
+          ${balLabel}
         </button>
         <span id="consolidateTimestamp" class="akteure-timestamp"></span>
       </div>`
@@ -3020,7 +3020,7 @@ function renderFiles(files) {
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <span>File KI-Analyse</span>
-            <span class="ki-scan-cost">1 Credit</span>
+            <span class="ki-scan-cost"></span>
           </button>
         </div>
         <div class="analysis-box" data-file-id="${file.id}"></div>
