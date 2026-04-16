@@ -1,6 +1,6 @@
 :root {
-  --bg: #0a0e17;
-  --card: rgba(15, 22, 36, 0.75);
+  --bg: #0F1E2B;
+  --card: rgba(26, 43, 60, 0.75);
   --ink: #e8edf4;
   --ink-soft: #9aacbe;
   --line: rgba(255,255,255,0.06);
@@ -11,7 +11,7 @@
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg);
   display: flex;
@@ -30,7 +30,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0.65rem 2rem;
-  background: rgba(11, 17, 32, 0.75);
+  background: linear-gradient(180deg, rgba(15,30,43,0.32), rgba(15,30,43,0.18));
   backdrop-filter: blur(40px) saturate(1.6);
   -webkit-backdrop-filter: blur(40px) saturate(1.6);
   border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -82,7 +82,7 @@ body {
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 99;
   padding: 5rem 1.5rem 2rem;
-  background: rgba(6, 10, 20, 0.95);
+  background: rgba(15, 30, 43, 0.95);
   backdrop-filter: blur(32px) saturate(1.4);
   -webkit-backdrop-filter: blur(32px) saturate(1.4);
   flex-direction: column;
@@ -197,7 +197,7 @@ a:hover {
   font-size: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
   color: rgba(255,255,255,0.85);
   letter-spacing: 0.01em;
-  background: linear-gradient(175deg, #0e1f3d 0%, #0a1628 40%, #081020 100%);
+  background: linear-gradient(175deg, #1A2B3C 0%, #0F1E2B 40%, #0F1E2B 100%);
   border-top: 1px solid rgba(197,160,89,0.2);
   overflow: hidden;
   margin-top: auto;
