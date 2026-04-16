@@ -4433,7 +4433,7 @@ router.get("/:caseId/files/:fileId/analysis", requireAuth, requireCaseAccess("re
     // Deduct 1 credit for manual re-analysis
     if (forceRefresh) {
       const creditResult = await deductCredits(req.user.sub, 1, `File KI-Analyse: ${file.original_name} (Fall ${caseId})`);
-      if (!creditResult.ok) {
+      if (!creditResult.success) {
         return res.status(402).json({
           error: `Nicht genügend Credits. Benötigt: 1, verfügbar: ${creditResult.balance}.`,
           needed: 1,
