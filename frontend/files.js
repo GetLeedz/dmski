@@ -217,6 +217,13 @@ function updateCreditChip() {
   if (heroNum) heroNum.textContent = creditBalance;
 }
 
+function personenBtnHtml() {
+  const c = calcCreditCost();
+  const costTxt = c > 0 ? `${c} Credit${c !== 1 ? "s" : ""}` : "";
+  const balTxt = creditBalance !== null ? `${creditBalance} verfügbar` : "";
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> <span>Personen KI-Analyse</span> <span class="ki-scan-meta"><span class="ki-scan-cost">${costTxt}</span><span class="ki-scan-bal">${balTxt}</span></span>`;
+}
+
 function creditBadgeHtml(cost) {
   if (creditBalance === null) return "";
   const costTxt = cost > 0 ? `${cost} Credit${cost !== 1 ? "s" : ""}` : "";
@@ -1718,18 +1725,19 @@ async function refreshAnalysisReport(files = allFiles) {
                 const now = new Date();
                 tsEl.textContent = `Letztes Update: ${now.toLocaleDateString("de-CH")} ${now.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })}`;
               }
+              loadCreditBalance();
             } else {
               const errMsg = data.error || "Konsolidierung fehlgeschlagen.";
-              dmskiModal({ icon: "error", title: "Personen-Update fehlgeschlagen", body: errMsg, confirmLabel: "Verstanden", confirmClass: "is-secondary" });
+              dmskiModal({ icon: "error", title: "Personen KI-Analyse fehlgeschlagen", body: errMsg, confirmLabel: "Verstanden", confirmClass: "is-secondary" });
               consolidateBtn.disabled = false;
-              consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
+              consolidateBtn.innerHTML = personenBtnHtml();
             }
           } catch (err) {
             if (err instanceof Error && err.message === "AUTH_REDIRECT") return;
             console.error("Consolidate persons error:", err);
-            dmskiModal({ icon: "error", title: "Personen-Update fehlgeschlagen", body: err.message || "Unbekannter Fehler bei der Konsolidierung.", confirmLabel: "Verstanden", confirmClass: "is-secondary" });
+            dmskiModal({ icon: "error", title: "Personen KI-Analyse fehlgeschlagen", body: err.message || "Unbekannter Fehler.", confirmLabel: "Verstanden", confirmClass: "is-secondary" });
             consolidateBtn.disabled = false;
-            consolidateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> KI Personen-Update`;
+            consolidateBtn.innerHTML = personenBtnHtml();
           }
         });
       }
@@ -4079,6 +4087,7 @@ void loadCaseContext().then(() => {
       setProgress(82, `Schritt 1 abgeschlossen – ${step1Result.analyzedCount} Files analysiert`);
       if (waveEl) waveEl.classList.add("hidden");
       renderForensicResults(step1Result);
+      loadCreditBalance();
 
       // ── DIALOG: Kreuzanalyse starten? ──
       const continueAnalysis = await dmskiModal({
