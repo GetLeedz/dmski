@@ -155,7 +155,11 @@
         <div class="page-hero-text">
           <h1>${cfg.title}</h1>
           <p>${cfg.sub}</p>
-        </div>`;
+        </div>
+        <a href="/credits.html" class="page-hero-credits" id="heroCredits" title="Ihr Credit-Guthaben">
+          <span class="page-hero-credits-num">${creditBalance}</span>
+          <span class="page-hero-credits-label">Credits</span>
+        </a>`;
       mainEl.insertBefore(heroEl, mainEl.firstChild);
     }
   }
@@ -174,6 +178,8 @@
       sessionStorage.setItem("dmski_credit_balance", String(bal));
       const badge = document.querySelector(".sb-credit-badge span");
       if (badge) badge.textContent = bal + " Credits";
+      const heroNum = document.querySelector(".page-hero-credits-num");
+      if (heroNum) heroNum.textContent = bal;
     }).catch(() => {});
   })();
 

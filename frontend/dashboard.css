@@ -7799,49 +7799,100 @@ body.printing .upload-hero-wrap { display: none !important; }
 }
 
 /* ================================================================
-   KI FILE-SCAN BUTTON (per-file analysis trigger)
+   KI-SCAN BUTTON (unified for File, Personen, all KI actions)
    ================================================================ */
-.ki-file-scan-btn {
+.ki-scan-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.85rem;
-  border: 1px solid rgba(197,160,89,0.4);
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(197,160,89,0.45);
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.04));
+  background: linear-gradient(135deg, rgba(197,160,89,0.14), rgba(197,160,89,0.05));
   color: #C5A059;
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 200ms ease;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(197,160,89,0.06);
 }
-.ki-file-scan-btn:hover {
-  background: linear-gradient(135deg, rgba(197,160,89,0.22), rgba(197,160,89,0.10));
-  border-color: rgba(197,160,89,0.65);
-  box-shadow: 0 4px 14px rgba(197,160,89,0.18);
+.ki-scan-btn:hover {
+  background: linear-gradient(135deg, rgba(197,160,89,0.24), rgba(197,160,89,0.12));
+  border-color: rgba(197,160,89,0.7);
+  box-shadow: 0 6px 20px rgba(197,160,89,0.18);
   transform: translateY(-1px);
 }
-.ki-file-scan-btn:active { transform: translateY(0); }
-.ki-file-scan-btn:disabled {
+.ki-scan-btn:active { transform: translateY(0); }
+.ki-scan-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
-.ki-file-scan-btn.is-loading {
+.ki-scan-btn.is-loading {
   pointer-events: none;
   opacity: 0.7;
 }
-.ki-file-scan-btn svg {
-  width: 0.9rem;
-  height: 0.9rem;
+.ki-scan-btn svg {
+  width: 1rem;
+  height: 1rem;
   flex-shrink: 0;
   stroke: #C5A059;
 }
-.ki-file-scan-label {
+.ki-scan-cost {
+  display: inline-flex;
+  padding: 0.12rem 0.5rem;
+  border-radius: 99px;
+  background: rgba(197,160,89,0.18);
+  color: rgba(197,160,89,0.9);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-left: 0.15rem;
+}
+.ki-scan-cost:empty { display: none; }
+
+/* ── Page Hero Credits Badge ── */
+.page-hero-credits {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  background: rgba(197,160,89,0.1);
+  border: 1px solid rgba(197,160,89,0.3);
+  text-decoration: none;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+}
+.page-hero-credits:hover {
+  background: rgba(197,160,89,0.18);
+  border-color: rgba(197,160,89,0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(197,160,89,0.15);
+}
+.page-hero-credits-num {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #C5A059;
   line-height: 1;
+}
+.page-hero-credits-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.5);
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .page-hero-credits { padding: 0.4rem 0.7rem; }
+  .page-hero-credits-num { font-size: 1rem; }
 }
 
 /* ── Credit Cost Badges (inline in buttons) ── */
@@ -7871,36 +7922,6 @@ body.printing .upload-hero-wrap { display: none !important; }
 .ms-launch-cost:empty,
 .btn-credit-cost:empty { display: none; }
 
-/* ── KI-Analyse Gold Button (einheitlich für alle KI-Actions) ── */
-.ki-action-btn--gold {
-  background: linear-gradient(135deg, rgba(197,160,89,0.15), rgba(197,160,89,0.06));
-  border: 1px solid rgba(197,160,89,0.45);
-  color: #C5A059;
-  font-weight: 700;
-  padding: 0.55rem 1.1rem;
-  font-size: 0.84rem;
-  box-shadow: 0 2px 8px rgba(197,160,89,0.08);
-  transition: all 200ms ease;
-}
-.ki-action-btn--gold:hover {
-  background: linear-gradient(135deg, rgba(197,160,89,0.25), rgba(197,160,89,0.12));
-  border-color: rgba(197,160,89,0.7);
-  box-shadow: 0 6px 20px rgba(197,160,89,0.2);
-  transform: translateY(-1px);
-}
-.ki-action-btn--gold:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(197,160,89,0.1);
-}
-.ki-action-btn--gold:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-.ki-action-btn--gold svg {
-  stroke: #C5A059;
-}
 
 /* ── Credit insufficient overlay in modals ── */
 .credit-info-row {

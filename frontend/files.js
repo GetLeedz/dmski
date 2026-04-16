@@ -210,8 +210,11 @@ function calcCreditCost() {
 }
 
 function updateCreditChip() {
+  if (creditBalance === null) return;
   const badge = document.querySelector(".sb-credit-badge span");
-  if (badge && creditBalance !== null) badge.textContent = creditBalance + " Credits";
+  if (badge) badge.textContent = creditBalance + " Credits";
+  const heroNum = document.querySelector(".page-hero-credits-num");
+  if (heroNum) heroNum.textContent = creditBalance;
 }
 
 function updateCreditCosts() {
@@ -1245,12 +1248,13 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
   }).join("");
 
   const personCost = calcCreditCost();
-  const personCostLabel = personCost > 0 ? `<span class="btn-credit-cost">${personCost} Credit${personCost !== 1 ? "s" : ""}</span>` : "";
+  const personCostLabel = personCost > 0 ? `<span class="ki-scan-cost">${personCost} Credit${personCost !== 1 ? "s" : ""}</span>` : "";
   const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
     ? `<div class="akteure-refresh-wrap">
-        <button id="consolidatePersonsBtn" type="button" class="ki-action-btn ki-action-btn--gold" title="KI: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
+        <button id="consolidatePersonsBtn" type="button" class="ki-scan-btn" title="Personen KI-Analyse: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          KI Personen-Update ${personCostLabel}
+          <span>Personen KI-Analyse</span>
+          ${personCostLabel}
         </button>
         <span id="consolidateTimestamp" class="akteure-timestamp"></span>
       </div>`
@@ -1661,7 +1665,7 @@ async function refreshAnalysisReport(files = allFiles) {
             return;
           }
           consolidateBtn.disabled = true;
-          consolidateBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> KI analysiert…`;
+          consolidateBtn.innerHTML = `<svg class="ki-btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> <span>Personen KI-Analyse…</span>`;
           try {
             const tkn = sessionStorage.getItem("token") || "";
             const resp = await fetch(`${API_BASE}/cases/${currentCaseId}/consolidate-persons`, {
@@ -3011,11 +3015,12 @@ function renderFiles(files) {
       </td>
       <td class="analysis-cell">
         <div class="analysis-cell-top">
-          <button type="button" class="ki-file-scan-btn" data-action="refresh-analysis" data-id="${file.id}" title="File KI-Analyse starten · 1 Credit" aria-label="File KI-Analyse starten">
+          <button type="button" class="ki-scan-btn" data-action="refresh-analysis" data-id="${file.id}" title="File KI-Analyse starten · 1 Credit" aria-label="File KI-Analyse starten">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
-            <span class="ki-file-scan-label">KI-Analyse</span>
+            <span>File KI-Analyse</span>
+            <span class="ki-scan-cost">1 Credit</span>
           </button>
         </div>
         <div class="analysis-box" data-file-id="${file.id}"></div>
