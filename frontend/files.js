@@ -217,12 +217,22 @@ function updateCreditChip() {
   if (heroNum) heroNum.textContent = creditBalance;
 }
 
+function creditBadgeHtml(cost) {
+  if (creditBalance === null) return "";
+  const costTxt = cost > 0 ? `${cost} Credit${cost !== 1 ? "s" : ""}` : "";
+  const balTxt = `${creditBalance} verfügbar`;
+  return `<span class="ki-scan-cost">${costTxt}</span><span class="ki-scan-bal">${balTxt}</span>`;
+}
+
 function updateCreditCosts() {
   if (creditBalance === null) return;
-  const label = `${creditBalance} Credit${creditBalance !== 1 ? "s" : ""}`;
-  const masterCostEl = document.getElementById("masterScanCost");
-  if (masterCostEl) masterCostEl.textContent = label;
-  document.querySelectorAll(".ki-scan-cost").forEach(el => { el.textContent = label; });
+  const scanCost = calcCreditCost();
+  const masterEl = document.getElementById("masterScanMeta");
+  if (masterEl) masterEl.innerHTML = creditBadgeHtml(scanCost);
+  document.querySelectorAll(".ki-scan-meta").forEach(el => {
+    const cost = parseInt(el.dataset.cost || "0", 10) || scanCost;
+    el.innerHTML = creditBadgeHtml(cost);
+  });
 }
 
 function creditInfoHtml(cost) {
@@ -1248,13 +1258,16 @@ function renderAkteureBox(analysis, protectedPerson, opposingParty, authorSentim
     `;
   }).join("");
 
-  const balLabel = creditBalance !== null ? `<span class="ki-scan-cost">${creditBalance} Credit${creditBalance !== 1 ? "s" : ""}</span>` : "";
+  const personCost = calcCreditCost();
+  const personMeta = creditBalance !== null
+    ? `<span class="ki-scan-meta"><span class="ki-scan-cost">${personCost} Credit${personCost !== 1 ? "s" : ""}</span><span class="ki-scan-bal">${creditBalance} verfügbar</span></span>`
+    : "";
   const refreshBtn = (currentUserRole === "admin" || currentUserRole === "customer")
     ? `<div class="akteure-refresh-wrap">
         <button id="consolidatePersonsBtn" type="button" class="ki-scan-btn" title="Personen KI-Analyse: Alle Files prüfen – Namen, Funktionen, Titel konsolidieren">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <span>Personen KI-Analyse</span>
-          ${balLabel}
+          ${personMeta}
         </button>
         <span id="consolidateTimestamp" class="akteure-timestamp"></span>
       </div>`
@@ -3020,7 +3033,7 @@ function renderFiles(files) {
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <span>File KI-Analyse</span>
-            <span class="ki-scan-cost"></span>
+            <span class="ki-scan-meta" data-cost="1"></span>
           </button>
         </div>
         <div class="analysis-box" data-file-id="${file.id}"></div>

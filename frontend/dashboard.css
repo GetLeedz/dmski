@@ -7804,24 +7804,24 @@ body.printing .upload-hero-wrap { display: none !important; }
 .ki-scan-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(197,160,89,0.45);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(197,160,89,0.14), rgba(197,160,89,0.05));
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid rgba(197,160,89,0.5);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1A2B3C, #243b50);
   color: #C5A059;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 200ms ease;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(197,160,89,0.06);
+  box-shadow: 0 3px 12px rgba(26,43,60,0.2);
 }
 .ki-scan-btn:hover {
-  background: linear-gradient(135deg, rgba(197,160,89,0.24), rgba(197,160,89,0.12));
-  border-color: rgba(197,160,89,0.7);
-  box-shadow: 0 6px 20px rgba(197,160,89,0.18);
+  background: linear-gradient(135deg, #243b50, #2d4a62);
+  border-color: rgba(197,160,89,0.75);
+  box-shadow: 0 6px 24px rgba(197,160,89,0.15);
   transform: translateY(-1px);
 }
 .ki-scan-btn:active { transform: translateY(0); }
@@ -7836,23 +7836,39 @@ body.printing .upload-hero-wrap { display: none !important; }
   opacity: 0.7;
 }
 .ki-scan-btn svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   flex-shrink: 0;
   stroke: #C5A059;
 }
+.ki-scan-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.2rem;
+}
 .ki-scan-cost {
   display: inline-flex;
-  padding: 0.12rem 0.5rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 99px;
-  background: rgba(197,160,89,0.18);
-  color: rgba(197,160,89,0.9);
-  font-size: 0.65rem;
+  background: rgba(197,160,89,0.2);
+  color: #C5A059;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  margin-left: 0.15rem;
 }
-.ki-scan-cost:empty { display: none; }
+.ki-scan-bal {
+  display: inline-flex;
+  padding: 0.15rem 0.55rem;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.ki-scan-cost:empty,
+.ki-scan-bal:empty { display: none; }
 
 /* ── Page Hero Credits Badge ── */
 .page-hero-credits {
@@ -7895,32 +7911,24 @@ body.printing .upload-hero-wrap { display: none !important; }
   .page-hero-credits-num { font-size: 1rem; }
 }
 
-/* ── Credit Cost Badges (inline in buttons) ── */
-.ms-launch-cost,
-.btn-credit-cost {
+/* ── Master-Scan credit meta (same pattern as ki-scan-meta) ── */
+.ms-launch-meta {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.55rem;
-  border-radius: 99px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
+  gap: 0.35rem;
+  margin-left: 0.25rem;
   position: relative;
   z-index: 1;
 }
-.ms-launch-cost {
-  background: rgba(15,23,42,0.35);
-  color: rgba(255,255,255,0.85);
-  margin-left: 0.35rem;
-}
-.btn-credit-cost {
-  background: rgba(197,160,89,0.2);
+.ms-launch-meta:empty { display: none; }
+.ms-launch-meta .ki-scan-cost {
+  background: rgba(15,23,42,0.4);
   color: #C5A059;
-  margin-left: 0.35rem;
 }
-.ms-launch-cost:empty,
-.btn-credit-cost:empty { display: none; }
+.ms-launch-meta .ki-scan-bal {
+  background: rgba(15,23,42,0.3);
+  color: rgba(255,255,255,0.55);
+}
 
 
 /* ── Credit insufficient overlay in modals ── */
