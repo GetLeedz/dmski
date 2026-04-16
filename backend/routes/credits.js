@@ -1,7 +1,15 @@
 const express = require("express");
 const { Pool } = require("pg");
+const { Resend } = require("resend");
 const { requireAuth } = require("../middleware/auth");
 const { writeLog } = require("./audit");
+
+const FROM_ADDRESS = "DMSKI <info@dmski.ch>";
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
 
 const router = express.Router();
 
@@ -307,6 +315,27 @@ router.post("/webhook", async (req, res) => {
       );
 
       console.log(`[credits] +${credits} credits for user ${userId} (session: ${sessionId})`);
+
+      // Bestätigungs-Mail senden
+      try {
+        const resend = getResend();
+        if (resend) {
+          const userRes = await pool.query(`SELECT email, first_name FROM users WHERE id = $1`, [userId]);
+          const u = userRes.rows[0];
+          if (u) {
+            const amountCHF = session.amount_total ? (session.amount_total / 100).toFixed(2) : null;
+            await resend.emails.send({
+              from: FROM_ADDRESS,
+              to: [u.email],
+              subject: `DMSKI – ${credits} Credits wurden gutgeschrieben`,
+              html: buildPurchaseEmail(u.first_name || "dort", credits, newBalance, amountCHF),
+            });
+            console.log(`[credits] Purchase email sent to ${u.email}`);
+          }
+        }
+      } catch (mailErr) {
+        console.warn("[credits] Purchase email failed:", mailErr.message);
+      }
     } catch (err) {
       console.error("[credits] webhook DB error:", err.message);
       return res.status(500).send("DB Error");
@@ -458,6 +487,53 @@ router.patch("/admin/packages/:id", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Paket konnte nicht aktualisiert werden." });
   }
 });
+
+function buildPurchaseEmail(firstName, credits, newBalance, amountCHF) {
+  return `<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6f8;padding:40px 20px;">
+<tr><td>
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08);">
+  <tr><td style="background:#1A2B3C;padding:32px 40px;text-align:center;">
+    <img src="https://www.dmski.ch/assets/logo-dmski_gold.png" alt="DMSKI" width="140" style="display:inline-block;max-width:140px;height:auto;border:0;outline:none;text-decoration:none;" />
+  </td></tr>
+  <tr><td style="padding:40px 40px 32px;">
+    <p style="color:#1A2B3C;font-size:17px;font-weight:600;line-height:1.5;margin:0 0 20px;">Vielen Dank, ${firstName} &#10003;</p>
+    <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 20px;">Ihre Credits wurden erfolgreich gutgeschrieben.</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 24px;border-radius:10px;overflow:hidden;border:1px solid #e8edf2;">
+      <tr style="background:#f9fafb;">
+        <td style="padding:14px 20px;border-bottom:1px solid #e8edf2;color:#6b7b8a;font-size:13px;width:50%;">Gekaufte Credits</td>
+        <td style="padding:14px 20px;border-bottom:1px solid #e8edf2;color:#1A2B3C;font-size:15px;font-weight:700;text-align:right;"><span style="color:#C5A059;">+${credits}</span></td>
+      </tr>
+      <tr style="background:#f9fafb;">
+        <td style="padding:14px 20px;border-bottom:1px solid #e8edf2;color:#6b7b8a;font-size:13px;">Neues Guthaben</td>
+        <td style="padding:14px 20px;border-bottom:1px solid #e8edf2;color:#1A2B3C;font-size:15px;font-weight:700;text-align:right;">${newBalance} Credits</td>
+      </tr>
+      ${amountCHF ? `<tr style="background:#f9fafb;">
+        <td style="padding:14px 20px;color:#6b7b8a;font-size:13px;">Betrag</td>
+        <td style="padding:14px 20px;color:#1A2B3C;font-size:15px;font-weight:700;text-align:right;">CHF ${amountCHF}</td>
+      </tr>` : ''}
+    </table>
+    <p style="color:#1A2B3C;font-size:14px;line-height:1.6;margin:0 0 24px;">Sie k&ouml;nnen Ihre Credits jetzt f&uuml;r KI-Analysen einsetzen. Jeder File-Scan kostet 1 Credit.</p>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
+      <tr><td style="background:#C5A059;border-radius:10px;text-align:center;">
+        <a href="https://dmski.ch/dashboard.html" style="display:inline-block;padding:15px 44px;color:#1A2B3C;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:.02em;">Zum Dashboard &rarr;</a>
+      </td></tr>
+    </table>
+    <p style="color:#8a96a3;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+      Sie erhalten eine separate Zahlungsbest&auml;tigung von Stripe.
+    </p>
+  </td></tr>
+  <tr><td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
+    <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI &middot; GetLeedz GmbH</p>
+    <p style="margin:0;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
 
 module.exports = router;
 module.exports.deductCredits = deductCredits;

@@ -366,6 +366,24 @@ router.post("/verify-email", async (req, res) => {
       console.warn("[auth] Could not grant signup credits:", creditErr.message);
     }
 
+    // Willkommens-Mail senden
+    try {
+      const resend = getResend();
+      if (resend) {
+        const settingsRes2 = await pool.query(`SELECT free_signup_credits FROM credit_settings WHERE id = 1`);
+        const granted = settingsRes2.rows[0]?.free_signup_credits ?? 10;
+        await resend.emails.send({
+          from: FROM_ADDRESS,
+          to: [user.email],
+          subject: "Willkommen bei DMSKI – Ihr Konto ist aktiv",
+          html: buildWelcomeEmail(user.first_name || "dort", granted),
+        });
+        console.log(`[auth] Welcome email sent to ${user.email}`);
+      }
+    } catch (mailErr) {
+      console.warn("[auth] Welcome email failed:", mailErr.message);
+    }
+
     writeLog({ userId: user.id, email: user.email, action: "email_verified", ip: "", userAgent: "" });
     res.json({ ok: true, message: "E-Mail bestätigt. Sie können sich jetzt anmelden." });
   } catch (err) {
@@ -401,6 +419,49 @@ function buildVerifyEmail(firstName, verifyUrl) {
   <tr><td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
     <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI &middot; GetLeedz GmbH</p>
     <p style="margin:0;font-size:11px;color:#6b7b8a;">Walter Fürst-Strasse 1 &middot; CH-4102 Binningen</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+function buildWelcomeEmail(firstName, freeCredits) {
+  return `<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6f8;padding:40px 20px;">
+<tr><td>
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08);">
+  <tr><td style="background:#1A2B3C;padding:32px 40px;text-align:center;">
+    <img src="https://www.dmski.ch/assets/logo-dmski_gold.png" alt="DMSKI" width="140" style="display:inline-block;max-width:140px;height:auto;border:0;outline:none;text-decoration:none;" />
+  </td></tr>
+  <tr><td style="padding:40px 40px 32px;">
+    <p style="color:#1A2B3C;font-size:17px;font-weight:600;line-height:1.5;margin:0 0 20px;">Willkommen bei DMSKI, ${firstName} &#127881;</p>
+    <p style="color:#1A2B3C;font-size:15px;line-height:1.7;margin:0 0 16px;">Ihre E-Mail wurde bestätigt &mdash; Ihr Konto ist ab sofort aktiv.</p>
+    ${freeCredits > 0 ? `<table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;border-radius:10px;overflow:hidden;border:1px solid #e8edf2;">
+      <tr><td style="padding:16px 20px;background:#f9fafb;">
+        <p style="margin:0;color:#1A2B3C;font-size:14px;line-height:1.6;"><strong style="color:#C5A059;">&#127873; ${freeCredits} Gratis-Credits</strong> wurden Ihrem Konto gutgeschrieben &mdash; Sie können direkt loslegen.</p>
+      </td></tr>
+    </table>` : ''}
+    <p style="color:#1A2B3C;font-size:15px;font-weight:600;line-height:1.5;margin:0 0 12px;">So starten Sie:</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 24px;">
+      <tr><td style="padding:6px 0;color:#1A2B3C;font-size:14px;line-height:1.6;">&#10102; Loggen Sie sich ein und legen Sie Ihren ersten Fall an</td></tr>
+      <tr><td style="padding:6px 0;color:#1A2B3C;font-size:14px;line-height:1.6;">&#10103; Laden Sie Ihre Files hoch (PDFs, Gutachten, Verfügungen)</td></tr>
+      <tr><td style="padding:6px 0;color:#1A2B3C;font-size:14px;line-height:1.6;">&#10104; Starten Sie die KI-Analyse &mdash; fertig</td></tr>
+    </table>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
+      <tr><td style="background:#C5A059;border-radius:10px;text-align:center;">
+        <a href="https://dmski.ch/login.html" style="display:inline-block;padding:15px 44px;color:#1A2B3C;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:.02em;">Jetzt einloggen &rarr;</a>
+      </td></tr>
+    </table>
+    <p style="color:#8a96a3;font-size:13px;line-height:1.6;margin:0;text-align:center;">
+      Fragen? Schreiben Sie uns an <a href="mailto:info@dmski.ch" style="color:#C5A059;text-decoration:none;font-weight:600;">info@dmski.ch</a> &mdash; wir helfen Ihnen gerne.
+    </p>
+  </td></tr>
+  <tr><td style="background:#f5f6f8;border-top:1px solid #e8edf2;padding:24px 40px;text-align:center;">
+    <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1A2B3C;">DMSKI &middot; GetLeedz GmbH</p>
+    <p style="margin:0;font-size:11px;color:#6b7b8a;">Walter F&uuml;rst-Strasse 1 &middot; CH-4102 Binningen</p>
   </td></tr>
 </table>
 </td></tr></table>
