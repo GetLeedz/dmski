@@ -246,11 +246,8 @@ function creditInfoHtml(cost) {
   if (creditBalance === null) return "";
   const sufficient = creditBalance >= cost;
   return `<div class="credit-info-row ${sufficient ? "" : "is-insufficient"}">
-    <div>
-      <span class="credit-info-needed">${cost} Credit${cost !== 1 ? "s" : ""} benötigt</span>
-      <span class="credit-info-available"> · Guthaben: ${creditBalance}</span>
-    </div>
-    ${sufficient ? "" : `<a href="/credits.html" class="credit-buy-link">Credits kaufen →</a>`}
+    <span class="credit-info-needed">${cost} Credit${cost !== 1 ? "s" : ""} benötigt</span>
+    <span class="credit-info-available">Guthaben: ${creditBalance}</span>
   </div>`;
 }
 
@@ -1671,12 +1668,13 @@ async function refreshAnalysisReport(files = allFiles) {
       const consolidateBtn = document.getElementById("consolidatePersonsBtn");
       if (consolidateBtn) {
         consolidateBtn.addEventListener("click", async () => {
+          if (creditBalance === null) await loadCreditBalance();
           const pCost = calcCreditCost();
           if (creditBalance !== null && creditBalance < pCost) {
             const goToBuy = await dmskiModal({
               icon: "info",
               title: "Nicht genügend Credits",
-              body: `Für das Personen-Update werden <strong>${pCost} Credits</strong> benötigt.${creditInfoHtml(pCost)}`,
+              body: `Für die Personen KI-Analyse werden <strong>${pCost} Credits</strong> benötigt.${creditInfoHtml(pCost)}`,
               confirmLabel: "Credits kaufen",
               cancelLabel: "Abbrechen",
               confirmClass: "is-primary"
